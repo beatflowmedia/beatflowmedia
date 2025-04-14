@@ -1,13 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    @apply bg-black text-white;
+  }
+  
+  a {
+    @apply transition-all duration-200;
+  }
+  
+/* Custom styles for Music Player */
+input[type="range"] {
+    @apply accent-green-500;
+  }
+
+  /* Fix padding and spacing */
+.song-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #181818;
+  padding: 16px;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+  gap: 16px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.song-item:hover {
+  background-color: #282828;
+}
+
+/* Album Cover Styling */
+.song-item img {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* Text Spacing */
+.song-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.song-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+}
+
+.song-meta {
+  font-size: 0.9rem;
+  color: #b3b3b3;
+}
+
+/* Play Button */
+.play-button {
+  background: white;
+  color: black;
+  border-radius: 50%;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.play-button:hover {
+  background: #1db954;
+  color: white;
+}
+
+/* Music Player Styles */
+.music-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #000;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #333;
+  z-index: 50;
+}
+
+.music-player .song-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 25%;
+}
+
+.music-player .song-info img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+}
+
+.music-player .song-info div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.music-player .song-info h3 {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.music-player .song-info p {
+  font-size: 12px;
+  color: #b3b3b3;
+}
+
+/* Player Controls */
+.music-player .controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 33%;
+}
+
+.music-player .controls .control-buttons {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.music-player .controls button {
+  background-color: #fff;
+  color: #000;
+  border-radius: 50%;
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.music-player .controls button:hover {
+  background-color: #1db954;
+  color: #fff;
+}
+
+.music-player .controls .progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.music-player .controls input[type="range"] {
+  width: 100%;
+  height: 4px;
+  border-radius: 4px;
+  background-color: #333;
+  cursor: pointer;
+}
+
+.music-player .controls input[type="range"]::-webkit-slider-thumb {
+  background-color: #1db954;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+}
+
+.music-player .controls input[type="range"]::-webkit-slider-runnable-track {
+  background-color: #333;
+}
+
+/* Volume Controls */
+.music-player .volume-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 25%;
+  justify-content: flex-end;
+}
+
+.music-player .volume-controls input[type="range"] {
+  width: 100px;
+}
+
+.music-player .volume-controls .fa-volume-up {
+  color: #fff;
+}
+
+/* Shuffle, Repeat, and Next/Previous buttons */
+.music-player .controls .control-buttons button:focus {
+  outline: none;
 }

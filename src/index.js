@@ -1,17 +1,23 @@
+// index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Import your AuthProvider and PlaybackProvider
+import { AuthProvider } from './context/AuthContext'; // adjust path as needed
+import { PlaybackProvider } from './context/PlaybackContext'; // adjust path as needed
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <PlaybackProvider>
+        <App />
+      </PlaybackProvider>
+    </AuthProvider>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
