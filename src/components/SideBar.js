@@ -26,21 +26,21 @@ const SideBar = ({
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [showSortMenu, setShowSortMenu] = useState(false);
-  const [viewMode, setViewMode] = useState("list");
   const [showNewPlaylistModal, setShowNewPlaylistModal] = useState(false);
 
+  // Static view mode (could be toggled later)
+  const viewMode = "list";
+
+  // Deduplicate artists from musicData
   const uniqueArtists = useMemo(() => {
     const seen = new Set();
-    let artists = musicData
+    return musicData
       .filter(({ artist }) => {
         if (seen.has(artist)) return false;
         seen.add(artist);
         return true;
       })
       .map((song, index) => ({ id: `artist-${index}`, name: song.artist }));
-
-    return artists;
   }, [musicData]);
 
   const { isFollowing, toggleFollow } = useFollowArtist(contextArtist);
@@ -64,6 +64,8 @@ const SideBar = ({
 
   return (
     <div className={`bg-gray-900 text-white h-screen flex flex-col ${isCollapsed ? "w-26" : "w-64"} p-6 pt-20 transition-all duration-300 relative`}>
+      
+      {/* Header Section */}
       <div className="flex items-center justify-between mb-4">
         {!isCollapsed && <h3 className="text-xl font-bold">Your Library</h3>}
         <div className="flex items-center space-x-2">
@@ -76,7 +78,6 @@ const SideBar = ({
               <FaPlus size={20} />
             </button>
           )}
-          
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             title="Toggle Sidebar"
@@ -87,7 +88,7 @@ const SideBar = ({
         </div>
       </div>
 
-      
+      {/* Artists Section */}
       <div>
         {!isCollapsed && <h4 className="text-lg font-semibold mb-2">Artists</h4>}
         {uniqueArtists.length === 0 ? (
@@ -109,11 +110,16 @@ const SideBar = ({
         )}
       </div>
 
+      {/* Playlists Section */}
       {!isCollapsed && (
         <div className="mt-6">
           <div className="flex justify-between items-center">
             <h4 className="text-lg font-semibold">Playlists</h4>
-            <button onClick={() => setShowNewPlaylistModal(true)} className="text-gray-400 hover:text-white">
+            <button
+              onClick={() => setShowNewPlaylistModal(true)}
+              className="text-gray-400 hover:text-white"
+              title="New Playlist"
+            >
               <FaPlus size={26} />
             </button>
           </div>
@@ -136,6 +142,7 @@ const SideBar = ({
         </div>
       )}
 
+      {/* Context Menu */}
       <ContextMenu
         visible={showMenu}
         x={menuPos.x}
@@ -144,6 +151,7 @@ const SideBar = ({
         onClose={() => setShowMenu(false)}
       />
 
+      {/* New Playlist Modal */}
       {showNewPlaylistModal && (
         <NewPlaylistModal
           onCreate={(name) => {

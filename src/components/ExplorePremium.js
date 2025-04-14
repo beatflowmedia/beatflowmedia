@@ -181,34 +181,34 @@ export default function ExplorePremium() {
           <div>
             <h4 className="text-white font-semibold mb-2">Company</h4>
             <ul className="space-y-1">
-              <li><a href="#" className="hover:text-white">About</a></li>
-              <li><a href="#" className="hover:text-white">Jobs</a></li>
-              <li><a href="#" className="hover:text-white">For the Record</a></li>
+              <li><a href="/about" className="hover:text-white">About</a></li>
+              <li><a href="/jobs" className="hover:text-white">Jobs</a></li>
+              <li><a href="/for-the-record" className="hover:text-white">For the Record</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-2">Communities</h4>
             <ul className="space-y-1">
-              <li><a href="#" className="hover:text-white">For Artists</a></li>
-              <li><a href="#" className="hover:text-white">Developers</a></li>
-              <li><a href="#" className="hover:text-white">Advertising</a></li>
+              <li><a href="/for-artist" className="hover:text-white">For Artists</a></li>
+              <li><a href="/developers" className="hover:text-white">Developers</a></li>
+              <li><a href="/advertising" className="hover:text-white">Advertising</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-2">Useful links</h4>
             <ul className="space-y-1">
-              <li><a href="#" className="hover:text-white">Support</a></li>
-              <li><a href="#" className="hover:text-white">Web Player App</a></li>
+              <li><a href="/support" className="hover:text-white">Support</a></li>
+              <li><a href="/webplayer" className="hover:text-white">Web Player App</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-2">Spotify Plans</h4>
             <ul className="space-y-1">
-              <li><a href="#" className="hover:text-white">Premium Individual</a></li>
-              <li><a href="#" className="hover:text-white">Premium Student</a></li>
-              <li><a href="#" className="hover:text-white">Premium Duo</a></li>
-              <li><a href="#" className="hover:text-white">Premium Family</a></li>
-              <li><a href="#" className="hover:text-white">Audiobooks Access</a></li>
+              <li><a href="/individual" className="hover:text-white">Premium Individual</a></li>
+              <li><a href="/student" className="hover:text-white">Premium Student</a></li>
+              <li><a href="/duo" className="hover:text-white">Premium Duo</a></li>
+              <li><a href="/family" className="hover:text-white">Premium Family</a></li>
+              <li><a href="audiobooks" className="hover:text-white">Audiobooks Access</a></li>
             </ul>
           </div>
         </div>

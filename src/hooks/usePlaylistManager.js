@@ -5,7 +5,6 @@ import {
   setDoc,
   doc,
   collection,
-  addDoc,
   updateDoc,
   arrayUnion,
   onSnapshot,
@@ -33,30 +32,32 @@ export function usePlaylistManager() {
   }, [user]);
 
   const createNewPlaylist = async (name) => {
-    if (!user || !user.uid) {
-      throw new Error("User not authenticated");
-    }
-
+    if (!user?.uid) throw new Error("User not authenticated");
+  
+    // Reference to the user's main doc
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
-
-    // 🛠 Ensure parent user doc exists
+  
+    // Create the user doc if it doesn't exist (first-time user)
     if (!userDocSnap.exists()) {
       await setDoc(userDocRef, { createdAt: new Date() });
       console.log("👤 Created user doc");
     }
-
-    const playlistCollectionRef = collection(db, "users", user.uid, "playlists");
-    const newDocRef = doc(playlistCollectionRef); // manual ID
-    await setDoc(newDocRef, {
+  
+    // Generate a new doc ref (with unique ID you control)
+    const newPlaylistRef = doc(collection(db, "users", user.uid, "playlists"));
+  
+    // Write the new playlist
+    await setDoc(newPlaylistRef, {
       name,
       songs: [],
       createdAt: new Date(),
     });
-
-    console.log("✅ Playlist created:", name, "→", newDocRef.id);
-    return newDocRef;
+  
+    console.log("✅ Playlist created:", name, "→", newPlaylistRef.id);
+    return newPlaylistRef;
   };
+  
 
   const addSong = (playlistId, song) => {
     if (!user) return;

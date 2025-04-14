@@ -1,4 +1,3 @@
-// src/pages/ArtistPage.js
 import React, { useState, useMemo } from "react";
 import musicData from "../musicData.json";
 import { buildArtistInfo } from "../utils/buildArtistInfo";
@@ -6,13 +5,14 @@ import RightPanel from "../components/RightPanel";
 
 function ArtistPage() {
   const [panelVisible, setPanelVisible] = useState(false);
+
   // Choose the artist you want to build info for (e.g., "Percy Rice")
   const selectedArtistName = "Percy Rice";
 
-  // Build the artist info object from musicData.json
+  // Memoize artist info to avoid recomputing unless the artist name changes
   const artistInfo = useMemo(
     () => buildArtistInfo(selectedArtistName, musicData),
-    [selectedArtistName, musicData]
+    [selectedArtistName]
   );
 
   return (
