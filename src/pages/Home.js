@@ -1,190 +1,326 @@
-import React, { useMemo, useState } from "react";
+// src/pages/Home.js
+import React, { useMemo, useState, useEffect, memo } from "react";
+import PropTypes from "prop-types";
 import { groupSongsByArtist } from "../utils/ArtistFilter";
 import useFollowArtist from "../hooks/useFollowArtist";
 import PlayButton from "../components/PlayButton";
 import DropdownMenu from "../components/DropdownMenu";
-import { FaTrash, FaBars, FaList, FaSortAlphaDown, FaClock } from "react-icons/fa";
+import LikeButton from "../components/LikeButton";
+import { toast } from "react-toastify";
+
+import {
+  FaTrashAlt,
+  FaMusic,
+  FaPlus,
+  FaShareAlt,
+  FaBars,
+  FaList,
+  FaSortAlphaDown,
+  FaClock,
+  FaTwitter,
+  FaFacebook,
+  FaLinkedin,
+  FaReddit,
+  FaEnvelope,
+  FaLink,
+} from "react-icons/fa";
+
+import { db } from "../firebaseConfig";
+import { collection, onSnapshot } from "firebase/firestore";
+
+import {
+  getSongUrl,
+  getShareText,
+  shareOnTwitter,
+  shareOnFacebook,
+  shareOnLinkedIn,
+  shareOnReddit,
+  shareViaEmail,
+  copyToClipboard,
+} from "../utils/shareHelper";
+
+const SORT_OPTIONS = [
+  { label: "Alphabetical", icon: <FaSortAlphaDown />, value: "alpha" },
+  { label: "Recently Added", icon: <FaClock />, value: "recentlyAdded" },
+];
+
+const VIEW_OPTIONS = [
+  { label: "Compact", icon: <FaBars />, value: "compact" },
+  { label: "List", icon: <FaList />, value: "list" },
+];
 
 function Home({
   musicData,
   selectedArtist,
   selectedPlaylist,
   onSongSelect,
-  onPlay = () => {},
+  onPlay,
   onToggleFavorite,
-  favorites = [],
+  favorites,
   currentSong,
   isPlaying,
   playlists,
   onAddSongToPlaylist,
   onRemoveSongFromPlaylist,
 }) {
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [selectedSong, setSelectedSong] = useState(null);
   const [viewMode, setViewMode] = useState("compact");
   const [sortMode, setSortMode] = useState("recentlyAdded");
+  const [globalLikes, setGlobalLikes] = useState({});
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareSong, setShareSong] = useState(null);
 
-  const songsGrouped = useMemo(() => groupSongsByArtist(musicData || []), [musicData]);
+  // ── Subscribe to global likes ────────────────────────────────────────────────
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "songLikes"), (snap) => {
+      const counts = {};
+      snap.docs.forEach((d) => {
+        counts[d.id] = d.data().likers?.length || 0;
+      });
+      setGlobalLikes(counts);
+    });
+    return unsub;
+  }, []);
+
+  // ── Artist / playlist grouping & follow toggle ───────────────────────────────
+  const songsByArtist = useMemo(() => groupSongsByArtist(musicData), [musicData]);
+  const normalizedArtist = selectedArtist?.trim().toLowerCase();
   const { isFollowing, toggleFollow } = useFollowArtist(selectedArtist);
 
-  const normalizedArtist = selectedArtist ? selectedArtist.trim().toLowerCase() : null;
-
-  const songsToDisplay = useMemo(() => {
-    let songs = selectedPlaylist?.songs?.length
+  // ── Filter + sort the list of songs ───────────────────────────────────────────
+  const songs = useMemo(() => {
+    const base = selectedPlaylist?.songs?.length
       ? selectedPlaylist.songs
       : normalizedArtist
-      ? songsGrouped[normalizedArtist] || []
+      ? songsByArtist[normalizedArtist] || []
       : musicData;
 
-    if (sortMode === "alpha") {
-      return [...songs].sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortMode === "recentlyAdded") {
-      return [...songs].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
-    }
-    return songs;
-  }, [musicData, selectedPlaylist, normalizedArtist, songsGrouped, sortMode]);
+    return [...base].sort((a, b) =>
+      sortMode === "alpha"
+        ? a.title.localeCompare(b.title)
+        : new Date(b.addedAt || 0) - new Date(a.addedAt || 0)
+    );
+  }, [musicData, selectedPlaylist, normalizedArtist, songsByArtist, sortMode]);
 
-  const handleAddToPlaylistClick = (song) => {
-    setSelectedSong(song);
-    setShowPlaylistModal(true);
+  // ── Share handlers ───────────────────────────────────────────────────────────
+  const handleShare = (song) => {
+    setShareSong(song);
+    setShowShareModal(true);
   };
+  const closeShareModal = () => {
+    setShowShareModal(false);
+    setShareSong(null);
+  };
+
+  const songUrl = shareSong ? getSongUrl(shareSong.id) : "";
+  const shareText = shareSong ? getShareText(shareSong.title, shareSong.id) : "";
 
   return (
     <div className="pt-16 px-6">
-      {selectedPlaylist ? (
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white">{selectedPlaylist.name}</h1>
-          <p className="text-gray-400 text-sm">{selectedPlaylist.songs.length} song(s)</p>
-        </div>
-      ) : selectedArtist ? (
-        <div className="relative w-full h-64 bg-gradient-to-b from-gray-700 to-black rounded-lg overflow-hidden mb-6">
-          <img
-            src={`/artistImages/${selectedArtist}.jpg`}
-            alt={selectedArtist}
-            className="absolute w-full h-full object-cover opacity-50"
-          />
-          <div className="relative z-10 flex flex-col justify-end h-full p-6">
-            <h1 className="text-white text-5xl font-bold">{selectedArtist}</h1>
-            <p className="text-gray-300 text-lg">Popular Songs</p>
-            <div className="mt-2">
-              <button
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition ${
-                  isFollowing
-                    ? "bg-red-500 hover:bg-red-400 text-white"
-                    : "bg-green-500 hover:bg-green-400 text-white"
-                }`}
-                onClick={toggleFollow}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </button>
-            </div>
+      {/* ── Controls (only on main “Popular Songs” view) ────────────────────────── */}
+      {!selectedArtist && !selectedPlaylist && (
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-white">Popular Songs</h2>
+          <div className="flex space-x-4">
+            {/* View mode dropdown */}
+            <DropdownMenu
+              trigger={
+                <button className="flex items-center space-x-1 text-sm text-white focus:outline-none">
+                  {VIEW_OPTIONS.find((v) => v.value === viewMode).icon}
+                  <span>{viewMode}</span>
+                </button>
+              }
+              items={VIEW_OPTIONS.map(({ label, icon, value }) => ({
+                label,
+                icon,
+                active: viewMode === value,
+                onClick: () => setViewMode(value),
+              }))}
+            />
+
+            {/* Sort mode dropdown */}
+            <DropdownMenu
+              trigger={
+                <button className="flex items-center space-x-1 text-sm text-white focus:outline-none">
+                  {SORT_OPTIONS.find((s) => s.value === sortMode).icon}
+                  <span>{sortMode}</span>
+                </button>
+              }
+              items={SORT_OPTIONS.map(({ label, icon, value }) => ({
+                label,
+                icon,
+                active: sortMode === value,
+                onClick: () => setSortMode(value),
+              }))}
+            />
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-3xl font-bold">Popular Songs</h2>
-          <DropdownMenu
-            trigger={
-              <button className="flex items-center space-x-2 text-white text-sm hover:text-green-400">
-                {viewMode === "list" ? <FaList /> : <FaBars />} <span>{viewMode === "list" ? "List" : "Compact"}</span>
-              </button>
-            }
-            items={[
-              { label: "Compact", icon: <FaBars />, active: viewMode === "compact", onClick: () => setViewMode("compact") },
-              { label: "List", icon: <FaList />, active: viewMode === "list", onClick: () => setViewMode("list") },
-              "divider",
-              { label: "Alphabetical", icon: <FaSortAlphaDown />, active: sortMode === "alpha", onClick: () => setSortMode("alpha") },
-              { label: "Recently Added", icon: <FaClock />, active: sortMode === "recentlyAdded", onClick: () => setSortMode("recentlyAdded") },
-            ]}
-          />
         </div>
       )}
 
-      <div className={viewMode === "list" ? "space-y-2" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"}>
-        {songsToDisplay.map((song) => {
-          const isInPlaylist = selectedPlaylist?.songs?.some((s) => s.id === song.id);
+      {/* ── Playlist or Artist Header ──────────────────────────────────────────── */}
+      {selectedPlaylist ? (
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white">{selectedPlaylist.name}</h1>
+          <p className="text-gray-400">
+            {selectedPlaylist.songs.length} song
+            {selectedPlaylist.songs.length !== 1 && "s"}
+          </p>
+        </div>
+      ) : selectedArtist ? (
+        <div className="relative mb-6 h-64 overflow-hidden rounded-lg bg-gradient-to-b from-gray-700 to-black">
+          <img
+            src={`/artistImages/${selectedArtist}.jpg`}
+            alt={selectedArtist}
+            className="absolute inset-0 w-full h-full object-cover opacity-50"
+          />
+          <div className="relative z-10 flex h-full flex-col justify-end p-6">
+            <h1 className="text-5xl font-bold text-white">{selectedArtist}</h1>
+            <button
+              onClick={toggleFollow}
+              className={`mt-2 rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
+                isFollowing
+                  ? "bg-red-500 hover:bg-red-400 text-white"
+                  : "bg-green-500 hover:bg-green-400 text-white"
+              }`}
+            >
+              {isFollowing ? "Unfollow" : "Follow"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Songs Grid / List ───────────────────────────────────────────────────── */}
+      <div
+        className={
+          viewMode === "list"
+            ? "space-y-4"
+            : "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        }
+      >
+        {songs.map((song) => {
+          const inPlaylist = selectedPlaylist?.songs?.some((s) => s.id === song.id);
+          const isFav = favorites.some((f) => f.id === song.id);
+          const likes = globalLikes[song.id] || 0;
+
           return (
             <div
               key={song.id}
-              className="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all cursor-pointer"
+              className="rounded-lg bg-gray-800 p-4 hover:bg-gray-700 transition"
             >
               <img
                 src={song.cover || "https://via.placeholder.com/50"}
-                alt="Album Cover"
-                className="w-14 h-14 rounded-md mb-2"
+                alt={song.title}
+                className="w-14 h-14 mb-2 rounded-md object-cover"
               />
-              <h3 className="text-white font-bold text-sm">{song.title}</h3>
-              <p className="text-gray-400 text-xs">{song.artist}</p>
-              <div className="flex items-center justify-between mt-2">
+              <h3 className="mb-1 text-sm font-bold text-white">{song.title}</h3>
+              <p className="text-xs text-gray-400">{song.artist}</p>
+              <p className="mb-2 text-xs text-gray-400">{likes} likes</p>
+
+              <div className="flex items-center justify-between">
                 <PlayButton
-                  isPlaying={currentSong && currentSong.id === song.id && isPlaying}
-                  onClick={() => {
-                    if (currentSong && currentSong.id === song.id) {
-                      onPlay(!isPlaying); // toggle play/pause
-                    } else {
-                      onSongSelect(song);
-                      onPlay(true); // start new song
-                    }
-                  }}
+                  isPlaying={currentSong?.id === song.id && isPlaying}
+                  onClick={() =>
+                    currentSong?.id === song.id
+                      ? onPlay(!isPlaying)
+                      : (onSongSelect(song), onPlay(true))
+                  }
                   size={20}
                 />
 
-                <button
-                  className="text-green-400 hover:text-green-300 text-lg ml-2"
-                  title={isInPlaylist ? "Remove from Playlist" : "Add to Playlist"}
-                  onClick={() => {
-                    if (isInPlaylist) {
-                      onRemoveSongFromPlaylist(selectedPlaylist.id, song);
-                    } else {
-                      handleAddToPlaylistClick(song);
+                <div className="flex items-center space-x-2 rounded-md bg-gray-700 bg-opacity-50 p-1">
+                  {/* Add / Remove from playlist */}
+                  <button
+                    onClick={() =>
+                      inPlaylist
+                        ? onRemoveSongFromPlaylist(selectedPlaylist.id, song)
+                        : onAddSongToPlaylist(selectedPlaylist?.id, song)
                     }
-                  }}
-                >
-                  {isInPlaylist ? <FaTrash /> : "➕"}
-                </button>
-                <button
-                  onClick={() => onToggleFavorite(song)}
-                  className={`text-lg transition ${
-                    favorites.some((fav) => fav.id === song.id)
-                      ? "text-red-500"
-                      : "text-gray-400 hover:text-red-400"
-                  }`}
-                  title={favorites.some((fav) => fav.id === song.id) ? "Unlike" : "Like"}
-                >
-                  {favorites.some((fav) => fav.id === song.id) ? "♥" : "♡"}
-                </button>
+                    className="relative text-green-400 hover:text-green-300 focus:outline-none"
+                    title={inPlaylist ? "Remove from playlist" : "Add to playlist"}
+                  >
+                    {inPlaylist ? <FaTrashAlt /> : <FaMusic />}
+                    {!inPlaylist && (
+                      <FaPlus className="absolute -top-1 -right-1 text-xs" />
+                    )}
+                  </button>
+
+                  {/* Like / Unlike */}
+                  <LikeButton
+                    item={song}
+                    isLiked={isFav}
+                    onToggleFavorite={onToggleFavorite}
+                    size={18}
+                  />
+
+                  {/* Share */}
+                  <button
+                    onClick={() => handleShare(song)}
+                    className="text-blue-400 hover:text-blue-300 focus:outline-none"
+                    title="Share"
+                  >
+                    <FaShareAlt />
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {showPlaylistModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-white text-xl font-bold mb-4">Select a Playlist</h2>
-            {playlists.length === 0 ? (
-              <p className="text-gray-400">No playlist available.</p>
-            ) : (
-              playlists.map((playlist) => (
-                <button
-                  key={playlist.id}
-                  className="block w-full text-left p-2 hover:bg-gray-700 rounded"
-                  onClick={() => {
-                    onAddSongToPlaylist(playlist.id, selectedSong);
-                    setShowPlaylistModal(false);
-                  }}
-                >
-                  {playlist.name}
-                </button>
-              ))
-            )}
-            <button
-              onClick={() => setShowPlaylistModal(false)}
-              className="mt-4 bg-red-500 px-4 py-2 rounded hover:bg-red-400"
-            >
-              Cancel
-            </button>
+      {/* ── Share Modal ─────────────────────────────────────────────────────────── */}
+      {showShareModal && shareSong && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-80 space-y-4 rounded-lg bg-gray-900 p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">Share to...</h2>
+              <button
+                onClick={closeShareModal}
+                className="text-gray-400 hover:text-white focus:outline-none"
+                aria-label="Close share modal"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={() => shareOnTwitter(shareText)}
+                className="flex items-center p-2 hover:bg-gray-800 rounded focus:outline-none"
+              >
+                <FaTwitter className="mr-2" /> Twitter
+              </button>
+              <button
+                onClick={() => shareOnFacebook(songUrl)}
+                className="flex items-center p-2 hover:bg-gray-800 rounded focus:outline-none"
+              >
+                <FaFacebook className="mr-2" /> Facebook
+              </button>
+              <button
+                onClick={() => shareOnLinkedIn(songUrl)}
+                className="flex items-center p-2 hover:bg-gray-800 rounded focus:outline-none"
+              >
+                <FaLinkedin className="mr-2" /> LinkedIn
+              </button>
+              <button
+                onClick={() => shareOnReddit(songUrl)}
+                className="flex items-center p-2 hover:bg-gray-800 rounded focus:outline-none"
+              >
+                <FaReddit className="mr-2" /> Reddit
+              </button>
+              <button
+                onClick={() => shareViaEmail(shareSong.title, shareText)}
+                className="flex items-center p-2 hover:bg-gray-800 rounded focus:outline-none"
+              >
+                <FaEnvelope className="mr-2" /> Email
+              </button>
+              <button
+                onClick={async () => {
+                  await copyToClipboard(shareText);
+                  toast.success("Link copied to clipboard!");
+                }}
+                className="flex items-center p-2 hover:bg-gray-800 rounded focus:outline-none"
+              >
+                <FaLink className="mr-2" /> Copy link
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -192,4 +328,30 @@ function Home({
   );
 }
 
-export default Home;
+Home.propTypes = {
+  musicData: PropTypes.array.isRequired,
+  selectedArtist: PropTypes.string,
+  selectedPlaylist: PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string,
+    songs: PropTypes.array,
+  }),
+  onSongSelect: PropTypes.func.isRequired,
+  onPlay: PropTypes.func,
+  onToggleFavorite: PropTypes.func.isRequired,
+  favorites: PropTypes.array,
+  currentSong: PropTypes.object,
+  isPlaying: PropTypes.bool,
+  playlists: PropTypes.array,
+  onAddSongToPlaylist: PropTypes.func.isRequired,
+  onRemoveSongFromPlaylist: PropTypes.func.isRequired,
+};
+
+Home.defaultProps = {
+  onPlay: () => {},
+  favorites: [],
+  playlists: [],
+  isPlaying: false,
+};
+
+export default memo(Home);

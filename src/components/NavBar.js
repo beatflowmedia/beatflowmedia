@@ -1,65 +1,144 @@
-import React from "react";
-import { FaBell, FaSearch, FaCrown, FaMusic } from "react-icons/fa";
+// src/components/NavBar.jsx
+import React, { memo } from "react";
+import PropTypes from "prop-types";
+import classNames from "classnames";
+import {
+  FaHome,
+  FaSearch,
+  FaDownload,
+  FaBell,
+  FaCrown,
+} from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 
 const NavBar = ({
-  onWhatsNewClick = () => {},
-  isBellActive = false,
-  onExplorePremium = () => {},
-  onBrowseClick = () => {},
-  onSearchChange = () => {},
+  onHomeClick,
+  onSearchChange,
+  onExplorePremium,
+  onDownloadClick,
+  onWhatsNewClick,
+  isBellActive,
 }) => {
+  const { user, signInWithGoogle, signOutUser } = useAuth();
+
   return (
-    <nav className="bg-gray-800 px-6 py-4 flex items-center justify-between fixed top-0 left-0 right-0 z-50 shadow-md">
-      {/* Logo/Brand */}
-      <div className="flex items-center space-x-2 text-white text-xl font-bold">
-        <FaMusic />
-        <span>BeatFlow</span>
-      </div>
-
-      {/* Center Search */}
-      <div className="flex-1 mx-6">
-        <input
-          type="text"
-          placeholder="Search for songs, artists..."
-          className="w-full p-2 rounded-md bg-gray-700 text-white placeholder-gray-400 outline-none"
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </div>
-
-      {/* Actions */}
+    <nav
+      role="navigation"
+      aria-label="Main navigation"
+      className="bg-black fixed top-0 inset-x-0 z-50 px-6 py-3 flex items-center"
+    >
+      {/* LEFT: Logo & Home */}
       <div className="flex items-center space-x-4">
-        {/* Browse */}
         <button
-          onClick={onBrowseClick}
-          className="text-gray-300 hover:text-white transition"
-          title="Browse"
+          type="button"
+          onClick={onHomeClick}
+          aria-label="Go to Home"
+          className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"
         >
-          Browse
+          <img
+            src="/images/Logo.svg"
+            alt="BeatFlow Logo"
+            className="h-8 w-auto"
+          />
+          <span className="sr-only">BeatFlow Home</span>
         </button>
+      </div>
 
-        {/* Premium */}
+      {/* CENTER: Search */}
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="flex-1 mx-6"
+        role="search"
+        aria-label="Site search"
+      >
+        <div className="relative">
+          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="What do you want to play?"
+            onChange={(e) => onSearchChange(e.target.value)}
+            aria-label="Search for songs, artists, or albums"
+            className="w-full pl-12 pr-4 py-2 rounded-full bg-gray-900 text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-yellow-400 transition"
+          />
+        </div>
+      </form>
+
+      {/* RIGHT: Actions */}
+      <div className="flex items-center space-x-4">
         <button
+          type="button"
           onClick={onExplorePremium}
-          className="text-yellow-400 hover:text-yellow-300 transition flex items-center space-x-1"
-          title="Explore Premium"
+          aria-label="Explore Premium"
+          className="bg-white text-black px-4 py-2 rounded-full flex items-center space-x-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
         >
           <FaCrown />
-          <span>Premium</span>
+          <span>Explore Premium</span>
         </button>
 
-        {/* Notifications */}
         <button
+          type="button"
+          onClick={onDownloadClick}
+          aria-label="Downloads"
+          className="p-2 rounded hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+        >
+          <FaDownload className="text-gray-400 hover:text-white" />
+        </button>
+
+        <button
+          type="button"
           onClick={onWhatsNewClick}
-          className={`text-gray-300 hover:text-white transition relative ${
-            isBellActive ? "text-green-400" : ""
-          }`}
-          title="What's New"
+          aria-label="Notifications"
+          className={classNames(
+            "p-2 rounded hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition",
+            {
+              "text-green-400": isBellActive,
+              "text-gray-400 hover:text-white": !isBellActive,
+            }
+          )}
         >
           <FaBell />
         </button>
+
+        {user ? (
+          <button
+            type="button"
+            onClick={signOutUser}
+            aria-label="Sign Out"
+            className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+          >
+            Sign Out
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={signInWithGoogle}
+            aria-label="Sign In"
+            className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+          >
+            Sign In
+          </button>
+        )}
       </div>
     </nav>
   );
 };
 
-export default NavBar;
+NavBar.propTypes = {
+  onHomeClick: PropTypes.func,
+  onSearchChange: PropTypes.func,
+  onExplorePremium: PropTypes.func,
+  onDownloadClick: PropTypes.func,
+  onWhatsNewClick: PropTypes.func,
+  isBellActive: PropTypes.bool,
+};
+
+NavBar.defaultProps = {
+  onHomeClick: () => {},
+  onSearchChange: () => {},
+  onExplorePremium: () => {},
+  onDownloadClick: () => {},
+  onWhatsNewClick: () => {},
+  isBellActive: false,
+};
+
+export default memo(NavBar);

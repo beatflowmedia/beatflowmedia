@@ -1,168 +1,123 @@
-import React, { useState, useEffect } from "react";
+// src/App.js
+import React, { useState, useEffect, lazy, Suspense, memo } from "react";
+import { BrowserRouter, Switch, Route, useLocation } from "react-router-dom"; // v5
 import NavBar from "./components/NavBar";
 import SideBar from "./components/SideBar";
 import MusicPlayer from "./components/MusicPlayer";
 import RightPanel from "./components/RightPanel";
-import Home from "./pages/Home";
-import Favorites from "./components/Favorites";
-import Playlists from "./components/Playlists";
-import PlaylistView from "./components/PlaylistView";
-import WhatsNew from "./components/WhatsNew";
-import ExplorePremium from "./components/ExplorePremium";
-import BrowsePage from "./pages/BrowsePage";
-import SearchResultsMain from "./components/SearchResultsMain";
-import musicData from "./musicData.json";
-import { usePlaylistManager } from "./hooks/usePlaylistManager";
-import { buildArtistInfo } from "./utils/buildArtistInfo";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { AuthProvider } from "./context/AuthContext";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { usePlaylistManager } from "./hooks/usePlaylistManager";
+import { buildArtistInfo } from "./utils/buildArtistInfo";
+import musicData from "./musicData.json";
 
-function loadLocalStorage(key, fallback) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) || fallback;
-  } catch {
-    return fallback;
-  }
-}
+const Home = lazy(() => import("./pages/Home"));
+const Favorites = lazy(() => import("./components/Favorites"));
+const Playlists = lazy(() => import("./components/Playlists"));
+const PlaylistView = lazy(() => import("./components/PlaylistView"));
+const WhatsNew = lazy(() => import("./components/WhatsNew"));
+const ExplorePremium = lazy(() => import("./components/ExplorePremium"));
+const BrowsePage = lazy(() => import("./pages/BrowsePage"));
+const SearchResultsMain = lazy(() => import("./components/SearchResultsMain"));
+// const SongPage = lazy(() => import("./pages/SongPage")); // enable when ready
 
-function App() {
-  const [currentPage, setCurrentPage] = useState("home");
+function AppShell() {
+  const location = useLocation();
+  const [page, setPage] = useState("home");
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const [rightPanelVisible, setRightPanelVisible] = useState(false);
+  const [rightVisible, setRightVisible] = useState(false);
   const [currentSong, setCurrentSong] = useState(musicData[0] || null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [favorites, setFavorites] = useState(loadLocalStorage("favorites", []));
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [artistInfo, setArtistInfo] = useState(null);
 
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("favorites")) || [];
+    } catch {
+      return [];
+    }
+  });
+
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
+  // Persist favorites to localStorage
   useEffect(() => {
     localStorage.setItem("favorites", JSON.stringify(favorites));
   }, [favorites]);
 
-  const handleNavigate = (page) => {
-    setCurrentPage(page);
-    setSelectedPlaylist(null);
-    setSelectedArtist(null);
-    setSearchQuery(""); // clear search when navigating
-  };
+  // On URL change, check for ?song=ID and auto-play it
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const songId = params.get("song");
+    if (songId) {
+      const match = musicData.find((s) => String(s.id) === songId);
+      if (match) {
+        setCurrentSong(match);
+        setIsPlaying(true);
+        setPage("home");
+        setSearchQuery("");
+        setRightVisible(true);
+        // remove query so refresh won't replay
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, [location.search]);
 
-  const handleSongSelect = (song) => {
+  const playSong = (song) => {
     if (!song) return;
     setCurrentSong(song);
     setIsPlaying(true);
-    setSearchQuery(""); // clear search when song is selected
-    setRightPanelVisible(true);
+    setSearchQuery("");
+    setRightVisible(true);
   };
 
-  const handleArtistSelect = (artistName) => {
-    if (!artistName) return;
-    const info = buildArtistInfo(artistName, musicData);
-    setSelectedArtist(artistName);
+  const selectArtist = (name) => {
+    if (!name) return;
+    const info = buildArtistInfo(name, musicData);
+    setSelectedArtist(name);
     setArtistInfo(info);
     setSelectedPlaylist(null);
-    setSearchQuery(""); // clear search when artist is selected
-    if (info?.songs?.length > 0) handleSongSelect(info.songs[0]);
-  };
-
-  const handleSelectPlaylist = (playlist) => {
-    if (!playlist?.songs) return;
-    setSelectedPlaylist(playlist);
-    setSelectedArtist(null);
     setSearchQuery("");
-    setCurrentPage("home");
+    if (info?.songs?.length) playSong(info.songs[0]);
   };
 
-  const clearArtistFilter = () => {
-    setSelectedArtist(null);
-    setArtistInfo(null);
-  };
-
-  const toggleFavorite = (song) => {
-    if (!song) return;
-    setFavorites((prev) =>
-      prev.some((fav) => fav.id === song.id)
-        ? prev.filter((fav) => fav.id !== song.id)
-        : [...prev, song]
-    );
-  };
-
-  const handleAddSongToPlaylist = async (playlistId, song) => {
-    if (!song) return toast.error("⚠️ No song selected.");
-    if (selectedPlaylist?.id === playlistId) {
-      setSelectedPlaylist((prev) => ({
-        ...prev,
-        songs: [...prev.songs, song],
-      }));
-    }
-    try {
-      await addSong(playlistId, song);
-      toast.success(`✅ "${song.title}" added to playlist!`);
-    } catch (error) {
-      toast.error("Error adding song: " + error.message);
-    }
-  };
-
-  const handleRemoveSongFromPlaylist = async (playlistId, song) => {
-    if (selectedPlaylist?.id === playlistId) {
-      setSelectedPlaylist((prev) => ({
-        ...prev,
-        songs: prev.songs.filter((s) => s.id !== song.id),
-      }));
-    }
-    try {
-      await removeSong(playlistId, song);
-      toast.success(`🗑️ Removed "${song.title}" from playlist.`);
-    } catch (error) {
-      toast.error("Error removing song: " + error.message);
-    }
-  };
-
-  const renderMainContent = () => {
-    if (searchQuery.trim() !== "") {
+  const renderContent = () => {
+    if (searchQuery) {
       return (
         <SearchResultsMain
           query={searchQuery}
           musicData={musicData}
-          onPlaySong={handleSongSelect}
-          onArtistSelect={handleArtistSelect}
+          onPlaySong={playSong}
+          onArtistSelect={selectArtist}
         />
       );
     }
-
     if (showWhatsNew) return <WhatsNew />;
 
-    switch (currentPage) {
+    switch (page) {
       case "favorites":
-        return <Favorites favorites={favorites} onSongSelect={handleSongSelect} />;
+        return <Favorites favorites={favorites} onSongSelect={playSong} />;
       case "playlists":
         return (
           <Playlists
             playlists={playlists}
-            onCreateNewPlaylist={async () => {
-              const name = prompt("Enter a name for your new playlist:");
-              if (!name) return;
-              try {
-                await createNewPlaylist(name);
-                toast.success(`✅ Playlist "${name}" created!`);
-              } catch (error) {
-                toast.error("❌ Failed to create playlist: " + error.message);
-              }
-            }}
-            onAddSongToPlaylist={handleAddSongToPlaylist}
+            onCreateNewPlaylist={createNewPlaylist}
+            onAddSongToPlaylist={addSong}
             selectedSong={currentSong}
-            onSelectPlaylist={handleSelectPlaylist}
+            onSelectPlaylist={setSelectedPlaylist}
           />
         );
       case "playlistView":
         return (
           <PlaylistView
             playlist={selectedPlaylist}
-            onSongSelect={handleSongSelect}
-            onRemoveSong={handleRemoveSongFromPlaylist}
+            onSongSelect={playSong}
+            onRemoveSong={removeSong}
           />
         );
       case "explorePremium":
@@ -173,18 +128,23 @@ function App() {
         return (
           <Home
             musicData={musicData}
-            onSongSelect={handleSongSelect}
-            onToggleFavorite={toggleFavorite}
+            onSongSelect={playSong}
+            onToggleFavorite={(s) =>
+              setFavorites((f) =>
+                f.some((x) => x.id === s.id)
+                  ? f.filter((x) => x.id !== s.id)
+                  : [...f, s]
+              )
+            }
             favorites={favorites}
             selectedArtist={selectedArtist}
-            selectedPlaylist={selectedPlaylist}
-            onClearArtist={clearArtistFilter}
-            onTogglePlay={(playing) => setIsPlaying(playing)}
+            onClearArtist={() => setSelectedArtist(null)}
             currentSong={currentSong}
             isPlaying={isPlaying}
+            setIsPlaying={setIsPlaying}
             playlists={playlists}
-            onAddSongToPlaylist={handleAddSongToPlaylist}
-            onRemoveSongFromPlaylist={handleRemoveSongFromPlaylist}
+            onAddSongToPlaylist={addSong}
+            onRemoveSongFromPlaylist={removeSong}
           />
         );
     }
@@ -192,37 +152,81 @@ function App() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
-      <NavBar
-        onWhatsNewClick={() => setShowWhatsNew(!showWhatsNew)}
-        isBellActive={showWhatsNew}
-        onExplorePremium={() => setCurrentPage("explorePremium")}
-        onBrowseClick={() => setCurrentPage("browse")}
-        onSearchChange={setSearchQuery}
-      />
+      <header className="flex-shrink-0">
+        <NavBar
+          onHomeClick={() => setPage("home")}
+          onSearchChange={setSearchQuery}
+          onExplorePremium={() => setPage("explorePremium")}
+          onDownloadClick={() => toast.info("Download clicked")}
+          onWhatsNewClick={() => setShowWhatsNew((v) => !v)}
+          isBellActive={showWhatsNew}
+        />
+      </header>
+
       <div className="flex flex-1 overflow-hidden">
         <SideBar
           musicData={musicData}
           playlists={playlists}
-          onNavigate={handleNavigate}
-          onArtistSelect={handleArtistSelect}
-          onPlaylistSelect={handleSelectPlaylist}
+          onNavigate={setPage}
+          onArtistSelect={selectArtist}
+          onPlaylistSelect={(pl) => {
+            setSelectedPlaylist(pl);
+            setPage("playlistView");
+          }}
           onCreatePlaylist={createNewPlaylist}
         />
-        <div className={`flex-1 p-6 pt-20 overflow-auto transition-all duration-300 ${rightPanelVisible ? "w-2/3" : "w-full"}`}>
-          {renderMainContent()}
-        </div>
-        <RightPanel visible={rightPanelVisible} artistInfo={artistInfo} onClose={() => setRightPanelVisible(false)} />
+
+        <main
+          className={`flex-1 p-6 overflow-y-auto transition-all duration-300 ${
+            rightVisible ? "w-2/3" : "w-full"
+          }`}
+        >
+          <ErrorBoundary>
+            <Suspense fallback={<div className="py-20 text-center">Loading…</div>}>
+              {renderContent()}
+            </Suspense>
+          </ErrorBoundary>
+        </main>
+
+        <RightPanel
+          visible={rightVisible}
+          artistInfo={artistInfo}
+          onClose={() => setRightVisible(false)}
+        />
       </div>
-      <MusicPlayer
-        song={currentSong}
-        songs={musicData}
-        onSongChange={setCurrentSong}
-        isPlaying={isPlaying}
-        setIsPlaying={setIsPlaying}
-      />
-      <ToastContainer position="bottom-center" />
+
+      <footer className="flex-shrink-0">
+        <MusicPlayer
+          song={currentSong}
+          songs={musicData}
+          onSongChange={setCurrentSong}
+          isPlaying={isPlaying}
+          setIsPlaying={setIsPlaying}
+        />
+        <ToastContainer position="bottom-center" />
+      </footer>
     </div>
   );
 }
 
-export default App;
+export default function RouterWrapper() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Switch>
+          {/*
+          <Route
+            path="/song/:id"
+            render={(props) => (
+              <Suspense fallback={<div>Loading…</div>}>
+                <SongPage {...props} />
+              </Suspense>
+            )}
+          />
+          */}
+          <Route path="/" component={memo(AppShell)} />
+        </Switch>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
