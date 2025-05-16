@@ -43,7 +43,7 @@ const plans = [
     details: [
       "Up to 6 Premium or Kids accounts",
       "Control content marked as explicit",
-      "Access to Spotify Kids",
+      "Access to BeatFlow Kids",
       "Plan manager only",
     ],
     button: "Get Premium Family",
@@ -182,7 +182,7 @@ export default function ExplorePremium() {
               ],
             },
             {
-              title: "Spotify Plans",
+              title: "BeatFlow Plans",
               links: [
                 ["Premium Individual", "/individual"],
                 ["Premium Student", "/student"],
