@@ -24,7 +24,7 @@ const NavBar = ({
     <nav
       role="navigation"
       aria-label="Main navigation"
-      className="bg-black fixed top-0 inset-x-0 z-50 px-6 py-3 flex items-center"
+      className="bg-bf-page fixed top-0 inset-x-0 z-50 px-6 py-3 flex items-center text-bf-text"
     >
       {/* LEFT: Logo & Home */}
       <div className="flex items-center space-x-4">
@@ -32,7 +32,7 @@ const NavBar = ({
           type="button"
           onClick={onHomeClick}
           aria-label="Go to Home"
-          className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"
+          className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-bf-green rounded"
         >
           <img
             src="/images/Logo.svg"
@@ -51,13 +51,13 @@ const NavBar = ({
         aria-label="Site search"
       >
         <div className="relative">
-          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-bf-subtext pointer-events-none" />
           <input
             type="text"
             placeholder="What do you want to play?"
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label="Search for songs, artists, or albums"
-            className="w-full pl-12 pr-4 py-2 rounded-full bg-gray-900 text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-yellow-400 transition"
+            className="w-full pl-12 pr-4 py-2 rounded-full bg-bf-card text-bf-text placeholder-bf-subtext outline-none focus:ring-2 focus:ring-bf-green transition"
           />
         </div>
       </form>
@@ -68,7 +68,7 @@ const NavBar = ({
           type="button"
           onClick={onExplorePremium}
           aria-label="Explore Premium"
-          className="bg-white text-black px-4 py-2 rounded-full flex items-center space-x-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+          className="bg-bf-blue text-white px-4 py-2 rounded-full flex items-center space-x-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-green transition"
         >
           <FaCrown />
           <span>Explore Premium</span>
@@ -78,9 +78,9 @@ const NavBar = ({
           type="button"
           onClick={onDownloadClick}
           aria-label="Downloads"
-          className="p-2 rounded hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+          className="p-2 rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition"
         >
-          <FaDownload className="text-gray-400 hover:text-white" />
+          <FaDownload className="text-bf-subtext hover:text-bf-text" />
         </button>
 
         <button
@@ -88,10 +88,10 @@ const NavBar = ({
           onClick={onWhatsNewClick}
           aria-label="Notifications"
           className={classNames(
-            "p-2 rounded hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition",
+            "p-2 rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition",
             {
-              "text-green-400": isBellActive,
-              "text-gray-400 hover:text-white": !isBellActive,
+              "text-bf-green": isBellActive,
+              "text-bf-subtext hover:text-bf-text": !isBellActive,
             }
           )}
         >
@@ -103,7 +103,7 @@ const NavBar = ({
             type="button"
             onClick={signOutUser}
             aria-label="Sign Out"
-            className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+            className="bg-bf-red text-white px-4 py-2 rounded-full hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-red transition"
           >
             Sign Out
           </button>
@@ -112,7 +112,7 @@ const NavBar = ({
             type="button"
             onClick={signInWithGoogle}
             aria-label="Sign In"
-            className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+            className="bg-bf-green text-white px-4 py-2 rounded-full hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-green transition"
           >
             Sign In
           </button>

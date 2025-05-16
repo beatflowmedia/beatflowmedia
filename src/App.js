@@ -45,7 +45,7 @@ function AppShell() {
     localStorage.setItem("favorites", JSON.stringify(favorites));
   }, [favorites]);
 
-  // Listen for SPA-play events:
+  // SPA "play song" event
   useEffect(() => {
     const handler = (e) => {
       setSong(e.detail);
@@ -58,6 +58,16 @@ function AppShell() {
   }, []);
 
   const playSong = song => window.dispatchEvent(new CustomEvent("PLAY_SONG", { detail: song }));
+
+  // -- THE MAIN PLAYBACK CONTROL HANDLER: --
+  const handlePlayPause = (song) => {
+    if (!currentSong || song.id !== currentSong.id) {
+      setSong(song);
+      setPlaying(true);
+    } else {
+      setPlaying(prev => !prev);
+    }
+  };
 
   const selectArtist = name => {
     if (!name) return;
@@ -111,6 +121,7 @@ function AppShell() {
           <Home
             musicData={musicData}
             onSongSelect={playSong}
+            onPlayPause={handlePlayPause} // <-- Unified play/pause handler
             onToggleFavorite={s =>
               setFavs(f =>
                 f.some(x => x.id === s.id) ? f.filter(x => x.id !== s.id) : [...f, s]
@@ -121,7 +132,6 @@ function AppShell() {
             onClearArtist={() => setArt(null)}
             currentSong={currentSong}
             isPlaying={isPlaying}
-            setIsPlaying={setPlaying}
             playlists={playlists}
             onAddSongToPlaylist={addSong}
             onRemoveSongFromPlaylist={removeSong}
@@ -175,6 +185,7 @@ function AppShell() {
           onSongChange={setSong}
           isPlaying={isPlaying}
           setIsPlaying={setPlaying}
+          onPlayPause={handlePlayPause} // <-- Unified play/pause handler
         />
         <ToastContainer position="bottom-center" />
       </footer>

@@ -72,3 +72,4 @@ webhooks.log
 # pnpm-lock.yaml
 
 githubPAT.txt
+netlify.toml

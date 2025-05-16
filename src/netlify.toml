@@ -1,15 +1,24 @@
+# netlify.toml
+
 [build]
   publish   = "build"
   functions = "netlify/functions"
 
-# your scheduled functions…
+[build.environment]
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_fWUbRcRbb0b0ZBPFZRnF8Bhj"
+  STRIPE_SECRET_KEY                  = "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"
+  NEXT_PUBLIC_APP_URL                = "https://beatflowmedia.netlify.app"
+  APP_URL                            = "https://beatflowmedia.netlify.app"
+
+[dev.environment]
+  REACT_APP_APP_URL = "http://localhost:3000"
+  APP_URL           = "http://localhost:8888"
+
 [[functions]]
   schedule = "0 3 * * *"
 
-# ─── SPA redirect ───────────────────────────────────────────────────────
-# Serve index.html for all routes, so React Router can take over.
 [[redirects]]
-  from     = "/*"
-  to       = "/index.html"
-  status   = 200
-  force    = true
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+  force  = true
