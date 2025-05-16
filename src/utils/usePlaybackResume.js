@@ -28,7 +28,12 @@ export function usePlaybackResume(audioRef, song, user) {
         const local = localStorage.getItem(key);
         if (local && !isNaN(local)) resumeTime = parseFloat(local);
       }
-      if (!cancelled && resumeTime && resumeTime > 0 && audioRef.current.duration > resumeTime) {
+      if (
+        !cancelled &&
+        resumeTime &&
+        resumeTime > 0 &&
+        audioRef.current.duration > resumeTime
+      ) {
         // If duration is available, set time; if not, listen for loadedmetadata
         if (audioRef.current.readyState >= 1) {
           audioRef.current.currentTime = resumeTime;
@@ -43,9 +48,11 @@ export function usePlaybackResume(audioRef, song, user) {
       }
     }
     restorePosition();
-    return () => { cancelled = true; };
-  // Only run on song change!
-  }, [song?.id]);
+    return () => {
+      cancelled = true;
+    };
+    // ESLint: include everything used inside
+  }, [audioRef, song, user, key]);
 
   // Save position every 2s and on pause/unload
   useEffect(() => {
@@ -78,7 +85,7 @@ export function usePlaybackResume(audioRef, song, user) {
       audio.removeEventListener("pause", saveTime);
       window.removeEventListener("beforeunload", saveTime);
     };
-  }, [song?.id, audioRef, user, key]);
+  }, [audioRef, song, user, key]);
 
   // Remove resume on song end
   useEffect(() => {
@@ -94,5 +101,5 @@ export function usePlaybackResume(audioRef, song, user) {
     };
     audio.addEventListener("ended", clearTime);
     return () => audio.removeEventListener("ended", clearTime);
-  }, [song?.id, audioRef, user, key]);
+  }, [audioRef, song, user, key]);
 }
