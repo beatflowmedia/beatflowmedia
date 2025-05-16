@@ -1,6 +1,6 @@
 // src/App.js
-import React, { useState, useEffect, lazy, Suspense, memo } from "react";
-import { BrowserRouter, Switch, Route, useLocation } from "react-router-dom"; // v5
+import React, { useState, useEffect, lazy, Suspense } from "react";
+import { BrowserRouter, Switch, Route } from "react-router-dom";
 import NavBar from "./components/NavBar";
 import SideBar from "./components/SideBar";
 import MusicPlayer from "./components/MusicPlayer";
@@ -13,83 +13,66 @@ import { usePlaylistManager } from "./hooks/usePlaylistManager";
 import { buildArtistInfo } from "./utils/buildArtistInfo";
 import musicData from "./musicData.json";
 
-const Home = lazy(() => import("./pages/Home"));
-const Favorites = lazy(() => import("./components/Favorites"));
-const Playlists = lazy(() => import("./components/Playlists"));
-const PlaylistView = lazy(() => import("./components/PlaylistView"));
-const WhatsNew = lazy(() => import("./components/WhatsNew"));
+const Home           = lazy(() => import("./pages/Home"));
+const Favorites      = lazy(() => import("./components/Favorites"));
+const Playlists      = lazy(() => import("./components/Playlists"));
+const PlaylistView   = lazy(() => import("./components/PlaylistView"));
+const WhatsNew       = lazy(() => import("./components/WhatsNew"));
 const ExplorePremium = lazy(() => import("./components/ExplorePremium"));
-const BrowsePage = lazy(() => import("./pages/BrowsePage"));
-const SearchResultsMain = lazy(() => import("./components/SearchResultsMain"));
-// const SongPage = lazy(() => import("./pages/SongPage")); // enable when ready
+const BrowsePage     = lazy(() => import("./pages/BrowsePage"));
+const SearchResults  = lazy(() => import("./components/SearchResultsMain"));
+const SongPage       = lazy(() => import("./pages/SongPage"));
 
 function AppShell() {
-  const location = useLocation();
-  const [page, setPage] = useState("home");
-  const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const [rightVisible, setRightVisible] = useState(false);
-  const [currentSong, setCurrentSong] = useState(musicData[0] || null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [selectedArtist, setSelectedArtist] = useState(null);
-  const [artistInfo, setArtistInfo] = useState(null);
+  const [page, setPage]           = useState("home");
+  const [showWhatsNew, setShow]   = useState(false);
+  const [rightVisible, setRight]  = useState(false);
+  const [currentSong, setSong]    = useState(musicData[0] || null);
+  const [isPlaying, setPlaying]   = useState(false);
+  const [searchQuery, setSearch]  = useState("");
+  const [selectedPlaylist, setPL] = useState(null);
+  const [selectedArtist, setArt]  = useState(null);
+  const [artistInfo, setInfo]     = useState(null);
 
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("favorites")) || [];
-    } catch {
-      return [];
-    }
+  const [favorites, setFavs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("favorites")) || []; }
+    catch { return []; }
   });
 
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
-  // Persist favorites to localStorage
   useEffect(() => {
     localStorage.setItem("favorites", JSON.stringify(favorites));
   }, [favorites]);
 
-  // On URL change, check for ?song=ID and auto-play it
+  // Listen for SPA-play events:
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const songId = params.get("song");
-    if (songId) {
-      const match = musicData.find((s) => String(s.id) === songId);
-      if (match) {
-        setCurrentSong(match);
-        setIsPlaying(true);
-        setPage("home");
-        setSearchQuery("");
-        setRightVisible(true);
-        // remove query so refresh won't replay
-        window.history.replaceState({}, "", window.location.pathname);
-      }
-    }
-  }, [location.search]);
+    const handler = (e) => {
+      setSong(e.detail);
+      setPlaying(true);
+      setSearch("");
+      setRight(true);
+    };
+    window.addEventListener("PLAY_SONG", handler);
+    return () => window.removeEventListener("PLAY_SONG", handler);
+  }, []);
 
-  const playSong = (song) => {
-    if (!song) return;
-    setCurrentSong(song);
-    setIsPlaying(true);
-    setSearchQuery("");
-    setRightVisible(true);
-  };
+  const playSong = song => window.dispatchEvent(new CustomEvent("PLAY_SONG", { detail: song }));
 
-  const selectArtist = (name) => {
+  const selectArtist = name => {
     if (!name) return;
     const info = buildArtistInfo(name, musicData);
-    setSelectedArtist(name);
-    setArtistInfo(info);
-    setSelectedPlaylist(null);
-    setSearchQuery("");
-    if (info?.songs?.length) playSong(info.songs[0]);
+    setArt(name);
+    setInfo(info);
+    setPL(null);
+    setSearch("");
+    if (info?.songs?.[0]) playSong(info.songs[0]);
   };
 
   const renderContent = () => {
     if (searchQuery) {
       return (
-        <SearchResultsMain
+        <SearchResults
           query={searchQuery}
           musicData={musicData}
           onPlaySong={playSong}
@@ -98,7 +81,6 @@ function AppShell() {
       );
     }
     if (showWhatsNew) return <WhatsNew />;
-
     switch (page) {
       case "favorites":
         return <Favorites favorites={favorites} onSongSelect={playSong} />;
@@ -109,7 +91,7 @@ function AppShell() {
             onCreateNewPlaylist={createNewPlaylist}
             onAddSongToPlaylist={addSong}
             selectedSong={currentSong}
-            onSelectPlaylist={setSelectedPlaylist}
+            onSelectPlaylist={setPL}
           />
         );
       case "playlistView":
@@ -129,19 +111,17 @@ function AppShell() {
           <Home
             musicData={musicData}
             onSongSelect={playSong}
-            onToggleFavorite={(s) =>
-              setFavorites((f) =>
-                f.some((x) => x.id === s.id)
-                  ? f.filter((x) => x.id !== s.id)
-                  : [...f, s]
+            onToggleFavorite={s =>
+              setFavs(f =>
+                f.some(x => x.id === s.id) ? f.filter(x => x.id !== s.id) : [...f, s]
               )
             }
             favorites={favorites}
             selectedArtist={selectedArtist}
-            onClearArtist={() => setSelectedArtist(null)}
+            onClearArtist={() => setArt(null)}
             currentSong={currentSong}
             isPlaying={isPlaying}
-            setIsPlaying={setIsPlaying}
+            setIsPlaying={setPlaying}
             playlists={playlists}
             onAddSongToPlaylist={addSong}
             onRemoveSongFromPlaylist={removeSong}
@@ -155,27 +135,22 @@ function AppShell() {
       <header className="flex-shrink-0">
         <NavBar
           onHomeClick={() => setPage("home")}
-          onSearchChange={setSearchQuery}
+          onSearchChange={setSearch}
           onExplorePremium={() => setPage("explorePremium")}
           onDownloadClick={() => toast.info("Download clicked")}
-          onWhatsNewClick={() => setShowWhatsNew((v) => !v)}
+          onWhatsNewClick={() => setShow(v => !v)}
           isBellActive={showWhatsNew}
         />
       </header>
-
       <div className="flex flex-1 overflow-hidden">
         <SideBar
           musicData={musicData}
           playlists={playlists}
           onNavigate={setPage}
           onArtistSelect={selectArtist}
-          onPlaylistSelect={(pl) => {
-            setSelectedPlaylist(pl);
-            setPage("playlistView");
-          }}
+          onPlaylistSelect={pl => { setPL(pl); setPage("playlistView"); }}
           onCreatePlaylist={createNewPlaylist}
         />
-
         <main
           className={`flex-1 p-6 overflow-y-auto transition-all duration-300 ${
             rightVisible ? "w-2/3" : "w-full"
@@ -187,21 +162,19 @@ function AppShell() {
             </Suspense>
           </ErrorBoundary>
         </main>
-
         <RightPanel
           visible={rightVisible}
           artistInfo={artistInfo}
-          onClose={() => setRightVisible(false)}
+          onClose={() => setRight(false)}
         />
       </div>
-
       <footer className="flex-shrink-0">
         <MusicPlayer
           song={currentSong}
           songs={musicData}
-          onSongChange={setCurrentSong}
+          onSongChange={setSong}
           isPlaying={isPlaying}
-          setIsPlaying={setIsPlaying}
+          setIsPlaying={setPlaying}
         />
         <ToastContainer position="bottom-center" />
       </footer>
@@ -214,17 +187,16 @@ export default function RouterWrapper() {
     <AuthProvider>
       <BrowserRouter>
         <Switch>
-          {/*
           <Route
+            exact
             path="/song/:id"
-            render={(props) => (
+            render={props => (
               <Suspense fallback={<div>Loading…</div>}>
                 <SongPage {...props} />
               </Suspense>
             )}
           />
-          */}
-          <Route path="/" component={memo(AppShell)} />
+          <Route path="/" component={AppShell} />
         </Switch>
       </BrowserRouter>
     </AuthProvider>

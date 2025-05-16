@@ -1,7 +1,15 @@
 [build]
-  publish = "build"  # Adjust if needed
+  publish   = "build"
   functions = "netlify/functions"
 
+# your scheduled functions…
 [[functions]]
-  # Schedule this function to run daily at 3 AM (server time)
   schedule = "0 3 * * *"
+
+# ─── SPA redirect ───────────────────────────────────────────────────────
+# Serve index.html for all routes, so React Router can take over.
+[[redirects]]
+  from     = "/*"
+  to       = "/index.html"
+  status   = 200
+  force    = true
