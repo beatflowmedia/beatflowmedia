@@ -1,40 +1,50 @@
 // src/pages/SongPage.js
-
-import React from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import PlayButton from '../components/PlayButton';
 import LikeButton from '../components/LikeButton';
 import { useAuth } from '../context/AuthContext';
 import musicData from '../musicData.json';
 
-export default function SongPage() {
+function SongPage({ onPlaySong, onToggleFavorite }) {
   const { id } = useParams();
-  const history = useHistory();
-  const song = musicData.find((s) => String(s.id) === id);
   const { user, signInWithGoogle } = useAuth();
+  const song = useMemo(
+    () => musicData.find((s) => String(s.id) === id),
+    [id]
+  );
+  const [isLiked, setIsLiked] = useState(false);
+
+  // 1) If the song exists, queue it on mount
+  useEffect(() => {
+    if (song) {
+      onPlaySong(song);
+    }
+  }, [song, onPlaySong]);
+
+  // 2) Keep local like state in sync with user profile
+  useEffect(() => {
+    setIsLiked(user?.likes?.includes(song?.id) ?? false);
+  }, [user, song]);
 
   if (!song) {
-    return <div className="p-6 text-white">Song not found.</div>;
+    return (
+      <div className="p-6 text-white">
+        <h2 className="text-2xl">Song not found</h2>
+      </div>
+    );
   }
 
-  // wrapper for the “toggle favorite” flow
-  const handleToggleFavorite = (song) => {
+  const handleToggle = async () => {
     if (!user) {
-      // not signed in yet — send them to your auth flow
-      signInWithGoogle()
-        .then(() => {
-          // after sign-in, you could optionally auto-like:
-          // onToggleFavorite(song)
-        })
-        .catch((err) => {
-          console.error("Sign-in failed:", err);
-        });
-    } else {
-      // if you had a prop onToggleFavorite passed in, call it here.
-      // e.g. props.onToggleFavorite(song)
-      // since you don’t, we’ll just console.log for demo:
-      console.log(user.email, "toggled favorite on", song.title);
+      // redirect into Google sign-in flow if unauthenticated
+      await signInWithGoogle();
+      return;
     }
+    // Optimistically update UI
+    setIsLiked((prev) => !prev);
+    onToggleFavorite(song);
   };
 
   return (
@@ -42,17 +52,18 @@ export default function SongPage() {
       <h1 className="text-3xl font-bold mb-4">{song.title}</h1>
       <p className="text-gray-400 mb-4">by {song.artist}</p>
 
-      <div className="flex items-center">
-        <PlayButton isPlaying={false} onClick={() => {}} size={32} />
-
-        <div className="ml-4">
-          <LikeButton
-            item={song}
-            isLiked={false /* derive from your likes state */}
-            onToggleFavorite={handleToggleFavorite}
-            size={24}
-          />
-        </div>
+      <div className="flex items-center space-x-4">
+        <PlayButton
+          isPlaying={false}
+          onClick={() => onPlaySong(song)}
+          size={32}
+        />
+        <LikeButton
+          item={song}
+          isLiked={isLiked}
+          onToggleFavorite={handleToggle}
+          size={24}
+        />
       </div>
 
       <div className="mt-6">
@@ -65,8 +76,20 @@ export default function SongPage() {
 
       <div className="mt-6">
         <h2 className="text-2xl font-semibold">Lyrics / Details</h2>
-        <p className="text-gray-300 mt-2">{/* … */}</p>
+        <p className="text-gray-300 mt-2">
+          {/* TODO: Populate with actual lyrics or additional metadata */}
+          No lyrics available.
+        </p>
       </div>
     </div>
   );
 }
+
+SongPage.propTypes = {
+  /** Callback to queue/play a song */
+  onPlaySong: PropTypes.func.isRequired,
+  /** Callback to toggle like/unlike in parent state */
+  onToggleFavorite: PropTypes.func.isRequired,
+};
+
+export default React.memo(SongPage);
