@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 import NavBar from "./components/NavBar";
@@ -10,9 +9,10 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { usePlaylistManager } from "./hooks/usePlaylistManager";
-import { buildArtistInfo } from "./utils/buildArtistInfo";
 import musicData from "./musicData.json";
+import { buildArtistInfo } from "./utils/buildArtistInfo";
 
+// Lazy-load pages
 const Home           = lazy(() => import("./pages/Home"));
 const Favorites      = lazy(() => import("./components/Favorites"));
 const Playlists      = lazy(() => import("./components/Playlists"));
@@ -22,63 +22,64 @@ const ExplorePremium = lazy(() => import("./components/ExplorePremium"));
 const BrowsePage     = lazy(() => import("./pages/BrowsePage"));
 const SearchResults  = lazy(() => import("./components/SearchResultsMain"));
 const SongPage       = lazy(() => import("./pages/SongPage"));
+const Jobs           = lazy(() => import("./pages/Jobs"));
 
 function AppShell() {
-  const [page, setPage]           = useState("home");
-  const [showWhatsNew, setShow]   = useState(false);
-  const [rightVisible, setRight]  = useState(false);
-  const [currentSong, setSong]    = useState(musicData[0] || null);
-  const [isPlaying, setPlaying]   = useState(false);
-  const [searchQuery, setSearch]  = useState("");
-  const [selectedPlaylist, setPL] = useState(null);
-  const [selectedArtist, setArt]  = useState(null);
-  const [artistInfo, setInfo]     = useState(null);
-
+  const [page, setPage] = useState("home");
+  const [showWhatsNew, setShow] = useState(false);
+  const [currentSong, setSong] = useState(musicData[0] || null);
+  const [isPlaying, setPlaying] = useState(false);
+  const [searchQuery, setSearch] = useState("");
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [selectedArtist, setSelectedArtist] = useState(null);
   const [favorites, setFavs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("favorites")) || []; }
     catch { return []; }
   });
 
+  // Right panel state
+  const [rightVisible, setRight] = useState(false);
+  const [rightPanelContent, setRightPanelContent] = useState(null);
+
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
+  // Persist favorites in localStorage
   useEffect(() => {
     localStorage.setItem("favorites", JSON.stringify(favorites));
   }, [favorites]);
 
-  // SPA "play song" event
+  // Listen for global "play song" events
   useEffect(() => {
     const handler = (e) => {
       setSong(e.detail);
       setPlaying(true);
       setSearch("");
-      setRight(true);
+      setRight(false); // Auto-close right panel on play
     };
     window.addEventListener("PLAY_SONG", handler);
     return () => window.removeEventListener("PLAY_SONG", handler);
   }, []);
 
-  const playSong = song => window.dispatchEvent(new CustomEvent("PLAY_SONG", { detail: song }));
+  // Global play song dispatcher
+  const playSong = (song) => window.dispatchEvent(new CustomEvent("PLAY_SONG", { detail: song }));
 
-  // -- THE MAIN PLAYBACK CONTROL HANDLER: --
-  const handlePlayPause = (song) => {
-    if (!currentSong || song.id !== currentSong.id) {
-      setSong(song);
-      setPlaying(true);
-    } else {
-      setPlaying(prev => !prev);
+  // Open right panel with artist/playlist/album info
+  const openRightPanel = (content) => {
+    let info = null;
+    if (content && content.type === "artist") {
+      info = buildArtistInfo(content.artistName, musicData);
+    } else if (content && content.type === "playlist") {
+      info = content;
     }
+    setRightPanelContent(info ? { ...content, info } : content);
+    setRight(true);
+  };
+  const closeRightPanel = () => {
+    setRight(false);
+    setRightPanelContent(null);
   };
 
-  const selectArtist = name => {
-    if (!name) return;
-    const info = buildArtistInfo(name, musicData);
-    setArt(name);
-    setInfo(info);
-    setPL(null);
-    setSearch("");
-    if (info?.songs?.[0]) playSong(info.songs[0]);
-  };
-
+  // Main content
   const renderContent = () => {
     if (searchQuery) {
       return (
@@ -86,7 +87,7 @@ function AppShell() {
           query={searchQuery}
           musicData={musicData}
           onPlaySong={playSong}
-          onArtistSelect={selectArtist}
+          onOpenRightPanel={openRightPanel}
         />
       );
     }
@@ -101,7 +102,8 @@ function AppShell() {
             onCreateNewPlaylist={createNewPlaylist}
             onAddSongToPlaylist={addSong}
             selectedSong={currentSong}
-            onSelectPlaylist={setPL}
+            onSelectPlaylist={setSelectedPlaylist}
+            onOpenRightPanel={openRightPanel}
           />
         );
       case "playlistView":
@@ -110,6 +112,7 @@ function AppShell() {
             playlist={selectedPlaylist}
             onSongSelect={playSong}
             onRemoveSong={removeSong}
+            onOpenRightPanel={openRightPanel}
           />
         );
       case "explorePremium":
@@ -120,31 +123,39 @@ function AppShell() {
         return (
           <Home
             musicData={musicData}
+            selectedArtist={selectedArtist}
+            selectedPlaylist={selectedPlaylist}
             onSongSelect={playSong}
-            onPlayPause={handlePlayPause} // <-- Unified play/pause handler
+            onPlayPause={song => setSong(song) || setPlaying(prev => song.id !== currentSong?.id ? true : !prev)}
             onToggleFavorite={s =>
               setFavs(f =>
                 f.some(x => x.id === s.id) ? f.filter(x => x.id !== s.id) : [...f, s]
               )
             }
             favorites={favorites}
-            selectedArtist={selectedArtist}
-            onClearArtist={() => setArt(null)}
             currentSong={currentSong}
             isPlaying={isPlaying}
             playlists={playlists}
             onAddSongToPlaylist={addSong}
             onRemoveSongFromPlaylist={removeSong}
+            onCreatePlaylist={createNewPlaylist}
+            onOpenRightPanel={openRightPanel}
           />
         );
     }
   };
 
+  // ---- LAYOUT: THIS IS THE SPOTIFY-STYLE LAYOUT! ----
   return (
-    <div className="h-screen flex flex-col bg-gray-900 text-white">
-      <header className="flex-shrink-0">
+    <div className="flex flex-col h-screen bg-gray-900 text-white">
+      {/* Top NavBar */}
+      <header className="flex-shrink-0 z-20">
         <NavBar
-          onHomeClick={() => setPage("home")}
+          onHomeClick={() => {
+            setSelectedArtist(null);
+            setSelectedPlaylist(null);
+            setPage("home");
+          }}
           onSearchChange={setSearch}
           onExplorePremium={() => setPage("explorePremium")}
           onDownloadClick={() => toast.info("Download clicked")}
@@ -152,18 +163,32 @@ function AppShell() {
           isBellActive={showWhatsNew}
         />
       </header>
-      <div className="flex flex-1 overflow-hidden">
+      {/* Body: Sidebar + Main + RightPanel */}
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         <SideBar
           musicData={musicData}
           playlists={playlists}
-          onNavigate={setPage}
-          onArtistSelect={selectArtist}
-          onPlaylistSelect={pl => { setPL(pl); setPage("playlistView"); }}
+          onPlaylistSelect={pl => {
+            setSelectedPlaylist(pl);
+            setSelectedArtist(null);
+            setPage("home");
+          }}
+          onArtistSelect={name => {
+            setSelectedArtist(name);
+            setSelectedPlaylist(null);
+            setPage("home");
+          }}
+          onShowRightPanel={artistName => openRightPanel({ type: "artist", artistName })}
           onCreatePlaylist={createNewPlaylist}
+          onPlayArtist={name => {
+            const songs = musicData.filter(song => song.artist === name);
+            if (songs[0]) playSong(songs[0]);
+          }}
         />
+        {/* Main content area, margin-right shrinks when RightPanel is open */}
         <main
-          className={`flex-1 p-6 overflow-y-auto transition-all duration-300 ${
-            rightVisible ? "w-2/3" : "w-full"
+          className={`flex-1 p-6 overflow-y-auto transition-all duration-300 min-w-0 ${
+            rightVisible ? "mr-96" : ""
           }`}
         >
           <ErrorBoundary>
@@ -172,20 +197,24 @@ function AppShell() {
             </Suspense>
           </ErrorBoundary>
         </main>
+        {/* RightPanel (fixed width, sits at right) */}
         <RightPanel
           visible={rightVisible}
-          artistInfo={artistInfo}
-          onClose={() => setRight(false)}
+          content={rightPanelContent}
+          onClose={closeRightPanel}
         />
       </div>
-      <footer className="flex-shrink-0">
+      {/* Bottom Music Player */}
+      <footer className="flex-shrink-0 z-10">
         <MusicPlayer
           song={currentSong}
           songs={musicData}
           onSongChange={setSong}
           isPlaying={isPlaying}
           setIsPlaying={setPlaying}
-          onPlayPause={handlePlayPause} // <-- Unified play/pause handler
+          onPlayPause={song =>
+            setSong(song) || setPlaying(prev => song.id !== currentSong?.id ? true : !prev)
+          }
         />
         <ToastContainer position="bottom-center" />
       </footer>
@@ -204,6 +233,15 @@ export default function RouterWrapper() {
             render={props => (
               <Suspense fallback={<div>Loading…</div>}>
                 <SongPage {...props} />
+              </Suspense>
+            )}
+          />
+          <Route
+            exact
+            path="/jobs"
+            render={props => (
+              <Suspense fallback={<div>Loading…</div>}>
+                <Jobs {...props} />
               </Suspense>
             )}
           />

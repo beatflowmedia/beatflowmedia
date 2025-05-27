@@ -1,215 +1,206 @@
 import React, { useState, useRef } from "react";
+import PropTypes from "prop-types";
 import ContextMenu from "./ContextMenu";
 
-const RightPanel = ({ visible, artistInfo, onClose }) => {
+const RightPanel = ({ visible, content, onClose }) => {
+  // content: { type: "artist"|"playlist", info: {...} }
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuButtonRef = useRef(null);
 
-  if (!visible || !artistInfo) return null;
+  if (!visible || !content) return null;
 
-  const {
-    name,
-    cover,
-    monthlyListeners,
-    biography,
-    credits = [],
-    onTour = [],
-    nextInQueue,
-    videoSrc,
-    videoPoster,
-  } = artistInfo;
+  // Handle artist and playlist display
+  const { type, info = {} } = content;
 
-  const menuItems = [
-    {
-      icon: "➕",
-      label: "Add to playlist",
-      submenu: [
-        { label: "Playlist 1", onClick: () => console.log("Add to Playlist 1") },
-        { label: "Playlist 2", onClick: () => console.log("Add to Playlist 2") },
-      ],
-    },
-    {
-      icon: "➕",
-      label: "Save to your Liked Songs",
-      onClick: () => console.log("Saved to Liked Songs"),
-    },
-    {
-      icon: "➕",
-      label: "Add to queue",
-      onClick: () => console.log("Added to queue"),
-    },
-    { type: "divider" },
-    {
-      icon: "📡",
-      label: "Go to song radio",
-      onClick: () => console.log("Go to song radio"),
-    },
-    {
-      icon: "👤",
-      label: "Go to artist",
-      submenu: [
-        { label: "Main Artist", onClick: () => console.log("Go to artist") },
-        { label: "Featured Artist", onClick: () => console.log("Go to featured") },
-      ],
-    },
-    {
-      icon: "💿",
-      label: "Go to album",
-      onClick: () => console.log("Go to album"),
-    },
-    {
-      icon: "🎼",
-      label: "View credits",
-      onClick: () => console.log("View credits"),
-    },
-    { type: "divider" },
-    {
-      icon: "📤",
-      label: "Share",
-      submenu: [
-        { label: "Copy song link", onClick: () => console.log("Copied link") },
-        { label: "Embed", onClick: () => console.log("Open embed dialog") },
-      ],
-    },
-    {
-      icon: "🖥️",
-      label: "Open in Desktop app",
-      onClick: () => console.log("Open in Desktop"),
-    },
-  ];
-  
-  
+  // --- Artist "peek" ---
+  if (type === "artist") {
+    const {
+      name,
+      cover,
+      monthlyListeners,
+      biography,
+      credits = [],
+      onTour = [],
+      videoSrc,
+      videoPoster,
+    } = info;
 
-  return (
-    <div className="fixed right-0 top-16 h-full w-80 bg-gray-900 text-white shadow-lg p-4 overflow-y-auto z-50">
-      
-      {/* Header Buttons */}
-      <div className="flex justify-between items-center mb-4 relative">
-        <button
-          ref={menuButtonRef}
-          onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setMenuPos({ x: rect.right, y: rect.bottom });
-            setShowMenu(true);
-          }}
-          className="text-gray-400 hover:text-white text-2xl px-2"
-          title="More options"
-        >
-          &#x22EE;
-        </button>
+    const artistMenu = [
+      { icon: "➕", label: "Add to playlist", onClick: () => {} },
+      { icon: "❤️", label: "Save to your Liked Songs", onClick: () => {} },
+      { icon: "📤", label: "Share", onClick: () => {} },
+      { type: "divider" },
+      { icon: "👤", label: "Go to artist", onClick: () => {} },
+    ];
 
-        <button
-          className="text-gray-400 hover:text-white text-xl"
-          onClick={onClose}
-          title="Close"
-        >
-          ✖
-        </button>
-
-        {/* Dropdown Menu */}
+    return (
+      <div className="fixed right-0 top-16 h-full w-96 max-w-full bg-gray-900 text-white shadow-xl p-6 z-50 overflow-y-auto">
+        {/* Header: More menu and close */}
+        <div className="flex justify-between items-center mb-4">
+          <button
+            ref={menuButtonRef}
+            onClick={e => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setMenuPos({ x: rect.right, y: rect.bottom });
+              setShowMenu(true);
+            }}
+            className="text-gray-400 hover:text-white text-2xl px-2"
+            title="More options"
+          >&#x22EE;</button>
+          <button
+            className="text-gray-400 hover:text-white text-xl"
+            onClick={onClose}
+            title="Close"
+          >✖</button>
+        </div>
+        {/* Dropdown */}
         <ContextMenu
           visible={showMenu}
           x={menuPos.x}
           y={menuPos.y}
-          items={menuItems}
+          items={artistMenu}
           onClose={() => setShowMenu(false)}
         />
-      </div>
 
-      {/* Video Section */}
-      {videoSrc && (
-        <div className="w-full max-w-sm mx-auto bg-black mb-4">
-          <video
-            className="w-full aspect-[9/16] object-cover"
-            controls
-            autoPlay
-            muted
-            poster={videoPoster || cover}
-          >
-            <source src={videoSrc} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-      )}
-
-      {/* Artist Header */}
-      <div className="flex flex-col items-center">
-        <img
-          src={cover || "https://via.placeholder.com/300x200"}
-          alt={name}
-          className="w-full h-40 object-cover rounded-lg"
-        />
-        <h2 className="text-2xl font-bold mt-4">{name}</h2>
-        {monthlyListeners && (
-          <p className="text-gray-300 text-sm">
-            {monthlyListeners} monthly listeners
-          </p>
-        )}
-      </div>
-
-      {/* Biography */}
-      {biography && (
-        <div className="mt-4">
-          <p className="text-gray-400">{biography}</p>
-        </div>
-      )}
-
-      {/* Credits */}
-      {credits.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold mb-2">Credits</h3>
-          <ul className="space-y-2">
-            {credits.map((credit, index) => (
-              <li key={index} className="flex items-center justify-between">
-                <div>
-                  <p className="text-white">{credit.name}</p>
-                  <p className="text-gray-400 text-sm">{credit.role}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* On Tour */}
-      {onTour.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold mb-2">On Tour</h3>
-          <ul className="space-y-2">
-            {onTour.map((tourItem, index) => (
-              <li key={index} className="flex items-center justify-between">
-                <div>
-                  <p className="text-white">{tourItem.date}</p>
-                  <p className="text-gray-400 text-sm">
-                    {tourItem.location} • {tourItem.venue}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Next in Queue */}
-      {nextInQueue && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold mb-2">Next in Queue</h3>
-          <div className="flex items-center space-x-3 bg-gray-800 p-2 rounded">
-            <img
-              src={nextInQueue.cover || "https://via.placeholder.com/50"}
-              alt={nextInQueue.title}
-              className="w-12 h-12 rounded object-cover"
-            />
-            <div>
-              <p className="text-white">{nextInQueue.title}</p>
-              <p className="text-gray-400 text-sm">{nextInQueue.artist}</p>
+        {/* Main: Cover, Name, Stats */}
+        <div className="flex flex-col items-center mb-4">
+          <img
+            src={cover || "/artistImages/default.jpg"}
+            alt={name}
+            className="w-40 h-40 rounded-full object-cover shadow"
+          />
+          <h2 className="text-2xl font-bold mt-4 mb-1">{name}</h2>
+          {monthlyListeners && (
+            <div className="text-green-400 text-sm mb-2">
+              {monthlyListeners.toLocaleString()} monthly listeners
             </div>
+          )}
+        </div>
+
+        {/* Bio */}
+        {biography && (
+          <div className="mb-4 text-gray-300 leading-relaxed">
+            {biography}
+          </div>
+        )}
+
+        {/* Video (optional) */}
+        {videoSrc && (
+          <div className="mb-4">
+            <video
+              className="w-full aspect-[16/9] object-cover rounded"
+              controls
+              autoPlay
+              muted
+              poster={videoPoster || cover}
+            >
+              <source src={videoSrc} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        )}
+
+        {/* Credits (Spotify-style) */}
+        {credits.length > 0 && (
+          <div className="mb-4">
+            <h3 className="font-bold mb-2 text-lg">Credits</h3>
+            <ul>
+              {credits.map((credit, i) => (
+                <li key={i} className="flex justify-between text-gray-200 py-1 border-b border-gray-700 last:border-none">
+                  <span>{credit.name}</span>
+                  <span className="text-gray-400 text-sm">{credit.role}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* On Tour (optional) */}
+        {onTour.length > 0 && (
+          <div className="mb-4">
+            <h3 className="font-bold mb-2 text-lg">On Tour</h3>
+            <ul>
+              {onTour.map((tourItem, i) => (
+                <li key={i} className="py-1 border-b border-gray-700 last:border-none">
+                  <div className="text-white">{tourItem.date}</div>
+                  <div className="text-gray-400 text-sm">{tourItem.location} • {tourItem.venue}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3 mt-6">
+          <button className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition">Play</button>
+          <button className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">Follow</button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Playlist "peek" (Spotify style) ---
+  if (type === "playlist") {
+    const {
+      name,
+      cover,
+      songs = [],
+      description,
+    } = info;
+
+    return (
+      <div className="fixed right-0 top-16 h-full w-96 max-w-full bg-gray-900 text-white shadow-xl p-6 z-50 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <span className="font-bold text-lg">Playlist Details</span>
+          <button
+            className="text-gray-400 hover:text-white text-xl"
+            onClick={onClose}
+            title="Close"
+          >✖</button>
+        </div>
+        <div className="flex flex-col items-center mb-4">
+          <img
+            src={cover || "/playlist-default.jpg"}
+            alt={name}
+            className="w-40 h-40 rounded-lg object-cover shadow"
+          />
+          <h2 className="text-2xl font-bold mt-4 mb-2">{name}</h2>
+          {description && <p className="text-gray-300 mb-2">{description}</p>}
+          <div className="text-gray-400 text-sm">
+            {songs.length} song{songs.length !== 1 ? "s" : ""}
           </div>
         </div>
-      )}
-    </div>
-  );
+        {/* List a preview of songs */}
+        <div className="mb-4">
+          <h3 className="font-bold mb-2 text-lg">Songs</h3>
+          <ul>
+            {songs.slice(0, 5).map((song, i) => (
+              <li key={i} className="flex items-center text-gray-200 py-1 border-b border-gray-800 last:border-none">
+                <img src={song.cover} alt={song.title} className="w-10 h-10 mr-2 rounded object-cover" />
+                <div>
+                  <div>{song.title}</div>
+                  <div className="text-xs text-gray-400">{song.artist}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <button className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition w-full">
+          Play Playlist
+        </button>
+      </div>
+    );
+  }
+
+  // Fallback: Unknown panel type
+  return null;
+};
+
+RightPanel.propTypes = {
+  visible: PropTypes.bool,
+  content: PropTypes.object, // { type: "artist", info: {...} } or { type: "playlist", info: {...} }
+  onClose: PropTypes.func.isRequired,
 };
 
 export default RightPanel;

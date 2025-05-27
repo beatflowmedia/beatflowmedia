@@ -1,168 +1,182 @@
-import React, { useState, useMemo } from "react";
-import { FaMusic, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import ContextMenu from "./ContextMenu";
-import SidebarArtistItem from "./SidebarArtistItem";
-import useFollowArtist from "../hooks/useFollowArtist";
+// components/SideBar.js
+import React, { useMemo, useState } from "react";
+import SidebarListItem from "./SidebarListItem";
 import NewPlaylistModal from "./NewPlaylistModal";
-import {
-  dontPlayArtist,
-  pinArtist,
-  goToArtistRadio,
-  reportArtist,
-  shareArtist,
-  openInDesktopApp,
-} from "../utils/artistContextHelpers";
+import { FaPlus, FaSearch, FaList } from "react-icons/fa";
+import PropTypes from "prop-types";
+
+const FILTERS = [
+  { label: "Playlists", value: "playlist" },
+  { label: "Artists", value: "artist" },
+];
+
+// Helper to group and filter sidebar items
+function buildSidebarItems(musicData, playlists, filter, search) {
+  const artistSet = new Set();
+  const artistItems = musicData
+    .filter(song => {
+      if (!song.artist || artistSet.has(song.artist)) return false;
+      artistSet.add(song.artist);
+      return true;
+    })
+    .map(artistSong => ({
+      id: `artist-${artistSong.artist}`,
+      name: artistSong.artist,
+      cover: `/artistImages/${artistSong.artist}.jpg`,
+      type: "artist",
+    }));
+
+  const playlistItems = playlists.map(p => ({
+    ...p,
+    cover: p.cover || "/playlist-default.jpg",
+    type: "playlist",
+    id: `playlist-${p.id}`,
+  }));
+
+  let items = [...playlistItems, ...artistItems];
+  if (filter) items = items.filter(item => item.type === filter);
+  if (search)
+    items = items.filter(item =>
+      item.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+  return {
+    playlists: items.filter(i => i.type === "playlist"),
+    artists: items.filter(i => i.type === "artist"),
+    all: items,
+  };
+}
 
 const SideBar = ({
   musicData = [],
   playlists = [],
-  onNavigate = () => {},
-  onArtistSelect = () => {},
-  onPlaylistSelect = () => {},
-  onCreatePlaylist = () => {},
-  onPlayArtist = () => {},
+  onPlaylistSelect,
+  onArtistSelect,
+  onShowRightPanel,
+  onCreatePlaylist,
+  onPlayArtist,
 }) => {
-  const [contextArtist, setContextArtist] = useState(null);
-  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [showNewPlaylistModal, setShowNewPlaylistModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
 
-  // Static view mode (could be toggled later)
-  const viewMode = "list";
+  const sidebar = useMemo(
+    () => buildSidebarItems(musicData, playlists, filter, search),
+    [musicData, playlists, filter, search]
+  );
+  const { playlists: playlistItems, artists: artistItems } = sidebar;
 
-  // Deduplicate artists from musicData
-  const uniqueArtists = useMemo(() => {
-    const seen = new Set();
-    return musicData
-      .filter(({ artist }) => {
-        if (seen.has(artist)) return false;
-        seen.add(artist);
-        return true;
-      })
-      .map((song, index) => ({ id: `artist-${index}`, name: song.artist }));
-  }, [musicData]);
-
-  const { isFollowing, toggleFollow } = useFollowArtist(contextArtist);
-
-  const handleRightClickArtist = (e, artistName) => {
-    e.preventDefault();
-    setContextArtist(artistName);
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setShowMenu(true);
-  };
-
-  const artistContextItems = [
-    { label: isFollowing ? "Unfollow" : "Follow", onClick: () => toggleFollow() },
-    { label: "Don't play this artist", onClick: () => dontPlayArtist(contextArtist) },
-    { label: "Pin artist", onClick: () => pinArtist(contextArtist) },
-    { label: "Go to artist radio", onClick: () => goToArtistRadio(contextArtist) },
-    { label: "Report", onClick: () => reportArtist(contextArtist) },
-    { label: "Share", onClick: () => shareArtist(contextArtist) },
-    { label: "Open in Desktop app", onClick: () => openInDesktopApp(contextArtist) },
-  ];
+  // Set this to match your NavBar height! h-16 is 64px (standard Tailwind navbar height)
+  const NAVBAR_HEIGHT_CLASS = "h-16";
 
   return (
-    <div className={`bg-gray-900 text-white h-screen flex flex-col ${isCollapsed ? "w-26" : "w-64"} p-6 pt-20 transition-all duration-300 relative`}>
-      
-      {/* Header Section */}
-      <div className="flex items-center justify-between mb-4">
-        {!isCollapsed && <h3 className="text-xl font-bold">Your Library</h3>}
-        <div className="flex items-center space-x-2">
-          {!isCollapsed && (
+    <aside className="bg-gray-900 text-white w-72 flex flex-col h-full border-r border-gray-800 min-h-0">
+      {/* --- Spacer to match NavBar height --- */}
+      <div className={NAVBAR_HEIGHT_CLASS}></div>
+
+      {/* Sidebar header: logo, filters, search */}
+      <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10 bg-gray-900">
+       
+        {/* Filter chips */}
+        <div className="flex space-x-2 px-4 mb-2">
+          {FILTERS.map(f => (
             <button
-              className="text-gray-400 hover:text-white"
-              title="Create Playlist"
-              onClick={() => setShowNewPlaylistModal(true)}
+              key={f.value}
+              className={`px-3 py-1 rounded-full text-xs ${
+                filter === f.value
+                  ? "bg-gray-800 text-white"
+                  : "bg-gray-700 text-gray-300"
+              } hover:bg-gray-800`}
+              onClick={() => setFilter(f.value)}
             >
-              <FaPlus size={20} />
+              {f.label}
             </button>
-          )}
+          ))}
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            title="Toggle Sidebar"
-            className="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition"
+            className={`px-3 py-1 rounded-full text-xs ${
+              !filter ? "bg-gray-800 text-white" : "bg-gray-700 text-gray-300"
+            } hover:bg-gray-800`}
+            onClick={() => setFilter("")}
           >
-            {isCollapsed ? <FaChevronRight size={16} /> : <FaChevronLeft size={16} />}
+            All
+          </button>
+        </div>
+        {/* Search */}
+        <div className="flex items-center px-4 mb-2">
+          <FaSearch className="text-gray-500 mr-2" />
+          <input
+            className="w-full p-1 bg-gray-800 rounded text-sm text-white"
+            placeholder="Search in Your Library"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <button className="ml-2 text-gray-400" title="Recents">
+            <FaList />
+          </button>
+          <button
+            className="bg-gray-700 rounded-full p-2 hover:bg-gray-600 ml-2"
+            title="Create Playlist"
+            onClick={() => setShowModal(true)}
+          >
+            <FaPlus />
           </button>
         </div>
       </div>
 
-      {/* Artists Section */}
-      <div>
-        {!isCollapsed && <h4 className="text-lg font-semibold mb-2">Artists</h4>}
-        {uniqueArtists.length === 0 ? (
-          !isCollapsed && <p className="text-gray-400">No artists available.</p>
-        ) : (
-          <div className={viewMode === "list" ? "space-y-2" : "grid grid-cols-1 gap-3"}>
-            {uniqueArtists.map((artistObj) => (
-              <SidebarArtistItem
-                key={artistObj.id}
-                artist={artistObj}
-                isCollapsed={isCollapsed}
-                onSelect={onArtistSelect}
-                onRightClick={handleRightClickArtist}
-                onPlay={onPlayArtist}
-                viewMode={viewMode}
+      {/* Scrollable library: playlists & artists */}
+      <div className="overflow-y-auto flex-1 px-2 pb-2 min-h-0">
+        {playlistItems.length > 0 && (
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Playlists</div>
+            {playlistItems.map(item => (
+              <SidebarListItem
+                key={item.id}
+                item={item}
+                onPlaylistSelect={onPlaylistSelect}
               />
             ))}
           </div>
         )}
-      </div>
-
-      {/* Playlists Section */}
-      {!isCollapsed && (
-        <div className="mt-6">
-          <div className="flex justify-between items-center">
-            <h4 className="text-lg font-semibold">Playlists</h4>
-            <button
-              onClick={() => setShowNewPlaylistModal(true)}
-              className="text-gray-400 hover:text-white"
-              title="New Playlist"
-            >
-              <FaPlus size={26} />
-            </button>
+        {artistItems.length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Artists</div>
+            {artistItems.map(item => (
+              <SidebarListItem
+                key={item.id}
+                item={item}
+                onArtistSelect={onArtistSelect}
+                onShowRightPanel={onShowRightPanel}
+                onPlayArtist={onPlayArtist}
+              />
+            ))}
           </div>
-          {playlists.length === 0 ? (
-            <p className="text-gray-400 mt-2">No playlists created yet.</p>
-          ) : (
-            <div className="mt-2 space-y-2">
-              {playlists.map((playlist) => (
-                <button
-                  key={playlist.id}
-                  onClick={() => onPlaylistSelect(playlist)}
-                  className="flex items-center space-x-3 cursor-pointer hover:text-white w-full text-left"
-                >
-                  <FaMusic size={16} />
-                  <span className="hover:text-green-400">{playlist.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Context Menu */}
-      <ContextMenu
-        visible={showMenu}
-        x={menuPos.x}
-        y={menuPos.y}
-        items={artistContextItems}
-        onClose={() => setShowMenu(false)}
-      />
-
+        )}
+        {playlistItems.length === 0 && artistItems.length === 0 && (
+          <div className="text-gray-400 text-center pt-4">No items found.</div>
+        )}
+      </div>
       {/* New Playlist Modal */}
-      {showNewPlaylistModal && (
+      {showModal && (
         <NewPlaylistModal
-          onCreate={(name) => {
+          onCreate={name => {
             onCreatePlaylist(name);
-            setShowNewPlaylistModal(false);
+            setShowModal(false);
           }}
-          onCancel={() => setShowNewPlaylistModal(false)}
+          onCancel={() => setShowModal(false)}
         />
       )}
-    </div>
+    </aside>
   );
+};
+
+SideBar.propTypes = {
+  musicData: PropTypes.array,
+  playlists: PropTypes.array,
+  onPlaylistSelect: PropTypes.func.isRequired,
+  onArtistSelect: PropTypes.func.isRequired,
+  onShowRightPanel: PropTypes.func.isRequired,
+  onCreatePlaylist: PropTypes.func.isRequired,
+  onPlayArtist: PropTypes.func,
 };
 
 export default SideBar;

@@ -1,14 +1,14 @@
-// src/pages/Home.js
-import React, { useMemo, useState, useEffect, memo } from "react";
+import React, { useMemo, useState, useEffect, memo, useCallback } from "react";
 import PropTypes from "prop-types";
 import { groupSongsByArtist } from "../utils/ArtistFilter";
 import useFollowArtist from "../hooks/useFollowArtist";
 import PlayButton from "../components/PlayButton";
 import DropdownMenu from "../components/DropdownMenu";
 import LikeButton from "../components/LikeButton";
+import AddToPlaylistModal from "../components/AddToPlaylistModal";
 import { toast } from "react-toastify";
 import {
-  FaTrashAlt, FaMusic, FaPlus, FaShareAlt, FaBars, FaList,
+  FaMusic, FaPlus, FaShareAlt, FaBars, FaList,
   FaSortAlphaDown, FaClock, FaTwitter, FaFacebook, FaLinkedin,
   FaReddit, FaEnvelope, FaLink,
 } from "react-icons/fa";
@@ -19,7 +19,6 @@ import {
   shareOnLinkedIn, shareOnReddit, shareViaEmail, copyToClipboard,
 } from "../utils/shareHelper";
 
-// Sort and view options
 const SORT_OPTIONS = [
   { label: "Alphabetical", icon: <FaSortAlphaDown />, value: "alpha" },
   { label: "Recently Added", icon: <FaClock />, value: "recentlyAdded" },
@@ -34,7 +33,7 @@ function Home({
   selectedArtist,
   selectedPlaylist,
   onSongSelect,
-  onPlayPause,         // Unified play/pause handler
+  onPlayPause,
   onToggleFavorite,
   favorites = [],
   currentSong,
@@ -42,14 +41,17 @@ function Home({
   playlists = [],
   onAddSongToPlaylist,
   onRemoveSongFromPlaylist,
+  onCreatePlaylist,
+  onOpenRightPanel, // <-- Use this to "peek" right panel
 }) {
   const [viewMode, setViewMode] = useState("compact");
   const [sortMode, setSortMode] = useState("recentlyAdded");
   const [globalLikes, setGlobalLikes] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareSong, setShareSong] = useState(null);
+  const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
+  const [pendingSong, setPendingSong] = useState(null);
 
-  // Live global like count from Firestore
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "songLikes"), (snap) => {
       const counts = {};
@@ -61,7 +63,7 @@ function Home({
     return unsub;
   }, []);
 
-  // Prepare artist grouping/filtering
+  // Artist/playlist filtering
   const songsByArtist = useMemo(() => groupSongsByArtist(musicData), [musicData]);
   const normalizedArtist = selectedArtist?.trim().toLowerCase();
   const { isFollowing, toggleFollow } = useFollowArtist(selectedArtist);
@@ -71,26 +73,60 @@ function Home({
     const base = selectedPlaylist?.songs?.length
       ? selectedPlaylist.songs
       : normalizedArtist
-      ? songsByArtist[normalizedArtist] || []
-      : musicData;
+        ? songsByArtist[normalizedArtist] || []
+        : musicData;
     return [...base].sort((a, b) =>
       sortMode === "alpha"
-        ? a.title.localeCompare(b.title)
+        ? a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
         : new Date(b.addedAt || 0) - new Date(a.addedAt || 0)
     );
   }, [musicData, selectedPlaylist, normalizedArtist, songsByArtist, sortMode]);
 
-  // Share modal handlers
-  const handleShare = (song) => {
+  // SHARE MODAL
+  const handleShare = useCallback((song) => {
     setShareSong(song);
     setShowShareModal(true);
-  };
-  const closeShareModal = () => {
+  }, []);
+  const closeShareModal = useCallback(() => {
     setShowShareModal(false);
     setShareSong(null);
-  };
+  }, []);
   const songUrl = shareSong ? getSongUrl(shareSong.id) : "";
   const shareText = shareSong ? getShareText(shareSong.title, shareSong.id) : "";
+
+  // ADD TO PLAYLIST MODAL
+  const handleAddToPlaylistClick = (song) => {
+    setPendingSong(song);
+    setShowAddToPlaylistModal(true);
+  };
+  const handleCloseAddToPlaylistModal = () => {
+    setPendingSong(null);
+    setShowAddToPlaylistModal(false);
+  };
+  const handleAddToExistingPlaylist = (playlistId, song) => {
+    onAddSongToPlaylist(playlistId, song);
+    toast.success("Song added to playlist!");
+    handleCloseAddToPlaylistModal();
+  };
+  const handleCreateAndAddToPlaylist = (playlistName, song) => {
+    onCreatePlaylist(playlistName, song);
+    toast.success(`Playlist "${playlistName}" created and song added!`);
+    handleCloseAddToPlaylistModal();
+  };
+
+  // "Peek" artist right panel (header or song artist click)
+  const handlePeekArtist = (artist) => {
+    if (onOpenRightPanel) {
+      onOpenRightPanel({ type: "artist", artistName: artist });
+    }
+  };
+
+  // "Peek" playlist right panel (header click)
+  const handlePeekPlaylist = () => {
+    if (onOpenRightPanel && selectedPlaylist) {
+      onOpenRightPanel({ type: "playlist", ...selectedPlaylist });
+    }
+  };
 
   return (
     <div className="pt-16 px-6">
@@ -103,7 +139,7 @@ function Home({
               trigger={
                 <button className="flex items-center space-x-1 text-sm text-white focus:outline-none" aria-label={`Change view mode (${viewMode})`}>
                   {VIEW_OPTIONS.find((v) => v.value === viewMode).icon}
-                  <span>{viewMode}</span>
+                  <span className="capitalize">{viewMode}</span>
                 </button>
               }
               items={VIEW_OPTIONS.map(({ label, icon, value }) => ({
@@ -117,7 +153,7 @@ function Home({
               trigger={
                 <button className="flex items-center space-x-1 text-sm text-white focus:outline-none" aria-label={`Change sort mode (${sortMode})`}>
                   {SORT_OPTIONS.find((s) => s.value === sortMode).icon}
-                  <span>{sortMode}</span>
+                  <span className="capitalize">{sortMode}</span>
                 </button>
               }
               items={SORT_OPTIONS.map(({ label, icon, value }) => ({
@@ -133,23 +169,40 @@ function Home({
 
       {/* Playlist or Artist Header */}
       {selectedPlaylist ? (
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white">{selectedPlaylist.name}</h1>
-          <p className="text-gray-400">
-            {selectedPlaylist.songs.length} song
-            {selectedPlaylist.songs.length !== 1 && "s"}
-          </p>
+        <div className="mb-6 cursor-pointer flex items-center gap-4" onClick={handlePeekPlaylist}>
+          <img
+            src={selectedPlaylist.cover || "/playlist-default.jpg"}
+            alt={selectedPlaylist.name}
+            className="w-28 h-28 rounded-lg object-cover shadow"
+          />
+          <div>
+            <h1 className="text-3xl font-bold text-white">{selectedPlaylist.name}</h1>
+            <p className="text-gray-400">
+              {selectedPlaylist?.songs?.length || 0} song
+              {(selectedPlaylist?.songs?.length !== 1) && "s"}
+            </p>
+          </div>
         </div>
       ) : selectedArtist ? (
-        <div className="relative mb-6 h-64 overflow-hidden rounded-lg bg-gradient-to-b from-gray-700 to-black">
+        <div className="relative mb-6 h-64 overflow-hidden rounded-lg bg-gradient-to-b from-gray-700 to-black group">
+          {/* Image triggers right panel */}
           <img
             src={`/artistImages/${selectedArtist}.jpg`}
             alt={selectedArtist}
-            className="absolute inset-0 w-full h-full object-cover opacity-50"
+            className="absolute inset-0 w-full h-full object-cover opacity-50 cursor-pointer"
             loading="lazy"
+            onClick={() => handlePeekArtist(selectedArtist)}
+            title="Show artist details"
           />
           <div className="relative z-10 flex h-full flex-col justify-end p-6">
-            <h1 className="text-5xl font-bold text-white">{selectedArtist}</h1>
+            {/* Name triggers right panel */}
+            <h1
+              className="text-5xl font-bold text-white cursor-pointer hover:underline"
+              onClick={() => handlePeekArtist(selectedArtist)}
+              title="Show artist details"
+            >
+              {selectedArtist}
+            </h1>
             <button
               onClick={toggleFollow}
               className={`mt-2 rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
@@ -173,7 +226,6 @@ function Home({
         }
       >
         {songs.map((song) => {
-          const inPlaylist = selectedPlaylist?.songs?.some((s) => s.id === song.id);
           const isFav = favorites.some((f) => f.id === song.id);
           const likes = globalLikes[song.id] || 0;
 
@@ -188,44 +240,46 @@ function Home({
                 className="w-14 h-14 mb-2 rounded-md object-cover"
                 loading="lazy"
               />
-              <h3 className="mb-1 text-sm font-bold text-white">{song.title}</h3>
-              <p className="text-xs text-gray-400">{song.artist}</p>
+              <h3
+                className="mb-1 text-sm font-bold text-white"
+                // Click title = play song
+                onClick={() => onSongSelect(song)}
+                style={{ cursor: "pointer" }}
+              >
+                {song.title}
+              </h3>
+              {/* Artist = peek artist info in right panel */}
+              <p
+                className="text-xs text-green-400 cursor-pointer hover:underline"
+                onClick={() => handlePeekArtist(song.artist)}
+                title={`Show artist: ${song.artist}`}
+              >
+                {song.artist}
+              </p>
               <p className="mb-2 text-xs text-gray-400">{likes} likes</p>
               <div className="flex items-center justify-between">
-                {/* Unified Play/Pause */}
                 <PlayButton
                   isPlaying={currentSong?.id === song.id && isPlaying}
                   onClick={() => onPlayPause(song)}
                   aria-label={currentSong?.id === song.id && isPlaying ? "Pause" : "Play"}
                   size={20}
                 />
-
                 <div className="flex items-center space-x-2 rounded-md bg-gray-700 bg-opacity-50 p-1">
-                  {/* Add / Remove from playlist */}
                   <button
-                    onClick={() => {
-                      if (selectedPlaylist && selectedPlaylist.id) {
-                        inPlaylist
-                          ? onRemoveSongFromPlaylist(selectedPlaylist.id, song)
-                          : onAddSongToPlaylist(selectedPlaylist.id, song);
-                      }
-                    }}
+                    onClick={() => handleAddToPlaylistClick(song)}
                     className="relative text-green-400 hover:text-green-300 focus:outline-none"
-                    aria-label={inPlaylist ? "Remove from playlist" : "Add to playlist"}
+                    aria-label="Add to playlist"
+                    title="Add to playlist"
                   >
-                    {inPlaylist ? <FaTrashAlt /> : <FaMusic />}
-                    {!inPlaylist && (
-                      <FaPlus className="absolute -top-1 -right-1 text-xs" />
-                    )}
+                    <FaMusic />
+                    <FaPlus className="absolute -top-1 -right-1 text-xs" />
                   </button>
-                  {/* Like / Unlike */}
                   <LikeButton
                     item={song}
                     isLiked={isFav}
                     onToggleFavorite={onToggleFavorite}
                     size={18}
                   />
-                  {/* Share */}
                   <button
                     onClick={() => handleShare(song)}
                     className="text-blue-400 hover:text-blue-300 focus:outline-none"
@@ -284,6 +338,17 @@ function Home({
           </div>
         </div>
       )}
+
+      {/* Add To/Create Playlist Modal */}
+      {showAddToPlaylistModal && (
+        <AddToPlaylistModal
+          song={pendingSong}
+          playlists={playlists}
+          onClose={handleCloseAddToPlaylistModal}
+          onAddToPlaylist={handleAddToExistingPlaylist}
+          onCreatePlaylist={handleCreateAndAddToPlaylist}
+        />
+      )}
     </div>
   );
 }
@@ -302,9 +367,11 @@ Home.propTypes = {
   favorites: PropTypes.array,
   currentSong: PropTypes.object,
   isPlaying: PropTypes.bool,
-  playlists: PropTypes.array,
+  playlists: PropTypes.array.isRequired,
   onAddSongToPlaylist: PropTypes.func.isRequired,
   onRemoveSongFromPlaylist: PropTypes.func.isRequired,
+  onCreatePlaylist: PropTypes.func.isRequired,
+  onOpenRightPanel: PropTypes.func, // <--- for right panel integration
 };
 
 export default memo(Home);
