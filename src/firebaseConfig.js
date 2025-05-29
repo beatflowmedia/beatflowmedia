@@ -18,7 +18,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCoXc1YonnH1uW3P4OlAO6eAi911DdyHgs",
   authDomain: "beatflowmedia.firebaseapp.com",
   projectId: "beatflowmedia",
-  storageBucket: "beatflowmedia.appspot.com", // <-- Correct!
+  storageBucket: "beatflowmedia.firebasestorage.app",
   messagingSenderId: "770153949772",
   appId: "1:770153949772:web:0034a30777827ae7dce2e9",
   measurementId: "G-11SMJF5YQR"
