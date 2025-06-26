@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { FaMusic, FaUser, FaPlay } from "react-icons/fa";
+import { FaMusic, FaUser } from "react-icons/fa";
+import PlayButton from "./PlayButton";
 
 const typeIcon = {
   playlist: <FaMusic className="text-green-400 mr-2" />,
@@ -45,13 +46,13 @@ const SidebarListItem = ({
           </div>
         </div>
         {/* Play - plays artist */}
-        <button
-          onClick={() => onPlayArtist && onPlayArtist(item.name)}
-          className="ml-2 flex items-center justify-center rounded-full p-2 bg-gray-800 hover:bg-green-500 transition focus:outline-none"
-          title={`Play songs by ${item.name}`}
-        >
-          <FaPlay className="text-white text-xs" />
-        </button>
+        <div className="ml-2">
+          <PlayButton
+            isPlaying={false}
+            onClick={() => onPlayArtist && onPlayArtist(item.name)}
+            size={16}
+          />
+        </div>
       </div>
     );
   }

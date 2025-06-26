@@ -1,13 +1,13 @@
 // components/SideBar.js
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import SidebarListItem from "./SidebarListItem";
-import NewPlaylistModal from "./NewPlaylistModal";
-import { FaPlus, FaSearch, FaList } from "react-icons/fa";
+import { FaPlus, FaSearch, FaList, FaTimes } from "react-icons/fa";
 import PropTypes from "prop-types";
 
 const FILTERS = [
   { label: "Playlists", value: "playlist" },
   { label: "Artists", value: "artist" },
+  { label: "Albums", value: "album" },
 ];
 
 // Helper to group and filter sidebar items
@@ -28,13 +28,30 @@ function buildSidebarItems(musicData, playlists, filter, search) {
 
   const playlistItems = playlists.map(p => ({
     ...p,
-    cover: p.cover || "/playlist-default.jpg",
+    cover: p.cover || "/artistImages/Unknown Artist.jpg",
     type: "playlist",
     id: `playlist-${p.id}`,
   }));
 
-  let items = [...playlistItems, ...artistItems];
-  if (filter) items = items.filter(item => item.type === filter);
+  // Album grouping
+  const albumSet = new Set();
+  const albumItems = musicData
+    .filter(song => song.album && !albumSet.has(song.album))
+    .map(song => {
+      albumSet.add(song.album);
+      return {
+        id: `album-${song.album}`,
+        name: song.album,
+        cover: `/albumImages/${song.album}.jpg`, // ensure these exist or fallback
+        type: "album",
+      };
+    });
+
+  let items = [...playlistItems, ...artistItems, ...albumItems];
+  // Only apply type filter when a specific filter other than 'all' is active
+  if (filter && filter !== 'all') {
+    items = items.filter(item => item.type === filter);
+  }
   if (search)
     items = items.filter(item =>
       item.name.toLowerCase().includes(search.toLowerCase())
@@ -43,6 +60,7 @@ function buildSidebarItems(musicData, playlists, filter, search) {
   return {
     playlists: items.filter(i => i.type === "playlist"),
     artists: items.filter(i => i.type === "artist"),
+    albums: items.filter(i => i.type === "album"),
     all: items,
   };
 }
@@ -53,18 +71,26 @@ const SideBar = ({
   onPlaylistSelect,
   onArtistSelect,
   onShowRightPanel,
-  onCreatePlaylist,
   onPlayArtist,
+  onShowCreatePlaylist,
+  onEditPlaylist,
+  onDeletePlaylist,
 }) => {
-  const [showModal, setShowModal] = useState(false);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+
+  const [subFilter, setSubFilter] = useState("all");
+
+  // Reset sub-filter when main filter changes
+  useEffect(() => {
+    setSubFilter("all");
+  }, [filter]);
 
   const sidebar = useMemo(
     () => buildSidebarItems(musicData, playlists, filter, search),
     [musicData, playlists, filter, search]
   );
-  const { playlists: playlistItems, artists: artistItems } = sidebar;
+  const { playlists: playlistItems, artists: artistItems, albums: albumItems } = sidebar;
 
   // Set this to match your NavBar height! h-16 is 64px (standard Tailwind navbar height)
   const NAVBAR_HEIGHT_CLASS = "h-16";
@@ -76,9 +102,17 @@ const SideBar = ({
 
       {/* Sidebar header: logo, filters, search */}
       <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10 bg-gray-900">
-       
         {/* Filter chips */}
         <div className="flex space-x-2 px-4 mb-2">
+          {filter !== "all" && (
+            <button
+              onClick={() => setFilter("all")}
+              className="px-2 py-1 rounded-full text-xs bg-gray-700 text-gray-300 hover:bg-gray-800"
+              title="Clear filter"
+            >
+              <FaTimes />
+            </button>
+          )}
           {FILTERS.map(f => (
             <button
               key={f.value}
@@ -92,14 +126,6 @@ const SideBar = ({
               {f.label}
             </button>
           ))}
-          <button
-            className={`px-3 py-1 rounded-full text-xs ${
-              !filter ? "bg-gray-800 text-white" : "bg-gray-700 text-gray-300"
-            } hover:bg-gray-800`}
-            onClick={() => setFilter("")}
-          >
-            All
-          </button>
         </div>
         {/* Search */}
         <div className="flex items-center px-4 mb-2">
@@ -114,57 +140,107 @@ const SideBar = ({
             <FaList />
           </button>
           <button
-            className="bg-gray-700 rounded-full p-2 hover:bg-gray-600 ml-2"
+            className="bg-gray-700 rounded-full p-2 hover:bg-gray-600 ml-2 text-gray-400"
             title="Create Playlist"
-            onClick={() => setShowModal(true)}
+            onClick={onShowCreatePlaylist}
           >
             <FaPlus />
           </button>
         </div>
+        {/* Playlist sub-filters when viewing Playlists */}
+        {filter === "playlist" && (
+          <div className="flex space-x-2 px-4 mb-2">
+            <button
+              onClick={() => setSubFilter("all")}
+              className={`px-3 py-1 rounded-full text-xs ${subFilter === "all" ? "bg-gray-800 text-white" : "bg-gray-700 text-gray-300"} hover:bg-gray-800`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setSubFilter("user")}
+              className={`px-3 py-1 rounded-full text-xs ${subFilter === "user" ? "bg-gray-800 text-white" : "bg-gray-700 text-gray-300"} hover:bg-gray-800`}
+            >
+              By You
+            </button>
+            <button
+              onClick={() => setSubFilter("beatflow")}
+              className={`px-3 py-1 rounded-full text-xs ${subFilter === "beatflow" ? "bg-gray-800 text-white" : "bg-gray-700 text-gray-300"} hover:bg-gray-800`}
+            >
+              Beatflow
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Scrollable library: playlists & artists */}
       <div className="overflow-y-auto flex-1 px-2 pb-2 min-h-0">
-        {playlistItems.length > 0 && (
-          <div className="mb-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Playlists</div>
-            {playlistItems.map(item => (
-              <SidebarListItem
-                key={item.id}
-                item={item}
-                onPlaylistSelect={onPlaylistSelect}
-              />
-            ))}
-          </div>
-        )}
-        {artistItems.length > 0 && (
-          <div>
-            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Artists</div>
-            {artistItems.map(item => (
-              <SidebarListItem
-                key={item.id}
-                item={item}
-                onArtistSelect={onArtistSelect}
-                onShowRightPanel={onShowRightPanel}
-                onPlayArtist={onPlayArtist}
-              />
-            ))}
-          </div>
-        )}
-        {playlistItems.length === 0 && artistItems.length === 0 && (
-          <div className="text-gray-400 text-center pt-4">No items found.</div>
-        )}
+        {(() => {
+          if (filter === "all") {
+            return (
+              <>
+                {playlistItems.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Playlists</div>
+                    {playlistItems.map(item => (
+                      <SidebarListItem
+                        key={item.id}
+                        item={item}
+                        onPlaylistSelect={onPlaylistSelect}
+                        onPlayArtist={onPlayArtist}
+                        onEditPlaylist={onEditPlaylist}
+                        onDeletePlaylist={onDeletePlaylist}
+                      />
+                    ))}
+                  </div>
+                )}
+                {artistItems.length > 0 && (
+                  <div>
+                    <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Artists</div>
+                    {artistItems.map(item => (
+                      <SidebarListItem
+                        key={item.id}
+                        item={item}
+                        onArtistSelect={onArtistSelect}
+                        onShowRightPanel={onShowRightPanel}
+                        onPlayArtist={onPlayArtist}
+                      />
+                    ))}
+                  </div>
+                )}
+                {playlistItems.length === 0 && artistItems.length === 0 && (
+                  <div className="text-gray-400 text-center pt-4">No items found.</div>
+                )}
+              </>
+            );
+          }
+          const itemsToRender =
+            filter === "playlist"
+              ? (
+                  subFilter === "user"
+                    ? playlistItems.filter(item => !item.isBeatflow)
+                    : subFilter === "beatflow"
+                    ? playlistItems.filter(item => item.isBeatflow)
+                    : playlistItems
+                )
+              : filter === "artist"
+              ? artistItems
+              : albumItems;
+          if (itemsToRender.length === 0) {
+            return <div className="text-gray-400 text-center pt-4">No items found.</div>;
+          }
+          return itemsToRender.map(item => (
+            <SidebarListItem
+              key={item.id}
+              item={item}
+              onPlaylistSelect={filter === "playlist" ? onPlaylistSelect : undefined}
+              onArtistSelect={filter === "artist" ? onArtistSelect : undefined}
+              onShowRightPanel={filter !== "playlist" ? onShowRightPanel : undefined}
+              onPlayArtist={onPlayArtist}
+            />
+          ));
+        })()}
       </div>
-      {/* New Playlist Modal */}
-      {showModal && (
-        <NewPlaylistModal
-          onCreate={name => {
-            onCreatePlaylist(name);
-            setShowModal(false);
-          }}
-          onCancel={() => setShowModal(false)}
-        />
-      )}
+      {/* Removed modal-based creation in favor of dedicated create route */}
     </aside>
   );
 };
@@ -175,8 +251,10 @@ SideBar.propTypes = {
   onPlaylistSelect: PropTypes.func.isRequired,
   onArtistSelect: PropTypes.func.isRequired,
   onShowRightPanel: PropTypes.func.isRequired,
-  onCreatePlaylist: PropTypes.func.isRequired,
   onPlayArtist: PropTypes.func,
+  onShowCreatePlaylist: PropTypes.func, // New prop type
+  onEditPlaylist: PropTypes.func, // New prop type
+  onDeletePlaylist: PropTypes.func, // New prop type
 };
 
 export default SideBar;

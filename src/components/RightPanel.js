@@ -160,11 +160,13 @@ const RightPanel = ({ visible, content, onClose }) => {
           >✖</button>
         </div>
         <div className="flex flex-col items-center mb-4">
-          <img
-            src={cover || "/playlist-default.jpg"}
-            alt={name}
-            className="w-40 h-40 rounded-lg object-cover shadow"
-          />
+          <div
+            className="relative w-40 h-40 rounded-lg overflow-hidden bg-cover bg-center shadow"
+            style={{ backgroundImage: `url(${cover || "/playlist-default.jpg"})` }}
+          >
+            {/* subtle overlay to improve loading aesthetics */}
+            <div className="absolute inset-0 bg-gray-900 opacity-20" />
+          </div>
           <h2 className="text-2xl font-bold mt-4 mb-2">{name}</h2>
           {description && <p className="text-gray-300 mb-2">{description}</p>}
           <div className="text-gray-400 text-sm">

@@ -3,6 +3,9 @@ import React, { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import AppShell from "./AppShell";
 
+// Lazy-loaded create playlist page
+const CreatePlaylist = lazy(() => import("./pages/CreatePlaylist"));
+
 // Lazy-loaded pages
 const Home = lazy(() => import("./pages/Home"));
 const Favorites = lazy(() => import("./components/Favorites"));
@@ -25,6 +28,7 @@ export default function AppRoutes() {
           <Route path="favorites" element={<Favorites />} />
           <Route path="playlists" element={<Playlists />} />
           <Route path="playlist-view" element={<PlaylistView />} />
+          <Route path="create-playlist" element={<CreatePlaylist />} />
           <Route path="whats-new" element={<WhatsNew />} />
           <Route path="explore-premium" element={<ExplorePremium />} />
           <Route path="browse" element={<BrowsePage />} />

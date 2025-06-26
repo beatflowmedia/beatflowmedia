@@ -17,8 +17,10 @@ import WhatsNew from "./components/WhatsNew";
 import ExplorePremium from "./components/ExplorePremium";
 import BrowsePage from "./pages/BrowsePage";
 import Home from "./pages/Home";
+import CreatePlaylist from "./pages/CreatePlaylist"; // import page
 
 export default function AppShell() {
+  const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
   const [page, setPage] = useState("home");
   const [showWhatsNew, setShow] = useState(false);
   const [currentSong, setSong] = useState(musicData[0] || null);
@@ -73,6 +75,14 @@ export default function AppShell() {
   };
 
   const renderContent = () => {
+    if (showCreatePlaylist) {
+      return (
+        <CreatePlaylist
+          onCreate={(data) => { createNewPlaylist(data); setShowCreatePlaylist(false); }}
+          onCancel={() => setShowCreatePlaylist(false)}
+        />
+      );
+    }
     if (searchQuery) {
       return (
         <SearchResults
@@ -160,6 +170,7 @@ export default function AppShell() {
       </header>
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
         <SideBar
+          onShowCreatePlaylist={() => setShowCreatePlaylist(true)}
           musicData={musicData}
           playlists={playlists}
           onPlaylistSelect={(pl) => {
@@ -175,7 +186,6 @@ export default function AppShell() {
           onShowRightPanel={(artistName) =>
             openRightPanel({ type: "artist", artistName })
           }
-          onCreatePlaylist={createNewPlaylist}
           onPlayArtist={(name) => {
             const songs = musicData.filter((song) => song.artist === name);
             if (songs[0]) playSong(songs[0]);

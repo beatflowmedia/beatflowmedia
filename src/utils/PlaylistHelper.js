@@ -58,3 +58,27 @@ export const removeSongFromPlaylist = async (playlistId, song) => {
     throw error;
   }
 };
+
+// Reorder songs in a playlist
+export const reorderSongsInPlaylist = async (playlistId, songs) => {
+  const playlistRef = doc(db, "playlists", playlistId);
+  try {
+    await updateDoc(playlistRef, { songs });
+    console.log(`🔀 Reordered songs in playlist: ${playlistId}`);
+  } catch (error) {
+    console.error("❌ Error reordering playlist songs:", error);
+    throw error;
+  }
+};
+
+// Update playlist metadata
+export const updatePlaylistDetails = async (playlistId, details) => {
+  const playlistRef = doc(db, "playlists", playlistId);
+  try {
+    await updateDoc(playlistRef, details);
+    console.log(`✏️ Updated playlist ${playlistId}`);
+  } catch (error) {
+    console.error("❌ Error updating playlist details:", error);
+    throw error;
+  }
+};
