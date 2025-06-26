@@ -1,9 +1,0 @@
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /users/{userId}/playlists/{playlistId}/{fileName=**} {
-      allow read: if true;  // public read access for covers
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
