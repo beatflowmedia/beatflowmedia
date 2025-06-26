@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { FaPencilAlt, FaUserPlus, FaEllipsisH, FaTh, FaSearch, FaTimes, FaPlus } from 'react-icons/fa';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { Vibrant } from 'node-vibrant/browser';
 import ContextMenu from '../components/ContextMenu';
 import EditPlaylistModal from '../components/EditPlaylistModal';
 import * as ctxHelpers from '../utils/contextMenuHelpers';
