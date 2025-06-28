@@ -1,157 +1,151 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut 
-} from "firebase/auth"; // ✅ All imports are now used
-import { db } from "../firebaseConfig"; // Adjust path as needed
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  arrayUnion, 
-  arrayRemove, 
-  onSnapshot, // ✅ Firestore Real-Time Listener
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut
+} from "firebase/auth";
+import { db } from "../firebaseConfig";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  onSnapshot
 } from "firebase/firestore";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [followedArtists, setFollowedArtists] = useState([]); // ✅ Store follow state in real-time
+  const [followedArtists, setFollowedArtists] = useState([]);
 
   const auth = getAuth();
-  const provider = new GoogleAuthProvider(); // ✅ Defined once at the top
+  const provider = new GoogleAuthProvider();
 
-  // 🔥 Listen for auth state changes
+  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-
-        // ✅ If user doesn't exist, create default fields
-        const userSnap = await getDoc(userDocRef);
-        if (!userSnap.exists()) {
-          await setDoc(userDocRef, { favorites: [], follows: [], playlists: [], likes: [] });
-        }
-
-        // ✅ Start listening for follow updates in real-time
-        const unsubscribeFollows = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            setFollowedArtists(docSnap.data().follows || []);
-          }
-        });
-
-        return () => unsubscribeFollows(); // Cleanup listener when user logs out
-      } else {
+      if (!firebaseUser) {
         setUser(null);
-        setFollowedArtists([]); // Reset follow state when user logs out
+        setFollowedArtists([]);
+        return;
       }
+      setUser(firebaseUser);
+      const userRef = doc(db, "users", firebaseUser.uid);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) {
+        await setDoc(
+          userRef,
+          {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            favorites: [],
+            follows: [],
+            playlists: [],
+            likes: []
+          },
+          { merge: true }
+        );
+      }
+      // Subscribe to follow list
+      const unsubFollows = onSnapshot(userRef, (ds) =>
+        setFollowedArtists(ds.data()?.follows || [])
+      );
+      return () => unsubFollows();
     });
-
-    return () => unsubscribe(); // Cleanup auth listener
+    return () => unsubscribe();
   }, [auth]);
 
-  // ✅ Google Sign-In
+  // Sign in with Google
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Google sign-in error:", error);
+      const { user: fbUser } = await signInWithPopup(auth, provider);
+      const userRef = doc(db, "users", fbUser.uid);
+      await setDoc(
+        userRef,
+        {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          name: fbUser.displayName,
+          photoURL: fbUser.photoURL
+        },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error("Google sign-in error:", e);
     }
   };
 
-  // ✅ Sign out
+  // Sign out
   const signOutUser = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-    } catch (error) {
-      console.error("Sign out error:", error);
-    }
+    await signOut(auth);
+    setUser(null);
   };
 
-  // ✅ Update favorites
-  const updateFavorites = async (favoritesArray) => {
+  // Update favorites array
+  const updateFavorites = async (arr) => {
     if (!user) return;
-    const userDocRef = doc(db, "users", user.uid);
-    try {
-      await updateDoc(userDocRef, { favorites: favoritesArray });
-    } catch (error) {
-      console.error("Error updating favorites:", error);
-    }
+    await updateDoc(doc(db, "users", user.uid), { favorites: arr });
   };
 
-  // ✅ Follow an artist
-  const followArtist = async (artistName) => {
+  // Follow/unfollow artist
+  const followArtist = async (name) => {
     if (!user) return;
-    const userDocRef = doc(db, "users", user.uid);
-    try {
-      await updateDoc(userDocRef, { follows: arrayUnion(artistName) });
-      console.log("Followed artist:", artistName);
-    } catch (error) {
-      console.error("Error following artist:", error);
-    }
+    await updateDoc(doc(db, "users", user.uid), { follows: arrayUnion(name) });
   };
-
-  // ✅ Unfollow an artist
-  const unfollowArtist = async (artistName) => {
+  const unfollowArtist = async (name) => {
     if (!user) return;
-    const userDocRef = doc(db, "users", user.uid);
-    try {
-      await updateDoc(userDocRef, { follows: arrayRemove(artistName) });
-      console.log("Unfollowed artist:", artistName);
-    } catch (error) {
-      console.error("Error unfollowing artist:", error);
-    }
+    await updateDoc(doc(db, "users", user.uid), { follows: arrayRemove(name) });
   };
+  const isArtistFollowed = (name) => followedArtists.includes(name);
 
-  // ✅ Check if an artist is followed (syncs with Firestore in real-time)
-  const isArtistFollowed = (artistName) => {
-    return followedArtists.includes(artistName);
-  };
-
-  // ✅ Add a like
-  const addLike = async (likeItem) => {
+  // Like/unlike uses a likers array in songLikes collection
+  const addLike = async (songId) => {
     if (!user) return;
-    const userDocRef = doc(db, "users", user.uid);
-    try {
-      await updateDoc(userDocRef, { likes: arrayUnion(likeItem) });
-    } catch (error) {
-      console.error("Error adding like:", error);
-    }
+    const userRef = doc(db, "users", user.uid);
+    const songLikesRef = doc(db, "songLikes", songId);
+    // add to user's own likes
+    await updateDoc(userRef, { likes: arrayUnion(songId) });
+    // add this user's UID to likers list
+    await setDoc(songLikesRef, { likers: arrayUnion(user.uid) }, { merge: true });
   };
-
-  // ✅ Remove a like
-  const removeLike = async (likeItem) => {
+  const removeLike = async (songId) => {
     if (!user) return;
-    const userDocRef = doc(db, "users", user.uid);
-    try {
-      await updateDoc(userDocRef, { likes: arrayRemove(likeItem) });
-    } catch (error) {
-      console.error("Error removing like:", error);
-    }
+    const userRef = doc(db, "users", user.uid);
+    const songLikesRef = doc(db, "songLikes", songId);
+    // remove from user's own likes
+    await updateDoc(userRef, { likes: arrayRemove(songId) });
+    // remove this user's UID from likers list
+    await updateDoc(songLikesRef, { likers: arrayRemove(user.uid) });
   };
 
-  const value = {
-    user,
-    signInWithGoogle,
-    signOutUser,
-    updateFavorites,
-    followArtist,
-    unfollowArtist,
-    isArtistFollowed,
-    addLike,
-    removeLike,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        signInWithGoogle,
+        signOutUser,
+        updateFavorites,
+        followArtist,
+        unfollowArtist,
+        isArtistFollowed,
+        addLike,
+        removeLike
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be inside AuthProvider");
+  return ctx;
 };

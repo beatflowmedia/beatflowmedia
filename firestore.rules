@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow anyone to read approved songs
+    match /songs/{songId} {
+      allow read: if true;
+    }
+
+    // Allow anyone to read track documents for playlist search
+    match /tracks/{trackId} {
+      allow read: if true;
+    }
+
+    // Supervisor sampler docs (public)
+    match /supervisorSamplers/{id} {
+      allow read: if true;
+    }
+
+    // Playlists per authenticated user
+    match /users/{userId}/playlists/{playlistId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // User profiles: allow users to read/write their own profile documents
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Submissions: artist can read their own, curators (admin) can read all
+    match /submissions/{submissionId} {
+      allow create: if request.auth.uid != null;
+      allow read: if request.auth.uid == resource.data.artistId || request.auth.token.admin == true;
+      allow update: if request.auth.token.admin == true;
+    }
+
+    // Supervisors collection (contacts)
+    match /supervisors/{id} {
+      allow read: if true;
+      allow write: if request.auth.token.admin == true;
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

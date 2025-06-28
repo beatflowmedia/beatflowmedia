@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { db } from "../firebaseConfig";
+import { db, storage } from "../firebaseConfig";
 import {
   getDoc,
   setDoc,
@@ -9,6 +9,7 @@ import {
   arrayUnion,
   onSnapshot,
 } from "firebase/firestore";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "./useAuth"; // ✅ Auth hook
 
 export function usePlaylistManager() {
@@ -31,33 +32,46 @@ export function usePlaylistManager() {
     return () => unsubscribe();
   }, [user]);
 
-  const createNewPlaylist = async (name) => {
+  const createNewPlaylist = async (data) => {
     if (!user?.uid) throw new Error("User not authenticated");
-  
+    // data: { name, year, description, coverFile, songs }
     // Reference to the user's main doc
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
-  
+
     // Create the user doc if it doesn't exist (first-time user)
     if (!userDocSnap.exists()) {
       await setDoc(userDocRef, { createdAt: new Date() });
       console.log("👤 Created user doc");
     }
-  
+
     // Generate a new doc ref (with unique ID you control)
     const newPlaylistRef = doc(collection(db, "users", user.uid, "playlists"));
-  
+
+    // Handle cover upload
+    let coverUrl = null;
+    if (data.coverFile) {
+      const ext = data.coverFile.name.split(".").pop();
+      const path = `users/${user.uid}/playlists/${newPlaylistRef.id}/cover.${ext}`;
+      const imgRef = storageRef(storage, path);
+      await uploadBytes(imgRef, data.coverFile);
+      coverUrl = await getDownloadURL(imgRef);
+    }
+
     // Write the new playlist
-    await setDoc(newPlaylistRef, {
-      name,
-      songs: [],
+    const playlistData = {
+      name: data.name,
+      year: data.year ?? null,
+      description: data.description ?? '',
+      coverUrl,
+      songs: data.songs || [],
       createdAt: new Date(),
-    });
-  
-    console.log("✅ Playlist created:", name, "→", newPlaylistRef.id);
+    };
+    await setDoc(newPlaylistRef, playlistData);
+
+    console.log("✅ Playlist created:", data.name, "→", newPlaylistRef.id);
     return newPlaylistRef;
   };
-  
 
   const addSong = (playlistId, song) => {
     if (!user) return;

@@ -43,30 +43,16 @@ coverage/
 Thumbs.db
 
 # Netlify
-netlify.toml
 .netlify/
 
-# React-specific
-*.jsx
-*.tsx
-*.map
-public/static/
-
-# Stripe - prevent sensitive info leakage
+# Secrets and credentials
+serviceAccountKey.json
+githubPAT.txt
 stripe.log
 stripe-secrets.json
 webhooks.log
 
-# Misc
-*.tgz
-*.zip
-*.bak
-*.tmp
-*.orig
-*.log
-*.pid
-
-# Optional: lock files (only if not using a lock strategy)
+# Optional: lock files (ensure lockfiles are committed)
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
