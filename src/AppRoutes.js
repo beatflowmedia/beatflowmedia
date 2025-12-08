@@ -62,11 +62,9 @@ export default function AppRoutes() {
         {user && role === "investor" && (
           <Route path="investor-portal" element={<InvestorPortal />} />
         )}
-        {user && role === "admin" && (
-          <Route path="agents-dashboard" element={<AgentsDashboard />} />
-        )}
 
         {/* Standalone routes outside of AppShell */}
+        <Route path="agents-dashboard" element={<AgentsDashboard />} />
         <Route path="song/:id" element={<SongPage />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="for-artists" element={<ForArtists />} />
