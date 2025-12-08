@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AgentsDashboard.css';
+import AgentLogViewer from '../components/AgentLogViewer';
 
 const AgentsDashboard = () => {
   const [agents, setAgents] = useState([]);
@@ -8,6 +9,8 @@ const AgentsDashboard = () => {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [recentReports, setRecentReports] = useState([]);
   const [actionInProgress, setActionInProgress] = useState(null);
+  const [showLogViewer, setShowLogViewer] = useState(false);
+  const [logViewerAgentId, setLogViewerAgentId] = useState(null);
 
   useEffect(() => {
     fetchAgentStatus();
@@ -189,6 +192,40 @@ const AgentsDashboard = () => {
     return `${Math.floor(seconds / 86400)}d ago`;
   };
 
+  const getDefaultOptions = (agentId) => {
+    const defaults = {
+      'content-ingestion': {
+        directory: './public/music'
+      },
+      'analytics': {
+        source: 'mock',
+        focus: 'all'
+      },
+      'recommendation': {
+        userId: 'test-user',
+        limit: 20,
+        algorithm: 'hybrid'
+      },
+      'moderation': {
+        contentId: 'pending'
+      },
+      'notification': {
+        recipient: 'all',
+        title: 'System Update',
+        message: 'Agent execution completed',
+        category: 'system'
+      },
+      'documentation': {
+        type: 'changelog'
+      },
+      'uiux': {
+        file: 'src/components'
+      }
+    };
+
+    return defaults[agentId] || {};
+  };
+
   const handleAgentAction = async (action, agentId) => {
     setActionInProgress(action);
 
@@ -197,18 +234,31 @@ const AgentsDashboard = () => {
 
       switch (action) {
         case 'run':
-          // Trigger agent run via CLI or API
+          // Trigger agent run via API
           console.log(`Running ${agentId} agent...`);
-          // In production, this would call an API endpoint
-          // await fetch(`/api/agents/${agentId}/run`, { method: 'POST' });
-          alert(`${agentId} agent started. Check reports for results.`);
+
+          const runResponse = await fetch('/.netlify/functions/api/agents-run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              agentId,
+              options: getDefaultOptions(agentId)
+            })
+          });
+
+          const runData = await runResponse.json();
+
+          if (runResponse.ok) {
+            alert(`✅ ${runData.message}\n\nJob ID: ${runData.jobId}\n\nThe agent is now running. Refresh the dashboard in a few moments to see updated results.`);
+          } else {
+            throw new Error(runData.error || 'Failed to start agent');
+          }
           break;
 
         case 'logs':
-          // View agent logs
-          console.log(`Viewing logs for ${agentId}...`);
-          // In production, this would open logs viewer or fetch logs
-          alert(`Logs for ${agentId} agent would be displayed here.`);
+          // Open log viewer
+          setLogViewerAgentId(agentId);
+          setShowLogViewer(true);
           break;
 
         case 'reports':
@@ -429,6 +479,17 @@ const AgentsDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Log Viewer Modal */}
+      {showLogViewer && logViewerAgentId && (
+        <AgentLogViewer
+          agentId={logViewerAgentId}
+          onClose={() => {
+            setShowLogViewer(false);
+            setLogViewerAgentId(null);
+          }}
+        />
       )}
     </div>
   );
