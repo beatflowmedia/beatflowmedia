@@ -1,0 +1,280 @@
+{
+  "agent": "ContentIngestion",
+  "timestamp": "2025-12-08T14:14:02.463Z",
+  "summary": {
+    "totalSessions": 1,
+    "successful": 1,
+    "failed": 0,
+    "pending": 0,
+    "inProgress": 0
+  },
+  "sessions": [
+    {
+      "id": "session_1765203242338_byms84e03",
+      "uploadId": "upload_1765203242338_tdklg7t33",
+      "filePath": "C:\\BeatFlowMedia\\music-license-app\\public\\music\\Moonlight Walk.mp3",
+      "fileName": "Moonlight Walk.mp3",
+      "fileSize": 4498102,
+      "contentType": "audio",
+      "status": "validated",
+      "processingSteps": {
+        "validation": {
+          "status": "completed",
+          "startedAt": "2025-12-08T14:14:02.342Z",
+          "completedAt": "2025-12-08T14:14:02.345Z",
+          "data": {
+            "passed": true,
+            "errors": [],
+            "warnings": [],
+            "details": {
+              "format": {
+                "extensions": [
+                  ".mp3"
+                ],
+                "maxSize": 524288000,
+                "mimeTypes": [
+                  "audio/mpeg",
+                  "audio/mp3"
+                ]
+              },
+              "contentType": "audio",
+              "extension": ".mp3",
+              "sizeCheck": {
+                "valid": true,
+                "errors": [],
+                "warnings": [],
+                "sizeInBytes": 4498102,
+                "sizeInMB": "4.29",
+                "maxSizeInMB": "500.00"
+              },
+              "qualityCheck": null,
+              "metadata": {
+                "format": null,
+                "duration": null,
+                "bitrate": null,
+                "sampleRate": null,
+                "channels": null,
+                "codec": null,
+                "_placeholder": true,
+                "_note": "Full metadata extraction requires ffprobe integration"
+              }
+            }
+          },
+          "error": null
+        },
+        "virusScan": {
+          "status": "completed",
+          "startedAt": "2025-12-08T14:14:02.347Z",
+          "completedAt": "2025-12-08T14:14:02.459Z",
+          "data": {
+            "clean": true,
+            "scanner": "placeholder",
+            "timestamp": "2025-12-08T14:14:02.347Z",
+            "note": "Virus scanning requires ClamAV or similar integration"
+          },
+          "error": null
+        },
+        "metadataExtraction": {
+          "status": "completed",
+          "startedAt": "2025-12-08T14:14:02.459Z",
+          "completedAt": "2025-12-08T14:14:02.459Z",
+          "data": {
+            "extracted": true,
+            "timestamp": "2025-12-08T14:14:02.459Z",
+            "source": "C:\\BeatFlowMedia\\music-license-app\\public\\music\\Moonlight Walk.mp3",
+            "technical": null,
+            "music": null,
+            "embedded": null,
+            "errors": [],
+            "warnings": []
+          },
+          "error": null
+        },
+        "transcoding": {
+          "status": "pending",
+          "startedAt": null,
+          "completedAt": null,
+          "data": null,
+          "error": null
+        },
+        "packaging": {
+          "status": "pending",
+          "startedAt": null,
+          "completedAt": null,
+          "data": null,
+          "error": null
+        },
+        "drm": {
+          "status": "pending",
+          "startedAt": null,
+          "completedAt": null,
+          "data": null,
+          "error": null
+        }
+      },
+      "metadata": {
+        "title": "Untitled",
+        "artist": "Unknown Artist",
+        "album": null,
+        "genre": null,
+        "isrc": null,
+        "territorialRights": [],
+        "releaseDate": null,
+        "label": null,
+        "copyrightOwner": null,
+        "duration": null,
+        "format": null,
+        "bitrate": null,
+        "sampleRate": null,
+        "channels": null,
+        "codec": null,
+        "fileSize": null,
+        "bpm": null,
+        "key": null,
+        "mood": [],
+        "energy": null,
+        "danceability": null,
+        "extractedAt": "2025-12-08T14:14:02.459Z",
+        "extractionSource": "C:\\BeatFlowMedia\\music-license-app\\public\\music\\Moonlight Walk.mp3"
+      },
+      "extractedMetadata": {
+        "extracted": true,
+        "timestamp": "2025-12-08T14:14:02.459Z",
+        "source": "C:\\BeatFlowMedia\\music-license-app\\public\\music\\Moonlight Walk.mp3",
+        "technical": null,
+        "music": null,
+        "embedded": null,
+        "errors": [],
+        "warnings": []
+      },
+      "errors": [],
+      "warnings": [],
+      "createdAt": "2025-12-08T14:14:02.339Z",
+      "completedAt": "2025-12-08T14:14:02.460Z"
+    }
+  ],
+  "capabilities": {
+    "validator": {
+      "audio": [
+        {
+          "mimeType": "audio/mpeg",
+          "extensions": [
+            ".mp3"
+          ],
+          "maxSizeMB": "500"
+        },
+        {
+          "mimeType": "audio/wav",
+          "extensions": [
+            ".wav"
+          ],
+          "maxSizeMB": "1024"
+        },
+        {
+          "mimeType": "audio/flac",
+          "extensions": [
+            ".flac"
+          ],
+          "maxSizeMB": "1024"
+        },
+        {
+          "mimeType": "audio/aac",
+          "extensions": [
+            ".aac",
+            ".m4a"
+          ],
+          "maxSizeMB": "500"
+        },
+        {
+          "mimeType": "audio/ogg",
+          "extensions": [
+            ".ogg"
+          ],
+          "maxSizeMB": "500"
+        }
+      ],
+      "video": [
+        {
+          "mimeType": "video/mp4",
+          "extensions": [
+            ".mp4"
+          ],
+          "maxSizeMB": "5120"
+        },
+        {
+          "mimeType": "video/quicktime",
+          "extensions": [
+            ".mov"
+          ],
+          "maxSizeMB": "5120"
+        },
+        {
+          "mimeType": "video/x-msvideo",
+          "extensions": [
+            ".avi"
+          ],
+          "maxSizeMB": "5120"
+        },
+        {
+          "mimeType": "video/x-matroska",
+          "extensions": [
+            ".mkv"
+          ],
+          "maxSizeMB": "5120"
+        }
+      ]
+    },
+    "metadataExtractor": {
+      "technical": {
+        "supported": false,
+        "fields": [
+          "format",
+          "duration",
+          "bitrate",
+          "sampleRate",
+          "channels",
+          "codec",
+          "fileSize"
+        ],
+        "requiresLibrary": "ffprobe",
+        "status": "placeholder"
+      },
+      "embedded": {
+        "supported": false,
+        "fields": [
+          "title",
+          "artist",
+          "album",
+          "genre",
+          "year",
+          "isrc",
+          "copyright"
+        ],
+        "requiresLibrary": "music-metadata",
+        "status": "placeholder"
+      },
+      "music": {
+        "supported": false,
+        "fields": [
+          "bpm",
+          "key",
+          "mood",
+          "energy",
+          "danceability"
+        ],
+        "requiresLibrary": "essentia.js or external API",
+        "status": "placeholder"
+      }
+    }
+  },
+  "metrics": {
+    "startTime": 1765203242305,
+    "operations": 1,
+    "errors": 0,
+    "warnings": 0,
+    "filesCreated": 0,
+    "filesModified": 0,
+    "testsGenerated": 0,
+    "storiesCreated": 0
+  }
+}

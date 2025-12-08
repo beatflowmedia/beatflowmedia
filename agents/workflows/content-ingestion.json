@@ -1,0 +1,321 @@
+{
+  "name": "content-ingestion",
+  "version": "1.0.0",
+  "description": "Content ingestion and validation workflow for music and video files",
+  "profiles": {
+    "quick": {
+      "name": "Quick Validation",
+      "description": "Fast validation only, no metadata extraction",
+      "config": {
+        "strictMode": false,
+        "requireMinBitrate": false,
+        "extractTechnical": false,
+        "extractMusic": false,
+        "extractEmbedded": false,
+        "analyzeMood": false
+      },
+      "estimatedDuration": "1-2 min",
+      "stages": ["validation", "virusScan"]
+    },
+    "standard": {
+      "name": "Standard Ingestion",
+      "description": "Validation + basic metadata extraction",
+      "config": {
+        "strictMode": false,
+        "requireMinBitrate": true,
+        "minAudioBitrate": 128,
+        "minVideoBitrate": 1000,
+        "extractTechnical": true,
+        "extractMusic": false,
+        "extractEmbedded": true,
+        "analyzeMood": false
+      },
+      "estimatedDuration": "3-5 min",
+      "stages": ["validation", "virusScan", "metadataExtraction"]
+    },
+    "comprehensive": {
+      "name": "Comprehensive Analysis",
+      "description": "Full validation + complete metadata extraction + music analysis",
+      "config": {
+        "strictMode": true,
+        "requireMinBitrate": true,
+        "minAudioBitrate": 192,
+        "minVideoBitrate": 2000,
+        "extractTechnical": true,
+        "extractMusic": true,
+        "extractEmbedded": true,
+        "analyzeMood": true
+      },
+      "estimatedDuration": "10-15 min",
+      "stages": ["validation", "virusScan", "metadataExtraction", "transcoding", "packaging", "drm"]
+    },
+    "music-focus": {
+      "name": "Music-Focused Ingestion",
+      "description": "Optimized for music files with full audio analysis",
+      "config": {
+        "strictMode": false,
+        "requireMinBitrate": true,
+        "minAudioBitrate": 192,
+        "extractTechnical": true,
+        "extractMusic": true,
+        "extractEmbedded": true,
+        "analyzeMood": true
+      },
+      "estimatedDuration": "8-12 min",
+      "stages": ["validation", "virusScan", "metadataExtraction"]
+    },
+    "video-focus": {
+      "name": "Video-Focused Ingestion",
+      "description": "Optimized for video files with transcoding",
+      "config": {
+        "strictMode": false,
+        "requireMinBitrate": true,
+        "minVideoBitrate": 2000,
+        "extractTechnical": true,
+        "extractMusic": false,
+        "extractEmbedded": true,
+        "analyzeMood": false
+      },
+      "estimatedDuration": "15-20 min",
+      "stages": ["validation", "virusScan", "metadataExtraction", "transcoding", "packaging"]
+    },
+    "production": {
+      "name": "Production Pipeline",
+      "description": "Complete production-ready pipeline with all stages",
+      "config": {
+        "strictMode": true,
+        "requireMinBitrate": true,
+        "minAudioBitrate": 192,
+        "minVideoBitrate": 2000,
+        "extractTechnical": true,
+        "extractMusic": true,
+        "extractEmbedded": true,
+        "analyzeMood": true
+      },
+      "estimatedDuration": "20-30 min",
+      "stages": ["validation", "virusScan", "metadataExtraction", "transcoding", "packaging", "drm"],
+      "postProcessing": {
+        "generateThumbnails": true,
+        "createPreviews": true,
+        "notifyUploader": true,
+        "updateCatalog": true
+      }
+    }
+  },
+  "stages": {
+    "validation": {
+      "name": "File Validation",
+      "description": "Validate file format, size, and quality",
+      "required": true,
+      "timeout": 60000,
+      "retries": 0,
+      "failOnError": true,
+      "checks": [
+        "File format validation",
+        "File size validation",
+        "MIME type verification",
+        "Quality parameters check"
+      ]
+    },
+    "virusScan": {
+      "name": "Virus Scan",
+      "description": "Scan file for malware and viruses",
+      "required": true,
+      "timeout": 120000,
+      "retries": 1,
+      "failOnError": true,
+      "checks": [
+        "Malware detection",
+        "Virus signature scan"
+      ]
+    },
+    "metadataExtraction": {
+      "name": "Metadata Extraction",
+      "description": "Extract technical and embedded metadata",
+      "required": false,
+      "timeout": 180000,
+      "retries": 2,
+      "failOnError": false,
+      "extractors": [
+        "Technical metadata (ffprobe)",
+        "Embedded metadata (ID3, etc.)",
+        "Music analysis (BPM, key, mood)"
+      ]
+    },
+    "transcoding": {
+      "name": "Transcoding",
+      "description": "Transcode to streaming formats (HLS, DASH)",
+      "required": false,
+      "timeout": 1800000,
+      "retries": 1,
+      "failOnError": true,
+      "outputs": [
+        "HLS (m3u8 + ts segments)",
+        "DASH (mpd + m4s segments)",
+        "Multiple bitrates (adaptive streaming)"
+      ]
+    },
+    "packaging": {
+      "name": "Packaging",
+      "description": "Package for distribution",
+      "required": false,
+      "timeout": 300000,
+      "retries": 1,
+      "failOnError": true,
+      "tasks": [
+        "Create distribution packages",
+        "Generate thumbnails",
+        "Create preview clips"
+      ]
+    },
+    "drm": {
+      "name": "DRM Protection",
+      "description": "Apply DRM protection",
+      "required": false,
+      "timeout": 300000,
+      "retries": 1,
+      "failOnError": true,
+      "systems": [
+        "Widevine",
+        "FairPlay",
+        "PlayReady"
+      ]
+    }
+  },
+  "validationRules": {
+    "audio": {
+      "formats": ["mp3", "wav", "flac", "aac", "m4a", "ogg"],
+      "maxSize": {
+        "mp3": 524288000,
+        "wav": 1073741824,
+        "flac": 1073741824,
+        "aac": 524288000,
+        "m4a": 524288000,
+        "ogg": 524288000
+      },
+      "minBitrate": 128,
+      "recommendedBitrate": 192,
+      "minSampleRate": 44100,
+      "recommendedSampleRate": 48000
+    },
+    "video": {
+      "formats": ["mp4", "mov", "avi", "mkv"],
+      "maxSize": {
+        "mp4": 5368709120,
+        "mov": 5368709120,
+        "avi": 5368709120,
+        "mkv": 5368709120
+      },
+      "minBitrate": 1000,
+      "recommendedBitrate": 2000,
+      "minResolution": {
+        "width": 640,
+        "height": 480
+      },
+      "recommendedResolution": {
+        "width": 1920,
+        "height": 1080
+      }
+    }
+  },
+  "metadataSchema": {
+    "required": ["title", "artist"],
+    "recommended": ["album", "genre", "releaseDate", "copyrightOwner"],
+    "optional": [
+      "albumArtist",
+      "trackNumber",
+      "discNumber",
+      "composer",
+      "publisher",
+      "isrc",
+      "label",
+      "territorialRights",
+      "bpm",
+      "key",
+      "mood",
+      "energy",
+      "danceability"
+    ]
+  },
+  "outputFormats": {
+    "audio": {
+      "streaming": {
+        "hls": {
+          "container": "mpegts",
+          "codec": "aac",
+          "bitrates": [128, 192, 256]
+        },
+        "dash": {
+          "container": "mp4",
+          "codec": "aac",
+          "bitrates": [128, 192, 256]
+        }
+      },
+      "download": {
+        "format": "mp3",
+        "bitrate": 320
+      }
+    },
+    "video": {
+      "streaming": {
+        "hls": {
+          "container": "mpegts",
+          "videoCodec": "h264",
+          "audioCodec": "aac",
+          "resolutions": [
+            {"width": 640, "height": 360, "bitrate": 800},
+            {"width": 1280, "height": 720, "bitrate": 2000},
+            {"width": 1920, "height": 1080, "bitrate": 4000}
+          ]
+        },
+        "dash": {
+          "container": "mp4",
+          "videoCodec": "h264",
+          "audioCodec": "aac",
+          "resolutions": [
+            {"width": 640, "height": 360, "bitrate": 800},
+            {"width": 1280, "height": 720, "bitrate": 2000},
+            {"width": 1920, "height": 1080, "bitrate": 4000}
+          ]
+        }
+      },
+      "download": {
+        "format": "mp4",
+        "videoCodec": "h264",
+        "audioCodec": "aac",
+        "maxBitrate": 8000
+      }
+    }
+  },
+  "notifications": {
+    "onValidationSuccess": {
+      "enabled": true,
+      "template": "validation-success",
+      "recipients": ["uploader"]
+    },
+    "onValidationFailure": {
+      "enabled": true,
+      "template": "validation-failure",
+      "recipients": ["uploader", "admin"]
+    },
+    "onProcessingComplete": {
+      "enabled": true,
+      "template": "processing-complete",
+      "recipients": ["uploader"]
+    },
+    "onProcessingFailure": {
+      "enabled": true,
+      "template": "processing-failure",
+      "recipients": ["uploader", "admin"]
+    }
+  },
+  "monitoring": {
+    "trackMetrics": true,
+    "logLevel": "info",
+    "alertOnFailure": true,
+    "alertThresholds": {
+      "failureRate": 10,
+      "avgProcessingTime": 1800000
+    }
+  }
+}

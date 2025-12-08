@@ -1,0 +1,108 @@
+{
+  "title": "BeatFlow Analytics Report",
+  "generated": "2025-12-08T14:07:51.992Z",
+  "agent": "Analytics",
+  "status": "completed",
+  "dataSource": "mock",
+  "timeRange": "all",
+  "focus": "all",
+  "eventsAnalyzed": 155,
+  "insights": [
+    {
+      "type": "HEALTHY_COMPLETION_RATE",
+      "severity": "INFO",
+      "message": "Average track completion rate (85.12%) is healthy",
+      "metric": "completion_rate",
+      "current": 0.8512000000000001
+    },
+    {
+      "type": "SHORT_SESSION_DURATION",
+      "severity": "MEDIUM",
+      "message": "Average session duration (0s) is below target (600s)",
+      "metric": "session_duration",
+      "current": 0,
+      "threshold": 600
+    },
+    {
+      "type": "ENGAGEMENT_RATE",
+      "severity": "INFO",
+      "message": "Engagement rate: 1.00 actions per session",
+      "metric": "engagement_rate",
+      "value": "1.00"
+    },
+    {
+      "type": "HEALTHY_ERROR_RATE",
+      "severity": "INFO",
+      "message": "Error rate (0.00%) is within acceptable limits",
+      "metric": "error_rate",
+      "current": 0
+    },
+    {
+      "type": "REVENUE_DISTRIBUTION",
+      "severity": "INFO",
+      "message": "Total royalties: $911.9164 across 15 tracks and 5 artists",
+      "metric": "revenue_distribution",
+      "totalRoyalties": "911.9164",
+      "trackCount": 15,
+      "artistCount": 5
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "INCREASE_ENGAGEMENT",
+      "message": "Users are leaving sessions quickly. Consider improving user retention strategies",
+      "actions": [
+        "Improve autoplay and queue functionality",
+        "Create more engaging playlists",
+        "Implement session-based recommendations"
+      ]
+    }
+  ],
+  "anomalies": [],
+  "alerts": [],
+  "metrics": {
+    "collection": {
+      "eventsCollected": 155,
+      "eventsProcessed": 155,
+      "eventsDropped": 0,
+      "errorCount": 0,
+      "errorRate": "0.00%"
+    },
+    "playback": {
+      "totalPlays": 50,
+      "totalDuration": 10617.25371393054,
+      "averageDuration": "212.35",
+      "averageCompletion": "85.12%",
+      "uniqueTracks": 20,
+      "uniqueArtists": 5
+    },
+    "engagement": {
+      "totalSessions": 20,
+      "averageSessionDuration": "0.00",
+      "activeUsers": 10,
+      "totalLikes": 20,
+      "totalPlaylists": 0,
+      "totalShares": 0
+    },
+    "performance": {
+      "averageBufferTime": "0.00",
+      "errorRate": "0.00%",
+      "qualityChanges": 0
+    },
+    "revenue": {
+      "totalRoyalties": "911.9164",
+      "trackCount": 15,
+      "artistCount": 5,
+      "territoryCount": 4
+    }
+  },
+  "startTime": "2025-12-08T14:07:51.975Z",
+  "endTime": "2025-12-08T14:07:51.990Z",
+  "summary": {
+    "totalInsights": 5,
+    "totalRecommendations": 1,
+    "totalAnomalies": 0,
+    "totalAlerts": 0,
+    "criticalAlerts": 0
+  }
+}

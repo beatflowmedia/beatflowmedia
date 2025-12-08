@@ -1,0 +1,232 @@
+{
+  "name": "Expert Review",
+  "version": "1.0.0",
+  "description": "Comprehensive multi-expert parallel code analysis with consensus generation",
+  "workflow": {
+    "id": "expert-review",
+    "name": "Expert Review Workflow",
+    "description": "Executes parallel analysis using CodeQuality, Performance, and Security experts, then generates consensus recommendations",
+    "timeout": 1800000,
+    "steps": [
+      {
+        "id": "initialize-experts",
+        "name": "Initialize Expert Agents",
+        "description": "Initialize all expert agents in preparation for parallel execution",
+        "agent": "parallelExpertResolver",
+        "action": "initializeExperts",
+        "params": {},
+        "haltOnFailure": true,
+        "timeout": 30000
+      },
+      {
+        "id": "parallel-analysis",
+        "name": "Parallel Expert Analysis",
+        "description": "Execute CodeQuality, Performance, and Security experts in parallel",
+        "agent": "parallelExpertResolver",
+        "action": "executeExpertsInParallel",
+        "params": {
+          "experts": ["codeQuality", "performance", "security"],
+          "targetPath": "${targetPath}"
+        },
+        "haltOnFailure": false,
+        "timeout": 900000,
+        "parallel": true
+      },
+      {
+        "id": "generate-consensus",
+        "name": "Generate Expert Consensus",
+        "description": "Synthesize findings from all experts into prioritized recommendations",
+        "agent": "parallelExpertResolver",
+        "action": "generateConsensus",
+        "params": {
+          "expertResults": "${parallel-analysis.result}"
+        },
+        "haltOnFailure": false,
+        "timeout": 60000
+      },
+      {
+        "id": "auto-remediation",
+        "name": "Auto-Remediation (Optional)",
+        "description": "Attempt automatic fixes for quick-win issues",
+        "agent": "parallelExpertResolver",
+        "action": "attemptAutoRemediation",
+        "params": {
+          "consensus": "${generate-consensus.result}",
+          "enabled": "${autoRemediation}"
+        },
+        "haltOnFailure": false,
+        "timeout": 300000,
+        "optional": true
+      },
+      {
+        "id": "generate-report",
+        "name": "Generate Comprehensive Report",
+        "description": "Create detailed analysis report with roadmap and metrics",
+        "agent": "parallelExpertResolver",
+        "action": "generateComprehensiveReport",
+        "params": {
+          "targetPath": "${targetPath}",
+          "expertResults": "${parallel-analysis.result}",
+          "consensus": "${generate-consensus.result}",
+          "remediationResults": "${auto-remediation.result}"
+        },
+        "haltOnFailure": false,
+        "timeout": 30000
+      }
+    ]
+  },
+  "profiles": {
+    "quick": {
+      "description": "Quick analysis focusing on critical issues only",
+      "experts": ["security"],
+      "autoRemediation": false,
+      "severityFilter": ["CRITICAL", "HIGH"]
+    },
+    "comprehensive": {
+      "description": "Full analysis with all experts and detailed recommendations",
+      "experts": ["codeQuality", "performance", "security"],
+      "autoRemediation": false,
+      "severityFilter": []
+    },
+    "security-focused": {
+      "description": "Security-first analysis with deep vulnerability scanning",
+      "experts": ["security", "codeQuality"],
+      "autoRemediation": false,
+      "expertWeights": {
+        "security": 60,
+        "quality": 30,
+        "performance": 10
+      }
+    },
+    "performance-focused": {
+      "description": "Performance optimization analysis",
+      "experts": ["performance", "codeQuality"],
+      "autoRemediation": false,
+      "expertWeights": {
+        "security": 20,
+        "quality": 30,
+        "performance": 50
+      }
+    },
+    "pre-commit": {
+      "description": "Fast pre-commit checks with auto-remediation",
+      "experts": ["codeQuality", "security"],
+      "autoRemediation": true,
+      "timeout": 300000,
+      "severityFilter": ["CRITICAL", "HIGH"]
+    },
+    "ci-pipeline": {
+      "description": "Complete CI/CD pipeline analysis",
+      "experts": ["codeQuality", "performance", "security"],
+      "autoRemediation": false,
+      "failOnCritical": true,
+      "generateArtifacts": true
+    }
+  },
+  "configurations": {
+    "expertWeights": {
+      "default": {
+        "security": 35,
+        "quality": 30,
+        "performance": 25,
+        "maintainability": 10
+      },
+      "security-first": {
+        "security": 60,
+        "quality": 25,
+        "performance": 10,
+        "maintainability": 5
+      },
+      "balanced": {
+        "security": 30,
+        "quality": 30,
+        "performance": 30,
+        "maintainability": 10
+      }
+    },
+    "thresholds": {
+      "compositeScore": {
+        "pass": 80,
+        "warning": 60,
+        "fail": 40
+      },
+      "securityScore": {
+        "pass": 90,
+        "warning": 70,
+        "fail": 50
+      },
+      "qualityScore": {
+        "pass": 85,
+        "warning": 70,
+        "fail": 50
+      },
+      "performanceScore": {
+        "pass": 80,
+        "warning": 60,
+        "fail": 40
+      }
+    },
+    "autoRemediation": {
+      "enabled": false,
+      "threshold": 8,
+      "maxAttempts": 10,
+      "allowedTypes": [
+        "UNUSED_IMPORTS",
+        "CONSOLE_LOGS",
+        "COMMENTED_OUT_CODE",
+        "FORMATTING",
+        "MISSING_SEMICOLON"
+      ]
+    }
+  },
+  "outputs": {
+    "console": {
+      "enabled": true,
+      "verbosity": "detailed"
+    },
+    "json": {
+      "enabled": true,
+      "path": "agents/reports/expert-analysis-{timestamp}.json"
+    },
+    "markdown": {
+      "enabled": true,
+      "path": "agents/reports/expert-analysis-{timestamp}.md"
+    },
+    "html": {
+      "enabled": false,
+      "path": "agents/reports/expert-analysis-{timestamp}.html"
+    },
+    "badges": {
+      "enabled": true,
+      "path": "agents/reports/badges/"
+    }
+  },
+  "integrations": {
+    "github": {
+      "enabled": false,
+      "commentOnPR": true,
+      "failOnCritical": true,
+      "createIssues": false
+    },
+    "slack": {
+      "enabled": false,
+      "webhookUrl": "${SLACK_WEBHOOK_URL}",
+      "notifyOn": ["CRITICAL", "FAILED"]
+    },
+    "sonarqube": {
+      "enabled": false,
+      "exportResults": false
+    }
+  },
+  "metadata": {
+    "author": "BeatFlow Agentic Suite",
+    "created": "2025-01-07",
+    "version": "1.0.0",
+    "compatibleAgents": [
+      "ParallelExpertResolver",
+      "CodeQualityReviewAgent",
+      "PerformanceAnalysisAgent",
+      "SecurityAuditAgent"
+    ]
+  }
+}

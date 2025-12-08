@@ -1,0 +1,301 @@
+{
+  "name": "UI/UX Expert Review",
+  "version": "1.0.0",
+  "description": "Comprehensive UI/UX analysis for music streaming platform",
+  "workflow": {
+    "id": "uiux-review",
+    "name": "UI/UX Expert Review Workflow",
+    "description": "Analyzes design system compliance, accessibility, and music-specific UX patterns",
+    "timeout": 1800000,
+    "steps": [
+      {
+        "id": "initialize-uiux-expert",
+        "name": "Initialize UI/UX Expert",
+        "description": "Initialize UIUXExpertAgent with validators",
+        "agent": "uiuxExpert",
+        "action": "initialize",
+        "params": {},
+        "haltOnFailure": true,
+        "timeout": 30000
+      },
+      {
+        "id": "analyze-design-system",
+        "name": "Analyze Design System",
+        "description": "Validate design token usage and compliance",
+        "agent": "uiuxExpert",
+        "action": "analyzeDesignSystem",
+        "params": {
+          "targetPath": "${targetPath}",
+          "includeComponents": true,
+          "includePages": true,
+          "includeDesignSystem": true
+        },
+        "haltOnFailure": false,
+        "timeout": 900000
+      },
+      {
+        "id": "generate-report",
+        "name": "Generate UI/UX Report",
+        "description": "Create comprehensive UI/UX analysis report",
+        "agent": "uiuxExpert",
+        "action": "generateReport",
+        "params": {
+          "format": "${reportFormat}"
+        },
+        "haltOnFailure": false,
+        "timeout": 30000
+      },
+      {
+        "id": "auto-remediation",
+        "name": "Auto-Remediation (Optional)",
+        "description": "Attempt automatic fixes for design system violations",
+        "agent": "uiuxExpert",
+        "action": "autoFix",
+        "params": {
+          "enabled": "${autoFix}"
+        },
+        "haltOnFailure": false,
+        "timeout": 300000,
+        "optional": true
+      }
+    ]
+  },
+  "profiles": {
+    "quick": {
+      "description": "Quick accessibility scan only",
+      "timeout": 300000,
+      "focusAreas": ["accessibility"],
+      "wcagLevel": "AA",
+      "autoFix": false
+    },
+    "design-focused": {
+      "description": "Design system compliance and UI patterns",
+      "timeout": 900000,
+      "focusAreas": ["design-system", "music-ux"],
+      "designSystemStrict": true,
+      "autoFix": false
+    },
+    "accessibility-audit": {
+      "description": "Comprehensive WCAG 2.1 AAA accessibility audit",
+      "timeout": 1200000,
+      "focusAreas": ["accessibility"],
+      "wcagLevel": "AAA",
+      "checkKeyboard": true,
+      "checkScreenReader": true,
+      "checkColorContrast": true,
+      "checkTouchTargets": true,
+      "autoFix": false
+    },
+    "music-ux": {
+      "description": "Music streaming UX patterns validation",
+      "timeout": 600000,
+      "focusAreas": ["music-ux", "performance"],
+      "musicPatternsEnabled": true,
+      "validatePerformance": true,
+      "autoFix": false
+    },
+    "comprehensive": {
+      "description": "Full UI/UX analysis with all validators",
+      "timeout": 1800000,
+      "focusAreas": ["design-system", "accessibility", "music-ux", "performance"],
+      "wcagLevel": "AA",
+      "designSystemStrict": false,
+      "musicPatternsEnabled": true,
+      "autoFix": false
+    },
+    "pre-commit": {
+      "description": "Fast pre-commit UI/UX checks",
+      "timeout": 180000,
+      "focusAreas": ["design-system", "accessibility"],
+      "wcagLevel": "AA",
+      "severityFilter": ["CRITICAL"],
+      "autoFix": true
+    }
+  },
+  "configurations": {
+    "wcagLevels": {
+      "A": {
+        "description": "WCAG 2.1 Level A (minimum)",
+        "contrastRatio": {
+          "text": 3,
+          "ui": 3
+        }
+      },
+      "AA": {
+        "description": "WCAG 2.1 Level AA (recommended)",
+        "contrastRatio": {
+          "text": 4.5,
+          "ui": 3
+        }
+      },
+      "AAA": {
+        "description": "WCAG 2.1 Level AAA (enhanced)",
+        "contrastRatio": {
+          "text": 7,
+          "ui": 4.5
+        }
+      }
+    },
+    "designSystemChecks": {
+      "colors": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "MEDIUM"
+      },
+      "spacing": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      },
+      "typography": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      },
+      "shadows": {
+        "enabled": true,
+        "autoFix": false,
+        "severity": "LOW"
+      },
+      "borderRadius": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      },
+      "animations": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      }
+    },
+    "accessibilityChecks": {
+      "ariaAttributes": {
+        "enabled": true,
+        "severity": "HIGH"
+      },
+      "keyboardNavigation": {
+        "enabled": true,
+        "severity": "HIGH"
+      },
+      "colorContrast": {
+        "enabled": true,
+        "severity": "CRITICAL"
+      },
+      "touchTargets": {
+        "enabled": true,
+        "minimumSize": 44,
+        "severity": "HIGH"
+      },
+      "screenReader": {
+        "enabled": true,
+        "severity": "HIGH"
+      },
+      "semanticHTML": {
+        "enabled": true,
+        "severity": "MEDIUM"
+      },
+      "focusManagement": {
+        "enabled": true,
+        "severity": "MEDIUM"
+      },
+      "formAccessibility": {
+        "enabled": true,
+        "severity": "CRITICAL"
+      },
+      "imageAltText": {
+        "enabled": true,
+        "severity": "CRITICAL"
+      }
+    },
+    "musicUXPatterns": {
+      "playbackControls": {
+        "enabled": true,
+        "requireKeyboardShortcuts": true,
+        "minimumTouchTarget": 44,
+        "severity": "HIGH"
+      },
+      "albumArt": {
+        "enabled": true,
+        "requireLazyLoading": true,
+        "requireAltText": true,
+        "optimizeFormat": true,
+        "severity": "MEDIUM"
+      },
+      "playlists": {
+        "enabled": true,
+        "requireVirtualScrolling": true,
+        "requireKeyboardNav": true,
+        "severity": "MEDIUM"
+      },
+      "search": {
+        "enabled": true,
+        "requireDebouncing": true,
+        "requireLoadingState": true,
+        "severity": "MEDIUM"
+      },
+      "audioVisualization": {
+        "enabled": true,
+        "requireReducedMotion": true,
+        "requireRAF": true,
+        "severity": "MEDIUM"
+      }
+    }
+  },
+  "thresholds": {
+    "designSystemScore": {
+      "pass": 85,
+      "warning": 70,
+      "fail": 50
+    },
+    "accessibilityScore": {
+      "pass": 95,
+      "warning": 80,
+      "fail": 60
+    },
+    "musicUXScore": {
+      "pass": 90,
+      "warning": 75,
+      "fail": 60
+    },
+    "compositeScore": {
+      "pass": 85,
+      "warning": 70,
+      "fail": 50
+    }
+  },
+  "outputs": {
+    "console": {
+      "enabled": true,
+      "verbosity": "detailed"
+    },
+    "json": {
+      "enabled": true,
+      "path": "agents/reports/uiux-analysis-{timestamp}.json"
+    },
+    "markdown": {
+      "enabled": true,
+      "path": "agents/reports/uiux-analysis-{timestamp}.md"
+    }
+  },
+  "integrations": {
+    "storybook": {
+      "enabled": false,
+      "generateA11yTests": true,
+      "validateAgainstSpecs": true
+    },
+    "github": {
+      "enabled": false,
+      "commentOnPR": true,
+      "failOnCritical": true
+    }
+  },
+  "metadata": {
+    "author": "BeatFlow Agentic Suite",
+    "created": "2025-01-08",
+    "version": "1.0.0",
+    "compatibleAgents": [
+      "UIUXExpertAgent",
+      "ParallelExpertResolver"
+    ]
+  }
+}
