@@ -33,6 +33,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "prebuild": "node -e \"const fs=require('fs'),path=require('path');const src='src/services';const dest='netlify/functions/src/services';if(fs.existsSync(dest))fs.rmSync(dest,{recursive:true});fs.cpSync(src,dest,{recursive:true});console.log('Copied services to functions')\"",
     "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
