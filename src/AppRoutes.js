@@ -11,7 +11,7 @@ const Home = lazy(() => import("./pages/Home"));
 const Search = lazy(() => import("./pages/Search"));
 const Playlist = lazy(() => import("./pages/Playlist"));
 const Album = lazy(() => import("./pages/Album"));
-const Artist = lazy(() => import("./pages/Artist"));
+const Artist = lazy(() => import("./pages/ArtistSimple"));
 const CuratorInbox = lazy(() => import("./pages/CuratorInbox"));
 const CampaignWizard = lazy(() => import("./pages/CampaignWizard"));
 const InvestorPortal = lazy(() => import("./pages/InvestorPortal"));
