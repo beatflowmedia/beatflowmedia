@@ -1,5 +1,5 @@
 // src/components/MusicPlayer.js
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaRandom,
   FaStepBackward,
@@ -15,8 +15,6 @@ import AddToPlaylistButton from "../utils/AddToPlaylistButton";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePlayerActions } from "../hooks/usePlayerActions";
 import MiniPlayerPortal from "./MiniPlayerPortal";
-import { useAuth } from "../context/AuthContext";
-import { usePlaybackResume } from "../utils/usePlaybackResume";
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
 const playerAnalytics = new PlayerAnalyticsClass();
 
@@ -44,107 +42,27 @@ const MusicPlayer = () => {
     duration: contextDuration,
     volume: contextVolume
   } = usePlayerActions();
-  const audioRef = useRef(new Audio());
+
   const { playlists, addSong } = usePlaylistManager();
-  const { user } = useAuth();
-  const [mseEngine, setMseEngine] = useState(null);
-  const [playbackToken, setPlaybackToken] = useState(null);
-  const [manifestUrl, setManifestUrl] = useState(null);
-
-  // --- HYBRID RESUME HOOK! ---
-  usePlaybackResume(audioRef, song, user);
-
-  // Request playback token and manifest when song changes
-  useEffect(() => {
-    if (!song) return;
-    async function fetchPlaybackToken() {
-      try {
-        const res = await fetch('/api/playback/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ asset_id: song.id, bitrate: song.bitrate || 256 })
-        });
-        const data = await res.json();
-        setPlaybackToken(data.playback_token);
-        setManifestUrl(data.manifest_url);
-      } catch (err) {
-        console.error('Failed to fetch playback token:', err);
-      }
-    }
-    fetchPlaybackToken();
-  }, [song]);
-
-  // Instantiate MseEngine when manifestUrl and playbackToken are available
-  useEffect(() => {
-    if (!manifestUrl || !playbackToken || !audioRef.current) return;
-    // Dynamically import MseEngine to avoid SSR issues
-    import('../engine/MseEngine').then(({ default: MseEngine }) => {
-      const engine = new MseEngine(audioRef.current, playbackToken);
-      engine.load({ streamUrl: manifestUrl });
-      setMseEngine(engine);
-    });
-  }, [manifestUrl, playbackToken]);
 
   // Local UI state only (not playback state - that's in context)
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
 
-  // Audio Playback Logic
+  // Analytics tracking only
   useEffect(() => {
     if (!song) return;
-    // Analytics: Track track load
-    playerAnalytics.trackTrackLoad(song, { manifestUrl });
-    // If not using MseEngine, fallback to direct src
-    if (!mseEngine) {
-      const audio = audioRef.current;
-      audio.src = `/music/${song.fileName}`;
-      audio.load();
-      if (isPlaying) {
-        audio.play().catch((err) => console.error("Autoplay failed:", err));
-        // Analytics: Track play start
-        playerAnalytics.trackPlayStart(song);
-      }
-    } else {
-      if (isPlaying) {
-        mseEngine.play();
-        // Analytics: Track play start
-        playerAnalytics.trackPlayStart(song);
-      } else {
-        mseEngine.pause();
-        // Analytics: Track play pause
-        playerAnalytics.trackPlayPause('user_action');
-      }
-    }
-  }, [song, isPlaying, setCurrentSongId]);
+    playerAnalytics.trackTrackLoad(song, {});
+  }, [song]);
 
-  // Sync audio element volume with context
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = contextVolume;
+    if (isPlaying && song) {
+      playerAnalytics.trackPlayStart(song);
+    } else if (!isPlaying && song) {
+      playerAnalytics.trackPlayPause('user_action');
     }
-  }, [contextVolume]);
-
-  // Simplified handlers - delegate to context
-  const handleNextSong = useCallback(() => {
-    skipNext();
-  }, [skipNext]);
-
-  const handlePrevSong = useCallback(() => {
-    skipPrevious();
-  }, [skipPrevious]);
-
-  // Handle song end - delegate to context
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const handleEnded = () => {
-      playerAnalytics.trackPlayEnd('natural_end');
-      skipNext(); // Context handles repeat logic
-    };
-    audio.addEventListener("ended", handleEnded);
-    return () => audio.removeEventListener("ended", handleEnded);
-  }, [skipNext]);
+  }, [isPlaying, song]);
 
   // Helpers
   const toggleMute = () => {
@@ -171,6 +89,15 @@ const MusicPlayer = () => {
   };
 
   const handleOpenMiniPlayer = () => setMiniPlayerVisible(true);
+
+  // Fallback if no song in queue
+  if (!song) {
+    return (
+      <div className="w-full bg-black text-white border-t border-gray-800 flex items-center justify-center px-4" style={{ height: "90px" }}>
+        <p className="text-gray-400">No song playing</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -299,8 +226,8 @@ const MusicPlayer = () => {
         onClose={() => setMiniPlayerVisible(false)}
         shuffle={shuffleOn}
         onShuffleToggle={toggleShuffle}
-        onPrevSong={handlePrevSong}
-        onNextSong={handleNextSong}
+        onPrevSong={skipPrevious}
+        onNextSong={skipNext}
         repeatMode={repeatMode}
         onCycleRepeat={cycleRepeat}
       />
