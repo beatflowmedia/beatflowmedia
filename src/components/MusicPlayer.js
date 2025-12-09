@@ -129,7 +129,7 @@ const MusicPlayer = () => {
               <FaRandom size={16} />
             </button>
             <button
-              onClick={handlePrevSong}
+              onClick={skipPrevious}
               className="text-gray-400 hover:text-white"
               title="Previous"
             >
@@ -143,7 +143,7 @@ const MusicPlayer = () => {
               {isPlaying ? <FaPause size={14} /> : <FaPlay size={14} />}
             </button>
             <button
-              onClick={handleNextSong}
+              onClick={skipNext}
               className="text-gray-400 hover:text-white"
               title="Next"
             >
