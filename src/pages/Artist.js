@@ -62,6 +62,12 @@ import { toast } from 'react-toastify';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 function Artist() {
+  // Hooks must be called first
+  const { artistId } = useParams();
+  const navigate = useNavigate();
+  const { state, dispatch, actions } = usePlayer();
+  const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
+
   // Campaign analytics state
   const [campaignMetrics, setCampaignMetrics] = useState([]);
 
@@ -88,10 +94,6 @@ function Artist() {
     };
     loadCampaignMetrics();
   }, [artistId]);
-  const { artistId } = useParams();
-  const navigate = useNavigate();
-  const { state, dispatch, actions } = usePlayer();
-  const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
 
   // Artist state
   const [artist, setArtist] = useState(null);
