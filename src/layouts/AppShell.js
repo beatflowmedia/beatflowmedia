@@ -1,6 +1,6 @@
 // src/layouts/AppShell.js
 import React, { useState, useEffect, Suspense } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -11,7 +11,6 @@ import RightPanel from "../components/RightPanel";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
-import { useAuth } from "../context/AuthContext";
 import musicData from "../musicData.json";
 import { buildArtistInfo } from "../utils/buildArtistInfo";
 
@@ -31,8 +30,6 @@ import styles from "./LayoutGrid.module.css";
  * └─────────────────────────────────────┘
  */
 export default function AppShell() {
-  const location = useLocation();
-  const { user } = useAuth();
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
   // UI State
