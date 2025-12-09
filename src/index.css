@@ -2,8 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   BEATFLOW UNIFIED DESIGN SYSTEM
+   ======================================== */
+
+:root {
+  /* Background Colors */
+  --bf-bg-app: #0a0e14;
+  --bf-bg-page: #111827;
+  --bf-bg-card: #1f2937;
+  --bf-bg-hover: #374151;
+
+  /* Text Colors */
+  --bf-text-primary: #f9fafb;
+  --bf-text-secondary: #d1d5db;
+  --bf-text-muted: #9ca3af;
+
+  /* Brand Colors */
+  --bf-green: #1db954;
+  --bf-green-hover: #1ed760;
+  --bf-blue: #4d75f0;
+  --bf-red: #e22134;
+
+  /* Spacing */
+  --bf-navbar-height: 64px;
+  --bf-sidebar-width: 288px;
+  --bf-player-height: 90px;
+}
+
 body {
   @apply bg-black text-white;
+  background-color: var(--bf-bg-app);
+  color: var(--bf-text-primary);
 }
 
 a {

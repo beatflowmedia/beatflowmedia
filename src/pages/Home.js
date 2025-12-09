@@ -353,13 +353,13 @@ function Home() {
   }
 
   return (
-    <Box sx={{ p: 3, minHeight: '100vh', bgcolor: 'grey.900' }}>
+    <Box sx={{ p: 3, minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Hero Section */}
       <Box sx={{ mb: 4 }}>
         <Typography
           variant="h3"
           sx={{
-            color: 'white',
+            color: 'text.primary',
             fontWeight: 'bold',
             mb: 1,
             background: 'linear-gradient(45deg, #1DB954, #1ed760)',
@@ -370,25 +370,25 @@ function Home() {
         >
           {user ? `Welcome back, ${user.displayName?.split(' ')[0] || 'Music Lover'}!` : 'Discover Amazing Music'}
         </Typography>
-        <Typography variant="body1" sx={{ color: 'grey.400', mb: 2 }}>
+        <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
           {user ? 'Here\'s what\'s trending and personalized for you' : 'Explore trending tracks and new releases'}
         </Typography>
       </Box>
 
       {/* Navigation Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'grey.700', mb: 3 }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
           sx={{
             '& .MuiTab-root': {
-              color: 'grey.400',
+              color: 'text.secondary',
               '&.Mui-selected': {
-                color: '#1DB954'
+                color: 'primary.main'
               }
             },
             '& .MuiTabs-indicator': {
-              backgroundColor: '#1DB954'
+              backgroundColor: 'primary.main'
             }
           }}
         >
@@ -420,7 +420,7 @@ function Home() {
       {/* Featured Artists Section */}
       {featuredArtists.length > 0 && (
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+          <Typography variant="h5" sx={{ color: 'text.primary', mb: 2, fontWeight: 'bold' }}>
             Featured Artists
           </Typography>
           <Grid container spacing={2}>
@@ -428,12 +428,11 @@ function Home() {
               <Grid item xs={6} sm={4} md={2.4} key={artist.id}>
                 <Card
                   sx={{
-                    bgcolor: 'grey.800',
+                    bgcolor: 'background.paper',
                     cursor: 'pointer',
                     transition: 'transform 0.2s',
                     '&:hover': {
                       transform: 'scale(1.05)',
-                      bgcolor: 'grey.700'
                     }
                   }}
                 >
@@ -445,10 +444,10 @@ function Home() {
                     sx={{ borderRadius: '50%', width: 120, height: 120, mx: 'auto', mt: 2 }}
                   />
                   <CardContent sx={{ textAlign: 'center', pb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
                       {artist.name}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'grey.400' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                       {artist.followers?.toLocaleString() || 0} followers
                     </Typography>
                     <Box sx={{ mt: 1 }}>
@@ -460,12 +459,9 @@ function Home() {
                           minWidth: 'auto',
                           fontSize: '0.75rem',
                           py: 0.5,
-                          bgcolor: isArtistFollowed(artist.name) ? 'transparent' : '#1DB954',
-                          borderColor: '#1DB954',
-                          color: isArtistFollowed(artist.name) ? '#1DB954' : 'white',
-                          '&:hover': {
-                            bgcolor: isArtistFollowed(artist.name) ? 'rgba(29, 185, 84, 0.1)' : '#1ed760'
-                          }
+                          bgcolor: isArtistFollowed(artist.name) ? 'transparent' : 'primary.main',
+                          borderColor: 'primary.main',
+                          color: isArtistFollowed(artist.name) ? 'primary.main' : 'white',
                         }}
                       >
                         {isArtistFollowed(artist.name) ? <PersonRemove sx={{ fontSize: 14 }} /> : <PersonAdd sx={{ fontSize: 14 }} />}
@@ -489,13 +485,12 @@ function Home() {
             <Grid item xs={12} sm={6} md={4} lg={3} key={song.id}>
               <Card
                 sx={{
-                  bgcolor: 'grey.800',
+                  bgcolor: 'background.paper',
                   position: 'relative',
                   transition: 'all 0.3s ease',
                   '&:hover': {
-                    bgcolor: 'grey.700',
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.3)'
+                    boxShadow: 3
                   }
                 }}
               >
@@ -505,13 +500,12 @@ function Home() {
                     icon={<TrendingUp />}
                     label={`#${index + 1}`}
                     size="small"
+                    color="primary"
                     sx={{
                       position: 'absolute',
                       top: 8,
                       left: 8,
                       zIndex: 1,
-                      bgcolor: '#1DB954',
-                      color: 'white',
                       fontWeight: 'bold'
                     }}
                   />
@@ -548,10 +542,11 @@ function Home() {
                   >
                     <IconButton
                       size="large"
+                      color="primary"
                       sx={{
-                        bgcolor: '#1DB954',
+                        bgcolor: 'primary.main',
                         color: 'white',
-                        '&:hover': { bgcolor: '#1ed760', transform: 'scale(1.1)' }
+                        '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.1)' }
                       }}
                     >
                       {isCurrentSong && state.isPlaying ? <Pause /> : <PlayArrow />}
@@ -563,10 +558,10 @@ function Home() {
                   <Typography
                     variant="subtitle1"
                     sx={{
-                      color: 'white',
+                      color: 'text.primary',
                       fontWeight: 'bold',
                       cursor: 'pointer',
-                      '&:hover': { color: '#1DB954' },
+                      '&:hover': { color: 'primary.main' },
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -579,9 +574,9 @@ function Home() {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: 'grey.400',
+                      color: 'text.secondary',
                       cursor: 'pointer',
-                      '&:hover': { color: '#1DB954' },
+                      '&:hover': { color: 'primary.main' },
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
