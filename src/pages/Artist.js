@@ -1,5 +1,6 @@
 import { getDocs } from 'firebase/firestore';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -67,6 +68,7 @@ function Artist() {
   const navigate = useNavigate();
   const { state, dispatch, actions } = usePlayer();
   const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
+  const { musicData = [], playSong } = useOutletContext() || {};
 
   // Campaign analytics state
   const [campaignMetrics, setCampaignMetrics] = useState([]);
@@ -111,106 +113,36 @@ function Artist() {
 
   // Load artist data
   useEffect(() => {
-    if (!artistId) return;
+    if (!artistId || !musicData) return;
 
     const loadArtist = async () => {
       try {
         setLoading(true);
 
-        // Load artist metadata
-        const artistDoc = await getDoc(doc(db, 'artists', artistId));
-        if (!artistDoc.exists()) {
+        // Decode the artist name from URL
+        const decodedArtistName = decodeURIComponent(artistId);
+
+        // Filter songs by artist from musicData.json
+        const artistSongs = musicData.filter(song => song.artist === decodedArtistName);
+
+        if (artistSongs.length === 0) {
           setError('Artist not found');
           setLoading(false);
           return;
         }
 
-        const artistData = { id: artistDoc.id, ...artistDoc.data() };
+        // Create artist data from songs
+        const artistData = {
+          id: decodedArtistName,
+          name: decodedArtistName,
+          bio: artistSongs[0]?.biography || 'No biography available.',
+          cover: artistSongs[0]?.cover || '/images/Logo.png',
+          genre: artistSongs[0]?.category || 'Unknown'
+        };
         setArtist(artistData);
-
-        // Load top tracks
-        const topTracksQuery = query(
-          collection(db, 'songs'),
-          where('artistId', '==', artistId),
-          orderBy('playCount', 'desc'),
-          limit(10)
-        );
-
-        const unsubscribeTopTracks = onSnapshot(topTracksQuery, (snapshot) => {
-          const tracks = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setTopTracks(tracks);
-        });
-
-        // Load albums
-        const albumsQuery = query(
-          collection(db, 'albums'),
-          where('artistId', '==', artistId),
-          orderBy('releaseDate', 'desc')
-        );
-
-        const unsubscribeAlbums = onSnapshot(albumsQuery, (snapshot) => {
-          const albumsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setAlbums(albumsData);
-        });
-
-        // Load playlists featuring this artist
-        const playlistsQuery = query(
-          collection(db, 'playlists'),
-          where('featuredArtists', 'array-contains', artistId),
-          where('isPublic', '==', true),
-          orderBy('followers', 'desc'),
-          limit(8)
-        );
-
-        const unsubscribePlaylists = onSnapshot(playlistsQuery, (snapshot) => {
-          const playlistsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setPlaylists(playlistsData);
-        });
-
-        // Load upcoming events
-        const eventsQuery = query(
-          collection(db, 'events'),
-          where('artistId', '==', artistId),
-          where('date', '>=', new Date()),
-          orderBy('date', 'asc'),
-          limit(10)
-        );
-
-        const unsubscribeEvents = onSnapshot(eventsQuery, (snapshot) => {
-          const eventsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setEvents(eventsData);
-        });
-
-        // Load similar artists
-        if (artistData.genre || artistData.tags) {
-          loadSimilarArtists(artistData);
-        }
-
-        // Update view count
-        await updateDoc(doc(db, 'artists', artistId), {
-          viewCount: increment(1)
-        });
+        setTopTracks(artistSongs);
 
         setLoading(false);
-
-        return () => {
-          unsubscribeTopTracks();
-          unsubscribeAlbums();
-          unsubscribePlaylists();
-          unsubscribeEvents();
-        };
       } catch (err) {
         console.error('Error loading artist:', err);
         setError(err.message);
@@ -219,7 +151,7 @@ function Artist() {
     };
 
     loadArtist();
-  }, [artistId]);
+  }, [artistId, musicData]);
 
   // Load similar artists
   const loadSimilarArtists = async (artistData) => {
