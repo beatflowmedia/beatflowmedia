@@ -1,5 +1,5 @@
 // src/components/MusicPlayer.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   FaRandom,
   FaStepBackward,
@@ -14,6 +14,8 @@ import {
 import AddToPlaylistButton from "../utils/AddToPlaylistButton";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePlayerActions } from "../hooks/usePlayerActions";
+import { useAuth } from "../context/AuthContext";
+import { usePlaybackResume } from "../utils/usePlaybackResume";
 import MiniPlayerPortal from "./MiniPlayerPortal";
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
 const playerAnalytics = new PlayerAnalyticsClass();
@@ -24,7 +26,7 @@ const REPEAT_ALL = 1;
 const REPEAT_ONE = 2;
 
 const MusicPlayer = () => {
-  // Use unified player context instead of props
+  // Get player state from context
   const {
     currentSong: song,
     queue: songs,
@@ -34,43 +36,83 @@ const MusicPlayer = () => {
     skipPrevious,
     toggleShuffle,
     cycleRepeat,
-    seekTo,
-    setVolume: setContextVolume,
     shuffleOn,
-    repeatMode,
-    currentTime: contextCurrentTime,
-    duration: contextDuration,
-    volume: contextVolume
+    repeatMode
   } = usePlayerActions();
 
   const { playlists, addSong } = usePlaylistManager();
+  const { user } = useAuth();
 
-  // Local UI state only (not playback state - that's in context)
+  // Create our own audio element for playback (like the working version)
+  const audioRef = useRef(new Audio());
+
+  // Local state for audio controls
+  const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
 
-  // Analytics tracking only
+  // Hybrid resume hook (from working version)
+  usePlaybackResume(audioRef, song, user);
+
+  // Audio Playback Logic (from working version)
   useEffect(() => {
     if (!song) return;
+    const audio = audioRef.current;
+    audio.src = `/music/${song.fileName}`;
+    audio.load();
+
+    // Analytics
     playerAnalytics.trackTrackLoad(song, {});
+
+    if (isPlaying) {
+      audio.play().catch((err) => console.error("Autoplay failed:", err));
+      playerAnalytics.trackPlayStart(song);
+    }
+  }, [song, isPlaying]);
+
+  // Sync volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  // Track time and duration
+  useEffect(() => {
+    const audio = audioRef.current;
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateDuration);
+
+    return () => {
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("loadedmetadata", updateDuration);
+    };
   }, [song]);
 
+  // Handle song end
   useEffect(() => {
-    if (isPlaying && song) {
-      playerAnalytics.trackPlayStart(song);
-    } else if (!isPlaying && song) {
-      playerAnalytics.trackPlayPause('user_action');
-    }
-  }, [isPlaying, song]);
+    const audio = audioRef.current;
+    const handleEnded = () => {
+      playerAnalytics.trackPlayEnd('natural_end');
+      skipNext();
+    };
+    audio.addEventListener("ended", handleEnded);
+    return () => audio.removeEventListener("ended", handleEnded);
+  }, [skipNext]);
 
   // Helpers
   const toggleMute = () => {
     if (isMuted) {
-      setContextVolume(previousVolume);
+      setVolume(previousVolume);
     } else {
-      setPreviousVolume(contextVolume);
-      setContextVolume(0);
+      setPreviousVolume(volume);
+      setVolume(0);
     }
     setIsMuted(!isMuted);
   };
@@ -84,8 +126,9 @@ const MusicPlayer = () => {
 
   const handleSeek = (e) => {
     const seekVal = parseFloat(e.target.value);
-    playerAnalytics.trackSeek(contextCurrentTime, seekVal, 'user_seek');
-    seekTo(seekVal);
+    playerAnalytics.trackSeek(currentTime, seekVal, 'user_seek');
+    audioRef.current.currentTime = seekVal;
+    setCurrentTime(seekVal);
   };
 
   const handleOpenMiniPlayer = () => setMiniPlayerVisible(true);
@@ -176,17 +219,17 @@ const MusicPlayer = () => {
           </div>
           {/* Seek Bar Row */}
           <div className="flex items-center gap-2 w-full px-4">
-            <span className="text-xs text-gray-400">{formatTime(contextCurrentTime)}</span>
+            <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>
             <input
               type="range"
               className="flex-1 accent-gray-300 h-1 cursor-pointer"
               min={0}
-              max={contextDuration || 0}
+              max={duration || 0}
               step="0.01"
-              value={contextCurrentTime}
+              value={currentTime}
               onChange={handleSeek}
             />
-            <span className="text-xs text-gray-400">{formatTime(contextDuration)}</span>
+            <span className="text-xs text-gray-400">{formatTime(duration)}</span>
           </div>
         </div>
 
@@ -203,8 +246,8 @@ const MusicPlayer = () => {
               min={0}
               max={1}
               step="0.01"
-              value={isMuted ? 0 : contextVolume}
-              onChange={(e) => setContextVolume(parseFloat(e.target.value))}
+              value={isMuted ? 0 : volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
             />
           </div>
           <button
