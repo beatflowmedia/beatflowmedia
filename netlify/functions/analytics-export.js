@@ -3,7 +3,7 @@
  * Handles export requests and scheduled reporting
  */
 
-const { DataExporter } = require('../../src/services/analytics/DataExporter');
+const { DataExporter } = require('./lib/DataExporter');
 
 // Initialize data exporter
 const dataExporter = new DataExporter({

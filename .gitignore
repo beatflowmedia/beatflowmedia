@@ -45,8 +45,6 @@ Thumbs.db
 # Netlify
 netlify.toml
 .netlify/
-# Copied service files for Netlify Functions (generated during build)
-netlify/functions/src/
 
 # React-specific
 *.jsx
