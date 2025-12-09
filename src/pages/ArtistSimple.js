@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useParams, useOutletContext, useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Card, CardContent } from '@mui/material';
 import { PlayArrow } from '@mui/icons-material';
+import { buildArtistInfo } from '../utils/buildArtistInfo';
 
 export default function ArtistSimple() {
   const { artistId } = useParams();
@@ -11,8 +12,14 @@ export default function ArtistSimple() {
   // Decode artist name from URL
   const artistName = decodeURIComponent(artistId);
 
-  // Filter songs by artist
-  const artistSongs = musicData.filter(song => song.artist === artistName);
+  // Build artist info from musicData.json using the existing utility
+  const artistInfo = useMemo(
+    () => buildArtistInfo(artistName, musicData),
+    [artistName, musicData]
+  );
+
+  // Get songs from artist info
+  const artistSongs = artistInfo?.songs || [];
 
   if (!musicData || musicData.length === 0) {
     return (
@@ -24,7 +31,7 @@ export default function ArtistSimple() {
     );
   }
 
-  if (artistSongs.length === 0) {
+  if (!artistInfo || artistSongs.length === 0) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography variant="h5" color="error" sx={{ mb: 2 }}>
@@ -37,22 +44,42 @@ export default function ArtistSimple() {
     );
   }
 
-  const firstSong = artistSongs[0];
-
   return (
     <Box sx={{ p: 4, height: '100%', overflow: 'auto', bgcolor: '#121212' }}>
-      {/* Artist Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
-          {artistName}
-        </Typography>
-        <Typography variant="body1" sx={{ color: 'grey.400', mb: 1 }}>
-          {firstSong.category || 'Music Artist'}
-        </Typography>
-        <Typography variant="body2" sx={{ color: 'grey.500' }}>
-          {artistSongs.length} {artistSongs.length === 1 ? 'song' : 'songs'}
-        </Typography>
+      {/* Artist Header with cover image */}
+      <Box sx={{ display: 'flex', gap: 3, mb: 4, alignItems: 'flex-end' }}>
+        <img
+          src={artistInfo.cover || '/images/Logo.png'}
+          alt={artistInfo.name}
+          style={{ width: 200, height: 200, borderRadius: 8, objectFit: 'cover' }}
+        />
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h3" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+            {artistInfo.name}
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'grey.400', mb: 1 }}>
+            {artistInfo.monthlyListeners !== 'Unknown'
+              ? `${Number(artistInfo.monthlyListeners).toLocaleString()} monthly listeners`
+              : 'Music Artist'
+            }
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'grey.500' }}>
+            {artistSongs.length} {artistSongs.length === 1 ? 'song' : 'songs'}
+          </Typography>
+        </Box>
       </Box>
+
+      {/* Biography */}
+      {artistInfo.biography && artistInfo.biography !== 'No biography available.' && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+            About
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'grey.400', lineHeight: 1.6 }}>
+            {artistInfo.biography}
+          </Typography>
+        </Box>
+      )}
 
       {/* Play All Button */}
       <Button
