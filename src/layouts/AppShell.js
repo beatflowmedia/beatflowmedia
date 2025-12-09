@@ -11,6 +11,7 @@ import RightPanel from "../components/RightPanel";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
+import { usePlayerActions } from "../hooks/usePlayerActions";
 import musicData from "../musicData.json";
 import { buildArtistInfo } from "../utils/buildArtistInfo";
 
@@ -32,15 +33,14 @@ import styles from "./LayoutGrid.module.css";
 export default function AppShell() {
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
+  // Use unified player actions hook (replaces local state + event system)
+  const { playSong, playArtist, currentSong, isPlaying } = usePlayerActions(musicData);
+
   // UI State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [rightPanelVisible, setRightPanelVisible] = useState(false);
   const [rightPanelContent, setRightPanelContent] = useState(null);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-
-  // Playback State
-  const [currentSong, setCurrentSong] = useState(musicData[0] || null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,23 +58,6 @@ export default function AppShell() {
   useEffect(() => {
     localStorage.setItem("favorites", JSON.stringify(favorites));
   }, [favorites]);
-
-  // Global play song event handler
-  useEffect(() => {
-    const handler = (e) => {
-      setCurrentSong(e.detail);
-      setIsPlaying(true);
-      setSearchQuery("");
-      setRightPanelVisible(false);
-    };
-    window.addEventListener("PLAY_SONG", handler);
-    return () => window.removeEventListener("PLAY_SONG", handler);
-  }, []);
-
-  // Helper to dispatch play song event
-  const playSong = (song) => {
-    window.dispatchEvent(new CustomEvent("PLAY_SONG", { detail: song }));
-  };
 
   // Right Panel Handlers
   const openRightPanel = (content) => {
@@ -128,21 +111,6 @@ export default function AppShell() {
     // TODO: Navigate to artist page
   };
 
-  const handlePlayArtist = (artistName) => {
-    const songs = musicData.filter((song) => song.artist === artistName);
-    if (songs[0]) playSong(songs[0]);
-  };
-
-  // Player Handlers
-  const handleSongChange = (song) => {
-    setCurrentSong(song);
-  };
-
-  const handlePlayPause = (song) => {
-    setCurrentSong(song);
-    setIsPlaying((prev) => (song.id !== currentSong?.id ? true : !prev));
-  };
-
   // Toggle Favorite
   const toggleFavorite = (song) => {
     setFavorites((favs) =>
@@ -186,7 +154,7 @@ export default function AppShell() {
             openRightPanel({ type: "artist", artistName })
           }
           onCreatePlaylist={createNewPlaylist}
-          onPlayArtist={handlePlayArtist}
+          onPlayArtist={playArtist}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
@@ -236,14 +204,7 @@ export default function AppShell() {
 
       {/* Music Player */}
       <footer className={styles.player}>
-        <MusicPlayer
-          song={currentSong}
-          songs={musicData}
-          onSongChange={handleSongChange}
-          isPlaying={isPlaying}
-          setIsPlaying={setIsPlaying}
-          onPlayPause={handlePlayPause}
-        />
+        <MusicPlayer />
       </footer>
 
       {/* Toast Notifications */}

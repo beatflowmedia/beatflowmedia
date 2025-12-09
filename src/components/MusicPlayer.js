@@ -13,8 +13,8 @@ import {
 } from "react-icons/fa";
 import AddToPlaylistButton from "../utils/AddToPlaylistButton";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
+import { usePlayerActions } from "../hooks/usePlayerActions";
 import MiniPlayerPortal from "./MiniPlayerPortal";
-import { usePlayback } from "../context/PlaybackContext";
 import { useAuth } from "../context/AuthContext";
 import { usePlaybackResume } from "../utils/usePlaybackResume";
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
@@ -25,13 +25,25 @@ const REPEAT_OFF = 0;
 const REPEAT_ALL = 1;
 const REPEAT_ONE = 2;
 
-const MusicPlayer = ({
-  song,
-  songs,
-  onSongChange,
-  isPlaying,
-  onPlayPause,
-}) => {
+const MusicPlayer = () => {
+  // Use unified player context instead of props
+  const {
+    currentSong: song,
+    queue: songs,
+    isPlaying,
+    togglePlay,
+    skipNext,
+    skipPrevious,
+    toggleShuffle,
+    cycleRepeat,
+    seekTo,
+    setVolume: setContextVolume,
+    shuffleOn,
+    repeatMode,
+    currentTime: contextCurrentTime,
+    duration: contextDuration,
+    volume: contextVolume
+  } = usePlayerActions();
   const audioRef = useRef(new Audio());
   const { playlists, addSong } = usePlaylistManager();
   const { user } = useAuth();
@@ -72,21 +84,15 @@ const MusicPlayer = ({
       setMseEngine(engine);
     });
   }, [manifestUrl, playbackToken]);
-  const [volume, setVolume] = useState(1);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [shuffle, setShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState(REPEAT_OFF);
+
+  // Local UI state only (not playback state - that's in context)
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
 
-  const { setCurrentSongId, setDuration: setGlobalDuration } = usePlayback();
-
   // Audio Playback Logic
   useEffect(() => {
     if (!song) return;
-    setCurrentSongId(song.id);
     // Analytics: Track track load
     playerAnalytics.trackTrackLoad(song, { manifestUrl });
     // If not using MseEngine, fallback to direct src
@@ -112,89 +118,41 @@ const MusicPlayer = ({
     }
   }, [song, isPlaying, setCurrentSongId]);
 
+  // Sync audio element volume with context
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = volume;
+      audioRef.current.volume = contextVolume;
     }
-  }, [volume]);
+  }, [contextVolume]);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => {
-      setDuration(audio.duration);
-      setGlobalDuration(audio.duration);
-    };
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("loadedmetadata", updateDuration);
-    return () => {
-      audio.removeEventListener("timeupdate", updateTime);
-      audio.removeEventListener("loadedmetadata", updateDuration);
-    };
-  }, [song, setGlobalDuration]);
-
-  // Next / Previous Song handlers
+  // Simplified handlers - delegate to context
   const handleNextSong = useCallback(() => {
-    if (!songs || !song) return;
-    const idx = songs.findIndex((s) => s.id === song.id);
-    if (idx === -1) return;
-    const newIndex = shuffle
-      ? Math.floor(Math.random() * songs.length)
-      : (idx + 1) % songs.length;
-    onSongChange(songs[newIndex]);
-    if (onPlayPause) onPlayPause(songs[newIndex]);
-  }, [song, songs, shuffle, onSongChange, onPlayPause]);
+    skipNext();
+  }, [skipNext]);
 
   const handlePrevSong = useCallback(() => {
-    if (!songs || !song) return;
-    const idx = songs.findIndex((s) => s.id === song.id);
-    if (idx === -1) return;
-    const newIndex = (idx - 1 + songs.length) % songs.length;
-    onSongChange(songs[newIndex]);
-    if (onPlayPause) onPlayPause(songs[newIndex]);
-  }, [song, songs, onSongChange, onPlayPause]);
+    skipPrevious();
+  }, [skipPrevious]);
 
-  // Repeat mode cycle handler
-  const cycleRepeatMode = () => {
-    setRepeatMode((prevMode) => (prevMode + 1) % 3);
-  };
-
-  // Handle song end event
+  // Handle song end - delegate to context
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     const handleEnded = () => {
-      // Analytics: Track play end
       playerAnalytics.trackPlayEnd('natural_end');
-      if (repeatMode === REPEAT_ONE) {
-        audio.currentTime = 0;
-        audio.play();
-      } else if (repeatMode === REPEAT_ALL) {
-        const idx = songs.findIndex((s) => s.id === song.id);
-        const nextIndex = (idx + 1) % songs.length;
-        onSongChange(songs[nextIndex]);
-        if (onPlayPause) onPlayPause(songs[nextIndex]);
-      } else {
-        const idx = songs.findIndex((s) => s.id === song.id);
-        if (idx === songs.length - 1) {
-          if (onPlayPause) onPlayPause(song);
-        } else {
-          onSongChange(songs[idx + 1]);
-          if (onPlayPause) onPlayPause(songs[idx + 1]);
-        }
-      }
+      skipNext(); // Context handles repeat logic
     };
     audio.addEventListener("ended", handleEnded);
     return () => audio.removeEventListener("ended", handleEnded);
-  }, [song, songs, repeatMode, onSongChange, onPlayPause]);
+  }, [skipNext]);
 
   // Helpers
   const toggleMute = () => {
     if (isMuted) {
-      setVolume(previousVolume);
+      setContextVolume(previousVolume);
     } else {
-      setPreviousVolume(volume);
-      setVolume(0);
+      setPreviousVolume(contextVolume);
+      setContextVolume(0);
     }
     setIsMuted(!isMuted);
   };
@@ -207,11 +165,9 @@ const MusicPlayer = ({
   };
 
   const handleSeek = (e) => {
-  const seekVal = parseFloat(e.target.value);
-  // Analytics: Track seek event
-  playerAnalytics.trackSeek(currentTime, seekVal, 'user_seek');
-  audioRef.current.currentTime = seekVal;
-  setCurrentTime(seekVal);
+    const seekVal = parseFloat(e.target.value);
+    playerAnalytics.trackSeek(contextCurrentTime, seekVal, 'user_seek');
+    seekTo(seekVal);
   };
 
   const handleOpenMiniPlayer = () => setMiniPlayerVisible(true);
@@ -239,8 +195,8 @@ const MusicPlayer = ({
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="flex items-center gap-4 mb-1">
             <button
-              onClick={() => setShuffle(!shuffle)}
-              className={`text-gray-400 hover:text-white ${shuffle ? "text-white" : ""}`}
+              onClick={toggleShuffle}
+              className={`text-gray-400 hover:text-white ${shuffleOn ? "text-white" : ""}`}
               title="Shuffle"
             >
               <FaRandom size={16} />
@@ -253,7 +209,7 @@ const MusicPlayer = ({
               <FaStepBackward size={18} />
             </button>
             <button
-              onClick={() => onPlayPause(song)}
+              onClick={togglePlay}
               className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center hover:scale-105 transition"
               title="Play/Pause"
             >
@@ -267,19 +223,19 @@ const MusicPlayer = ({
               <FaStepForward size={18} />
             </button>
             <button
-              onClick={cycleRepeatMode}
+              onClick={cycleRepeat}
               className={`relative text-gray-400 hover:text-white ${
-                repeatMode !== REPEAT_OFF ? "text-white" : ""
+                repeatMode !== "OFF" ? "text-white" : ""
               }`}
               title={
-                repeatMode === REPEAT_ONE
+                repeatMode === "ONE"
                   ? "Repeat One"
-                  : repeatMode === REPEAT_ALL
+                  : repeatMode === "ALL"
                   ? "Repeat All"
                   : "Repeat Off"
               }
             >
-              {repeatMode === REPEAT_ONE ? (
+              {repeatMode === "ONE" ? (
                 <div className="relative">
                   <FaRedoAlt size={16} />
                   <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-black">
@@ -293,17 +249,17 @@ const MusicPlayer = ({
           </div>
           {/* Seek Bar Row */}
           <div className="flex items-center gap-2 w-full px-4">
-            <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>
+            <span className="text-xs text-gray-400">{formatTime(contextCurrentTime)}</span>
             <input
               type="range"
               className="flex-1 accent-gray-300 h-1 cursor-pointer"
               min={0}
-              max={duration || 0}
+              max={contextDuration || 0}
               step="0.01"
-              value={currentTime}
+              value={contextCurrentTime}
               onChange={handleSeek}
             />
-            <span className="text-xs text-gray-400">{formatTime(duration)}</span>
+            <span className="text-xs text-gray-400">{formatTime(contextDuration)}</span>
           </div>
         </div>
 
@@ -320,8 +276,8 @@ const MusicPlayer = ({
               min={0}
               max={1}
               step="0.01"
-              value={isMuted ? 0 : volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              value={isMuted ? 0 : contextVolume}
+              onChange={(e) => setContextVolume(parseFloat(e.target.value))}
             />
           </div>
           <button
@@ -339,14 +295,14 @@ const MusicPlayer = ({
         visible={miniPlayerVisible}
         song={song}
         isPlaying={isPlaying}
-        onTogglePlay={() => onPlayPause(song)}
+        onTogglePlay={togglePlay}
         onClose={() => setMiniPlayerVisible(false)}
-        shuffle={shuffle}
-        onShuffleToggle={() => setShuffle(!shuffle)}
+        shuffle={shuffleOn}
+        onShuffleToggle={toggleShuffle}
         onPrevSong={handlePrevSong}
         onNextSong={handleNextSong}
         repeatMode={repeatMode}
-        onCycleRepeat={cycleRepeatMode}
+        onCycleRepeat={cycleRepeat}
       />
     </>
   );
