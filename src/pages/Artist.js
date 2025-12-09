@@ -113,19 +113,33 @@ function Artist() {
 
   // Load artist data
   useEffect(() => {
-    if (!artistId || !musicData) return;
+    console.log('Artist useEffect triggered:', { artistId, hasMusicData: !!musicData, musicDataLength: musicData?.length });
+
+    if (!artistId) {
+      console.log('No artistId, skipping');
+      return;
+    }
+
+    if (!musicData || musicData.length === 0) {
+      console.log('No musicData, skipping');
+      return;
+    }
 
     const loadArtist = async () => {
       try {
         setLoading(true);
+        console.log('Loading artist:', artistId);
 
         // Decode the artist name from URL
         const decodedArtistName = decodeURIComponent(artistId);
+        console.log('Decoded artist name:', decodedArtistName);
 
         // Filter songs by artist from musicData.json
         const artistSongs = musicData.filter(song => song.artist === decodedArtistName);
+        console.log('Found artist songs:', artistSongs.length);
 
         if (artistSongs.length === 0) {
+          console.log('No songs found for artist');
           setError('Artist not found');
           setLoading(false);
           return;
@@ -142,6 +156,7 @@ function Artist() {
         setArtist(artistData);
         setTopTracks(artistSongs);
 
+        console.log('Artist loaded successfully');
         setLoading(false);
       } catch (err) {
         console.error('Error loading artist:', err);
