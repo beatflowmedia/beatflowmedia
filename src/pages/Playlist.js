@@ -1,6 +1,7 @@
 import { getDocs } from 'firebase/firestore';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+  Avatar,
   Box,
   Typography,
   Card,
