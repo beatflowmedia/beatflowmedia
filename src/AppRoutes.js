@@ -1,7 +1,7 @@
 // src/AppRoutes.js
 import React, { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import AppShell from "./AppShell";
+import AppShell from "./layouts/AppShell";
 import { useAuth } from "./context/AuthContext";
 import ArtistPortal from "./pages/ArtistPortal";
 import CuratorPortal from "./pages/CuratorPortal";

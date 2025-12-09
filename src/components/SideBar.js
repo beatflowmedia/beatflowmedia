@@ -54,7 +54,9 @@ const SideBar = ({
   onArtistSelect,
   onShowRightPanel,
   onCreatePlaylist,
-  onPlayArtist
+  onPlayArtist,
+  isCollapsed = false,
+  onToggleCollapse
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState("");
@@ -66,13 +68,9 @@ const SideBar = ({
   );
   const { playlists: playlistItems, artists: artistItems } = sidebar;
 
-  // Set this to match your NavBar height! h-16 is 64px (standard Tailwind navbar height)
-  const NAVBAR_HEIGHT_CLASS = "h-16";
-
   return (
-    <aside className="bg-gray-900 text-white w-72 flex flex-col h-full border-r border-gray-800 min-h-0">
-      {/* --- Spacer to match NavBar height --- */}
-      <div className={NAVBAR_HEIGHT_CLASS}></div>
+    <aside className="bg-gray-900 text-white flex flex-col h-full border-r border-gray-800 min-h-0">
+      {/* No more spacer - grid handles positioning */}
 
       {/* Sidebar header: logo, filters, search */}
       <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10 bg-gray-900">
@@ -179,7 +177,9 @@ SideBar.propTypes = {
   onArtistSelect: PropTypes.func.isRequired,
   onShowRightPanel: PropTypes.func.isRequired,
   onCreatePlaylist: PropTypes.func.isRequired,
-  onPlayArtist: PropTypes.func
+  onPlayArtist: PropTypes.func,
+  isCollapsed: PropTypes.bool,
+  onToggleCollapse: PropTypes.func
 };
 
 export default SideBar;

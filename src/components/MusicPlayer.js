@@ -219,8 +219,8 @@ const MusicPlayer = ({
   return (
     <>
       <div
-        className="fixed bottom-0 left-0 w-full bg-black text-white border-t border-gray-800 flex items-center px-4"
-        style={{ height: "60px" }}
+        className="w-full bg-black text-white border-t border-gray-800 flex items-center px-4"
+        style={{ height: "90px" }}
       >
         {/* LEFT: Cover + Title/Artist */}
         <div className="flex items-center min-w-[180px] w-1/5">
