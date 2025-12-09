@@ -40,6 +40,7 @@ export function usePlayerActions(musicData = []) {
       return;
     }
 
+    // Set queue first, then play
     dispatch({
       type: actions.SET_QUEUE,
       payload: {
@@ -48,7 +49,11 @@ export function usePlayerActions(musicData = []) {
       }
     });
 
-    dispatch({ type: actions.TOGGLE_PLAY });
+    // Play at index 0 (sets isPlaying: true)
+    dispatch({
+      type: actions.PLAY_AT,
+      payload: 0
+    });
   }, [musicData, dispatch, actions]);
 
   /**
@@ -69,7 +74,11 @@ export function usePlayerActions(musicData = []) {
       }
     });
 
-    dispatch({ type: actions.TOGGLE_PLAY });
+    // Play at index 0 (sets isPlaying: true)
+    dispatch({
+      type: actions.PLAY_AT,
+      payload: 0
+    });
   }, [dispatch, actions]);
 
   /**
@@ -78,15 +87,21 @@ export function usePlayerActions(musicData = []) {
   const playQueueAt = useCallback((queue, index = 0) => {
     if (!queue || queue.length === 0) return;
 
+    const validIndex = Math.max(0, Math.min(index, queue.length - 1));
+
     dispatch({
       type: actions.SET_QUEUE,
       payload: {
         queue,
-        currentIndex: Math.max(0, Math.min(index, queue.length - 1))
+        currentIndex: validIndex
       }
     });
 
-    dispatch({ type: actions.TOGGLE_PLAY });
+    // Play at specified index (sets isPlaying: true)
+    dispatch({
+      type: actions.PLAY_AT,
+      payload: validIndex
+    });
   }, [dispatch, actions]);
 
   /**
