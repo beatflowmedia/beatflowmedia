@@ -1,6 +1,4 @@
-import { FaSortAlphaDown, FaClock, FaBars, FaList } from 'react-icons/fa';
-import React, { useMemo, useState, useEffect, memo, useCallback } from "react";
-import PropTypes from "prop-types";
+import React, { useState, useEffect, memo, useCallback } from "react";
 import {
   Box,
   Grid,
@@ -10,12 +8,9 @@ import {
   CardMedia,
   Button,
   Chip,
-  CircularProgress,
   Skeleton,
   Tabs,
   Tab,
-  Avatar,
-  Rating,
   Divider,
   IconButton,
   Menu,
@@ -36,45 +31,18 @@ import NewReleases from '@mui/icons-material/NewReleases';
 import MusicNote from '@mui/icons-material/MusicNote';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import PersonRemove from '@mui/icons-material/PersonRemove';
-import Shuffle from '@mui/icons-material/Shuffle';
-import SkipNext from '@mui/icons-material/SkipNext';
-import SkipPrevious from '@mui/icons-material/SkipPrevious';
-import VolumeUp from '@mui/icons-material/VolumeUp';
 import QueueMusic from '@mui/icons-material/QueueMusic';
-import Search from '@mui/icons-material/Search';
-import FilterList from '@mui/icons-material/FilterList';
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
-import { groupSongsByArtist } from "../utils/ArtistFilter";
-import useFollowArtist from "../hooks/useFollowArtist";
-import PlayButton from "../components/PlayButton";
-import DropdownMenu from "../components/DropdownMenu";
-import LikeButton from "../components/LikeButton";
-import AddToPlaylistModal from "../components/AddToPlaylistModal";
 import { toast } from "react-toastify";
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
-import {
-  getSongUrl, getShareText, shareOnTwitter, shareOnFacebook,
-  shareOnLinkedIn, shareOnReddit, shareViaEmail, copyToClipboard,
-} from "../utils/shareHelper";
-
-const SORT_OPTIONS = [
-  { label: "Alphabetical", icon: <FaSortAlphaDown />, value: "alpha" },
-  { label: "Recently Added", icon: <FaClock />, value: "recentlyAdded" },
-];
-const VIEW_OPTIONS = [
-  { label: "Compact", icon: <FaBars />, value: "compact" },
-  { label: "List", icon: <FaList />, value: "list" },
-];
 
 function Home() {
   const { state, dispatch, actions } = usePlayer();
   const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
   // Enhanced state management for discovery features
   const [activeTab, setActiveTab] = useState(0);
-  const [viewMode, setViewMode] = useState("grid");
-  const [sortMode, setSortMode] = useState("trending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -83,14 +51,11 @@ function Home() {
   const [newReleases, setNewReleases] = useState([]);
   const [recommendedSongs, setRecommendedSongs] = useState([]);
   const [featuredArtists, setFeaturedArtists] = useState([]);
-  const [popularPlaylists, setPopularPlaylists] = useState([]);
   const [userActivity, setUserActivity] = useState([]);
 
   // UI state
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
 
   // Load trending content
   useEffect(() => {
@@ -105,7 +70,7 @@ function Home() {
           limit(20)
         );
 
-        const trendingSnapshot = await onSnapshot(trendingQuery, (snapshot) => {
+        onSnapshot(trendingQuery, (snapshot) => {
           const trending = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
@@ -125,7 +90,7 @@ function Home() {
           limit(15)
         );
 
-        const releasesSnapshot = await onSnapshot(newReleasesQuery, (snapshot) => {
+        onSnapshot(newReleasesQuery, (snapshot) => {
           const releases = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -140,12 +105,12 @@ function Home() {
           limit(10)
         );
 
-        const artistsSnapshot = await onSnapshot(artistsQuery, (snapshot) => {
-          const artists = snapshot.docs.map(doc => ({
+        onSnapshot(artistsQuery, (snapshot) => {
+          const featuredArtistsData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
-          setFeaturedArtists(artists);
+          setFeaturedArtists(featuredArtistsData);
         });
 
         // Generate personalized recommendations if user is logged in
@@ -177,7 +142,7 @@ function Home() {
         limit(50)
       );
 
-      const historySnapshot = await onSnapshot(historyQuery, (snapshot) => {
+      onSnapshot(historyQuery, (snapshot) => {
         const history = snapshot.docs.map(doc => doc.data());
 
         // Generate recommendations based on listening history
@@ -196,7 +161,6 @@ function Home() {
 
     // Extract genres and artists from history
     const genres = [...new Set(history.map(h => h.genre).filter(Boolean))];
-    const artists = [...new Set(history.map(h => h.artist).filter(Boolean))];
 
     try {
       // Find songs with similar genres or from followed artists
@@ -206,7 +170,7 @@ function Home() {
         limit(20)
       );
 
-      const recommendationsSnapshot = await onSnapshot(recommendationsQuery, (snapshot) => {
+      onSnapshot(recommendationsQuery, (snapshot) => {
         const recommendations = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
@@ -292,13 +256,11 @@ function Home() {
 
   const handleShare = useCallback((song) => {
     setSelectedSong(song);
-    setShowShareModal(true);
     handleMenuClose();
   }, [handleMenuClose]);
 
   const handleAddToPlaylist = useCallback((song) => {
     setSelectedSong(song);
-    setShowAddToPlaylistModal(true);
     handleMenuClose();
   }, [handleMenuClose]);
 
@@ -353,7 +315,7 @@ function Home() {
   }
 
   return (
-    <Box sx={{ p: 3, minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ p: 3, height: '100%', overflow: 'auto', bgcolor: 'background.default' }}>
       {/* Hero Section */}
       <Box sx={{ mb: 4 }}>
         <Typography
@@ -756,9 +718,5 @@ function Home() {
     </Box>
   );
 }
-
-Home.propTypes = {
-  // No props needed - component is fully self-contained with context
-};
 
 export default memo(Home);

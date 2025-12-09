@@ -12,25 +12,13 @@ import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
-import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 import Fade from '@mui/material/Fade';
-import Slide from '@mui/material/Slide';
 import Link from '@mui/material/Link';
-import Tooltip from '@mui/material/Tooltip';
 import PlayArrow from '@mui/icons-material/PlayArrow';
-import Pause from '@mui/icons-material/Pause';
 import Favorite from '@mui/icons-material/Favorite';
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
 import MoreVert from '@mui/icons-material/MoreVert';
@@ -41,7 +29,6 @@ import Shuffle from '@mui/icons-material/Shuffle';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import AlbumIcon from '@mui/icons-material/Album';
 import MusicNote from '@mui/icons-material/MusicNote';
-import CalendarToday from '@mui/icons-material/CalendarToday';
 import LocationOn from '@mui/icons-material/LocationOn';
 import Language from '@mui/icons-material/Language';
 import Facebook from '@mui/icons-material/Facebook';
@@ -50,11 +37,7 @@ import Instagram from '@mui/icons-material/Instagram';
 import YouTube from '@mui/icons-material/YouTube';
 import Apple from '@mui/icons-material/Apple';
 import VerifiedUser from '@mui/icons-material/VerifiedUser';
-import TrendingUp from '@mui/icons-material/TrendingUp';
-import PlayCircleFilled from '@mui/icons-material/PlayCircleFilled';
-import Event from '@mui/icons-material/Event';
 import People from '@mui/icons-material/People';
-import Star from '@mui/icons-material/Star';
 import Visibility from '@mui/icons-material/Visibility';
 
 import { FaSpotify } from 'react-icons/fa';
@@ -434,7 +417,7 @@ function Artist() {
   const displayedTracks = showAllTracks ? topTracks : topTracks.slice(0, 5);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.900', color: 'white' }}>
+    <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
       {/* Artist Header */}
       <Box
         sx={{

@@ -35,7 +35,7 @@ const RightPanel = ({ visible, content, onClose }) => {
     ];
 
     return (
-      <div className="h-full w-full bg-gray-900 text-white p-6 overflow-y-auto">
+      <div className="bg-gray-900 text-white p-6 overflow-y-auto" style={{ height: "100%", width: "100%" }}>
         {/* Header: More menu and close */}
         <div className="flex justify-between items-center mb-4">
           <button
@@ -159,7 +159,7 @@ const RightPanel = ({ visible, content, onClose }) => {
     const { name, cover, songs = [], description } = info;
 
     return (
-      <div className="h-full w-full bg-gray-900 text-white p-6 overflow-y-auto">
+      <div className="bg-gray-900 text-white p-6 overflow-y-auto" style={{ height: "100%", width: "100%" }}>
         <div className="flex justify-between items-center mb-4">
           <span className="font-bold text-lg">Playlist Details</span>
           <button

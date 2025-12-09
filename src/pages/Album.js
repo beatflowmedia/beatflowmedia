@@ -364,7 +364,7 @@ function Album() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.900', color: 'white' }}>
+    <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
       {/* Album Header */}
       <Box
         sx={{

@@ -7,7 +7,6 @@ import {
   CardContent,
   CardMedia,
   TextField,
-  InputAdornment,
   Tabs,
   Tab,
   Chip,
@@ -20,9 +19,6 @@ import {
   Divider,
   Skeleton,
   Paper,
-  List,
-  ListItem,
-  ListItemAvatar,
   Autocomplete
 } from "@mui/material";
 import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
@@ -452,7 +448,7 @@ function Search() {
   const filteredResults = getFilteredResults();
 
   return (
-    <Box sx={{ p: 3, minHeight: "100vh", bgcolor: "grey.900" }}>
+    <Box sx={{ p: 3, height: "100%", overflow: "auto", bgcolor: "grey.900" }}>
       {/* Search Header */}
       <Box sx={{ mb: 4 }}>
         <Typography

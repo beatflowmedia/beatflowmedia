@@ -20,16 +20,10 @@ import MiniPlayerPortal from "./MiniPlayerPortal";
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
 const playerAnalytics = new PlayerAnalyticsClass();
 
-// Repeat mode constants
-const REPEAT_OFF = 0;
-const REPEAT_ALL = 1;
-const REPEAT_ONE = 2;
-
 const MusicPlayer = () => {
   // Get player state from context
   const {
     currentSong: song,
-    queue: songs,
     isPlaying,
     togglePlay,
     skipNext,
@@ -136,7 +130,7 @@ const MusicPlayer = () => {
   // Fallback if no song in queue
   if (!song) {
     return (
-      <div className="w-full bg-black text-white border-t border-gray-800 flex items-center justify-center px-4" style={{ height: "90px" }}>
+      <div className="bg-black text-white border-t border-gray-800 flex items-center justify-center px-4" style={{ height: "100%" }}>
         <p className="text-gray-400">No song playing</p>
       </div>
     );
@@ -145,8 +139,8 @@ const MusicPlayer = () => {
   return (
     <>
       <div
-        className="w-full bg-black text-white border-t border-gray-800 flex items-center px-4"
-        style={{ height: "90px" }}
+        className="bg-black text-white border-t border-gray-800 flex items-center px-4"
+        style={{ height: "100%" }}
       >
         {/* LEFT: Cover + Title/Artist */}
         <div className="flex items-center min-w-[180px] w-1/5">

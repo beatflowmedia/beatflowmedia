@@ -1,6 +1,6 @@
 // src/layouts/AppShell.js
 import React, { useState, useEffect, Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -31,6 +31,7 @@ import styles from "./LayoutGrid.module.css";
  * └─────────────────────────────────────┘
  */
 export default function AppShell() {
+  const navigate = useNavigate();
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
   // Use unified player actions hook (replaces local state + event system)
@@ -102,13 +103,11 @@ export default function AppShell() {
 
   // Sidebar Handlers
   const handlePlaylistSelect = (playlist) => {
-    console.log("Playlist selected:", playlist);
-    // TODO: Navigate to playlist page
+    navigate(`/playlist/${playlist.id}`);
   };
 
   const handleArtistSelect = (artistName) => {
-    console.log("Artist selected:", artistName);
-    // TODO: Navigate to artist page
+    navigate(`/artist/${encodeURIComponent(artistName)}`);
   };
 
   // Toggle Favorite

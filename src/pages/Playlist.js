@@ -2,15 +2,12 @@ import { getDocs } from 'firebase/firestore';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Grid,
   Typography,
   Card,
   CardContent,
   CardMedia,
   Button,
   IconButton,
-  Avatar,
-  Chip,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -31,16 +28,11 @@ import {
   TableRow,
   Paper,
   Skeleton,
-  Tooltip,
-  Fab,
   SpeedDial,
   SpeedDialAction,
-  SpeedDialIcon,
-  Fade,
-  Slide
+  SpeedDialIcon
 } from '@mui/material';
 import PlayArrow from '@mui/icons-material/PlayArrow';
-import Pause from '@mui/icons-material/Pause';
 import Favorite from '@mui/icons-material/Favorite';
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
 import MoreVert from '@mui/icons-material/MoreVert';
@@ -49,26 +41,13 @@ import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
 import Add from '@mui/icons-material/Add';
 import DragIndicator from '@mui/icons-material/DragIndicator';
-import Public from '@mui/icons-material/Public';
-import Lock from '@mui/icons-material/Lock';
 import People from '@mui/icons-material/People';
 import PersonAdd from '@mui/icons-material/PersonAdd';
-import PersonRemove from '@mui/icons-material/PersonRemove';
-import Download from '@mui/icons-material/Download';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
-import Repeat from '@mui/icons-material/Repeat';
-import VolumeUp from '@mui/icons-material/VolumeUp';
 import AccessTime from '@mui/icons-material/AccessTime';
-import CalendarToday from '@mui/icons-material/CalendarToday';
 import MusicNote from '@mui/icons-material/MusicNote';
-import PlaylistPlay from '@mui/icons-material/PlaylistPlay';
-import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
-import FilterList from '@mui/icons-material/FilterList';
-import Sort from '@mui/icons-material/Sort';
 import Search from '@mui/icons-material/Search';
-import Close from '@mui/icons-material/Close';
-import Save from '@mui/icons-material/Save';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
@@ -492,7 +471,7 @@ function Playlist() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.900', color: 'white' }}>
+    <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
       {/* Playlist Header */}
       <Box
         sx={{

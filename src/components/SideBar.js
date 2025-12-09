@@ -69,8 +69,8 @@ const SideBar = ({
   const { playlists: playlistItems, artists: artistItems } = sidebar;
 
   return (
-    <aside className="bg-gray-900 text-white flex flex-col h-full border-r border-gray-800 min-h-0">
-      {/* No more spacer - grid handles positioning */}
+    <div className="bg-black text-white flex flex-col border-r border-gray-800" style={{ height: "100%" }}>
+      {/* Grid handles positioning */}
 
       {/* Sidebar header: logo, filters, search */}
       <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10 bg-gray-900">
@@ -121,7 +121,7 @@ const SideBar = ({
       </div>
 
       {/* Scrollable library: playlists & artists */}
-      <div className="overflow-y-auto flex-1 px-2 pb-2 min-h-0">
+      <div className="overflow-y-auto flex-1 px-2 pb-2">
         {playlistItems.length > 0 && (
           <div className="mb-4">
             <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
@@ -166,7 +166,7 @@ const SideBar = ({
           onCancel={() => setShowModal(false)}
         />
       )}
-    </aside>
+    </div>
   );
 };
 

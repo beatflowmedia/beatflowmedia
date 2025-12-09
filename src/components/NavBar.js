@@ -19,7 +19,7 @@ const NavBar = ({
     <nav
       role="navigation"
       aria-label="Main navigation"
-      className="bg-bf-page h-16 px-6 flex items-center text-bf-text w-full"
+      className="px-6 flex items-center text-bf-text bg-black border-b border-gray-800"
     >
       {/* LEFT: Logo & Home */}
       <div className="flex items-center space-x-4">
