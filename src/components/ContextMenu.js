@@ -24,7 +24,7 @@ const ContextMenu = ({ visible, x, y, items = [], onClose }) => {
             <span className="mr-2">{item.icon}</span>
             {item.label}
           </button>
-        )
+        ),
       )}
     </div>
   );

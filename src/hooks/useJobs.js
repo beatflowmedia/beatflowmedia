@@ -11,8 +11,11 @@ export function useJobs() {
     // Query only "open" jobs for best UX
     const q = query(collection(db, "jobs"), where("status", "==", "open"));
     getDocs(q)
-      .then(snapshot => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      .then((snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data()
+        }));
         // Optional: sort by most recent
         data.sort((a, b) => b.posted_at - a.posted_at);
         setJobs(data);

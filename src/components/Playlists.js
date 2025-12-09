@@ -7,7 +7,7 @@ const Playlists = ({
   onAddSongToPlaylist,
   onRemoveSongFromPlaylist, // ✅ ADD THIS
   selectedSong,
-  onSelectPlaylist,
+  onSelectPlaylist
 }) => {
   return (
     <div className="p-6">
@@ -44,7 +44,9 @@ const Playlists = ({
                   <button
                     className="text-green-400 hover:text-green-300"
                     title={`Add "${selectedSong.title}"`}
-                    onClick={() => onAddSongToPlaylist(playlist.id, selectedSong)} // ✅ PASS SONG
+                    onClick={() =>
+                      onAddSongToPlaylist(playlist.id, selectedSong)
+                    } // ✅ PASS SONG
                   >
                     <FaPlus />
                   </button>

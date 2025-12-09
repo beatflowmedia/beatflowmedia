@@ -27,7 +27,7 @@ const JobApplicationModal = ({
     const { name, value, files } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: files ? files[0] : value,
+      [name]: files ? files[0] : value
     }));
   };
 
@@ -48,7 +48,9 @@ const JobApplicationModal = ({
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white"
           aria-label="Close"
-        >✕</button>
+        >
+          ✕
+        </button>
         <h2 className="text-2xl font-bold mb-4">Apply for: {job?.title}</h2>
         {submitted ? (
           <div className="text-green-400 text-lg">
@@ -57,7 +59,9 @@ const JobApplicationModal = ({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="job-name" className="block mb-1">Full Name</label>
+              <label htmlFor="job-name" className="block mb-1">
+                Full Name
+              </label>
               <input
                 id="job-name"
                 name="name"
@@ -70,7 +74,9 @@ const JobApplicationModal = ({
               />
             </div>
             <div>
-              <label htmlFor="job-email" className="block mb-1">Email</label>
+              <label htmlFor="job-email" className="block mb-1">
+                Email
+              </label>
               <input
                 id="job-email"
                 name="email"
@@ -83,7 +89,9 @@ const JobApplicationModal = ({
               />
             </div>
             <div>
-              <label htmlFor="job-message" className="block mb-1">Message / Cover Letter</label>
+              <label htmlFor="job-message" className="block mb-1">
+                Message / Cover Letter
+              </label>
               <textarea
                 id="job-message"
                 name="message"
@@ -96,7 +104,9 @@ const JobApplicationModal = ({
               />
             </div>
             <div>
-              <label htmlFor="job-resume" className="block mb-1">Resume (PDF or DOC)</label>
+              <label htmlFor="job-resume" className="block mb-1">
+                Resume (PDF or DOC)
+              </label>
               <input
                 id="job-resume"
                 type="file"
@@ -108,9 +118,7 @@ const JobApplicationModal = ({
                 ref={fileRef}
               />
             </div>
-            {error && (
-              <div className="text-red-400">{error}</div>
-            )}
+            {error && <div className="text-red-400">{error}</div>}
             {submitting && progress > 0 && progress < 100 && (
               <div className="w-full bg-gray-700 rounded h-2 my-2">
                 <div

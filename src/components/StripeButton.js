@@ -1,31 +1,31 @@
 // src/components/StripeButton.jsx
-import React, { useMemo } from 'react'
-import { loadStripe } from '@stripe/stripe-js'
+import React, { useMemo } from "react";
+import { loadStripe } from "@stripe/stripe-js";
 
-export default function StripeButton({ priceId, children, className = '' }) {
-  const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
+export default function StripeButton({ priceId, children, className = "" }) {
+  const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
   const stripePromise = useMemo(() => {
     if (!publishableKey) {
-      console.error('Missing REACT_APP_STRIPE_PUBLISHABLE_KEY')
-      return null
+      console.error("Missing REACT_APP_STRIPE_PUBLISHABLE_KEY");
+      return null;
     }
-    return loadStripe(publishableKey)
-  }, [publishableKey])
+    return loadStripe(publishableKey);
+  }, [publishableKey]);
 
   const handleClick = async () => {
-    if (!stripePromise) return
-    const stripe = await stripePromise
-    const res = await fetch('/.netlify/functions/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId }),
-    })
-    const { sessionId } = await res.json()
+    if (!stripePromise) return;
+    const stripe = await stripePromise;
+    const res = await fetch("/.netlify/functions/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priceId })
+    });
+    const { sessionId } = await res.json();
     if (sessionId) {
-      const { error } = await stripe.redirectToCheckout({ sessionId })
-      if (error) console.error('Stripe redirect error:', error)
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      if (error) console.error("Stripe redirect error:", error);
     }
-  }
+  };
 
   return (
     <button
@@ -36,5 +36,5 @@ export default function StripeButton({ priceId, children, className = '' }) {
     >
       {children}
     </button>
-  )
+  );
 }

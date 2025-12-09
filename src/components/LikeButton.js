@@ -1,7 +1,7 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState } from "react";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 import PropTypes from 'prop-types';
-import { FaHeart, FaRegHeart } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
 
 /**
  * LikeButton renders a heart icon that users can click to like/unlike a song.
@@ -14,7 +14,7 @@ const LikeButton = ({
   onToggleFavorite,
   onCountChange = () => {},
   size,
-  className,
+  className
 }) => {
   const { user, signInWithGoogle, addLike, removeLike } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,7 @@ const LikeButton = ({
       }
       onToggleFavorite(item);
     } catch (error) {
-      console.error('Error toggling like:', error);
+      console.error("Error toggling like:", error);
       // rollback count on error
       onCountChange(isLiked ? 1 : -1);
     } finally {
@@ -53,7 +53,7 @@ const LikeButton = ({
       type="button"
       onClick={handleClick}
       disabled={loading}
-      aria-label={!user ? 'Sign in to like' : isLiked ? 'Unlike' : 'Like'}
+      aria-label={!user ? "Sign in to like" : isLiked ? "Unlike" : "Like"}
       className={`focus:outline-none focus:ring-2 focus:ring-yellow-400 transition ${className}`}
     >
       {isLiked ? (
@@ -67,7 +67,9 @@ const LikeButton = ({
 
 LikeButton.propTypes = {
   /** Song item; must have id */
-  item: PropTypes.shape({ id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired }).isRequired,
+  item: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired
+  }).isRequired,
   /** Whether currently liked */
   isLiked: PropTypes.bool,
   /** Callback to sync local favorite state */
@@ -77,14 +79,14 @@ LikeButton.propTypes = {
   /** Icon size */
   size: PropTypes.number,
   /** Additional CSS classes */
-  className: PropTypes.string,
+  className: PropTypes.string
 };
 
 LikeButton.defaultProps = {
   isLiked: false,
   onCountChange: () => {},
   size: 20,
-  className: '',
+  className: ""
 };
 
 export default memo(LikeButton);

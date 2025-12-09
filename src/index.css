@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 body {
-    @apply bg-black text-white;
-  }
-  
-  a {
-    @apply transition-all duration-200;
-  }
-  
+  @apply bg-black text-white;
+}
+
+a {
+  @apply transition-all duration-200;
+}
+
 /* Custom styles for Music Player */
 input[type="range"] {
-    @apply accent-green-500;
-  }
+  @apply accent-green-500;
+}
 
-  /* Fix padding and spacing */
+/* Fix padding and spacing */
 .song-item {
   display: flex;
   align-items: center;

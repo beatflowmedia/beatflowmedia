@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { FaTrash } from "react-icons/fa";
-import { subscribeToPlaylists, removeSongFromPlaylist } from "../utils/PlaylistHelper";
+import {
+  subscribeToPlaylists,
+  removeSongFromPlaylist
+} from "../utils/PlaylistHelper";
 import { toast } from "react-toastify";
 
 export default function PlaylistView({ playlistId, onSongSelect }) {
@@ -49,7 +52,7 @@ export default function PlaylistView({ playlistId, onSongSelect }) {
               className="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all cursor-pointer flex items-center justify-between"
             >
               {/* Click to play the song */}
-              <div 
+              <div
                 className="flex items-center space-x-3 w-full cursor-pointer"
                 onClick={() => {
                   console.log("[DEBUG] Playing song from playlist:", song);
@@ -74,8 +77,12 @@ export default function PlaylistView({ playlistId, onSongSelect }) {
                   e.stopPropagation(); // Prevent accidental song play
                   console.log("[DEBUG] Removing song from playlist:", song);
                   removeSongFromPlaylist(playlist.id, song)
-                    .then(() => toast.success(`Removed "${song.title}" from playlist!`))
-                    .catch((error) => toast.error("Error removing song: " + error.message));
+                    .then(() =>
+                      toast.success(`Removed "${song.title}" from playlist!`),
+                    )
+                    .catch((error) =>
+                      toast.error("Error removing song: " + error.message),
+                    );
                 }}
                 title="Remove from Playlist"
               >

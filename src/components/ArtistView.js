@@ -15,7 +15,9 @@ const ArtistView = ({ artist, songs = [], currentSong, isPlaying, onPlay }) => {
   }
 
   const isArtistPlaying =
-    isPlaying && currentSong && songs.some((song) => song.id === currentSong.id);
+    isPlaying &&
+    currentSong &&
+    songs.some((song) => song.id === currentSong.id);
 
   return (
     <div className="p-6">

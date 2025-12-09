@@ -6,7 +6,9 @@
 // ------------------------------------------------------
 export const groupSongsByArtist = (allSongs) => {
   const grouped = allSongs.reduce((acc, song) => {
-    const normalizedArtist = song.artist ? song.artist.trim().toLowerCase() : "unknown";
+    const normalizedArtist = song.artist
+      ? song.artist.trim().toLowerCase()
+      : "unknown";
     if (!acc[normalizedArtist]) {
       acc[normalizedArtist] = [];
     }

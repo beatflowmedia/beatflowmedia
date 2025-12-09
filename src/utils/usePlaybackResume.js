@@ -17,7 +17,7 @@ export function usePlaybackResume(audioRef, song, user) {
       if (user && user.uid) {
         try {
           const snap = await getDoc(
-            doc(db, "users", user.uid, "songPositions", String(song.id))
+            doc(db, "users", user.uid, "songPositions", String(song.id)),
           );
           if (snap.exists()) resumeTime = snap.data().position;
         } catch (e) {
@@ -68,7 +68,7 @@ export function usePlaybackResume(audioRef, song, user) {
           await setDoc(
             doc(db, "users", user.uid, "songPositions", String(song.id)),
             { position, updatedAt: Date.now() },
-            { merge: true }
+            { merge: true },
           );
         } else {
           localStorage.setItem(key, position);
@@ -94,7 +94,7 @@ export function usePlaybackResume(audioRef, song, user) {
     const clearTime = async () => {
       if (user && user.uid) {
         await deleteDoc(
-          doc(db, "users", user.uid, "songPositions", String(song.id))
+          doc(db, "users", user.uid, "songPositions", String(song.id)),
         );
       }
       localStorage.removeItem(key);

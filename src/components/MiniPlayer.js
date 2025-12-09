@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect , useCallback } from "react";
 import {
   FaPlay,
   FaPause,
@@ -9,7 +9,7 @@ import {
   FaRedoAlt,
   FaExpand,
   FaCompress,
-  FaPlus,
+  FaPlus
 } from "react-icons/fa";
 
 const REPEAT_OFF = 0;
@@ -27,7 +27,7 @@ export default function MiniPlayer({
   onPrevSong,
   onNextSong,
   repeatMode,
-  onCycleRepeat,
+  onCycleRepeat
 }) {
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
@@ -38,7 +38,7 @@ export default function MiniPlayer({
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - position.x,
-      y: e.clientY - position.y,
+      y: e.clientY - position.y
     });
   };
 
@@ -47,10 +47,10 @@ export default function MiniPlayer({
       if (!isDragging) return;
       setPosition({
         x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y,
+        y: e.clientY - dragOffset.y
       });
     },
-    [isDragging, dragOffset]
+    [isDragging, dragOffset],
   );
 
   const handleDragMouseUp = () => {
@@ -89,11 +89,11 @@ export default function MiniPlayer({
       const dy = e.clientY - resizeDragStart.y;
       setSize((prev) => ({
         w: Math.max(220, prev.w + dx),
-        h: Math.max(220, prev.h + dy),
+        h: Math.max(220, prev.h + dy)
       }));
       setResizeDragStart({ x: e.clientX, y: e.clientY });
     },
-    [isResizing, resizeDragStart]
+    [isResizing, resizeDragStart],
   );
 
   const handleResizeMouseUp = () => {
@@ -135,9 +135,7 @@ export default function MiniPlayer({
       <FaRedoAlt
         size={16}
         className={baseClasses}
-        title={
-          repeatMode === REPEAT_ALL ? "Repeat All" : "Repeat Off"
-        }
+        title={repeatMode === REPEAT_ALL ? "Repeat All" : "Repeat Off"}
         onClick={onCycleRepeat}
       />
     );
@@ -151,14 +149,14 @@ export default function MiniPlayer({
         top: 0,
         left: 0,
         width: "100vw",
-        height: "100vh",
+        height: "100vh"
       }
     : {
         position: "fixed",
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: `${size.w}px`,
-        height: `${size.h}px`,
+        height: `${size.h}px`
       };
 
   return (
@@ -204,7 +202,7 @@ export default function MiniPlayer({
           className="object-cover rounded mb-2"
           style={{
             width: isFullscreen ? "50%" : "80%",
-            height: isFullscreen ? "50%" : "auto",
+            height: isFullscreen ? "50%" : "auto"
           }}
         />
         <div className="text-center mb-3 w-full">

@@ -14,7 +14,7 @@ export default function MiniPlayerPortal({ visible, ...props }) {
     externalWindowRef.current = window.open(
       "",
       "_blank",
-      "width=300,height=400,left=200,top=200"
+      "width=300,height=400,left=200,top=200",
     );
 
     // 2) If the pop-up was blocked or failed
@@ -51,8 +51,5 @@ export default function MiniPlayerPortal({ visible, ...props }) {
   }
 
   // Render your <MiniPlayer> inside the new window
-  return ReactDOM.createPortal(
-    <MiniPlayer {...props} />,
-    containerEl.current
-  );
+  return ReactDOM.createPortal(<MiniPlayer {...props} />, containerEl.current);
 }

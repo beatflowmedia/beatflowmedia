@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { addSongToPlaylist, subscribeToPlaylists } from "../utils/PlaylistHelper";
+import React, { useState, useEffect , useCallback } from "react";
+import {
+  addSongToPlaylist,
+  subscribeToPlaylists
+} from "../utils/PlaylistHelper";
 import { toast } from "react-toastify";
 
 const PlaylistModal = ({ song, onClose }) => {
@@ -20,7 +23,7 @@ const PlaylistModal = ({ song, onClose }) => {
         toast.error(`Failed to add song: ${error.message}`);
       }
     },
-    [song, onClose]
+    [song, onClose],
   );
 
   return (

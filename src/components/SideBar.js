@@ -1,9 +1,9 @@
 // components/SideBar.js
-import React, { useMemo, useState } from "react";
+import React, { useState , useMemo } from "react";
 import SidebarListItem from "./SidebarListItem";
 import NewPlaylistModal from "./NewPlaylistModal";
 import { FaPlus, FaSearch, FaList } from "react-icons/fa";
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 
 const FILTERS = [
   { label: "Playlists", value: "playlist" },
@@ -14,36 +14,36 @@ const FILTERS = [
 function buildSidebarItems(musicData, playlists, filter, search) {
   const artistSet = new Set();
   const artistItems = musicData
-    .filter(song => {
+    .filter((song) => {
       if (!song.artist || artistSet.has(song.artist)) return false;
       artistSet.add(song.artist);
       return true;
     })
-    .map(artistSong => ({
+    .map((artistSong) => ({
       id: `artist-${artistSong.artist}`,
       name: artistSong.artist,
       cover: `/artistImages/${artistSong.artist}.jpg`,
-      type: "artist",
+      type: "artist"
     }));
 
-  const playlistItems = playlists.map(p => ({
+  const playlistItems = playlists.map((p) => ({
     ...p,
     cover: p.cover || "/playlist-default.jpg",
     type: "playlist",
-    id: `playlist-${p.id}`,
+    id: `playlist-${p.id}`
   }));
 
   let items = [...playlistItems, ...artistItems];
-  if (filter) items = items.filter(item => item.type === filter);
+  if (filter) items = items.filter((item) => item.type === filter);
   if (search)
-    items = items.filter(item =>
-      item.name.toLowerCase().includes(search.toLowerCase())
+    items = items.filter((item) =>
+      item.name.toLowerCase().includes(search.toLowerCase()),
     );
 
   return {
-    playlists: items.filter(i => i.type === "playlist"),
-    artists: items.filter(i => i.type === "artist"),
-    all: items,
+    playlists: items.filter((i) => i.type === "playlist"),
+    artists: items.filter((i) => i.type === "artist"),
+    all: items
   };
 }
 
@@ -54,7 +54,7 @@ const SideBar = ({
   onArtistSelect,
   onShowRightPanel,
   onCreatePlaylist,
-  onPlayArtist,
+  onPlayArtist
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState("");
@@ -62,7 +62,7 @@ const SideBar = ({
 
   const sidebar = useMemo(
     () => buildSidebarItems(musicData, playlists, filter, search),
-    [musicData, playlists, filter, search]
+    [musicData, playlists, filter, search],
   );
   const { playlists: playlistItems, artists: artistItems } = sidebar;
 
@@ -76,10 +76,9 @@ const SideBar = ({
 
       {/* Sidebar header: logo, filters, search */}
       <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10 bg-gray-900">
-       
         {/* Filter chips */}
         <div className="flex space-x-2 px-4 mb-2">
-          {FILTERS.map(f => (
+          {FILTERS.map((f) => (
             <button
               key={f.value}
               className={`px-3 py-1 rounded-full text-xs ${
@@ -108,7 +107,7 @@ const SideBar = ({
             className="w-full p-1 bg-gray-800 rounded text-sm text-white"
             placeholder="Search in Your Library"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
           <button className="ml-2 text-gray-400" title="Recents">
             <FaList />
@@ -127,8 +126,10 @@ const SideBar = ({
       <div className="overflow-y-auto flex-1 px-2 pb-2 min-h-0">
         {playlistItems.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Playlists</div>
-            {playlistItems.map(item => (
+            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
+              Playlists
+            </div>
+            {playlistItems.map((item) => (
               <SidebarListItem
                 key={item.id}
                 item={item}
@@ -139,8 +140,10 @@ const SideBar = ({
         )}
         {artistItems.length > 0 && (
           <div>
-            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">Artists</div>
-            {artistItems.map(item => (
+            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
+              Artists
+            </div>
+            {artistItems.map((item) => (
               <SidebarListItem
                 key={item.id}
                 item={item}
@@ -158,7 +161,7 @@ const SideBar = ({
       {/* New Playlist Modal */}
       {showModal && (
         <NewPlaylistModal
-          onCreate={name => {
+          onCreate={(name) => {
             onCreatePlaylist(name);
             setShowModal(false);
           }}
@@ -176,7 +179,7 @@ SideBar.propTypes = {
   onArtistSelect: PropTypes.func.isRequired,
   onShowRightPanel: PropTypes.func.isRequired,
   onCreatePlaylist: PropTypes.func.isRequired,
-  onPlayArtist: PropTypes.func,
+  onPlayArtist: PropTypes.func
 };
 
 export default SideBar;

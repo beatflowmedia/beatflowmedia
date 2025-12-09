@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import PropTypes from "prop-types";
 import ContextMenu from "./ContextMenu";
+import PropTypes from 'prop-types';
 
 const RightPanel = ({ visible, content, onClose }) => {
   // content: { type: "artist"|"playlist", info: {...} }
@@ -23,7 +23,7 @@ const RightPanel = ({ visible, content, onClose }) => {
       credits = [],
       onTour = [],
       videoSrc,
-      videoPoster,
+      videoPoster
     } = info;
 
     const artistMenu = [
@@ -40,19 +40,23 @@ const RightPanel = ({ visible, content, onClose }) => {
         <div className="flex justify-between items-center mb-4">
           <button
             ref={menuButtonRef}
-            onClick={e => {
+            onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               setMenuPos({ x: rect.right, y: rect.bottom });
               setShowMenu(true);
             }}
             className="text-gray-400 hover:text-white text-2xl px-2"
             title="More options"
-          >&#x22EE;</button>
+          >
+            &#x22EE;
+          </button>
           <button
             className="text-gray-400 hover:text-white text-xl"
             onClick={onClose}
             title="Close"
-          >✖</button>
+          >
+            ✖
+          </button>
         </div>
         {/* Dropdown */}
         <ContextMenu
@@ -80,9 +84,7 @@ const RightPanel = ({ visible, content, onClose }) => {
 
         {/* Bio */}
         {biography && (
-          <div className="mb-4 text-gray-300 leading-relaxed">
-            {biography}
-          </div>
+          <div className="mb-4 text-gray-300 leading-relaxed">{biography}</div>
         )}
 
         {/* Video (optional) */}
@@ -107,7 +109,10 @@ const RightPanel = ({ visible, content, onClose }) => {
             <h3 className="font-bold mb-2 text-lg">Credits</h3>
             <ul>
               {credits.map((credit, i) => (
-                <li key={i} className="flex justify-between text-gray-200 py-1 border-b border-gray-700 last:border-none">
+                <li
+                  key={i}
+                  className="flex justify-between text-gray-200 py-1 border-b border-gray-700 last:border-none"
+                >
                   <span>{credit.name}</span>
                   <span className="text-gray-400 text-sm">{credit.role}</span>
                 </li>
@@ -122,9 +127,14 @@ const RightPanel = ({ visible, content, onClose }) => {
             <h3 className="font-bold mb-2 text-lg">On Tour</h3>
             <ul>
               {onTour.map((tourItem, i) => (
-                <li key={i} className="py-1 border-b border-gray-700 last:border-none">
+                <li
+                  key={i}
+                  className="py-1 border-b border-gray-700 last:border-none"
+                >
                   <div className="text-white">{tourItem.date}</div>
-                  <div className="text-gray-400 text-sm">{tourItem.location} • {tourItem.venue}</div>
+                  <div className="text-gray-400 text-sm">
+                    {tourItem.location} • {tourItem.venue}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -133,8 +143,12 @@ const RightPanel = ({ visible, content, onClose }) => {
 
         {/* Actions */}
         <div className="flex gap-3 mt-6">
-          <button className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition">Play</button>
-          <button className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">Follow</button>
+          <button className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition">
+            Play
+          </button>
+          <button className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">
+            Follow
+          </button>
         </div>
       </div>
     );
@@ -142,12 +156,7 @@ const RightPanel = ({ visible, content, onClose }) => {
 
   // --- Playlist "peek" (Spotify style) ---
   if (type === "playlist") {
-    const {
-      name,
-      cover,
-      songs = [],
-      description,
-    } = info;
+    const { name, cover, songs = [], description } = info;
 
     return (
       <div className="fixed right-0 top-16 h-full w-96 max-w-full bg-gray-900 text-white shadow-xl p-6 z-50 overflow-y-auto">
@@ -157,7 +166,9 @@ const RightPanel = ({ visible, content, onClose }) => {
             className="text-gray-400 hover:text-white text-xl"
             onClick={onClose}
             title="Close"
-          >✖</button>
+          >
+            ✖
+          </button>
         </div>
         <div className="flex flex-col items-center mb-4">
           <img
@@ -176,8 +187,15 @@ const RightPanel = ({ visible, content, onClose }) => {
           <h3 className="font-bold mb-2 text-lg">Songs</h3>
           <ul>
             {songs.slice(0, 5).map((song, i) => (
-              <li key={i} className="flex items-center text-gray-200 py-1 border-b border-gray-800 last:border-none">
-                <img src={song.cover} alt={song.title} className="w-10 h-10 mr-2 rounded object-cover" />
+              <li
+                key={i}
+                className="flex items-center text-gray-200 py-1 border-b border-gray-800 last:border-none"
+              >
+                <img
+                  src={song.cover}
+                  alt={song.title}
+                  className="w-10 h-10 mr-2 rounded object-cover"
+                />
                 <div>
                   <div>{song.title}</div>
                   <div className="text-xs text-gray-400">{song.artist}</div>
@@ -200,7 +218,7 @@ const RightPanel = ({ visible, content, onClose }) => {
 RightPanel.propTypes = {
   visible: PropTypes.bool,
   content: PropTypes.object, // { type: "artist", info: {...} } or { type: "playlist", info: {...} }
-  onClose: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired
 };
 
 export default RightPanel;

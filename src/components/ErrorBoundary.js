@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -13,7 +13,7 @@ export default class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, info) {
     // You can log the error to an error reporting service here
-    console.error('ErrorBoundary caught an error:', error, info);
+    console.error("ErrorBoundary caught an error:", error, info);
   }
 
   render() {

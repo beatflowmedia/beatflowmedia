@@ -17,6 +17,8 @@ import MiniPlayerPortal from "./MiniPlayerPortal";
 import { usePlayback } from "../context/PlaybackContext";
 import { useAuth } from "../context/AuthContext";
 import { usePlaybackResume } from "../utils/usePlaybackResume";
+import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
+const playerAnalytics = new PlayerAnalyticsClass();
 
 // Repeat mode constants
 const REPEAT_OFF = 0;
@@ -32,12 +34,44 @@ const MusicPlayer = ({
 }) => {
   const audioRef = useRef(new Audio());
   const { playlists, addSong } = usePlaylistManager();
-  const { user } = useAuth(); // Get Google user from context
+  const { user } = useAuth();
+  const [mseEngine, setMseEngine] = useState(null);
+  const [playbackToken, setPlaybackToken] = useState(null);
+  const [manifestUrl, setManifestUrl] = useState(null);
 
   // --- HYBRID RESUME HOOK! ---
   usePlaybackResume(audioRef, song, user);
 
-  // Local state for playback controls
+  // Request playback token and manifest when song changes
+  useEffect(() => {
+    if (!song) return;
+    async function fetchPlaybackToken() {
+      try {
+        const res = await fetch('/api/playback/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ asset_id: song.id, bitrate: song.bitrate || 256 })
+        });
+        const data = await res.json();
+        setPlaybackToken(data.playback_token);
+        setManifestUrl(data.manifest_url);
+      } catch (err) {
+        console.error('Failed to fetch playback token:', err);
+      }
+    }
+    fetchPlaybackToken();
+  }, [song]);
+
+  // Instantiate MseEngine when manifestUrl and playbackToken are available
+  useEffect(() => {
+    if (!manifestUrl || !playbackToken || !audioRef.current) return;
+    // Dynamically import MseEngine to avoid SSR issues
+    import('../engine/MseEngine').then(({ default: MseEngine }) => {
+      const engine = new MseEngine(audioRef.current, playbackToken);
+      engine.load({ streamUrl: manifestUrl });
+      setMseEngine(engine);
+    });
+  }, [manifestUrl, playbackToken]);
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -52,12 +86,29 @@ const MusicPlayer = ({
   // Audio Playback Logic
   useEffect(() => {
     if (!song) return;
-    const audio = audioRef.current;
-    audio.src = `/music/${song.fileName}`;
-    audio.load();
     setCurrentSongId(song.id);
-    if (isPlaying) {
-      audio.play().catch((err) => console.error("Autoplay failed:", err));
+    // Analytics: Track track load
+    playerAnalytics.trackTrackLoad(song, { manifestUrl });
+    // If not using MseEngine, fallback to direct src
+    if (!mseEngine) {
+      const audio = audioRef.current;
+      audio.src = `/music/${song.fileName}`;
+      audio.load();
+      if (isPlaying) {
+        audio.play().catch((err) => console.error("Autoplay failed:", err));
+        // Analytics: Track play start
+        playerAnalytics.trackPlayStart(song);
+      }
+    } else {
+      if (isPlaying) {
+        mseEngine.play();
+        // Analytics: Track play start
+        playerAnalytics.trackPlayStart(song);
+      } else {
+        mseEngine.pause();
+        // Analytics: Track play pause
+        playerAnalytics.trackPlayPause('user_action');
+      }
     }
   }, [song, isPlaying, setCurrentSongId]);
 
@@ -113,6 +164,8 @@ const MusicPlayer = ({
     const audio = audioRef.current;
     if (!audio) return;
     const handleEnded = () => {
+      // Analytics: Track play end
+      playerAnalytics.trackPlayEnd('natural_end');
       if (repeatMode === REPEAT_ONE) {
         audio.currentTime = 0;
         audio.play();
@@ -154,9 +207,11 @@ const MusicPlayer = ({
   };
 
   const handleSeek = (e) => {
-    const seekVal = parseFloat(e.target.value);
-    audioRef.current.currentTime = seekVal;
-    setCurrentTime(seekVal);
+  const seekVal = parseFloat(e.target.value);
+  // Analytics: Track seek event
+  playerAnalytics.trackSeek(currentTime, seekVal, 'user_seek');
+  audioRef.current.currentTime = seekVal;
+  setCurrentTime(seekVal);
   };
 
   const handleOpenMiniPlayer = () => setMiniPlayerVisible(true);

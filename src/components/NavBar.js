@@ -1,14 +1,9 @@
 // src/components/NavBar.jsx
 import React, { memo } from "react";
-import PropTypes from "prop-types";
 import classNames from "classnames";
-import {
-  FaSearch,
-  FaDownload,
-  FaBell,
-  FaCrown,
-} from "react-icons/fa";
+import { FaSearch, FaDownload, FaBell, FaCrown } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import PropTypes from 'prop-types';
 
 const NavBar = ({
   onHomeClick,
@@ -16,7 +11,7 @@ const NavBar = ({
   onExplorePremium,
   onDownloadClick,
   onWhatsNewClick,
-  isBellActive,
+  isBellActive
 }) => {
   const { user, signInWithGoogle, signOutUser } = useAuth();
 
@@ -91,8 +86,8 @@ const NavBar = ({
             "p-2 rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition",
             {
               "text-bf-green": isBellActive,
-              "text-bf-subtext hover:text-bf-text": !isBellActive,
-            }
+              "text-bf-subtext hover:text-bf-text": !isBellActive
+            },
           )}
         >
           <FaBell />
@@ -128,7 +123,7 @@ NavBar.propTypes = {
   onExplorePremium: PropTypes.func,
   onDownloadClick: PropTypes.func,
   onWhatsNewClick: PropTypes.func,
-  isBellActive: PropTypes.bool,
+  isBellActive: PropTypes.bool
 };
 
 NavBar.defaultProps = {
@@ -137,7 +132,7 @@ NavBar.defaultProps = {
   onExplorePremium: () => {},
   onDownloadClick: () => {},
   onWhatsNewClick: () => {},
-  isBellActive: false,
+  isBellActive: false
 };
 
 export default memo(NavBar);

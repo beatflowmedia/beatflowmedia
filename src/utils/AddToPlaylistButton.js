@@ -9,7 +9,11 @@ export default function AddToPlaylistButton({ song, playlists, addSong }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   if (!song || !playlists || !addSong) {
-    console.error("Missing props in AddToPlaylistButton:", { song, playlists, addSong });
+    console.error("Missing props in AddToPlaylistButton:", {
+      song,
+      playlists,
+      addSong
+    });
     return null;
   }
 
@@ -35,7 +39,7 @@ export default function AddToPlaylistButton({ song, playlists, addSong }) {
                   addSong(playlist.id, song);
                   setShowDropdown(false);
                   console.log(
-                    `Added "${song.title}" to playlist "${playlist.name}"`
+                    `Added "${song.title}" to playlist "${playlist.name}"`,
                   );
                 }}
               >

@@ -6,17 +6,22 @@ export default function SearchResultsMain({
   query = "",
   musicData = [],
   onPlaySong = () => {},
-  onArtistSelect = () => {},
+  onArtistSelect = () => {}
 }) {
   if (!query.trim()) return null;
 
   const normalizedQuery = query.trim().toLowerCase();
 
   const filteredSongs = musicData
-    .filter((song) => song.title && song.title.toLowerCase().includes(normalizedQuery))
+    .filter(
+      (song) =>
+        song.title && song.title.toLowerCase().includes(normalizedQuery),
+    )
     .slice(0, 5);
 
-  const allArtists = [...new Set(musicData.map((song) => song.artist).filter(Boolean))];
+  const allArtists = [
+    ...new Set(musicData.map((song) => song.artist).filter(Boolean)),
+  ];
   const filteredArtists = allArtists
     .filter((artist) => artist.toLowerCase().includes(normalizedQuery))
     .slice(0, 6);
@@ -27,10 +32,15 @@ export default function SearchResultsMain({
   const topResult = topSongObject
     ? { ...topSongObject, type: "Song" }
     : topArtistName
-    ? { artist: topArtistName, type: "Artist", cover: "/images/artistPlaceholder.jpg" }
-    : null;
+      ? {
+          artist: topArtistName,
+          type: "Artist",
+          cover: "/images/artistPlaceholder.jpg"
+        }
+      : null;
 
-  const noResults = !topResult && filteredSongs.length === 0 && filteredArtists.length === 0;
+  const noResults =
+    !topResult && filteredSongs.length === 0 && filteredArtists.length === 0;
 
   return (
     <div className="p-4 text-white">
@@ -43,7 +53,8 @@ export default function SearchResultsMain({
                 className="bg-gray-800 p-4 rounded flex items-center gap-4 cursor-pointer hover:bg-gray-700"
                 onClick={() => {
                   if (topResult.type === "Song") onPlaySong(topResult);
-                  else if (topResult.type === "Artist") onArtistSelect(topResult.artist);
+                  else if (topResult.type === "Artist")
+                    onArtistSelect(topResult.artist);
                 }}
               >
                 {topResult.cover ? (
@@ -92,7 +103,11 @@ export default function SearchResultsMain({
                         {song.artist || "Unknown Artist"}
                       </p>
                     </div>
-                    <PlayButton isPlaying={false} onClick={() => onPlaySong(song)} size={20} />
+                    <PlayButton
+                      isPlaying={false}
+                      onClick={() => onPlaySong(song)}
+                      size={20}
+                    />
                   </div>
                 ))}
               </div>

@@ -5,7 +5,7 @@ import {
   FaDownload,
   FaSearch,
   FaCompass,
-  FaBars,
+  FaBars
 } from "react-icons/fa";
 import SearchResults from "./SearchResults";
 import useClickOutside from "../hooks/useClickOutside";
@@ -18,7 +18,7 @@ const NavBar = ({
   onExplorePremium,
   onBrowseClick,
   onSearchChange,
-  toggleSidebar,
+  toggleSidebar
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -51,7 +51,11 @@ const NavBar = ({
           onClick={() => window.location.reload()}
           aria-label="Reload Home"
         >
-          <img src="/images/Logo.svg" alt="BeatFlow Logo" className="h-10 w-auto" />
+          <img
+            src="/images/Logo.svg"
+            alt="BeatFlow Logo"
+            className="h-10 w-auto"
+          />
         </button>
         <button
           className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition"

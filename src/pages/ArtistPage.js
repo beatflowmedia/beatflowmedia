@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState , useMemo } from "react";
 import musicData from "../musicData.json";
 import { buildArtistInfo } from "../utils/buildArtistInfo";
 import RightPanel from "../components/RightPanel";
@@ -12,7 +12,7 @@ function ArtistPage() {
   // Memoize artist info to avoid recomputing unless the artist name changes
   const artistInfo = useMemo(
     () => buildArtistInfo(selectedArtistName, musicData),
-    [selectedArtistName]
+    [selectedArtistName],
   );
 
   return (

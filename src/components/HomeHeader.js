@@ -10,10 +10,12 @@ function HomeHeader({
   isFollowing,
   toggleFollow,
   onSongSelect,
-  onTogglePlay,
+  onTogglePlay
 }) {
   return (
-    <div className={`relative w-full h-80 bg-gradient-to-b ${headerBgStyle} p-6 flex items-end`}>
+    <div
+      className={`relative w-full h-80 bg-gradient-to-b ${headerBgStyle} p-6 flex items-end`}
+    >
       {/* Big green play button anchored to bottom-left */}
       <button
         className="absolute left-6 bottom-6 w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-black shadow-lg hover:scale-105 transform transition"
@@ -31,9 +33,12 @@ function HomeHeader({
       <div className="ml-24">
         {selectedPlaylist ? (
           <div>
-            <h1 className="text-5xl font-bold text-white">{selectedPlaylist.name}</h1>
+            <h1 className="text-5xl font-bold text-white">
+              {selectedPlaylist.name}
+            </h1>
             <p className="text-gray-300 text-sm">
-              Trending Songs (Music Production) · {songsToDisplay.length} song(s)
+              Trending Songs (Music Production) · {songsToDisplay.length}{" "}
+              song(s)
             </p>
           </div>
         ) : selectedArtist ? (
@@ -57,7 +62,8 @@ function HomeHeader({
           <div>
             <h1 className="text-5xl font-bold text-white">Liked Songs</h1>
             <p className="text-gray-300 text-sm">
-              Trending Songs (Music Production) · {songsToDisplay.length} song(s)
+              Trending Songs (Music Production) · {songsToDisplay.length}{" "}
+              song(s)
             </p>
           </div>
         )}

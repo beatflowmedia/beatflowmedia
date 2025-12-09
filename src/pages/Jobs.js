@@ -4,7 +4,7 @@ import Footer from "../components/Footer";
 import JobApplicationModal from "../components/JobApplicationModal";
 import { db, storage } from "../firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { collection, Timestamp, addDoc } from "firebase/firestore";
 
 const JOBS_PER_PAGE = 5;
 
@@ -28,15 +28,25 @@ const Jobs = () => {
   const [progress, setProgress] = useState(0);
 
   // Dropdown options
-  const allLocations = ["All", ...new Set(jobs.map(j => j.location).filter(Boolean))];
-  const allDepartments = ["All", ...new Set(jobs.map(j => j.department).filter(Boolean))];
-  const allTypes = ["All", ...new Set(jobs.map(j => (j.employment_type || j.type)).filter(Boolean))];
+  const allLocations = [
+    "All",
+    ...new Set(jobs.map((j) => j.location).filter(Boolean)),
+  ];
+  const allDepartments = [
+    "All",
+    ...new Set(jobs.map((j) => j.department).filter(Boolean)),
+  ];
+  const allTypes = [
+    "All",
+    ...new Set(jobs.map((j) => j.employment_type || j.type).filter(Boolean)),
+  ];
 
   // Filtered and paginated jobs
-  const filteredJobs = jobs.filter(j =>
-    (filter.location === "All" || j.location === filter.location) &&
-    (filter.department === "All" || j.department === filter.department) &&
-    (filter.type === "All" || (j.employment_type || j.type) === filter.type)
+  const filteredJobs = jobs.filter(
+    (j) =>
+      (filter.location === "All" || j.location === filter.location) &&
+      (filter.department === "All" || j.department === filter.department) &&
+      (filter.type === "All" || (j.employment_type || j.type) === filter.type),
   );
   const visibleJobs = filteredJobs.slice(0, visibleCount);
 
@@ -71,10 +81,11 @@ const Jobs = () => {
 
       // Track upload progress
       await new Promise((resolve, reject) => {
-        uploadTask.on("state_changed",
+        uploadTask.on(
+          "state_changed",
           (snapshot) => {
             const percent = Math.round(
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
             );
             setProgress(percent);
           },
@@ -103,7 +114,7 @@ const Jobs = () => {
             resetForm();
             setSubmitting(false);
             resolve();
-          }
+          },
         );
       });
     } catch (e) {
@@ -114,7 +125,7 @@ const Jobs = () => {
   };
 
   const toggleJob = (id) => setOpenId(openId === id ? null : id);
-  const handleLoadMore = () => setVisibleCount(v => v + JOBS_PER_PAGE);
+  const handleLoadMore = () => setVisibleCount((v) => v + JOBS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
@@ -122,38 +133,131 @@ const Jobs = () => {
         <h1 className="text-4xl font-bold mb-8">Join BeatFlow Media</h1>
         {/* Filters */}
         <div className="mb-8 flex flex-wrap gap-4">
-          <select value={filter.location} onChange={e => setFilter(f => ({ ...f, location: e.target.value }))} className="rounded px-3 py-2 bg-gray-800 text-white">{allLocations.map(loc => (<option key={loc} value={loc}>{loc}</option>))}</select>
-          <select value={filter.department} onChange={e => setFilter(f => ({ ...f, department: e.target.value }))} className="rounded px-3 py-2 bg-gray-800 text-white">{allDepartments.map(dep => (<option key={dep} value={dep}>{dep}</option>))}</select>
-          <select value={filter.type} onChange={e => setFilter(f => ({ ...f, type: e.target.value }))} className="rounded px-3 py-2 bg-gray-800 text-white">{allTypes.map(t => (<option key={t} value={t}>{t.replace("_", " ")}</option>))}</select>
+          <select
+            value={filter.location}
+            onChange={(e) =>
+              setFilter((f) => ({ ...f, location: e.target.value }))
+            }
+            className="rounded px-3 py-2 bg-gray-800 text-white"
+          >
+            {allLocations.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filter.department}
+            onChange={(e) =>
+              setFilter((f) => ({ ...f, department: e.target.value }))
+            }
+            className="rounded px-3 py-2 bg-gray-800 text-white"
+          >
+            {allDepartments.map((dep) => (
+              <option key={dep} value={dep}>
+                {dep}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filter.type}
+            onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value }))}
+            className="rounded px-3 py-2 bg-gray-800 text-white"
+          >
+            {allTypes.map((t) => (
+              <option key={t} value={t}>
+                {t.replace("_", " ")}
+              </option>
+            ))}
+          </select>
         </div>
         {loading ? (
           <div>Loading jobs…</div>
         ) : filteredJobs.length === 0 ? (
-          <div className="text-gray-400">No open positions right now. Check back soon!</div>
+          <div className="text-gray-400">
+            No open positions right now. Check back soon!
+          </div>
         ) : (
           <>
             {visibleJobs.map((job) => {
               const id = job.id || job.title;
-              const employmentType = job.employment_type ? job.employment_type.replace("_", " ") : "";
-              const infoRow = [job.department, job.location, employmentType || job.type].filter(Boolean).join(" · ");
+              const employmentType = job.employment_type
+                ? job.employment_type.replace("_", " ")
+                : "";
+              const infoRow = [
+                job.department,
+                job.location,
+                employmentType || job.type,
+              ]
+                .filter(Boolean)
+                .join(" · ");
               const isOpen = openId === id;
               return (
-                <section key={id} className="mb-6 bg-gray-900 p-6 rounded-lg shadow-md" aria-labelledby={`job-${id}`}>
-                  <button className="w-full text-left focus:outline-none" aria-expanded={isOpen} aria-controls={`panel-${id}`} onClick={() => toggleJob(id)}>
+                <section
+                  key={id}
+                  className="mb-6 bg-gray-900 p-6 rounded-lg shadow-md"
+                  aria-labelledby={`job-${id}`}
+                >
+                  <button
+                    className="w-full text-left focus:outline-none"
+                    aria-expanded={isOpen}
+                    aria-controls={`panel-${id}`}
+                    onClick={() => toggleJob(id)}
+                  >
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 id={`job-${id}`} className="text-2xl font-semibold mb-1">{job.title || "Untitled Position"}</h2>
-                        {infoRow && (<div className="mb-1 text-sm text-gray-400">{infoRow}</div>)}
+                        <h2
+                          id={`job-${id}`}
+                          className="text-2xl font-semibold mb-1"
+                        >
+                          {job.title || "Untitled Position"}
+                        </h2>
+                        {infoRow && (
+                          <div className="mb-1 text-sm text-gray-400">
+                            {infoRow}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-green-400 text-2xl ml-2">{isOpen ? "−" : "+"}</span>
+                      <span className="text-green-400 text-2xl ml-2">
+                        {isOpen ? "−" : "+"}
+                      </span>
                     </div>
                   </button>
                   {isOpen && (
-                    <div id={`panel-${id}`} className="mt-4 transition-all animate-fadeIn">
-                      {job.description && (<div className="mb-4 text-base">{job.description}</div>)}
-                      {job.responsibilities?.length > 0 && (<><strong className="block mb-1">Responsibilities:</strong><ul className="list-disc ml-5 mb-4">{job.responsibilities.map((r, i) => (<li key={i}>{r}</li>))}</ul></>)}
-                      {job.requirements?.length > 0 && (<><strong className="block mb-1">Requirements:</strong><ul className="list-disc ml-5 mb-4">{job.requirements.map((r, i) => (<li key={i}>{r}</li>))}</ul></>)}
-                      <button className="mt-2 px-5 py-2 bg-green-600 rounded text-white font-semibold hover:bg-green-700 focus:outline-none focus:ring" aria-label={`Apply for ${job.title}`} onClick={() => handleOpenApply(job)}>
+                    <div
+                      id={`panel-${id}`}
+                      className="mt-4 transition-all animate-fadeIn"
+                    >
+                      {job.description && (
+                        <div className="mb-4 text-base">{job.description}</div>
+                      )}
+                      {job.responsibilities?.length > 0 && (
+                        <>
+                          <strong className="block mb-1">
+                            Responsibilities:
+                          </strong>
+                          <ul className="list-disc ml-5 mb-4">
+                            {job.responsibilities.map((r, i) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                      {job.requirements?.length > 0 && (
+                        <>
+                          <strong className="block mb-1">Requirements:</strong>
+                          <ul className="list-disc ml-5 mb-4">
+                            {job.requirements.map((r, i) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                      <button
+                        className="mt-2 px-5 py-2 bg-green-600 rounded text-white font-semibold hover:bg-green-700 focus:outline-none focus:ring"
+                        aria-label={`Apply for ${job.title}`}
+                        onClick={() => handleOpenApply(job)}
+                      >
                         Apply Now
                       </button>
                     </div>
@@ -163,13 +267,18 @@ const Jobs = () => {
             })}
             {visibleCount < filteredJobs.length && (
               <div className="flex justify-center">
-                <button className="mt-4 px-5 py-2 bg-gray-800 rounded text-white font-medium hover:bg-gray-700 focus:outline-none" onClick={handleLoadMore} aria-label="Load more jobs">
+                <button
+                  className="mt-4 px-5 py-2 bg-gray-800 rounded text-white font-medium hover:bg-gray-700 focus:outline-none"
+                  onClick={handleLoadMore}
+                  aria-label="Load more jobs"
+                >
                   Load more jobs
                 </button>
               </div>
             )}
             <div className="mt-6 text-sm text-center text-gray-500">
-              Showing {Math.min(visibleCount, filteredJobs.length)} of {filteredJobs.length} open positions
+              Showing {Math.min(visibleCount, filteredJobs.length)} of{" "}
+              {filteredJobs.length} open positions
             </div>
           </>
         )}

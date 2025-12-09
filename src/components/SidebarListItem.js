@@ -1,10 +1,10 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { FaMusic, FaUser, FaPlay } from "react-icons/fa";
+import PropTypes from 'prop-types';
 
 const typeIcon = {
   playlist: <FaMusic className="text-green-400 mr-2" />,
-  artist: <FaUser className="text-yellow-400 mr-2" />,
+  artist: <FaUser className="text-yellow-400 mr-2" />
 };
 
 const SidebarListItem = ({
@@ -12,7 +12,7 @@ const SidebarListItem = ({
   onArtistSelect,
   onShowRightPanel,
   onPlaylistSelect,
-  onPlayArtist,
+  onPlayArtist
 }) => {
   if (item.type === "artist") {
     return (
@@ -23,7 +23,11 @@ const SidebarListItem = ({
           className="w-10 h-10 mr-3 rounded-full overflow-hidden focus:outline-none"
           title="Show artist info"
         >
-          <img src={item.cover} alt={item.name} className="w-full h-full object-cover"/>
+          <img
+            src={item.cover}
+            alt={item.name}
+            className="w-full h-full object-cover"
+          />
         </button>
         {/* Play artist button */}
         <button
@@ -39,7 +43,9 @@ const SidebarListItem = ({
           onClick={() => onArtistSelect(item.name)}
           title={`Go to artist page: ${item.name}`}
         >
-          <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">{item.name}</div>
+          <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">
+            {item.name}
+          </div>
           <div className="text-xs text-gray-400 flex items-center mt-0.5">
             {typeIcon[item.type]}
             Artist
@@ -60,13 +66,15 @@ const SidebarListItem = ({
         src={item.cover}
         alt={item.name}
         className="w-10 h-10 rounded object-cover mr-3 flex-shrink-0 border border-gray-800"
-        onError={e => {
+        onError={(e) => {
           e.target.onerror = null;
           e.target.src = "/playlist-default.jpg";
         }}
       />
       <div className="flex-1 min-w-0">
-        <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">{item.name}</div>
+        <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">
+          {item.name}
+        </div>
         <div className="text-xs text-gray-400 flex items-center mt-0.5">
           {typeIcon[item.type]} Playlist
         </div>
@@ -79,12 +87,12 @@ SidebarListItem.propTypes = {
   item: PropTypes.shape({
     name: PropTypes.string.isRequired,
     cover: PropTypes.string,
-    type: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired
   }).isRequired,
   onArtistSelect: PropTypes.func,
   onShowRightPanel: PropTypes.func,
   onPlaylistSelect: PropTypes.func,
-  onPlayArtist: PropTypes.func,
+  onPlayArtist: PropTypes.func
 };
 
 export default SidebarListItem;

@@ -8,7 +8,10 @@ import { FaPlay, FaPause } from "react-icons/fa";
 
 const PlayButton = ({ isPlaying, onClick, size = 24 }) => {
   return (
-    <button onClick={onClick} className="text-white hover:text-green-400 transition">
+    <button
+      onClick={onClick}
+      className="text-white hover:text-green-400 transition"
+    >
       {isPlaying ? <FaPause size={size} /> : <FaPlay size={size} />}
     </button>
   );

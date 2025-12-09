@@ -1,4 +1,12 @@
-import { collection, addDoc, updateDoc, doc, arrayUnion, onSnapshot, getDoc } from "firebase/firestore";
+import {
+  collection,
+  updateDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  addDoc,
+  arrayUnion
+} from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 // ✅ Listen for playlist updates in Firebase
@@ -6,7 +14,7 @@ export const subscribeToPlaylists = (callback) => {
   return onSnapshot(collection(db, "playlists"), (snapshot) => {
     const updatedPlaylists = snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
+      ...doc.data()
     }));
     callback(updatedPlaylists);
   });
@@ -18,7 +26,7 @@ export const createPlaylist = async (playlistName) => {
     const docRef = await addDoc(collection(db, "playlists"), {
       name: playlistName,
       songs: [],
-      createdAt: new Date(),
+      createdAt: new Date()
     });
     console.log("✅ Playlist created with ID:", docRef.id);
     return docRef.id;
@@ -33,7 +41,7 @@ export const addSongToPlaylist = async (playlistId, song) => {
   const playlistRef = doc(db, "playlists", playlistId);
   try {
     await updateDoc(playlistRef, {
-      songs: arrayUnion(song),
+      songs: arrayUnion(song)
     });
     console.log(`🎵 Added song "${song.title}" to playlist: ${playlistId}`);
   } catch (error) {

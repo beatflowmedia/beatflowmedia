@@ -1,17 +1,17 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { FaMusic, FaUser, FaPlay } from "react-icons/fa";
+import PropTypes from 'prop-types';
 
 const typeIcon = {
   playlist: <FaMusic className="text-green-400 mr-2" />,
-  artist: <FaUser className="text-yellow-400 mr-2" />,
+  artist: <FaUser className="text-yellow-400 mr-2" />
 };
 
 const SidebarListItem = ({
   item,
-  onViewArtist,     // (artistName) => show artist in main area (Home.js)
+  onViewArtist, // (artistName) => show artist in main area (Home.js)
   onShowRightPanel, // (artistName) => show artist in right panel
-  onPlayArtist,     // (artistName) => play artist's first song
+  onPlayArtist, // (artistName) => play artist's first song
   onPlaylistSelect, // (playlist)   => open playlist
 }) => {
   if (item.type === "artist") {
@@ -23,7 +23,7 @@ const SidebarListItem = ({
           alt={item.name}
           className="w-10 h-10 rounded object-cover mr-3 flex-shrink-0 border border-gray-800 cursor-pointer hover:ring-2 hover:ring-green-400"
           onClick={() => onShowRightPanel && onShowRightPanel(item.name)}
-          onError={e => {
+          onError={(e) => {
             e.target.onerror = null;
             e.target.src = "/artistImages/default.jpg";
           }}
@@ -33,7 +33,12 @@ const SidebarListItem = ({
         <div className="flex-1 min-w-0">
           <button
             className="truncate text-white text-sm font-semibold group-hover:text-green-300 text-left"
-            style={{ background: "none", border: "none", padding: 0, margin: 0 }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              margin: 0
+            }}
             onClick={() => onViewArtist && onViewArtist(item.name)}
             title={`Show artist: ${item.name}`}
             tabIndex={0}
@@ -68,7 +73,7 @@ const SidebarListItem = ({
         src={item.cover}
         alt={item.name}
         className="w-10 h-10 rounded object-cover mr-3 flex-shrink-0 border border-gray-800"
-        onError={e => {
+        onError={(e) => {
           e.target.onerror = null;
           e.target.src = "/playlist-default.jpg";
         }}
@@ -89,12 +94,12 @@ SidebarListItem.propTypes = {
   item: PropTypes.shape({
     name: PropTypes.string.isRequired,
     cover: PropTypes.string,
-    type: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired
   }).isRequired,
-  onViewArtist: PropTypes.func,      // Loads artist in main content area (Home.js)
-  onShowRightPanel: PropTypes.func,  // Opens right panel with artist info
-  onPlayArtist: PropTypes.func,      // Plays artist's first song
-  onPlaylistSelect: PropTypes.func,  // Selects playlist
+  onViewArtist: PropTypes.func, // Loads artist in main content area (Home.js)
+  onShowRightPanel: PropTypes.func, // Opens right panel with artist info
+  onPlayArtist: PropTypes.func, // Plays artist's first song
+  onPlaylistSelect: PropTypes.func, // Selects playlist
 };
 
 export default SidebarListItem;

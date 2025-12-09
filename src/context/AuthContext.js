@@ -21,6 +21,7 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   const [followedArtists, setFollowedArtists] = useState([]);
 
   const auth = getAuth();
@@ -48,15 +49,20 @@ export const AuthProvider = ({ children }) => {
             favorites: [],
             follows: [],
             playlists: [],
-            likes: []
+            likes: [],
+            role: "artist" // Default role, update as needed
           },
           { merge: true }
         );
+        setRole("artist");
+      } else {
+        setRole(snap.data()?.role || null);
       }
-      // Subscribe to follow list
-      const unsubFollows = onSnapshot(userRef, (ds) =>
-        setFollowedArtists(ds.data()?.follows || [])
-      );
+      // Subscribe to follow list and role
+      const unsubFollows = onSnapshot(userRef, (ds) => {
+        setFollowedArtists(ds.data()?.follows || []);
+        setRole(ds.data()?.role || null);
+      });
       return () => unsubFollows();
     });
     return () => unsubscribe();
@@ -129,6 +135,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        role,
         signInWithGoogle,
         signOutUser,
         updateFavorites,

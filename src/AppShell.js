@@ -36,7 +36,8 @@ export default function AppShell() {
 
   const [rightVisible, setRight] = useState(false);
   const [rightPanelContent, setRightPanelContent] = useState(null);
-  const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
+  const { playlists, createNewPlaylist, addSong, removeSong } =
+    usePlaylistManager();
 
   useEffect(() => {
     localStorage.setItem("favorites", JSON.stringify(favorites));
@@ -126,7 +127,7 @@ export default function AppShell() {
               setFavs((f) =>
                 f.some((x) => x.id === s.id)
                   ? f.filter((x) => x.id !== s.id)
-                  : [...f, s]
+                  : [...f, s],
               )
             }
             favorites={favorites}
@@ -187,7 +188,9 @@ export default function AppShell() {
           }`}
         >
           <ErrorBoundary>
-            <Suspense fallback={<div className="py-20 text-center">Loading…</div>}>
+            <Suspense
+              fallback={<div className="py-20 text-center">Loading…</div>}
+            >
               {renderContent()}
             </Suspense>
           </ErrorBoundary>

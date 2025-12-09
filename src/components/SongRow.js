@@ -22,14 +22,14 @@ const SongRow = ({
   onTogglePlay,
   onToggleFavorite,
   onAddToPlaylist,
-  onRemoveSongFromPlaylist,
+  onRemoveSongFromPlaylist
 }) => {
   const displayDuration =
     song.id === currentSongId && duration
       ? formatDuration(duration)
       : song.duration
-      ? song.duration
-      : "N/A";
+        ? song.duration
+        : "N/A";
 
   return (
     <div className="grid grid-cols-[40px_1fr_1fr_100px_60px_40px] items-center text-sm text-gray-300 py-2 hover:bg-gray-800 rounded transition cursor-pointer">
@@ -74,7 +74,9 @@ const SongRow = ({
           isFavorite={isFavorite}
           isInPlaylist={isInPlaylist}
           onAddToPlaylist={() => onAddToPlaylist(song)}
-          onRemoveFromPlaylist={(songToRemove) => onRemoveSongFromPlaylist(songToRemove)}
+          onRemoveFromPlaylist={(songToRemove) =>
+            onRemoveSongFromPlaylist(songToRemove)
+          }
           onToggleFavorite={onToggleFavorite}
           onRemoveFromLiked={(songToRemove) => onToggleFavorite(songToRemove)}
         />

@@ -1,19 +1,16 @@
 // src/pages/SongPage.js
-import React, { useEffect, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState , useMemo } from "react";
+import { useParams } from "react-router-dom";
+import PlayButton from "../components/PlayButton";
+import LikeButton from "../components/LikeButton";
+import { useAuth } from "../context/AuthContext";
+import musicData from "../musicData.json";
 import PropTypes from 'prop-types';
-import PlayButton from '../components/PlayButton';
-import LikeButton from '../components/LikeButton';
-import { useAuth } from '../context/AuthContext';
-import musicData from '../musicData.json';
 
 function SongPage({ onPlaySong, onToggleFavorite }) {
   const { id } = useParams();
   const { user, signInWithGoogle } = useAuth();
-  const song = useMemo(
-    () => musicData.find((s) => String(s.id) === id),
-    [id]
-  );
+  const song = useMemo(() => musicData.find((s) => String(s.id) === id), [id]);
   const [isLiked, setIsLiked] = useState(false);
 
   // 1) If the song exists, queue it on mount
@@ -68,7 +65,7 @@ function SongPage({ onPlaySong, onToggleFavorite }) {
 
       <div className="mt-6">
         <img
-          src={song.cover || 'https://via.placeholder.com/300'}
+          src={song.cover || "https://via.placeholder.com/300"}
           alt={song.title}
           className="rounded-lg max-w-full"
         />
@@ -89,7 +86,7 @@ SongPage.propTypes = {
   /** Callback to queue/play a song */
   onPlaySong: PropTypes.func.isRequired,
   /** Callback to toggle like/unlike in parent state */
-  onToggleFavorite: PropTypes.func.isRequired,
+  onToggleFavorite: PropTypes.func.isRequired
 };
 
 export default React.memo(SongPage);

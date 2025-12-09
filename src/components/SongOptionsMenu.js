@@ -13,7 +13,7 @@ function SongOptionsMenu({
   onViewCredits,
   onOpenDesktopApp,
   onRemoveFromLiked,
-  isInPlaylist = false,
+  isInPlaylist = false
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);

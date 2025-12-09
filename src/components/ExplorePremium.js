@@ -1,70 +1,69 @@
-
 // src/components/ExplorePremium.jsx
-import React, { useRef } from 'react'
-import { FaCcVisa, FaCcMastercard, FaCcStripe } from 'react-icons/fa'
-import StripeButton from './StripeButton'
-import Footer from './Footer'
+import React, { useRef } from "react";
+import { FaCcVisa, FaCcMastercard, FaCcStripe } from "react-icons/fa";
+import StripeButton from "./StripeButton";
+import Footer from "./Footer";
 
 const plans = [
   {
-    title: 'Individual',
-    price: '$11.99 / month after',
+    title: "Individual",
+    price: "$11.99 / month after",
     details: [
-      '1 Premium account',
-      'Cancel anytime',
-      '15-hour/month of listening time from our audiobooks',
+      "1 Premium account",
+      "Cancel anytime",
+      "15-hour/month of listening time from our audiobooks",
     ],
-    label: 'Try free for 1 month',
-    note: 'Free for 1 month, then $11.99/month after.',
-    tag: 'Free for 1 month',
-    priceId: 'price_4gMeVcbdS11GbeX13t2cg00',
+    label: "Try free for 1 month",
+    note: "Free for 1 month, then $11.99/month after.",
+    tag: "Free for 1 month",
+    priceId: "price_4gMeVcbdS11GbeX13t2cg00"
   },
   {
-    title: 'Student',
-    price: '$9.99 / month after',
+    title: "Student",
+    price: "$9.99 / month after",
     details: [
-      '1 verified Premium account',
-      'Discount for eligible students',
-      'Same benefits as Individual',
+      "1 verified Premium account",
+      "Discount for eligible students",
+      "Same benefits as Individual",
     ],
-    label: 'Try free for 1 month',
-    note: 'Free for 1 month, then $9.99/month after.',
-    tag: 'Free for 1 month',
-    priceId: 'price_eVq6oG3Lq8u83Mv8wV2cg01',
+    label: "Try free for 1 month",
+    note: "Free for 1 month, then $9.99/month after.",
+    tag: "Free for 1 month",
+    priceId: "price_eVq6oG3Lq8u83Mv8wV2cg01"
   },
   {
-    title: 'Duo',
-    price: '$16.99 / month after',
+    title: "Duo",
+    price: "$16.99 / month after",
     details: [
-      '2 Premium accounts',
-      'For couples under one roof',
-      'Plan manager only',
+      "2 Premium accounts",
+      "For couples under one roof",
+      "Plan manager only",
     ],
-    label: 'Get Premium Duo',
-    note: 'For couples who reside at the same address.',
-    tag: 'Free for 1 month',
-    priceId: 'price_dRm4gy2HmcKodn5cMb2cg02',
+    label: "Get Premium Duo",
+    note: "For couples who reside at the same address.",
+    tag: "Free for 1 month",
+    priceId: "price_dRm4gy2HmcKodn5cMb2cg02"
   },
   {
-    title: 'Family',
-    price: '$18.00 / month',
+    title: "Family",
+    price: "$18.00 / month",
     details: [
-      'Up to 6 Premium or Kids accounts',
-      'Control content marked as explicit',
-      'Access to BeatFlow Kids',
-      'Plan manager only',
+      "Up to 6 Premium or Kids accounts",
+      "Control content marked as explicit",
+      "Access to BeatFlow Kids",
+      "Plan manager only",
     ],
-    label: 'Get Premium Family',
-    note: 'For couples or families who reside at the same address.',
-    tag: 'Popular',
-    priceId: 'price_bJe4gybdS5hWaaT13t2cg03',
+    label: "Get Premium Family",
+    note: "For couples or families who reside at the same address.",
+    tag: "Popular",
+    priceId: "price_bJe4gybdS5hWaaT13t2cg03"
   },
-]
+];
 
 export default function ExplorePremium() {
-  const plansRef = useRef(null)
+  const plansRef = useRef(null);
   const scrollToPlans = () =>
-    plansRef.current?.scrollIntoView({ behavior: 'smooth' })
+    plansRef.current?.scrollIntoView({ behavior: "smooth" });
 
   return (
     <div className="flex flex-col min-h-screen bg-bf-page text-bf-text">
@@ -115,7 +114,7 @@ export default function ExplorePremium() {
           Pay in various ways. Cancel anytime.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          {plans.map(plan => (
+          {plans.map((plan) => (
             <div
               key={plan.title}
               className="bg-bf-card p-6 rounded-lg flex flex-col h-full"
@@ -152,7 +151,9 @@ export default function ExplorePremium() {
 
       {/* Comparison */}
       <section className="py-12 px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-center mb-6">Experience the difference</h2>
+        <h2 className="text-3xl font-bold text-center mb-6">
+          Experience the difference
+        </h2>
         <p className="text-center text-bf-subtext mb-8">
           Go Premium and enjoy full control of your listening. Cancel anytime.
         </p>
@@ -161,17 +162,21 @@ export default function ExplorePremium() {
             <thead className="border-b border-bf-page">
               <tr>
                 <th className="p-4 text-sm text-bf-subtext">What you get</th>
-                <th className="p-4 text-sm text-bf-subtext text-center">Free</th>
-                <th className="p-4 text-sm text-bf-subtext text-center">Premium</th>
+                <th className="p-4 text-sm text-bf-subtext text-center">
+                  Free
+                </th>
+                <th className="p-4 text-sm text-bf-subtext text-center">
+                  Premium
+                </th>
               </tr>
             </thead>
             <tbody>
               {[
-                'Ad-free music listening',
-                'Download songs',
-                'High-quality audio',
-                'Listen with fewer ads',
-                'Organize listening space',
+                "Ad-free music listening",
+                "Download songs",
+                "High-quality audio",
+                "Listen with fewer ads",
+                "Organize listening space",
               ].map((feat, i) => (
                 <tr key={i} className="border-b border-bf-page">
                   <td className="p-4">{feat}</td>
@@ -187,6 +192,5 @@ export default function ExplorePremium() {
       {/* Footer */}
       <Footer />
     </div>
-  )
+  );
 }
-

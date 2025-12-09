@@ -7,11 +7,7 @@ import {
   doc,
   updateDoc
 } from "firebase/firestore";
-import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider
-} from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage"; // <-- Import Storage
 
 const firebaseConfig = {
@@ -41,5 +37,5 @@ export {
   doc,
   updateDoc,
   signInWithPopup,
-  storage // <-- Export storage for resume uploads
+  storage, // <-- Export storage for resume uploads
 };
