@@ -25,30 +25,34 @@ export default function Advertising() {
             <span className="text-2xl font-bold text-bf-green">
               BeatFlow Advertising
             </span>
-            {[
-              "Get Started",
-              "Ad Formats",
-              "Goals",
-              "News & Inspiration",
-              "Creative Lab",
-            ].map((link) => (
-              <a key={link} href="#" className="hover:text-gray-400">
-                {link}
-              </a>
-            ))}
+            <Link to="/get-started" className="hover:text-gray-400">
+              Get Started
+            </Link>
+            <Link to="/ad-formats" className="hover:text-gray-400">
+              Ad Formats
+            </Link>
+            <Link to="/goals" className="hover:text-gray-400">
+              Goals
+            </Link>
+            <Link to="/news-inspiration" className="hover:text-gray-400">
+              News & Inspiration
+            </Link>
+            <Link to="/creative-lab" className="hover:text-gray-400">
+              Creative Lab
+            </Link>
             <div className="relative group">
               <button className="flex items-center hover:text-gray-400">
                 Resources <FiChevronDown className="ml-1" />
               </button>
               <div className="absolute left-0 mt-2 w-48 bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 {resourcesLinks.map((link) => (
-                  <a
+                  <Link
                     key={link.label}
-                    href={link.href}
+                    to={link.href}
                     className="block px-4 py-2 hover:bg-gray-700"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>

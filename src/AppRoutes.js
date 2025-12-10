@@ -37,6 +37,22 @@ const Developers = lazy(() => import("./pages/Developers"));
 const Vendors = lazy(() => import("./pages/Vendors"));
 const Advertising = lazy(() => import("./pages/Advertising"));
 
+// Advertising pages
+const GetStarted = lazy(() => import("./pages/GetStarted"));
+const AdFormats = lazy(() => import("./pages/AdFormats"));
+const Goals = lazy(() => import("./pages/Goals"));
+const NewsInspiration = lazy(() => import("./pages/NewsInspiration"));
+const CreativeLab = lazy(() => import("./pages/CreativeLab"));
+const AdSignup = lazy(() => import("./pages/AdSignup"));
+
+// Advertising resource pages
+const HelpCenter = lazy(() => import("./pages/resources/HelpCenter"));
+const AdSpecs = lazy(() => import("./pages/resources/AdSpecs"));
+const WrappedAdvertisers2024 = lazy(() => import("./pages/resources/Wrapped2024"));
+const CreativeBestPractices = lazy(() => import("./pages/resources/CreativeBestPractices"));
+const Partners = lazy(() => import("./pages/resources/Partners"));
+const AnalyticsHelpCenter = lazy(() => import("./pages/resources/AnalyticsHelpCenter"));
+
 // Premium plan pages
 const Individual = lazy(() => import("./pages/Individual"));
 const Student = lazy(() => import("./pages/Student"));
@@ -112,6 +128,22 @@ export default function AppRoutes() {
         <Route path="developers" element={<Developers />} />
         <Route path="vendors" element={<Vendors />} />
         <Route path="advertising" element={<Advertising />} />
+
+        {/* Advertising pages */}
+        <Route path="get-started" element={<GetStarted />} />
+        <Route path="ad-formats" element={<AdFormats />} />
+        <Route path="goals" element={<Goals />} />
+        <Route path="news-inspiration" element={<NewsInspiration />} />
+        <Route path="creative-lab" element={<CreativeLab />} />
+        <Route path="ad-signup" element={<AdSignup />} />
+
+        {/* Advertising resource pages */}
+        <Route path="resources/help-center" element={<HelpCenter />} />
+        <Route path="resources/ad-specs" element={<AdSpecs />} />
+        <Route path="resources/wrapped-2024" element={<WrappedAdvertisers2024 />} />
+        <Route path="resources/creative-best-practices" element={<CreativeBestPractices />} />
+        <Route path="resources/partners" element={<Partners />} />
+        <Route path="resources/analytics-help-center" element={<AnalyticsHelpCenter />} />
 
         {/* Premium plan pages */}
         <Route path="individual" element={<Individual />} />
