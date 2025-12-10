@@ -118,7 +118,7 @@ export default function CreativeLab() {
       <header className="bg-gradient-to-br from-bf-green to-green-700 py-16 px-6">
         <div className="max-w-6xl mx-auto text-center">
           <Link to="/advertising" className="text-black hover:underline mb-4 inline-block">
-            ê Back to Advertising
+            ÔøΩ Back to Advertising
           </Link>
           <h1 className="text-6xl font-bold mb-4 text-black">BeatFlow Creative Lab</h1>
           <p className="text-black text-xl max-w-3xl mx-auto">
@@ -241,9 +241,11 @@ export default function CreativeLab() {
             Let's bring your vision to life with professional creative services from BeatFlow Creative Lab.
           </p>
           <div className="flex justify-center space-x-4">
-            <button className="bg-bf-green text-black px-8 py-3 rounded-full font-semibold hover:bg-green-400 transition">
-              Request a Quote
-            </button>
+            <Link to="/creative-quote">
+              <button className="bg-bf-green text-black px-8 py-3 rounded-full font-semibold hover:bg-green-400 transition">
+                Request a Quote
+              </button>
+            </Link>
             <Link to="/resources/creative-best-practices">
               <button className="border border-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-black transition">
                 View Best Practices

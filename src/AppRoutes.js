@@ -45,6 +45,7 @@ const AdFormats = lazy(() => import("./pages/AdFormats"));
 const Goals = lazy(() => import("./pages/Goals"));
 const NewsInspiration = lazy(() => import("./pages/NewsInspiration"));
 const CreativeLab = lazy(() => import("./pages/CreativeLab"));
+const CreativeQuote = lazy(() => import("./pages/CreativeQuote"));
 const AdSignup = lazy(() => import("./pages/AdSignup"));
 
 // Advertising resource pages
@@ -140,6 +141,7 @@ export default function AppRoutes() {
         <Route path="goals" element={<Goals />} />
         <Route path="news-inspiration" element={<NewsInspiration />} />
         <Route path="creative-lab" element={<CreativeLab />} />
+        <Route path="creative-quote" element={<CreativeQuote />} />
         <Route path="ad-signup" element={<AdSignup />} />
 
         {/* Advertising resource pages */}
