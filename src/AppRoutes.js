@@ -64,6 +64,7 @@ const Audiobooks = lazy(() => import("./pages/Audiobooks"));
 
 // Legal pages
 const Legal = lazy(() => import("./pages/Legal"));
+const Nda = lazy(() => import("./pages/Nda"));
 const PrivacyCenter = lazy(() => import("./pages/PrivacyCenter"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Cookies = lazy(() => import("./pages/Cookies"));
@@ -158,6 +159,7 @@ export default function AppRoutes() {
 
         {/* Legal pages */}
         <Route path="legal" element={<Legal />} />
+        <Route path="nda" element={<Nda />} />
         <Route path="privacy-center" element={<PrivacyCenter />} />
         <Route path="privacy-policy" element={<PrivacyPolicy />} />
         <Route path="cookies" element={<Cookies />} />
