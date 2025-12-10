@@ -1,0 +1,62 @@
+{
+  "name": "@beatflowmedia/agentic-suite",
+  "version": "1.0.0",
+  "description": "Intelligent agentic automation suite for React development with comprehensive workflow management",
+  "main": "index.js",
+  "bin": {
+    "beatflow-agents": "./cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .js --fix",
+    "validate": "node -e \"require('./core/AgentOrchestrator'); console.log('✅ All agents validated successfully');\""
+  },
+  "keywords": [
+    "automation",
+    "agentic",
+    "react",
+    "development",
+    "workflow",
+    "ci-cd",
+    "testing",
+    "scaffolding",
+    "quality",
+    "security",
+    "deployment"
+  ],
+  "author": "BeatFlow Media",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "esprima": "^4.0.1",
+    "events": "^3.3.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.57.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BeatFlowMedia/music-license-app.git",
+    "directory": "agents"
+  },
+  "bugs": {
+    "url": "https://github.com/BeatFlowMedia/music-license-app/issues"
+  },
+  "homepage": "https://github.com/BeatFlowMedia/music-license-app/tree/main/agents",
+  "files": [
+    "core/",
+    "config/",
+    "templates/",
+    "utils/",
+    "cli.js",
+    "index.js",
+    "README.md"
+  ]
+}

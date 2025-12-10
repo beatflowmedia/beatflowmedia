@@ -1,0 +1,15 @@
+{
+  "agent": "ContentIngestion",
+  "duration": 201,
+  "durationFormatted": "0.20s",
+  "startTime": 1765203242305,
+  "operations": 1,
+  "errors": 0,
+  "warnings": 0,
+  "filesCreated": 1,
+  "filesModified": 0,
+  "testsGenerated": 0,
+  "storiesCreated": 0,
+  "successRate": "100.00%",
+  "timestamp": "2025-12-08T14:14:02.506Z"
+}

@@ -22,7 +22,7 @@ const AdminPanel = () => {
         onTour: [],
         nextInQueue: null,
         videoSrc: null,
-        videoPoster: null,
+        videoPoster: null
       };
       console.log("New music record to add:", newRecord);
       showSuccessToast("Music data updated successfully!");
@@ -52,7 +52,10 @@ const AdminPanel = () => {
             />
           </div>
           <div>
-            <label htmlFor="artist" className="block text-sm font-semibold mb-1">
+            <label
+              htmlFor="artist"
+              className="block text-sm font-semibold mb-1"
+            >
               Artist
             </label>
             <input
@@ -65,7 +68,10 @@ const AdminPanel = () => {
             />
           </div>
           <div>
-            <label htmlFor="fileName" className="block text-sm font-semibold mb-1">
+            <label
+              htmlFor="fileName"
+              className="block text-sm font-semibold mb-1"
+            >
               File Name
             </label>
             <input
@@ -91,7 +97,10 @@ const AdminPanel = () => {
             />
           </div>
           <div>
-            <label htmlFor="category" className="block text-sm font-semibold mb-1">
+            <label
+              htmlFor="category"
+              className="block text-sm font-semibold mb-1"
+            >
               Category
             </label>
             <select
@@ -108,7 +117,10 @@ const AdminPanel = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="biography" className="block text-sm font-semibold mb-1">
+            <label
+              htmlFor="biography"
+              className="block text-sm font-semibold mb-1"
+            >
               Biography
             </label>
             <textarea

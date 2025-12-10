@@ -37,9 +37,24 @@ const UserProfileMenu = () => {
         >
           <MenuItem title="Account" link="#" icon={<FaUser />} />
           <MenuItem title="Profile" link="#" icon={<FaUser />} />
-          <MenuItem title="Upgrade to Premium" link="#" icon={<FaExternalLinkAlt />} external />
-          <MenuItem title="Support" link="#" icon={<FaExternalLinkAlt />} external />
-          <MenuItem title="Download" link="#" icon={<FaExternalLinkAlt />} external />
+          <MenuItem
+            title="Upgrade to Premium"
+            link="#"
+            icon={<FaExternalLinkAlt />}
+            external
+          />
+          <MenuItem
+            title="Support"
+            link="#"
+            icon={<FaExternalLinkAlt />}
+            external
+          />
+          <MenuItem
+            title="Download"
+            link="#"
+            icon={<FaExternalLinkAlt />}
+            external
+          />
           <MenuItem title="Settings" link="#" icon={<FaCog />} />
           <MenuItem title="Log out" link="#" icon={<FaSignOutAlt />} danger />
         </div>

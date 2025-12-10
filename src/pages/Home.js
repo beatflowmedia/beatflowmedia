@@ -1,195 +1,854 @@
-import React, { useMemo, useState } from "react";
-import { groupSongsByArtist } from "../utils/ArtistFilter";
-import useFollowArtist from "../hooks/useFollowArtist";
-import PlayButton from "../components/PlayButton";
-import DropdownMenu from "../components/DropdownMenu";
-import { FaTrash, FaBars, FaList, FaSortAlphaDown, FaClock } from "react-icons/fa";
+import React, { useState, useEffect, memo, useCallback } from "react";
+import {
+  Box,
+  Grid,
+  Typography,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  Chip,
+  Skeleton,
+  Tabs,
+  Tab,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
+} from "@mui/material";
+import PlayArrow from '@mui/icons-material/PlayArrow';
+import Favorite from '@mui/icons-material/Favorite';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
+import MoreVert from '@mui/icons-material/MoreVert';
+import Share from '@mui/icons-material/Share';
+import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
+import TrendingUp from '@mui/icons-material/TrendingUp';
+import Whatshot from '@mui/icons-material/Whatshot';
+import NewReleases from '@mui/icons-material/NewReleases';
+import MusicNote from '@mui/icons-material/MusicNote';
+import PersonAdd from '@mui/icons-material/PersonAdd';
+import PersonRemove from '@mui/icons-material/PersonRemove';
+import QueueMusic from '@mui/icons-material/QueueMusic';
+import PlayingIndicator from "../components/PlayingIndicator";
+import SongLikeCount from "../components/SongLikeCount";
+import SongPlayCount from "../components/SongPlayCount";
+import TrendingSongs from "../components/TrendingSongs";
+import PersonalizedSections from "../components/PersonalizedSections";
+import { usePlayer } from "../context/PlayerContext";
+import { useAuth } from "../context/AuthContext";
+import { usePlaySong } from "../hooks/usePlaySong";
+import { toast } from "react-toastify";
+import { db } from "../firebaseConfig";
+import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
+import ShareButton from "../utils/ShareButton";
+import Footer from "../components/Footer";
 
-function Home({
-  musicData,
-  selectedArtist,
-  selectedPlaylist,
-  onSongSelect,
-  onPlay = () => {},
-  onToggleFavorite,
-  favorites = [],
-  currentSong,
-  isPlaying,
-  playlists,
-  onAddSongToPlaylist,
-  onRemoveSongFromPlaylist,
-}) {
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+function Home() {
+  const { dispatch, actions } = usePlayer();
+  const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
+  const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
+  // Enhanced state management for discovery features
+  const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Content state
+  const [trendingSongs, setTrendingSongs] = useState([]);
+  const [newReleases, setNewReleases] = useState([]);
+  const [recommendedSongs, setRecommendedSongs] = useState([]);
+  const [featuredArtists, setFeaturedArtists] = useState([]);
+  const [userActivity, setUserActivity] = useState([]);
+  const [podcasts, setPodcasts] = useState([]);
+  const [audiobooks, setAudiobooks] = useState([]);
+
+  // UI state
+  const [anchorEl, setAnchorEl] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
-  const [viewMode, setViewMode] = useState("compact");
-  const [sortMode, setSortMode] = useState("recentlyAdded");
 
-  const songsGrouped = useMemo(() => groupSongsByArtist(musicData || []), [musicData]);
-  const { isFollowing, toggleFollow } = useFollowArtist(selectedArtist);
+  // Load trending content
+  useEffect(() => {
+    const loadTrendingContent = async () => {
+      try {
+        setLoading(true);
 
-  const normalizedArtist = selectedArtist ? selectedArtist.trim().toLowerCase() : null;
+        // Load trending songs (most played in last 7 days)
+        const trendingQuery = query(
+          collection(db, "songs"),
+          orderBy("playCount", "desc"),
+          limit(20)
+        );
 
-  const songsToDisplay = useMemo(() => {
-    let songs = selectedPlaylist?.songs?.length
-      ? selectedPlaylist.songs
-      : normalizedArtist
-      ? songsGrouped[normalizedArtist] || []
-      : musicData;
+        onSnapshot(trendingQuery, (snapshot) => {
+          const trending = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            playCount: doc.data().playCount || 0
+          }));
+          console.log('Home: Loaded', trending.length, 'trending songs from Firebase');
+          setTrendingSongs(trending);
+        });
 
-    if (sortMode === "alpha") {
-      return [...songs].sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortMode === "recentlyAdded") {
-      return [...songs].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
+        // Load new releases (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const newReleasesQuery = query(
+          collection(db, "songs"),
+          where("releaseDate", ">", thirtyDaysAgo),
+          orderBy("releaseDate", "desc"),
+          limit(15)
+        );
+
+        onSnapshot(newReleasesQuery, (snapshot) => {
+          const releases = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('Home: Loaded', releases.length, 'new releases from Firebase');
+          setNewReleases(releases);
+        });
+
+        // Load featured artists
+        const artistsQuery = query(
+          collection(db, "artists"),
+          where("featured", "==", true),
+          limit(10)
+        );
+
+        onSnapshot(artistsQuery, (snapshot) => {
+          const featuredArtistsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setFeaturedArtists(featuredArtistsData);
+        });
+
+        // Load podcasts
+        const podcastsQuery = query(
+          collection(db, "podcast_episodes"),
+          orderBy("releaseDate", "desc"),
+          limit(20)
+        );
+
+        onSnapshot(podcastsQuery, (snapshot) => {
+          const podcastsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setPodcasts(podcastsData);
+        }, (error) => {
+          console.log('Podcasts collection not available:', error.message);
+          setPodcasts([]);
+        });
+
+        // Load audiobooks
+        const audiobooksQuery = query(
+          collection(db, "audiobooks"),
+          orderBy("releaseDate", "desc"),
+          limit(20)
+        );
+
+        onSnapshot(audiobooksQuery, (snapshot) => {
+          const audiobooksData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setAudiobooks(audiobooksData);
+        }, (error) => {
+          console.log('Audiobooks collection not available:', error.message);
+          setAudiobooks([]);
+        });
+
+        // Generate personalized recommendations if user is logged in
+        if (user) {
+          loadPersonalizedContent();
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading content:", err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    loadTrendingContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Simple recommendation algorithm
+  const generateRecommendations = useCallback(async (history) => {
+    if (!history.length) return;
+
+    // Extract genres and artists from history
+    const genres = [...new Set(history.map(h => h.genre).filter(Boolean))];
+
+    try {
+      // Find songs with similar genres or from followed artists
+      const recommendationsQuery = query(
+        collection(db, "songs"),
+        where("genre", "in", genres.slice(0, 10)), // Firestore 'in' limit
+        limit(20)
+      );
+
+      onSnapshot(recommendationsQuery, (snapshot) => {
+        const recommendations = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          reason: "Based on your listening history"
+        }));
+        setRecommendedSongs(recommendations);
+      });
+    } catch (err) {
+      console.error("Error generating recommendations:", err);
     }
-    return songs;
-  }, [musicData, selectedPlaylist, normalizedArtist, songsGrouped, sortMode]);
+  }, []);
 
-  const handleAddToPlaylistClick = (song) => {
-    setSelectedSong(song);
-    setShowPlaylistModal(true);
+  // Load personalized content for authenticated users
+  const loadPersonalizedContent = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Load user's listening history for recommendations
+      const historyQuery = query(
+        collection(db, "listening_history"),
+        where("userId", "==", user.uid),
+        orderBy("timestamp", "desc"),
+        limit(50)
+      );
+
+      onSnapshot(historyQuery, (snapshot) => {
+        const history = snapshot.docs.map(doc => doc.data());
+
+        // Generate recommendations based on listening history
+        generateRecommendations(history);
+        setUserActivity(history.slice(0, 10)); // Recent activity
+      });
+
+    } catch (err) {
+      console.error("Error loading personalized content:", err);
+    }
+  }, [user, generateRecommendations]);
+
+  // Get current content based on active tab
+  const getCurrentContent = () => {
+    switch (activeTab) {
+      case 0: return trendingSongs; // All
+      case 1: return trendingSongs; // Music
+      case 2: return newReleases; // New Releases
+      case 3: return podcasts; // Podcasts
+      case 4: return audiobooks; // Audiobooks
+      default: return trendingSongs;
+    }
   };
 
+  const currentContent = getCurrentContent();
+
+  // Enhanced interaction handlers - using DRY hook
+  const handlePlaySong = useCallback((song) => {
+    playSelectedSong(song);
+  }, [playSelectedSong]);
+
+  const handleToggleLike = useCallback(async (song) => {
+    if (!user) {
+      toast.error("Please sign in to like songs");
+      return;
+    }
+
+    try {
+      // Check if already liked
+      const isLiked = user.likes?.includes(song.id);
+
+      if (isLiked) {
+        await removeLike(song.id);
+        toast.success("Removed from liked songs");
+      } else {
+        await addLike(song.id);
+        toast.success("Added to liked songs");
+      }
+    } catch (err) {
+      toast.error("Failed to update likes");
+    }
+  }, [user, addLike, removeLike]);
+
+  const handleFollowArtist = useCallback(async (artistName) => {
+    if (!user) {
+      toast.error("Please sign in to follow artists");
+      return;
+    }
+
+    try {
+      const isFollowing = isArtistFollowed(artistName);
+
+      if (isFollowing) {
+        await unfollowArtist(artistName);
+        toast.success(`Unfollowed ${artistName}`);
+      } else {
+        await followArtist(artistName);
+        toast.success(`Following ${artistName}`);
+      }
+    } catch (err) {
+      toast.error("Failed to update follow status");
+    }
+  }, [user, followArtist, unfollowArtist, isArtistFollowed]);
+
+  const handleMenuOpen = useCallback((event, song) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedSong(song);
+  }, []);
+
+  const handleMenuClose = useCallback(() => {
+    setAnchorEl(null);
+    setSelectedSong(null);
+  }, []);
+
+  const handleShare = useCallback((song) => {
+    setSelectedSong(song);
+    handleMenuClose();
+  }, [handleMenuClose]);
+
+  const handleAddToPlaylist = useCallback((song) => {
+    setSelectedSong(song);
+    handleMenuClose();
+  }, [handleMenuClose]);
+
+  // Tab change handler
+  const handleTabChange = useCallback((event, newValue) => {
+    setActiveTab(newValue);
+  }, []);
+
+  // Render loading state
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" sx={{ mb: 3, color: 'white' }}>
+          Discover Music
+        </Typography>
+        <Grid container spacing={2}>
+          {[...Array(8)].map((_, index) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+              <Card sx={{ bgcolor: 'grey.800' }}>
+                <Skeleton variant="rectangular" height={200} />
+                <CardContent>
+                  <Skeleton variant="text" />
+                  <Skeleton variant="text" width="60%" />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" color="error" sx={{ mb: 2 }}>
+          Error loading content
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {error}
+        </Typography>
+        <Button
+          variant="contained"
+          sx={{ mt: 2 }}
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <div className="pt-16 px-6">
-      {selectedPlaylist ? (
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white">{selectedPlaylist.name}</h1>
-          <p className="text-gray-400 text-sm">{selectedPlaylist.songs.length} song(s)</p>
-        </div>
-      ) : selectedArtist ? (
-        <div className="relative w-full h-64 bg-gradient-to-b from-gray-700 to-black rounded-lg overflow-hidden mb-6">
-          <img
-            src={`/artistImages/${selectedArtist}.jpg`}
-            alt={selectedArtist}
-            className="absolute w-full h-full object-cover opacity-50"
-          />
-          <div className="relative z-10 flex flex-col justify-end h-full p-6">
-            <h1 className="text-white text-5xl font-bold">{selectedArtist}</h1>
-            <p className="text-gray-300 text-lg">Popular Songs</p>
-            <div className="mt-2">
-              <button
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition ${
-                  isFollowing
-                    ? "bg-red-500 hover:bg-red-400 text-white"
-                    : "bg-green-500 hover:bg-green-400 text-white"
-                }`}
-                onClick={toggleFollow}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-3xl font-bold">Popular Songs</h2>
-          <DropdownMenu
-            trigger={
-              <button className="flex items-center space-x-2 text-white text-sm hover:text-green-400">
-                {viewMode === "list" ? <FaList /> : <FaBars />} <span>{viewMode === "list" ? "List" : "Compact"}</span>
-              </button>
+    <Box sx={{ p: 3, height: '100%', overflow: 'auto', bgcolor: 'background.default' }}>
+      {/* Hero Section */}
+      <Box sx={{ mb: 4 }}>
+        <Typography
+          variant="h3"
+          sx={{
+            color: 'text.primary',
+            fontWeight: 'bold',
+            mb: 1,
+            background: 'linear-gradient(45deg, #1DB954, #1ed760)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}
+        >
+          {user ? `Welcome back, ${user.displayName?.split(' ')[0] || 'Music Lover'}!` : 'Discover Amazing Music'}
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
+          {user ? 'Here\'s what\'s trending and personalized for you' : 'Explore trending tracks and new releases'}
+        </Typography>
+      </Box>
+
+      {/* Category Filter Pills */}
+      <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        <Chip
+          label="All"
+          onClick={() => setActiveTab(0)}
+          sx={{
+            bgcolor: activeTab === 0 ? 'white' : 'transparent',
+            color: activeTab === 0 ? 'black' : 'white',
+            border: activeTab === 0 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 0 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="Music"
+          onClick={() => setActiveTab(1)}
+          sx={{
+            bgcolor: activeTab === 1 ? 'white' : 'transparent',
+            color: activeTab === 1 ? 'black' : 'white',
+            border: activeTab === 1 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 1 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="New Releases"
+          onClick={() => setActiveTab(2)}
+          sx={{
+            bgcolor: activeTab === 2 ? 'white' : 'transparent',
+            color: activeTab === 2 ? 'black' : 'white',
+            border: activeTab === 2 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 2 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="Podcasts"
+          onClick={() => setActiveTab(3)}
+          sx={{
+            bgcolor: activeTab === 3 ? 'white' : 'transparent',
+            color: activeTab === 3 ? 'black' : 'white',
+            border: activeTab === 3 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 3 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="Audiobooks"
+          onClick={() => setActiveTab(4)}
+          sx={{
+            bgcolor: activeTab === 4 ? 'white' : 'transparent',
+            color: activeTab === 4 ? 'black' : 'white',
+            border: activeTab === 4 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 4 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+      </Box>
+
+      {/* Navigation Tabs - Hidden, kept for functionality */}
+      <Box sx={{ display: 'none' }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          sx={{
+            '& .MuiTab-root': {
+              color: 'text.secondary',
+              '&.Mui-selected': {
+                color: 'primary.main'
+              }
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: 'primary.main'
             }
-            items={[
-              { label: "Compact", icon: <FaBars />, active: viewMode === "compact", onClick: () => setViewMode("compact") },
-              { label: "List", icon: <FaList />, active: viewMode === "list", onClick: () => setViewMode("list") },
-              "divider",
-              { label: "Alphabetical", icon: <FaSortAlphaDown />, active: sortMode === "alpha", onClick: () => setSortMode("alpha") },
-              { label: "Recently Added", icon: <FaClock />, active: sortMode === "recentlyAdded", onClick: () => setSortMode("recentlyAdded") },
-            ]}
+          }}
+        >
+          <Tab
+            icon={<TrendingUp />}
+            label={user ? "For You" : "Trending"}
+            iconPosition="start"
           />
-        </div>
+          <Tab
+            icon={<Whatshot />}
+            label="Trending"
+            iconPosition="start"
+          />
+          <Tab
+            icon={<NewReleases />}
+            label="New Releases"
+            iconPosition="start"
+          />
+          {user && (
+            <Tab
+              icon={<MusicNote />}
+              label="Recommended"
+              iconPosition="start"
+            />
+          )}
+        </Tabs>
+      </Box>
+
+      {/* Personalized Sections (only for logged in users) */}
+      {user && (
+        <>
+          <Box sx={{ mb: 4 }}>
+            <PersonalizedSections />
+          </Box>
+          <Divider sx={{ my: 4 }} />
+        </>
       )}
 
-      <div className={viewMode === "list" ? "space-y-2" : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"}>
-        {songsToDisplay.map((song) => {
-          const isInPlaylist = selectedPlaylist?.songs?.some((s) => s.id === song.id);
-          return (
-            <div
-              key={song.id}
-              className="bg-gray-800 p-4 rounded-lg hover:bg-gray-700 transition-all cursor-pointer"
-            >
-              <img
-                src={song.cover || "https://via.placeholder.com/50"}
-                alt="Album Cover"
-                className="w-14 h-14 rounded-md mb-2"
-              />
-              <h3 className="text-white font-bold text-sm">{song.title}</h3>
-              <p className="text-gray-400 text-xs">{song.artist}</p>
-              <div className="flex items-center justify-between mt-2">
-                <PlayButton
-                  isPlaying={currentSong && currentSong.id === song.id && isPlaying}
-                  onClick={() => {
-                    if (currentSong && currentSong.id === song.id) {
-                      onPlay(!isPlaying); // toggle play/pause
-                    } else {
-                      onSongSelect(song);
-                      onPlay(true); // start new song
-                    }
-                  }}
-                  size={20}
-                />
+      {/* Trending Songs Section */}
+      <Box sx={{ mb: 4 }}>
+        <TrendingSongs limit={10} daysBack={7} />
+      </Box>
 
-                <button
-                  className="text-green-400 hover:text-green-300 text-lg ml-2"
-                  title={isInPlaylist ? "Remove from Playlist" : "Add to Playlist"}
-                  onClick={() => {
-                    if (isInPlaylist) {
-                      onRemoveSongFromPlaylist(selectedPlaylist.id, song);
-                    } else {
-                      handleAddToPlaylistClick(song);
+      <Divider sx={{ my: 4 }} />
+
+      {/* Featured Artists Section */}
+      {featuredArtists.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" sx={{ color: 'text.primary', mb: 2, fontWeight: 'bold' }}>
+            Featured Artists
+          </Typography>
+          <Grid container spacing={2}>
+            {featuredArtists.slice(0, 5).map((artist) => (
+              <Grid item xs={6} sm={4} md={2.4} key={artist.id}>
+                <Card
+                  sx={{
+                    bgcolor: 'background.paper',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
                     }
                   }}
                 >
-                  {isInPlaylist ? <FaTrash /> : "➕"}
-                </button>
-                <button
-                  onClick={() => onToggleFavorite(song)}
-                  className={`text-lg transition ${
-                    favorites.some((fav) => fav.id === song.id)
-                      ? "text-red-500"
-                      : "text-gray-400 hover:text-red-400"
-                  }`}
-                  title={favorites.some((fav) => fav.id === song.id) ? "Unlike" : "Like"}
-                >
-                  {favorites.some((fav) => fav.id === song.id) ? "♥" : "♡"}
-                </button>
-              </div>
-            </div>
+                  <CardMedia
+                    component="img"
+                    height="120"
+                    image={artist.imageUrl || '/default-artist.jpg'}
+                    alt={artist.name}
+                    sx={{ borderRadius: '50%', width: 120, height: 120, mx: 'auto', mt: 2 }}
+                  />
+                  <CardContent sx={{ textAlign: 'center', pb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+                      {artist.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      {artist.followers?.toLocaleString() || 0} followers
+                    </Typography>
+                    <Box sx={{ mt: 1 }}>
+                      <Button
+                        size="small"
+                        variant={isArtistFollowed(artist.name) ? "outlined" : "contained"}
+                        onClick={() => handleFollowArtist(artist.name)}
+                        sx={{
+                          minWidth: 'auto',
+                          fontSize: '0.75rem',
+                          py: 0.5,
+                          bgcolor: isArtistFollowed(artist.name) ? 'transparent' : 'primary.main',
+                          borderColor: 'primary.main',
+                          color: isArtistFollowed(artist.name) ? 'primary.main' : 'white',
+                        }}
+                      >
+                        {isArtistFollowed(artist.name) ? <PersonRemove sx={{ fontSize: 14 }} /> : <PersonAdd sx={{ fontSize: 14 }} />}
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
+
+      {/* Main Content Grid */}
+      <Grid container spacing={2}>
+        {currentContent.map((song, index) => {
+          const isPlaying = isSongPlaying(song);
+          const isLiked = user?.likes?.includes(song.id) || false;
+
+          return (
+            <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={song.id}>
+              <Card
+                sx={{
+                  bgcolor: 'background.paper',
+                  position: 'relative',
+                  transition: 'all 0.3s ease',
+                  maxWidth: 'clamp(200px, 100%, 280px)',
+                  margin: '0 auto',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 3
+                  }
+                }}
+              >
+                {/* Trending Badge */}
+                {activeTab === 1 && index < 3 && (
+                  <Chip
+                    icon={<TrendingUp />}
+                    label={`#${index + 1}`}
+                    size="small"
+                    color="primary"
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      zIndex: 1,
+                      fontWeight: 'bold'
+                    }}
+                  />
+                )}
+
+                <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+                  <CardMedia
+                    component="img"
+                    image={song.coverUrl || song.cover || '/default-song-cover.jpg'}
+                    alt={song.title}
+                    sx={{
+                      cursor: 'pointer',
+                      width: '100%',
+                      height: 'auto',
+                      aspectRatio: '1 / 1',
+                      objectFit: 'cover'
+                    }}
+                    onClick={() => handlePlaySong(song)}
+                  />
+
+                  {/* Play Overlay */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      bgcolor: 'rgba(0,0,0,0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: isPlaying ? 1 : 0,
+                      transition: 'opacity 0.3s',
+                      cursor: 'pointer',
+                      '&:hover': { opacity: 1 }
+                    }}
+                    onClick={() => handlePlaySong(song)}
+                  >
+                    {isPlaying ? (
+                      <PlayingIndicator isPlaying={isPlaying} size="large" />
+                    ) : (
+                      <IconButton
+                        size="large"
+                        color="primary"
+                        sx={{
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.1)' }
+                        }}
+                      >
+                        <PlayArrow />
+                      </IconButton>
+                    )}
+                  </Box>
+                </Box>
+
+                <CardContent sx={{
+                  p: 'clamp(0.75rem, 2vw, 1rem)',
+                  '&:last-child': { pb: 'clamp(0.75rem, 2vw, 1rem)' }
+                }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      color: 'text.primary',
+                      fontWeight: 'bold',
+                      fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
+                      cursor: 'pointer',
+                      '&:hover': { color: 'primary.main' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onClick={() => handlePlaySong(song)}
+                  >
+                    {song.title}
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+                      cursor: 'pointer',
+                      '&:hover': { color: 'primary.main' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onClick={() => handleFollowArtist(song.artist)}
+                  >
+                    {song.artist}
+                  </Typography>
+
+                  {song.genre && (
+                    <Chip
+                      label={song.genre}
+                      size="small"
+                      sx={{
+                        mt: 1,
+                        bgcolor: 'grey.700',
+                        color: 'white',
+                        fontSize: '0.7rem'
+                      }}
+                    />
+                  )}
+
+                  {/* Stats */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 1 }}>
+                    <SongPlayCount songId={song.id} />
+                    <SongLikeCount songId={song.id} />
+                  </Box>
+
+                  {/* Action Buttons */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleToggleLike(song)}
+                        sx={{
+                          color: isLiked ? '#e91e63' : 'grey.400',
+                          '&:hover': { color: isLiked ? '#ad1457' : '#e91e63' }
+                        }}
+                      >
+                        {isLiked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                      </IconButton>
+
+                      <IconButton
+                        size="small"
+                        onClick={() => handleAddToPlaylist(song)}
+                        sx={{ color: 'grey.400', '&:hover': { color: '#1DB954' } }}
+                      >
+                        <PlaylistAdd fontSize="small" />
+                      </IconButton>
+
+                      <ShareButton song={song} iconSize="small" />
+                    </Box>
+
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, song)}
+                      sx={{ color: 'grey.400', '&:hover': { color: 'white' } }}
+                    >
+                      <MoreVert />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           );
         })}
-      </div>
+      </Grid>
 
-      {showPlaylistModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-white text-xl font-bold mb-4">Select a Playlist</h2>
-            {playlists.length === 0 ? (
-              <p className="text-gray-400">No playlist available.</p>
-            ) : (
-              playlists.map((playlist) => (
-                <button
-                  key={playlist.id}
-                  className="block w-full text-left p-2 hover:bg-gray-700 rounded"
-                  onClick={() => {
-                    onAddSongToPlaylist(playlist.id, selectedSong);
-                    setShowPlaylistModal(false);
+      {/* Context Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          sx: {
+            bgcolor: 'grey.800',
+            border: '1px solid',
+            borderColor: 'grey.700'
+          }
+        }}
+      >
+        <MenuItem onClick={() => handlePlaySong(selectedSong)} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <PlayArrow sx={{ color: '#1DB954' }} />
+          </ListItemIcon>
+          <ListItemText>Play Now</ListItemText>
+        </MenuItem>
+
+        <MenuItem onClick={() => dispatch({ type: actions.ENQUEUE, payload: { item: selectedSong } })} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <QueueMusic sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Add to Queue</ListItemText>
+        </MenuItem>
+
+        <Divider sx={{ bgcolor: 'grey.700' }} />
+
+        <MenuItem onClick={() => handleAddToPlaylist(selectedSong)} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <PlaylistAdd sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Add to Playlist</ListItemText>
+        </MenuItem>
+
+        <MenuItem onClick={() => handleShare(selectedSong)} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <Share sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Share</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Recent Activity Section for Logged-in Users */}
+      {user && userActivity.length > 0 && (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+            Recently Played
+          </Typography>
+          <Grid container spacing={1}>
+            {userActivity.slice(0, 6).map((activity, index) => (
+              <Grid item xs={6} sm={4} md={2} key={index}>
+                <Card
+                  sx={{
+                    bgcolor: 'grey.800',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'grey.700' }
                   }}
+                  onClick={() => handlePlaySong(activity)}
                 >
-                  {playlist.name}
-                </button>
-              ))
-            )}
-            <button
-              onClick={() => setShowPlaylistModal(false)}
-              className="mt-4 bg-red-500 px-4 py-2 rounded hover:bg-red-400"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+                  <CardMedia
+                    component="img"
+                    height="80"
+                    image={activity.coverUrl || '/default-song-cover.jpg'}
+                    alt={activity.title}
+                  />
+                  <CardContent sx={{ p: 1 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'white',
+                        fontWeight: 'bold',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {activity.title}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'grey.400',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {activity.artist}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       )}
-    </div>
+
+      {/* Footer */}
+      <Footer />
+    </Box>
   );
 }
 
-export default Home;
+export default memo(Home);

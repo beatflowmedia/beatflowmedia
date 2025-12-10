@@ -1,0 +1,64 @@
+{
+  "title": "BeatFlow Notification Report",
+  "generated": "2025-12-08T18:02:25.148Z",
+  "agent": "Notification",
+  "status": "completed",
+  "notificationId": "notif_1765216945129_1ytguze54",
+  "type": "update",
+  "category": "content",
+  "recipients": [
+    "test-user-789"
+  ],
+  "priority": "normal",
+  "channels": [
+    "email",
+    "push",
+    "inApp"
+  ],
+  "delivery": {
+    "email": {
+      "channel": "email",
+      "sent": true,
+      "delivered": true,
+      "messageId": "email_1765216945134_rzrj9slo7",
+      "error": null
+    },
+    "sms": {
+      "sent": false,
+      "delivered": false
+    },
+    "push": {
+      "channel": "push",
+      "sent": true,
+      "delivered": true,
+      "messageId": "push_1765216945135_jxb5rnj4u",
+      "error": null
+    },
+    "inApp": {
+      "channel": "inApp",
+      "sent": true,
+      "delivered": true,
+      "messageId": "inapp_1765216945138_tvk13fnuh",
+      "error": null
+    }
+  },
+  "errors": [],
+  "startTime": "2025-12-08T18:02:25.129Z",
+  "endTime": "2025-12-08T18:02:25.142Z",
+  "statistics": {
+    "sent": 3,
+    "delivered": 3,
+    "failed": 0,
+    "opened": 0,
+    "clicked": 0,
+    "deliveryRate": 1,
+    "openRate": 0,
+    "clickRate": 0
+  },
+  "summary": {
+    "totalRecipients": 1,
+    "channelsUsed": 3,
+    "successfulDeliveries": 3,
+    "failedDeliveries": 0
+  }
+}

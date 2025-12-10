@@ -1,0 +1,534 @@
+import {
+  Meta,
+  ColorPalette,
+  ColorItem,
+  Typeset,
+  Source,
+} from "@storybook/blocks";
+import { designTokens } from "../tokens";
+
+<Meta title="Design System/Foundation/Design Tokens" />
+
+# Design Tokens
+
+Design tokens are the foundational elements of the BeatFlowMedia design system. They provide a consistent visual language across all components and ensure brand consistency.
+
+## Colors
+
+Our color system is inspired by Spotify's design principles with a focus on dark themes and accessibility.
+
+### Primary Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Primary"
+    subtitle="Brand colors for primary actions and emphasis"
+    colors={{
+      50: designTokens.colors.primary[50],
+      100: designTokens.colors.primary[100],
+      200: designTokens.colors.primary[200],
+      300: designTokens.colors.primary[300],
+      400: designTokens.colors.primary[400],
+      500: designTokens.colors.primary[500],
+      600: designTokens.colors.primary[600],
+      700: designTokens.colors.primary[700],
+      800: designTokens.colors.primary[800],
+      900: designTokens.colors.primary[900],
+      950: designTokens.colors.primary[950],
+    }}
+  />
+</ColorPalette>
+
+### Surface Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Surface"
+    subtitle="Background and surface colors for dark themes"
+    colors={{
+      50: designTokens.colors.surface[50],
+      100: designTokens.colors.surface[100],
+      200: designTokens.colors.surface[200],
+      300: designTokens.colors.surface[300],
+      400: designTokens.colors.surface[400],
+      500: designTokens.colors.surface[500],
+      600: designTokens.colors.surface[600],
+      700: designTokens.colors.surface[700],
+      800: designTokens.colors.surface[800],
+      900: designTokens.colors.surface[900],
+      950: designTokens.colors.surface[950],
+    }}
+  />
+</ColorPalette>
+
+### Neutral Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Neutral"
+    subtitle="Text and subtle UI elements"
+    colors={{
+      50: designTokens.colors.neutral[50],
+      100: designTokens.colors.neutral[100],
+      200: designTokens.colors.neutral[200],
+      300: designTokens.colors.neutral[300],
+      400: designTokens.colors.neutral[400],
+      500: designTokens.colors.neutral[500],
+      600: designTokens.colors.neutral[600],
+      700: designTokens.colors.neutral[700],
+      800: designTokens.colors.neutral[800],
+      900: designTokens.colors.neutral[900],
+      950: designTokens.colors.neutral[950],
+    }}
+  />
+</ColorPalette>
+
+### Semantic Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Danger"
+    subtitle="Error states and destructive actions"
+    colors={{
+      50: designTokens.colors.danger[50],
+      100: designTokens.colors.danger[100],
+      200: designTokens.colors.danger[200],
+      300: designTokens.colors.danger[300],
+      400: designTokens.colors.danger[400],
+      500: designTokens.colors.danger[500],
+      600: designTokens.colors.danger[600],
+      700: designTokens.colors.danger[700],
+      800: designTokens.colors.danger[800],
+      900: designTokens.colors.danger[900],
+      950: designTokens.colors.danger[950],
+    }}
+  />
+  <ColorItem
+    title="Success"
+    subtitle="Success states and positive actions"
+    colors={{
+      50: designTokens.colors.success[50],
+      100: designTokens.colors.success[100],
+      200: designTokens.colors.success[200],
+      300: designTokens.colors.success[300],
+      400: designTokens.colors.success[400],
+      500: designTokens.colors.success[500],
+      600: designTokens.colors.success[600],
+      700: designTokens.colors.success[700],
+      800: designTokens.colors.success[800],
+      900: designTokens.colors.success[900],
+      950: designTokens.colors.success[950],
+    }}
+  />
+  <ColorItem
+    title="Warning"
+    subtitle="Warning states and caution"
+    colors={{
+      50: designTokens.colors.warning[50],
+      100: designTokens.colors.warning[100],
+      200: designTokens.colors.warning[200],
+      300: designTokens.colors.warning[300],
+      400: designTokens.colors.warning[400],
+      500: designTokens.colors.warning[500],
+      600: designTokens.colors.warning[600],
+      700: designTokens.colors.warning[700],
+      800: designTokens.colors.warning[800],
+      900: designTokens.colors.warning[900],
+      950: designTokens.colors.warning[950],
+    }}
+  />
+  <ColorItem
+    title="Info"
+    subtitle="Informational states and neutral actions"
+    colors={{
+      50: designTokens.colors.info[50],
+      100: designTokens.colors.info[100],
+      200: designTokens.colors.info[200],
+      300: designTokens.colors.info[300],
+      400: designTokens.colors.info[400],
+      500: designTokens.colors.info[500],
+      600: designTokens.colors.info[600],
+      700: designTokens.colors.info[700],
+      800: designTokens.colors.info[800],
+      900: designTokens.colors.info[900],
+      950: designTokens.colors.info[950],
+    }}
+  />
+</ColorPalette>
+
+## Typography
+
+Our typography system uses Inter as the primary font family with responsive sizing that adapts to different screen sizes.
+
+### Font Families
+
+<div style={{ display: 'grid', gap: '24px', marginBottom: '32px' }}>
+  <div>
+    <h4>Sans Serif (Primary)</h4>
+    <div style={{ fontFamily: designTokens.typography.fontFamily.sans.join(', '), fontSize: '18px' }}>
+      {designTokens.typography.fontFamily.sans.join(', ')}
+    </div>
+    <p style={{ fontFamily: designTokens.typography.fontFamily.sans.join(', ') }}>
+      The quick brown fox jumps over the lazy dog. 0123456789
+    </p>
+  </div>
+
+  <div>
+    <h4>Monospace</h4>
+    <div style={{ fontFamily: designTokens.typography.fontFamily.mono.join(', '), fontSize: '18px' }}>
+      {designTokens.typography.fontFamily.mono.join(', ')}
+    </div>
+    <p style={{ fontFamily: designTokens.typography.fontFamily.mono.join(', ') }}>
+      The quick brown fox jumps over the lazy dog. 0123456789
+    </p>
+  </div>
+</div>
+
+### Font Sizes
+
+<Typeset
+  fontSizes={[
+    designTokens.typography.fontSize.xs.desktop,
+    designTokens.typography.fontSize.sm.desktop,
+    designTokens.typography.fontSize.base.desktop,
+    designTokens.typography.fontSize.lg.desktop,
+    designTokens.typography.fontSize.xl.desktop,
+    designTokens.typography.fontSize["2xl"].desktop,
+    designTokens.typography.fontSize["3xl"].desktop,
+    designTokens.typography.fontSize["4xl"].desktop,
+  ]}
+  fontWeight={designTokens.typography.fontWeight.normal}
+  sampleText="The quick brown fox jumps over the lazy dog"
+  fontFamily={designTokens.typography.fontFamily.sans.join(", ")}
+/>
+
+### Font Weights
+
+<div style={{ display: "grid", gap: "16px", marginBottom: "32px" }}>
+  {Object.entries(designTokens.typography.fontWeight).map(([name, weight]) => (
+    <div
+      key={name}
+      style={{ display: "flex", alignItems: "center", gap: "16px" }}
+    >
+      <div
+        style={{ minWidth: "100px", fontFamily: "monospace", fontSize: "14px" }}
+      >
+        {name} ({weight})
+      </div>
+      <div
+        style={{
+          fontWeight: weight,
+          fontFamily: designTokens.typography.fontFamily.sans.join(", "),
+        }}
+      >
+        The quick brown fox jumps over the lazy dog
+      </div>
+    </div>
+  ))}
+</div>
+
+## Spacing
+
+Our spacing system uses a consistent scale based on multiples of 4px for visual rhythm and alignment.
+
+<div style={{ display: "grid", gap: "16px", marginBottom: "32px" }}>
+  {Object.entries(designTokens.spacing)
+    .filter(
+      ([key]) =>
+        !key.includes("component") &&
+        !key.includes("layout") &&
+        !key.includes("container"),
+    )
+    .map(([name, value]) => (
+      <div
+        key={name}
+        style={{ display: "flex", alignItems: "center", gap: "16px" }}
+      >
+        <div
+          style={{
+            minWidth: "60px",
+            fontFamily: "monospace",
+            fontSize: "14px",
+          }}
+        >
+          {name}
+        </div>
+        <div
+          style={{
+            minWidth: "60px",
+            fontFamily: "monospace",
+            fontSize: "14px",
+            opacity: 0.7,
+          }}
+        >
+          {value}
+        </div>
+        <div
+          style={{
+            width: value,
+            height: "24px",
+            backgroundColor: designTokens.colors.primary[500],
+            borderRadius: "2px",
+          }}
+        />
+      </div>
+    ))}
+</div>
+
+## Motion
+
+Animation and transition tokens for consistent motion design.
+
+### Duration
+
+<div style={{ display: "grid", gap: "16px", marginBottom: "32px" }}>
+  {Object.entries(designTokens.motion.duration).map(([name, value]) => (
+    <div
+      key={name}
+      style={{ display: "flex", alignItems: "center", gap: "16px" }}
+    >
+      <div
+        style={{ minWidth: "80px", fontFamily: "monospace", fontSize: "14px" }}
+      >
+        {name}
+      </div>
+      <div
+        style={{
+          minWidth: "80px",
+          fontFamily: "monospace",
+          fontSize: "14px",
+          opacity: 0.7,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          width: "100px",
+          height: "8px",
+          backgroundColor: designTokens.colors.primary[200],
+          borderRadius: "4px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "20px",
+            height: "100%",
+            backgroundColor: designTokens.colors.primary[500],
+            borderRadius: "4px",
+            animation: `slide-${name} ${value} infinite linear`,
+          }}
+        />
+      </div>
+    </div>
+  ))}
+</div>
+
+### Easing
+
+<div style={{ display: "grid", gap: "16px", marginBottom: "32px" }}>
+  {Object.entries(designTokens.motion.easing).map(([name, value]) => (
+    <div
+      key={name}
+      style={{ display: "flex", alignItems: "center", gap: "16px" }}
+    >
+      <div
+        style={{ minWidth: "120px", fontFamily: "monospace", fontSize: "14px" }}
+      >
+        {name}
+      </div>
+      <div style={{ fontFamily: "monospace", fontSize: "12px", opacity: 0.7 }}>
+        {value}
+      </div>
+    </div>
+  ))}
+</div>
+
+## Border Radius
+
+<div style={{ display: "grid", gap: "16px", marginBottom: "32px" }}>
+  {Object.entries(designTokens.radius).map(([name, value]) => (
+    <div
+      key={name}
+      style={{ display: "flex", alignItems: "center", gap: "16px" }}
+    >
+      <div
+        style={{ minWidth: "80px", fontFamily: "monospace", fontSize: "14px" }}
+      >
+        {name}
+      </div>
+      <div
+        style={{
+          minWidth: "80px",
+          fontFamily: "monospace",
+          fontSize: "14px",
+          opacity: 0.7,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          width: "48px",
+          height: "48px",
+          backgroundColor: designTokens.colors.primary[500],
+          borderRadius: value === "full" ? "50%" : value,
+        }}
+      />
+    </div>
+  ))}
+</div>
+
+## Shadows
+
+Elevation system using box shadows for depth and hierarchy.
+
+<div style={{ display: "grid", gap: "16px", marginBottom: "32px" }}>
+  {Object.entries(designTokens.shadows)
+    .filter(([key]) => !key.includes("dark") && !key.includes("colored"))
+    .map(([name, value]) => (
+      <div
+        key={name}
+        style={{ display: "flex", alignItems: "center", gap: "16px" }}
+      >
+        <div
+          style={{
+            minWidth: "80px",
+            fontFamily: "monospace",
+            fontSize: "14px",
+          }}
+        >
+          {name}
+        </div>
+        <div
+          style={{
+            width: "80px",
+            height: "48px",
+            backgroundColor: designTokens.colors.white,
+            borderRadius: designTokens.radius.md,
+            boxShadow: value,
+            border: `1px solid ${designTokens.colors.surface[200]}`,
+          }}
+        />
+        <div
+          style={{
+            fontFamily: "monospace",
+            fontSize: "12px",
+            opacity: 0.7,
+            maxWidth: "300px",
+          }}
+        >
+          {value}
+        </div>
+      </div>
+    ))}
+</div>
+
+## Breakpoints
+
+Responsive breakpoints for consistent layouts across devices.
+
+<div style={{ display: "grid", gap: "16px", marginBottom: "32px" }}>
+  {Object.entries(designTokens.breakpoints.values).map(([name, value]) => (
+    <div
+      key={name}
+      style={{ display: "flex", alignItems: "center", gap: "16px" }}
+    >
+      <div
+        style={{ minWidth: "60px", fontFamily: "monospace", fontSize: "14px" }}
+      >
+        {name}
+      </div>
+      <div
+        style={{
+          minWidth: "80px",
+          fontFamily: "monospace",
+          fontSize: "14px",
+          opacity: 0.7,
+        }}
+      >
+        {value}px
+      </div>
+      <div
+        style={{
+          width: `${Math.max(value / 10, 20)}px`,
+          height: "24px",
+          backgroundColor: designTokens.colors.info[500],
+          borderRadius: "2px",
+        }}
+      />
+    </div>
+  ))}
+</div>
+
+## Usage
+
+Import design tokens in your components:
+
+<Source
+  language="typescript"
+  code={`
+import { designTokens } from '@/design';
+
+// Use color tokens
+const primaryColor = designTokens.colors.primary[500];
+
+// Use spacing tokens
+const padding = designTokens.spacing.md;
+
+// Use typography tokens
+const fontSize = designTokens.typography.fontSize.lg.desktop;
+
+// Use motion tokens
+const duration = designTokens.motion.duration.normal;
+const easing = designTokens.motion.easing.easeOut;
+`}
+/>
+
+## CSS Custom Properties
+
+Design tokens are also available as CSS custom properties:
+
+<Source
+  language="css"
+  code={`
+/* Color tokens */
+color: var(--color-primary-500);
+background-color: var(--color-surface-900);
+
+/_ Typography tokens _/
+font-family: var(--font-family-sans);
+font-size: var(--font-size-base);
+
+/_ Spacing tokens _/
+padding: var(--spacing-md);
+margin: var(--spacing-lg);
+
+/_ Motion tokens _/
+transition: all var(--duration-normal) var(--easing-ease-out);
+
+/_ Border radius tokens _/
+border-radius: var(--radius-md);
+
+/_ Shadow tokens _/
+box-shadow: var(--shadow-md);
+`}
+/>
+
+<style>
+  {Object.entries(designTokens.motion.duration)
+    .map(
+      ([name, value]) => `
+@keyframes slide-${name} {
+  from { transform: translateX(-20px); }
+  to { transform: translateX(100px); }
+}
+`,
+    )
+    .join("")}
+</style>

@@ -9,7 +9,7 @@ export const buildArtistInfo = (artistName, allSongs) => {
   // Filter out all songs matching this artist (case-insensitive)
   const normalizedArtist = artistName.trim().toLowerCase();
   const artistSongs = allSongs.filter(
-    (song) => song.artist.trim().toLowerCase() === normalizedArtist
+    (song) => song.artist.trim().toLowerCase() === normalizedArtist,
   );
 
   if (artistSongs.length === 0) {

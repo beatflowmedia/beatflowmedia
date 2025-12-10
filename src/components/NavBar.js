@@ -1,177 +1,138 @@
-// NavBar.js
-import React, { useState, useRef, useEffect } from "react";
-import {
-  FaHome,
-  FaBell,
-  FaDownload,
-  FaSearch,
-  FaUser,
-  FaSignOutAlt,
-  FaCog,
-  FaExternalLinkAlt,
-  FaCompass,
-} from "react-icons/fa";
-import SearchResults from "./SearchResults";
-import useClickOutside from "../hooks/useClickOutside";
+// src/components/NavBar.jsx
+import React, { memo } from "react";
+import { Link } from "react-router-dom";
+import classNames from "classnames";
+import { FaSearch, FaDownload, FaBell, FaCrown } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import PropTypes from 'prop-types';
 
 const NavBar = ({
-  onWhatsNewClick,
-  isBellActive,
-  onExplorePremium,
-  onBrowseClick,
+  onHomeClick,
   onSearchChange,
-  musicData = [],
-  playlists = [],
+  onExplorePremium,
+  onDownloadClick,
+  onWhatsNewClick,
+  isBellActive
 }) => {
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef();
-  const searchResultsRef = useRef();
-
   const { user, signInWithGoogle, signOutUser } = useAuth();
 
-  useClickOutside(menuRef, () => setMenuOpen(false));
-  useClickOutside(searchResultsRef, () => setShowResults(false));
-
-  const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    onSearchChange(query);
-    setShowResults(!!query.trim());
-  };
-
-  useEffect(() => {
-    if (!searchQuery.trim()) setShowResults(false);
-  }, [searchQuery]);
-
-  const avatarContent = () => {
-    if (user && user.photoURL) {
-      return <img src={user.photoURL} alt="User Avatar" className="w-full h-full object-cover rounded-full" />;
-    }
-    if (user && user.displayName) {
-      return user.displayName[0].toUpperCase();
-    }
-    return "BFM";
-  };
-
   return (
-    <nav className="bg-black text-white flex items-center justify-between px-6 py-3 fixed top-0 left-0 w-full z-50">
-      <div className="flex items-center gap-4">
-        <button className="bg-black rounded-full p-2" onClick={() => window.location.reload()}>
-          <img src="/images/Logo.svg" alt="Logo" className="w-auto h-10" />
-        </button>
-        <button className="bg-gray-800 hover:bg-gray-700 p-2 rounded-full" onClick={() => window.location.reload()}>
-          <FaHome size={30} />
-        </button>
+    <nav
+      role="navigation"
+      aria-label="Main navigation"
+      className="px-6 flex items-center text-bf-text bg-black border-b border-gray-800"
+    >
+      {/* LEFT: Logo & Home */}
+      <div className="flex items-center space-x-4">
+        <Link
+          to="/"
+          aria-label="Go to Home"
+          className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-bf-green rounded"
+        >
+          <img
+            src="/images/Logo.svg"
+            alt="BeatFlow Logo"
+            className="h-8 w-auto"
+          />
+          <span className="sr-only">BeatFlow Home</span>
+        </Link>
       </div>
 
-      <div className="relative flex-1 max-w-lg flex items-center gap-3">
-        <button className="bg-gray-800 hover:bg-gray-700 p-2 rounded-full" onClick={onBrowseClick}>
-          <FaCompass size={24} className="text-gray-400" />
-        </button>
-
-        <div className="relative flex items-center bg-gray-800 px-4 py-2 rounded-full w-full">
-          <FaSearch className="text-gray-400" />
+      {/* CENTER: Search */}
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="flex-1 mx-6"
+        role="search"
+        aria-label="Site search"
+      >
+        <div className="relative">
+          <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-bf-subtext pointer-events-none" />
           <input
             type="text"
             placeholder="What do you want to play?"
-            className="bg-transparent text-white outline-none px-2 flex-1"
-            value={searchQuery}
-            onChange={handleSearch}
-            onFocus={() => {
-              if (searchQuery.trim()) setShowResults(true);
-            }}
+            onChange={(e) => onSearchChange(e.target.value)}
+            aria-label="Search for songs, artists, or albums"
+            className="w-full pl-12 pr-4 py-2 rounded-full bg-bf-card text-bf-text placeholder-bf-subtext outline-none focus:ring-2 focus:ring-bf-green transition"
           />
-          {showResults && (
-            <div ref={searchResultsRef} className="absolute top-full left-0 right-0 z-50 mt-2">
-              <SearchResults query={searchQuery} onClose={() => setShowResults(false)} />
-            </div>
-          )}
         </div>
-      </div>
+      </form>
 
-      <div className="flex items-center gap-6">
+      {/* RIGHT: Actions */}
+      <div className="flex items-center space-x-4">
         <button
-          onClick={() => onExplorePremium && onExplorePremium()}
-          className="bg-white text-black font-semibold px-4 py-2 rounded-full hover:bg-gray-200"
+          type="button"
+          onClick={onExplorePremium}
+          aria-label="Explore Premium"
+          className="bg-bf-blue text-white px-4 py-2 rounded-full flex items-center space-x-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-green transition"
         >
-          Explore Premium
-        </button>
-        <FaDownload className="text-gray-400 hover:text-white cursor-pointer" size={20} />
-        <button onClick={onWhatsNewClick} className="relative">
-          <FaBell
-            className={`cursor-pointer transition-colors ${
-              isBellActive ? "text-white" : "text-gray-400 hover:text-white"
-            }`}
-            size={20}
-          />
+          <FaCrown />
+          <span>Explore Premium</span>
         </button>
 
-        {!user && (
+        <button
+          type="button"
+          onClick={onDownloadClick}
+          aria-label="Downloads"
+          className="p-2 rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition"
+        >
+          <FaDownload className="text-bf-subtext hover:text-bf-text" />
+        </button>
+
+        <button
+          type="button"
+          onClick={onWhatsNewClick}
+          aria-label="Notifications"
+          className={classNames(
+            "p-2 rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition",
+            {
+              "text-bf-green": isBellActive,
+              "text-bf-subtext hover:text-bf-text": !isBellActive
+            },
+          )}
+        >
+          <FaBell />
+        </button>
+
+        {user ? (
           <button
+            type="button"
+            onClick={signOutUser}
+            aria-label="Sign Out"
+            className="bg-bf-red text-white px-4 py-2 rounded-full hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-red transition"
+          >
+            Sign Out
+          </button>
+        ) : (
+          <button
+            type="button"
             onClick={signInWithGoogle}
-            className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600"
+            aria-label="Sign In"
+            className="bg-bf-green text-white px-4 py-2 rounded-full hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-green transition"
           >
             Sign In
           </button>
-        )}
-
-        {user && (
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="w-10 h-10 bg-orange-500 text-white flex items-center justify-center rounded-full overflow-hidden hover:bg-orange-600"
-            >
-              {avatarContent()}
-            </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-gray-900 shadow-lg rounded-lg py-2 border border-gray-700 z-50">
-                <MenuItem title="Account" link="#" icon={<FaUser />} />
-                <MenuItem title="Profile" link="#" icon={<FaUser />} />
-                <MenuItem title="Upgrade to Premium" link="/upgrade-now" icon={<FaExternalLinkAlt />} external />
-                <MenuItem title="Support" link="#" icon={<FaExternalLinkAlt />} external />
-                <MenuItem title="Download" link="#" icon={<FaExternalLinkAlt />} external />
-                <MenuItem title="Settings" link="#" icon={<FaCog />} />
-                <MenuItem title="Log out" onClick={signOutUser} icon={<FaSignOutAlt />} danger />
-              </div>
-            )}
-          </div>
         )}
       </div>
     </nav>
   );
 };
 
-const MenuItem = ({ title, link, icon, external, danger, onClick }) => {
-  if (onClick) {
-    return (
-      <button
-        onClick={onClick}
-        className={`flex items-center w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 rounded-md ${
-          danger ? "text-red-400 hover:text-red-500" : ""
-        }`}
-      >
-        <span className="mr-3">{icon}</span> {title}
-      </button>
-    );
-  }
-  return (
-    <a
-      href={link}
-      target={external ? "_blank" : "_self"}
-      rel="noopener noreferrer"
-      className={`flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 rounded-md ${
-        danger ? "text-red-400 hover:text-red-500" : ""
-      }`}
-    >
-      <span className="mr-3">{icon}</span> {title}
-      {external && <FaExternalLinkAlt className="ml-auto text-xs opacity-50" />}
-    </a>
-  );
+NavBar.propTypes = {
+  onHomeClick: PropTypes.func,
+  onSearchChange: PropTypes.func,
+  onExplorePremium: PropTypes.func,
+  onDownloadClick: PropTypes.func,
+  onWhatsNewClick: PropTypes.func,
+  isBellActive: PropTypes.bool
 };
 
-export default NavBar;
+NavBar.defaultProps = {
+  onHomeClick: () => {},
+  onSearchChange: () => {},
+  onExplorePremium: () => {},
+  onDownloadClick: () => {},
+  onWhatsNewClick: () => {},
+  isBellActive: false
+};
+
+export default memo(NavBar);

@@ -1,0 +1,32 @@
+{
+  "title": "BeatFlow Moderation Report",
+  "generated": "2025-12-08T16:49:20.678Z",
+  "agent": "Moderation",
+  "status": "completed",
+  "contentType": "track",
+  "contentId": "track123",
+  "submittedBy": "user123",
+  "decision": "approved",
+  "flags": [],
+  "violations": [],
+  "warnings": [],
+  "confidence": 1,
+  "reviewRequired": false,
+  "startTime": "2025-12-08T16:49:20.657Z",
+  "endTime": "2025-12-08T16:49:20.661Z",
+  "statistics": {
+    "totalReviewed": 1,
+    "approved": 1,
+    "flagged": 0,
+    "rejected": 0,
+    "approvalRate": 1
+  },
+  "summary": {
+    "totalFlags": 0,
+    "totalViolations": 0,
+    "totalWarnings": 0,
+    "decision": "approved",
+    "reviewRequired": false,
+    "confidence": 1
+  }
+}

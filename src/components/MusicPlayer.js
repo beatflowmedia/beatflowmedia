@@ -1,5 +1,5 @@
-// MusicPlayer.js
-import React, { useEffect, useRef, useState, useCallback } from "react";
+// src/components/MusicPlayer.js
+import React, { useEffect, useState } from "react";
 import {
   FaRandom,
   FaStepBackward,
@@ -13,130 +13,61 @@ import {
 } from "react-icons/fa";
 import AddToPlaylistButton from "../utils/AddToPlaylistButton";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
+import { usePlayerActions } from "../hooks/usePlayerActions";
+import { usePlayer } from "../context/PlayerContext";
+import { useAuth } from "../context/AuthContext";
+import { usePlaybackResume } from "../utils/usePlaybackResume";
 import MiniPlayerPortal from "./MiniPlayerPortal";
-import { usePlayback } from "../context/PlaybackContext";
+import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
+const playerAnalytics = new PlayerAnalyticsClass();
 
-// Define repeat mode constants
-const REPEAT_OFF = 0;
-const REPEAT_ALL = 1;
-const REPEAT_ONE = 2;
+const MusicPlayer = () => {
+  // Get player state and audioRef from context - SINGLE SOURCE OF TRUTH
+  const { audioRef } = usePlayer();
+  const {
+    currentSong: song,
+    isPlaying,
+    togglePlay,
+    skipNext,
+    skipPrevious,
+    toggleShuffle,
+    cycleRepeat,
+    shuffleOn,
+    repeatMode,
+    currentTime,
+    duration,
+    volume: contextVolume,
+    setVolume: setContextVolume,
+    queue
+  } = usePlayerActions();
 
-const MusicPlayer = ({ song, songs, onSongChange, isPlaying, setIsPlaying }) => {
-  const audioRef = useRef(new Audio());
   const { playlists, addSong } = usePlaylistManager();
+  const { user } = useAuth();
 
-  // Local state for playback controls
-  const [volume, setVolume] = useState(1);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [shuffle, setShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState(REPEAT_OFF);
+  // Local state for UI only (mute toggle and mini player)
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
 
-  // Use playback context to share the current song id and duration globally
-  const { setCurrentSongId, setDuration: setGlobalDuration } = usePlayback();
+  // Hybrid resume hook - now uses PlayerContext's audioRef
+  usePlaybackResume(audioRef, song, user);
 
-  // ----------------------------
-  //  Audio Playback Logic
-  // ----------------------------
+  // Analytics tracking only - playback is handled by PlayerContext
   useEffect(() => {
     if (!song) return;
-    const audio = audioRef.current;
-    audio.src = `/music/${song.fileName}`;
-    audio.load();
-    // Update context with the current song id
-    setCurrentSongId(song.id);
+    playerAnalytics.trackTrackLoad(song, {});
     if (isPlaying) {
-      audio.play().catch((err) => console.error("Autoplay failed:", err));
+      playerAnalytics.trackPlayStart(song);
     }
-  }, [song, isPlaying, setCurrentSongId]);
+  }, [song, isPlaying]);
 
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => {
-      setDuration(audio.duration);         // Update local duration
-      setGlobalDuration(audio.duration);   // Update global duration in context
-    };
-
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("loadedmetadata", updateDuration);
-    return () => {
-      audio.removeEventListener("timeupdate", updateTime);
-      audio.removeEventListener("loadedmetadata", updateDuration);
-    };
-  }, [song, setGlobalDuration]);
-
-  // Next / Previous Song handlers
-  const handleNextSong = useCallback(() => {
-    if (!songs || !song) return;
-    const idx = songs.findIndex((s) => s.id === song.id);
-    if (idx === -1) return;
-    const newIndex = shuffle
-      ? Math.floor(Math.random() * songs.length)
-      : (idx + 1) % songs.length;
-    onSongChange(songs[newIndex]);
-    setIsPlaying(true);
-  }, [song, songs, shuffle, onSongChange, setIsPlaying]);
-
-  const handlePrevSong = useCallback(() => {
-    if (!songs || !song) return;
-    const idx = songs.findIndex((s) => s.id === song.id);
-    if (idx === -1) return;
-    const newIndex = (idx - 1 + songs.length) % songs.length;
-    onSongChange(songs[newIndex]);
-    setIsPlaying(true);
-  }, [song, songs, onSongChange, setIsPlaying]);
-
-  // Repeat mode cycle handler
-  const cycleRepeatMode = () => {
-    setRepeatMode((prevMode) => (prevMode + 1) % 3);
-  };
-
-  // Handle song end event
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const handleEnded = () => {
-      if (repeatMode === REPEAT_ONE) {
-        audio.currentTime = 0;
-        audio.play();
-      } else if (repeatMode === REPEAT_ALL) {
-        const idx = songs.findIndex((s) => s.id === song.id);
-        const nextIndex = (idx + 1) % songs.length;
-        onSongChange(songs[nextIndex]);
-        setIsPlaying(true);
-      } else {
-        const idx = songs.findIndex((s) => s.id === song.id);
-        if (idx === songs.length - 1) {
-          setIsPlaying(false);
-        } else {
-          onSongChange(songs[idx + 1]);
-          setIsPlaying(true);
-        }
-      }
-    };
-    audio.addEventListener("ended", handleEnded);
-    return () => audio.removeEventListener("ended", handleEnded);
-  }, [song, songs, repeatMode, onSongChange, setIsPlaying]);
-
-  // ----------------------------
-  //  Helper Functions
-  // ----------------------------
+  // Helpers - now use context volume and PlayerContext's controls
   const toggleMute = () => {
     if (isMuted) {
-      setVolume(previousVolume);
+      setContextVolume(previousVolume);
     } else {
-      setPreviousVolume(volume);
-      setVolume(0);
+      setPreviousVolume(contextVolume);
+      setContextVolume(0);
     }
     setIsMuted(!isMuted);
   };
@@ -150,82 +81,117 @@ const MusicPlayer = ({ song, songs, onSongChange, isPlaying, setIsPlaying }) => 
 
   const handleSeek = (e) => {
     const seekVal = parseFloat(e.target.value);
-    audioRef.current.currentTime = seekVal;
-    setCurrentTime(seekVal);
+    playerAnalytics.trackSeek(currentTime, seekVal, 'user_seek');
+    // Seek via PlayerContext (which updates the engine)
+    if (audioRef.current) {
+      audioRef.current.currentTime = seekVal;
+    }
   };
 
-  // ----------------------------
-  //  Mini Player Toggle
-  // ----------------------------
-  const handleOpenMiniPlayer = () => {
-    setMiniPlayerVisible(true);
+  const handleOpenMiniPlayer = () => setMiniPlayerVisible(true);
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setContextVolume(newVolume);
+    if (newVolume > 0 && isMuted) {
+      setIsMuted(false);
+    }
+  };
+
+  const handleMiniPlayerVolumeChange = (newVolume) => {
+    setContextVolume(newVolume);
+    if (newVolume > 0 && isMuted) {
+      setIsMuted(false);
+    }
+  };
+
+  const handleMiniPlayerSeek = (seekVal) => {
+    playerAnalytics.trackSeek(currentTime, seekVal, 'user_seek');
+    if (audioRef.current) {
+      audioRef.current.currentTime = seekVal;
+    }
   };
 
   return (
     <>
       <div
-        className="fixed bottom-0 left-0 w-full bg-black text-white border-t border-gray-800 flex items-center px-4"
-        style={{ height: "60px" }}
+        className="bg-black text-white border-t border-gray-800 flex items-center px-4"
+        style={{ height: "100%" }}
       >
         {/* LEFT: Cover + Title/Artist */}
         <div className="flex items-center min-w-[180px] w-1/5">
-          <img
-            src={song.cover || "https://via.placeholder.com/50"}
-            alt="cover"
-            className="w-12 h-12 object-cover rounded mr-3"
-          />
-          <div className="leading-tight">
-            <p className="font-bold text-sm">{song.title}</p>
-            <p className="text-xs text-gray-400">{song.artist}</p>
-          </div>
+          {song ? (
+            <>
+              <img
+                src={song.cover || "https://via.placeholder.com/50"}
+                alt="cover"
+                className="w-12 h-12 object-cover rounded mr-3"
+              />
+              <div className="leading-tight">
+                <p className="font-bold text-sm">{song.title}</p>
+                <p className="text-xs text-gray-400">{song.artist}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <img
+                src="/images/Logo.png"
+                alt="BeatFlow"
+                className="w-12 h-12 object-cover rounded mr-3"
+              />
+              <div className="leading-tight">
+                <p className="font-bold text-sm">No song playing</p>
+                <p className="text-xs text-gray-400">Select a song to play</p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* CENTER: Playback Controls + Seek */}
         <div className="flex-1 flex flex-col items-center justify-center">
-          {/* Playback Controls Row */}
           <div className="flex items-center gap-4 mb-1">
             <button
-              onClick={() => setShuffle(!shuffle)}
-              className={`text-gray-400 hover:text-white ${shuffle ? "text-white" : ""}`}
+              onClick={toggleShuffle}
+              className={`text-gray-400 hover:text-white ${shuffleOn ? "text-white" : ""}`}
               title="Shuffle"
             >
               <FaRandom size={16} />
             </button>
             <button
-              onClick={handlePrevSong}
+              onClick={skipPrevious}
               className="text-gray-400 hover:text-white"
               title="Previous"
             >
               <FaStepBackward size={18} />
             </button>
             <button
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={togglePlay}
               className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center hover:scale-105 transition"
               title="Play/Pause"
             >
               {isPlaying ? <FaPause size={14} /> : <FaPlay size={14} />}
             </button>
             <button
-              onClick={handleNextSong}
+              onClick={skipNext}
               className="text-gray-400 hover:text-white"
               title="Next"
             >
               <FaStepForward size={18} />
             </button>
             <button
-              onClick={cycleRepeatMode}
+              onClick={cycleRepeat}
               className={`relative text-gray-400 hover:text-white ${
-                repeatMode !== REPEAT_OFF ? "text-white" : ""
+                repeatMode !== "OFF" ? "text-white" : ""
               }`}
               title={
-                repeatMode === REPEAT_ONE
+                repeatMode === "ONE"
                   ? "Repeat One"
-                  : repeatMode === REPEAT_ALL
+                  : repeatMode === "ALL"
                   ? "Repeat All"
                   : "Repeat Off"
               }
             >
-              {repeatMode === REPEAT_ONE ? (
+              {repeatMode === "ONE" ? (
                 <div className="relative">
                   <FaRedoAlt size={16} />
                   <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-black">
@@ -255,7 +221,7 @@ const MusicPlayer = ({ song, songs, onSongChange, isPlaying, setIsPlaying }) => 
 
         {/* RIGHT: AddToPlaylist, Volume, Mini Player Toggle */}
         <div className="flex items-center justify-end w-1/5 gap-3">
-          <AddToPlaylistButton song={song} playlists={playlists} addSong={addSong} />
+          {song && <AddToPlaylistButton song={song} playlists={playlists} addSong={addSong} />}
           <div className="flex items-center gap-2">
             <button onClick={toggleMute} className="text-gray-400 hover:text-white">
               {isMuted ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
@@ -266,8 +232,8 @@ const MusicPlayer = ({ song, songs, onSongChange, isPlaying, setIsPlaying }) => 
               min={0}
               max={1}
               step="0.01"
-              value={isMuted ? 0 : volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              value={isMuted ? 0 : contextVolume}
+              onChange={handleVolumeChange}
             />
           </div>
           <button
@@ -285,14 +251,22 @@ const MusicPlayer = ({ song, songs, onSongChange, isPlaying, setIsPlaying }) => 
         visible={miniPlayerVisible}
         song={song}
         isPlaying={isPlaying}
-        onTogglePlay={() => setIsPlaying(!isPlaying)}
+        onTogglePlay={togglePlay}
         onClose={() => setMiniPlayerVisible(false)}
-        shuffle={shuffle}
-        onShuffleToggle={() => setShuffle(!shuffle)}
-        onPrevSong={handlePrevSong}
-        onNextSong={handleNextSong}
+        shuffle={shuffleOn}
+        onShuffleToggle={toggleShuffle}
+        onPrevSong={skipPrevious}
+        onNextSong={skipNext}
         repeatMode={repeatMode}
-        onCycleRepeat={cycleRepeatMode}
+        onCycleRepeat={cycleRepeat}
+        currentTime={currentTime}
+        duration={duration}
+        volume={contextVolume}
+        onVolumeChange={handleMiniPlayerVolumeChange}
+        onSeek={handleMiniPlayerSeek}
+        queue={queue || []}
+        playlists={playlists}
+        addSong={addSong}
       />
     </>
   );

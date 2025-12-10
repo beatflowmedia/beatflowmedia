@@ -25,10 +25,7 @@ export default function ArtistProfile() {
         <div>
           {/* "Verified Artist" label */}
           <div className="flex items-center text-blue-400 text-sm mb-2">
-            <svg
-              className="w-4 h-4 mr-1 fill-current"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4 mr-1 fill-current" viewBox="0 0 24 24">
               {/* Example checkmark icon or any badge icon you prefer */}
               <path d="M10 15.172l-3.95-3.95-1.414 1.414L10 18 20.364 7.636l-1.414-1.414z" />
             </svg>
@@ -65,9 +62,7 @@ export default function ArtistProfile() {
                 alt="Lose Control"
                 className="w-10 h-10 object-cover rounded"
               />
-              <span className="text-white font-medium">
-                Lose Control
-              </span>
+              <span className="text-white font-medium">Lose Control</span>
             </div>
             <span className="text-gray-400 text-sm">3:30</span>
           </div>
@@ -81,9 +76,7 @@ export default function ArtistProfile() {
                 alt="Bad Dreams"
                 className="w-10 h-10 object-cover rounded"
               />
-              <span className="text-white font-medium">
-                Bad Dreams
-              </span>
+              <span className="text-white font-medium">Bad Dreams</span>
             </div>
             <span className="text-gray-400 text-sm">3:34</span>
           </div>
@@ -97,9 +90,7 @@ export default function ArtistProfile() {
                 alt="The Door"
                 className="w-10 h-10 object-cover rounded"
               />
-              <span className="text-white font-medium">
-                The Door
-              </span>
+              <span className="text-white font-medium">The Door</span>
             </div>
             <span className="text-gray-400 text-sm">3:32</span>
           </div>

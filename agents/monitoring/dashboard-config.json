@@ -1,0 +1,454 @@
+{
+  "dashboardConfig": {
+    "title": "BeatFlow Agent Monitoring Dashboard",
+    "version": "2.1.0",
+    "refreshInterval": 30000,
+    "theme": "dark"
+  },
+  "metrics": {
+    "contentIngestion": {
+      "enabled": true,
+      "displayName": "Content Ingestion",
+      "icon": "📥",
+      "endpoints": [
+        {
+          "name": "processedFiles",
+          "query": "agents/reports/content-ingestion-report-*.json",
+          "aggregation": "count",
+          "period": "24h"
+        },
+        {
+          "name": "validationSuccessRate",
+          "query": "agents/reports/content-ingestion-report-*.json",
+          "field": "status",
+          "aggregation": "percentageMatch",
+          "matchValue": "validated",
+          "period": "24h"
+        },
+        {
+          "name": "averageProcessingTime",
+          "query": "agents/reports/content-ingestion-report-*.json",
+          "field": "processingTime",
+          "aggregation": "average",
+          "period": "24h"
+        }
+      ],
+      "alerts": [
+        {
+          "name": "High Failure Rate",
+          "condition": "validationSuccessRate < 0.8",
+          "severity": "high",
+          "action": "notify"
+        }
+      ]
+    },
+    "analytics": {
+      "enabled": true,
+      "displayName": "Analytics",
+      "icon": "📈",
+      "endpoints": [
+        {
+          "name": "eventsProcessed",
+          "query": "agents/reports/analytics-report-*.json",
+          "field": "eventsAnalyzed",
+          "aggregation": "sum",
+          "period": "24h"
+        },
+        {
+          "name": "insightsGenerated",
+          "query": "agents/reports/analytics-report-*.json",
+          "field": "insights",
+          "aggregation": "count",
+          "period": "24h"
+        },
+        {
+          "name": "alertsTriggered",
+          "query": "agents/reports/analytics-report-*.json",
+          "field": "alerts",
+          "aggregation": "count",
+          "period": "24h"
+        }
+      ],
+      "alerts": [
+        {
+          "name": "Critical Alert",
+          "condition": "alertsTriggered > 0",
+          "severity": "critical",
+          "action": "notify"
+        }
+      ]
+    },
+    "recommendations": {
+      "enabled": true,
+      "displayName": "Recommendations",
+      "icon": "📊",
+      "endpoints": [
+        {
+          "name": "recommendationsGenerated",
+          "query": "agents/reports/recommendation-report-*.json",
+          "field": "recommendations",
+          "aggregation": "count",
+          "period": "24h"
+        },
+        {
+          "name": "clickThroughRate",
+          "query": "agents/reports/recommendation-report-*.json",
+          "field": "metrics.clickThroughRate",
+          "aggregation": "average",
+          "period": "24h"
+        },
+        {
+          "name": "averageDiversityScore",
+          "query": "agents/reports/recommendation-report-*.json",
+          "field": "metadata.diversityScore",
+          "aggregation": "average",
+          "period": "24h"
+        }
+      ],
+      "alerts": [
+        {
+          "name": "Low Click-Through Rate",
+          "condition": "clickThroughRate < 0.05",
+          "severity": "medium",
+          "action": "notify"
+        },
+        {
+          "name": "Low Diversity",
+          "condition": "averageDiversityScore < 0.3",
+          "severity": "low",
+          "action": "log"
+        }
+      ]
+    },
+    "moderation": {
+      "enabled": true,
+      "displayName": "Moderation",
+      "icon": "🛡️",
+      "endpoints": [
+        {
+          "name": "contentReviewed",
+          "query": "agents/reports/moderation-report-*.json",
+          "aggregation": "count",
+          "period": "24h"
+        },
+        {
+          "name": "approvalRate",
+          "query": "agents/reports/moderation-report-*.json",
+          "field": "statistics.approvalRate",
+          "aggregation": "average",
+          "period": "24h"
+        },
+        {
+          "name": "humanReviewRequired",
+          "query": "agents/reports/moderation-report-*.json",
+          "field": "reviewRequired",
+          "aggregation": "countTrue",
+          "period": "24h"
+        },
+        {
+          "name": "averageConfidence",
+          "query": "agents/reports/moderation-report-*.json",
+          "field": "confidence",
+          "aggregation": "average",
+          "period": "24h"
+        }
+      ],
+      "alerts": [
+        {
+          "name": "High Review Queue",
+          "condition": "humanReviewRequired > 50",
+          "severity": "medium",
+          "action": "notify"
+        },
+        {
+          "name": "Low Confidence",
+          "condition": "averageConfidence < 0.7",
+          "severity": "medium",
+          "action": "log"
+        }
+      ]
+    },
+    "notifications": {
+      "enabled": true,
+      "displayName": "Notifications",
+      "icon": "🔔",
+      "endpoints": [
+        {
+          "name": "notificationsSent",
+          "query": "agents/reports/notification-report-*.json",
+          "aggregation": "count",
+          "period": "24h"
+        },
+        {
+          "name": "deliveryRate",
+          "query": "agents/reports/notification-report-*.json",
+          "field": "statistics.deliveryRate",
+          "aggregation": "average",
+          "period": "24h"
+        },
+        {
+          "name": "openRate",
+          "query": "agents/reports/notification-report-*.json",
+          "field": "statistics.openRate",
+          "aggregation": "average",
+          "period": "24h"
+        },
+        {
+          "name": "failureRate",
+          "query": "agents/reports/notification-report-*.json",
+          "field": "errors",
+          "aggregation": "countNonEmpty",
+          "period": "24h"
+        }
+      ],
+      "alerts": [
+        {
+          "name": "Low Delivery Rate",
+          "condition": "deliveryRate < 0.95",
+          "severity": "high",
+          "action": "notify"
+        },
+        {
+          "name": "High Failure Rate",
+          "condition": "failureRate > 0.1",
+          "severity": "high",
+          "action": "notify"
+        }
+      ]
+    },
+    "documentation": {
+      "enabled": true,
+      "displayName": "Documentation",
+      "icon": "📚",
+      "endpoints": [
+        {
+          "name": "docsGenerated",
+          "query": "agents/reports/documentation-report-*.json",
+          "aggregation": "count",
+          "period": "7d"
+        },
+        {
+          "name": "filesDocumented",
+          "query": "agents/reports/documentation-report-*.json",
+          "field": "summary.totalFiles",
+          "aggregation": "sum",
+          "period": "7d"
+        }
+      ],
+      "alerts": []
+    }
+  },
+  "widgets": [
+    {
+      "id": "overview",
+      "type": "grid",
+      "title": "Agent Overview",
+      "layout": {
+        "cols": 3,
+        "rows": 2
+      },
+      "items": [
+        {
+          "metric": "contentIngestion.processedFiles",
+          "type": "counter",
+          "title": "Files Processed",
+          "color": "blue"
+        },
+        {
+          "metric": "analytics.eventsProcessed",
+          "type": "counter",
+          "title": "Events Analyzed",
+          "color": "green"
+        },
+        {
+          "metric": "recommendations.recommendationsGenerated",
+          "type": "counter",
+          "title": "Recommendations",
+          "color": "purple"
+        },
+        {
+          "metric": "moderation.contentReviewed",
+          "type": "counter",
+          "title": "Content Reviewed",
+          "color": "orange"
+        },
+        {
+          "metric": "notifications.notificationsSent",
+          "type": "counter",
+          "title": "Notifications Sent",
+          "color": "cyan"
+        },
+        {
+          "metric": "documentation.docsGenerated",
+          "type": "counter",
+          "title": "Docs Generated",
+          "color": "gray"
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "type": "status",
+      "title": "Agent Health",
+      "items": [
+        {
+          "agent": "contentIngestion",
+          "healthCheck": "contentIngestion.validationSuccessRate > 0.8",
+          "displayName": "Content Ingestion"
+        },
+        {
+          "agent": "analytics",
+          "healthCheck": "analytics.alertsTriggered == 0",
+          "displayName": "Analytics"
+        },
+        {
+          "agent": "recommendations",
+          "healthCheck": "recommendations.clickThroughRate > 0.05",
+          "displayName": "Recommendations"
+        },
+        {
+          "agent": "moderation",
+          "healthCheck": "moderation.averageConfidence > 0.7",
+          "displayName": "Moderation"
+        },
+        {
+          "agent": "notifications",
+          "healthCheck": "notifications.deliveryRate > 0.95",
+          "displayName": "Notifications"
+        }
+      ]
+    },
+    {
+      "id": "recommendations-performance",
+      "type": "chart",
+      "title": "Recommendation Performance",
+      "chartType": "line",
+      "metrics": [
+        {
+          "metric": "recommendations.clickThroughRate",
+          "label": "CTR",
+          "color": "green"
+        },
+        {
+          "metric": "recommendations.averageDiversityScore",
+          "label": "Diversity",
+          "color": "blue"
+        }
+      ],
+      "period": "7d"
+    },
+    {
+      "id": "moderation-stats",
+      "type": "chart",
+      "title": "Moderation Statistics",
+      "chartType": "bar",
+      "metrics": [
+        {
+          "metric": "moderation.contentReviewed",
+          "label": "Reviewed",
+          "color": "blue"
+        },
+        {
+          "metric": "moderation.humanReviewRequired",
+          "label": "Flagged",
+          "color": "orange"
+        }
+      ],
+      "period": "7d"
+    },
+    {
+      "id": "notification-channels",
+      "type": "pie",
+      "title": "Notification Channels",
+      "query": "agents/reports/notification-report-*.json",
+      "field": "channels",
+      "period": "24h"
+    },
+    {
+      "id": "recent-alerts",
+      "type": "list",
+      "title": "Recent Alerts",
+      "query": "alerts",
+      "limit": 10,
+      "sortBy": "timestamp",
+      "sortOrder": "desc"
+    }
+  ],
+  "alerting": {
+    "enabled": true,
+    "channels": [
+      {
+        "type": "email",
+        "enabled": false,
+        "config": {
+          "recipients": ["admin@beatflow.com"],
+          "subject": "[BeatFlow Agents] {severity}: {alertName}"
+        }
+      },
+      {
+        "type": "slack",
+        "enabled": false,
+        "config": {
+          "webhook": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+          "channel": "#agent-alerts"
+        }
+      },
+      {
+        "type": "inApp",
+        "enabled": true,
+        "config": {
+          "storePath": "agents/alerts"
+        }
+      }
+    ],
+    "rules": {
+      "critical": {
+        "channels": ["email", "slack", "inApp"],
+        "throttle": 300
+      },
+      "high": {
+        "channels": ["slack", "inApp"],
+        "throttle": 600
+      },
+      "medium": {
+        "channels": ["inApp"],
+        "throttle": 1800
+      },
+      "low": {
+        "channels": ["inApp"],
+        "throttle": 3600
+      }
+    }
+  },
+  "integrations": {
+    "grafana": {
+      "enabled": false,
+      "url": "http://localhost:3000",
+      "dashboardId": "beatflow-agents"
+    },
+    "prometheus": {
+      "enabled": false,
+      "url": "http://localhost:9090",
+      "scrapeInterval": 60
+    },
+    "datadog": {
+      "enabled": false,
+      "apiKey": "",
+      "tags": ["env:production", "service:beatflow-agents"]
+    }
+  },
+  "retention": {
+    "reports": {
+      "enabled": true,
+      "days": 30
+    },
+    "alerts": {
+      "enabled": true,
+      "days": 90
+    },
+    "logs": {
+      "enabled": true,
+      "days": 7
+    }
+  }
+}

@@ -7,7 +7,7 @@ export default function SearchResults({
   playlists = [],
   onSongSelect = () => {},
   onArtistSelect = () => {},
-  onPlaylistSelect = () => {},
+  onPlaylistSelect = () => {}
 }) {
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -17,16 +17,18 @@ export default function SearchResults({
   const filteredSongs = musicData.filter(
     (song) =>
       song.title?.toLowerCase().includes(normalizedQuery) ||
-      song.artist?.toLowerCase().includes(normalizedQuery)
+      song.artist?.toLowerCase().includes(normalizedQuery),
   );
 
-  const allArtists = [...new Set(musicData.map((song) => song.artist).filter(Boolean))];
+  const allArtists = [
+    ...new Set(musicData.map((song) => song.artist).filter(Boolean)),
+  ];
   const filteredArtists = allArtists.filter((artist) =>
-    artist.toLowerCase().includes(normalizedQuery)
+    artist.toLowerCase().includes(normalizedQuery),
   );
 
   const filteredPlaylists = playlists.filter((playlist) =>
-    playlist.name.toLowerCase().includes(normalizedQuery)
+    playlist.name.toLowerCase().includes(normalizedQuery),
   );
 
   const noResults =
@@ -48,7 +50,10 @@ export default function SearchResults({
                 onClose();
               }}
             >
-              🎵 {song.title} <span className="text-gray-400 text-xs ml-1">by {song.artist}</span>
+              🎵 {song.title}{" "}
+              <span className="text-gray-400 text-xs ml-1">
+                by {song.artist}
+              </span>
             </div>
           ))}
         </div>
@@ -91,7 +96,9 @@ export default function SearchResults({
       )}
 
       {noResults && (
-        <div className="text-gray-400 text-sm text-center">No results found</div>
+        <div className="text-gray-400 text-sm text-center">
+          No results found
+        </div>
       )}
     </div>
   );

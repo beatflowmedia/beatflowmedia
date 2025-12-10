@@ -1,0 +1,346 @@
+{
+  "logLevel": "info",
+  "timeout": 1800000,
+  "retries": 3,
+  "monitoringEnabled": true,
+  "notificationsEnabled": true,
+  "persistWorkflows": true,
+
+  "scaffold": {
+    "srcDir": "src",
+    "componentsDir": "src/components",
+    "storybookDir": ".storybook",
+    "testDir": "src",
+    "designTokens": {
+      "spacing": [0, 4, 8, 16, 32, 64],
+      "colors": {
+        "primary": "#1976d2",
+        "secondary": "#dc004e",
+        "success": "#2e7d32",
+        "error": "#d32f2f",
+        "warning": "#ed6c02",
+        "info": "#0288d1"
+      },
+      "typography": {
+        "fontFamily": "Roboto, Arial, sans-serif",
+        "fontSize": "16px",
+        "fontWeights": {
+          "light": 300,
+          "regular": 400,
+          "medium": 500,
+          "bold": 700
+        }
+      },
+      "breakpoints": {
+        "xs": "0px",
+        "sm": "600px",
+        "md": "900px",
+        "lg": "1200px",
+        "xl": "1536px"
+      }
+    }
+  },
+
+  "test": {
+    "testDir": "src",
+    "coverageThreshold": 90,
+    "testFramework": "jest",
+    "testingLibrary": "@testing-library/react",
+    "accessibilityTesting": true,
+    "performanceTesting": true,
+    "integrationTesting": true
+  },
+
+  "lint": {
+    "srcDir": "src",
+    "eslintConfig": ".eslintrc.js",
+    "prettierConfig": ".prettierrc",
+    "tsConfig": "tsconfig.json",
+    "autoFix": true,
+    "enforceSecurity": true,
+    "performanceCheck": true,
+    "accessibilityCheck": true
+  },
+
+  "pr": {
+    "defaultBranch": "main",
+    "branchPrefix": "feature/",
+    "commitPrefix": "",
+    "prTemplate": ".github/pull_request_template.md",
+    "signCommits": true,
+    "enforceConventionalCommits": true,
+    "autoMergeStrategy": "squash",
+    "requiredChecks": ["ci", "tests", "lint", "security"]
+  },
+
+  "deploy": {
+    "platform": "netlify",
+    "buildCommand": "npm run build",
+    "buildDir": "build",
+    "functionsDir": "netlify/functions",
+    "envVarPrefix": "REACT_APP_",
+    "autoCleanup": true,
+    "maxPreviewDays": 30
+  },
+
+  "security": {
+    "secretsPolicy": "strict",
+    "dependencyAudit": true,
+    "codeAnalysis": true,
+    "complianceStandards": ["OWASP", "GDPR", "SOC2"],
+    "autoRemediation": true,
+    "signedCommitsRequired": true,
+    "encryptionRequired": false
+  },
+
+  "orchestrator": {
+    "workflowTimeout": 1800000,
+    "maxConcurrentWorkflows": 3,
+    "retryAttempts": 3,
+    "retryDelay": 5000,
+    "monitoringEnabled": true,
+    "notificationsEnabled": true,
+    "persistWorkflows": true
+  },
+
+  "expertResolver": {
+    "enableParallelExecution": true,
+    "enableConsensusGeneration": true,
+    "enableAutoRemediation": false,
+    "enableConflictResolution": true,
+    "maxConcurrentExperts": 3,
+    "outputFormat": "console",
+    "saveReport": true,
+    "expertWeights": {
+      "security": 35,
+      "quality": 30,
+      "performance": 25,
+      "maintainability": 10
+    },
+    "thresholds": {
+      "compositeScore": 70,
+      "securityScore": 80,
+      "qualityScore": 75,
+      "performanceScore": 70,
+      "criticalIssues": 0,
+      "highPriorityIssues": 5
+    },
+    "autoRemediationThreshold": 8,
+    "maxRecommendations": 20,
+    "profiles": {
+      "quick": {
+        "experts": ["security"],
+        "timeout": 300000
+      },
+      "comprehensive": {
+        "experts": ["codeQuality", "performance", "security"],
+        "timeout": 1800000
+      },
+      "security-focused": {
+        "experts": ["security", "codeQuality"],
+        "expertWeights": {
+          "security": 60,
+          "quality": 30,
+          "performance": 10
+        }
+      },
+      "performance-focused": {
+        "experts": ["performance", "codeQuality"],
+        "expertWeights": {
+          "security": 20,
+          "quality": 30,
+          "performance": 50
+        }
+      }
+    }
+  },
+
+  "uiux": {
+    "enableDesignSystemValidation": true,
+    "enableAccessibilityChecks": true,
+    "enableMusicUXPatterns": true,
+    "wcagLevel": "AA",
+    "designSystemStrict": false,
+    "autoFixEnabled": false,
+    "outputFormat": "console",
+    "saveReport": true,
+    "thresholds": {
+      "designSystemScore": {
+        "pass": 85,
+        "warning": 70,
+        "fail": 50
+      },
+      "accessibilityScore": {
+        "pass": 95,
+        "warning": 80,
+        "fail": 60
+      },
+      "musicUXScore": {
+        "pass": 90,
+        "warning": 75,
+        "fail": 60
+      },
+      "compositeScore": {
+        "pass": 85,
+        "warning": 70,
+        "fail": 50
+      }
+    },
+    "designSystemChecks": {
+      "colors": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "MEDIUM"
+      },
+      "spacing": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      },
+      "typography": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      },
+      "shadows": {
+        "enabled": true,
+        "autoFix": false,
+        "severity": "LOW"
+      },
+      "borderRadius": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      },
+      "animations": {
+        "enabled": true,
+        "autoFix": true,
+        "severity": "LOW"
+      }
+    },
+    "accessibilityChecks": {
+      "ariaAttributes": {
+        "enabled": true,
+        "severity": "HIGH"
+      },
+      "keyboardNavigation": {
+        "enabled": true,
+        "severity": "HIGH"
+      },
+      "colorContrast": {
+        "enabled": true,
+        "severity": "CRITICAL"
+      },
+      "touchTargets": {
+        "enabled": true,
+        "minimumSize": 44,
+        "severity": "HIGH"
+      },
+      "screenReader": {
+        "enabled": true,
+        "severity": "HIGH"
+      },
+      "semanticHTML": {
+        "enabled": true,
+        "severity": "MEDIUM"
+      },
+      "focusManagement": {
+        "enabled": true,
+        "severity": "MEDIUM"
+      },
+      "formAccessibility": {
+        "enabled": true,
+        "severity": "CRITICAL"
+      },
+      "imageAltText": {
+        "enabled": true,
+        "severity": "CRITICAL"
+      }
+    },
+    "musicUXPatterns": {
+      "playbackControls": {
+        "enabled": true,
+        "requireKeyboardShortcuts": true,
+        "minimumTouchTarget": 44,
+        "severity": "HIGH"
+      },
+      "albumArt": {
+        "enabled": true,
+        "requireLazyLoading": true,
+        "requireAltText": true,
+        "optimizeFormat": true,
+        "severity": "MEDIUM"
+      },
+      "playlists": {
+        "enabled": true,
+        "requireVirtualScrolling": true,
+        "requireKeyboardNav": true,
+        "severity": "MEDIUM"
+      },
+      "search": {
+        "enabled": true,
+        "requireDebouncing": true,
+        "requireLoadingState": true,
+        "severity": "MEDIUM"
+      },
+      "audioVisualization": {
+        "enabled": true,
+        "requireReducedMotion": true,
+        "requireRAF": true,
+        "severity": "MEDIUM"
+      }
+    },
+    "profiles": {
+      "quick": {
+        "description": "Quick accessibility scan only",
+        "timeout": 300000,
+        "focusAreas": ["accessibility"],
+        "wcagLevel": "AA",
+        "autoFix": false
+      },
+      "design-focused": {
+        "description": "Design system compliance and UI patterns",
+        "timeout": 900000,
+        "focusAreas": ["design-system", "music-ux"],
+        "designSystemStrict": true,
+        "autoFix": false
+      },
+      "accessibility-audit": {
+        "description": "Comprehensive WCAG 2.1 AAA accessibility audit",
+        "timeout": 1200000,
+        "focusAreas": ["accessibility"],
+        "wcagLevel": "AAA",
+        "checkKeyboard": true,
+        "checkScreenReader": true,
+        "checkColorContrast": true,
+        "checkTouchTargets": true,
+        "autoFix": false
+      },
+      "music-ux": {
+        "description": "Music streaming UX patterns validation",
+        "timeout": 600000,
+        "focusAreas": ["music-ux", "performance"],
+        "musicPatternsEnabled": true,
+        "validatePerformance": true,
+        "autoFix": false
+      },
+      "comprehensive": {
+        "description": "Full UI/UX analysis with all validators",
+        "timeout": 1800000,
+        "focusAreas": ["design-system", "accessibility", "music-ux", "performance"],
+        "wcagLevel": "AA",
+        "designSystemStrict": false,
+        "musicPatternsEnabled": true,
+        "autoFix": false
+      },
+      "pre-commit": {
+        "description": "Fast pre-commit UI/UX checks",
+        "timeout": 180000,
+        "focusAreas": ["design-system", "accessibility"],
+        "wcagLevel": "AA",
+        "severityFilter": ["CRITICAL"],
+        "autoFix": true
+      }
+    }
+  }
+}

@@ -70,3 +70,8 @@ webhooks.log
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+
+githubPAT.txt
+netlify.toml
+*storybook.log
+storybook-static

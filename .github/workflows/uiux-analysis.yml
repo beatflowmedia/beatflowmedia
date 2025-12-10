@@ -1,0 +1,199 @@
+name: UI/UX Analysis
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**/*.js'
+      - 'src/**/*.jsx'
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  uiux-analysis:
+    name: UI/UX Expert Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run UI/UX Analysis
+        id: uiux
+        run: |
+          echo "Running UI/UX Expert Analysis..."
+          npm run agents:uiux:comprehensive || echo "analysis_failed=true" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Check for critical issues
+        id: check-critical
+        run: |
+          # Parse JSON report for critical issues
+          REPORT=$(find agents/reports -name "uiux-analysis-*.json" -type f -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2)
+
+          if [ -f "$REPORT" ]; then
+            CRITICAL_COUNT=$(node -e "
+              const fs = require('fs');
+              const report = JSON.parse(fs.readFileSync('$REPORT', 'utf8'));
+              const critical = [
+                ...(report.designSystemViolations || []),
+                ...(report.accessibilityIssues || []),
+                ...(report.musicUXIssues || [])
+              ].filter(issue => issue.severity === 'CRITICAL').length;
+              console.log(critical);
+            ")
+
+            echo "critical_count=$CRITICAL_COUNT" >> $GITHUB_OUTPUT
+
+            if [ "$CRITICAL_COUNT" -gt 0 ]; then
+              echo "::error::Found $CRITICAL_COUNT critical UI/UX issues"
+              exit 1
+            fi
+          else
+            echo "::warning::No UI/UX report found"
+          fi
+
+      - name: Upload UI/UX Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: uiux-analysis-report
+          path: |
+            agents/reports/uiux-analysis-*.json
+            agents/reports/uiux-analysis-*.md
+          retention-days: 30
+
+      - name: Comment PR with Results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const glob = require('glob');
+
+            // Find latest markdown report
+            const reports = glob.sync('agents/reports/uiux-analysis-*.md');
+            if (reports.length === 0) {
+              console.log('No markdown report found');
+              return;
+            }
+
+            const latestReport = reports.sort().reverse()[0];
+            let reportContent = fs.readFileSync(latestReport, 'utf8');
+
+            // Truncate if too long for GitHub comment
+            if (reportContent.length > 60000) {
+              reportContent = reportContent.substring(0, 60000) + '\n\n... (truncated)';
+            }
+
+            // Create comment
+            const comment = `## 🎨 UI/UX Expert Analysis Results
+
+            ${reportContent}
+
+            <details>
+            <summary>📊 View detailed JSON report</summary>
+
+            Download the full JSON report from the workflow artifacts.
+
+            </details>
+
+            ---
+            *Automated by [UI/UX Expert Agent](../blob/main/agents/UIUX_EXPERT_GUIDE.md)*`;
+
+            // Post comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  accessibility-audit:
+    name: Accessibility Audit (WCAG AA)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Accessibility Audit
+        run: npm run agents:uiux:quick
+
+      - name: Check WCAG Compliance
+        run: |
+          REPORT=$(find agents/reports -name "UIUXExpertAgent_report_*.json" -type f -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2)
+
+          if [ -f "$REPORT" ]; then
+            ACCESSIBILITY_SCORE=$(node -e "
+              const fs = require('fs');
+              const report = JSON.parse(fs.readFileSync('$REPORT', 'utf8'));
+              console.log(report.scores?.accessibility || 0);
+            ")
+
+            echo "Accessibility Score: $ACCESSIBILITY_SCORE/100"
+
+            if [ "$ACCESSIBILITY_SCORE" -lt 80 ]; then
+              echo "::warning::Accessibility score ($ACCESSIBILITY_SCORE) is below threshold (80)"
+            fi
+          fi
+
+  design-tokens:
+    name: Design Token Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Design Tokens
+        run: npm run agents:uiux:tokens
+
+      - name: Check for violations
+        run: |
+          REPORT=$(find agents/reports -name "UIUXExpertAgent_report_*.json" -type f -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2)
+
+          if [ -f "$REPORT" ]; then
+            VIOLATIONS=$(node -e "
+              const fs = require('fs');
+              const report = JSON.parse(fs.readFileSync('$REPORT', 'utf8'));
+              console.log((report.designSystemViolations || []).length);
+            ")
+
+            echo "Design System Violations: $VIOLATIONS"
+
+            if [ "$VIOLATIONS" -gt 50 ]; then
+              echo "::warning::High number of design token violations ($VIOLATIONS)"
+            fi
+          fi

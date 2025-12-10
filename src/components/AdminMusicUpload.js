@@ -1,7 +1,6 @@
 // src/components/AdminMusicUpload.js
 import React, { useState } from "react";
-import { db } from "../firebaseConfig"; // Adjust the path if needed
-import { collection, addDoc } from "firebase/firestore";
+import { uploadSongWithMetadata } from "../services/ingestionService";
 import { showSuccessToast, showErrorToast } from "../utils/Toast";
 
 const AdminMusicUpload = () => {
@@ -20,51 +19,25 @@ const AdminMusicUpload = () => {
   const [musicFile, setMusicFile] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
 
-  // Handler for uploading a new song
+  // Handler for uploading a new song (delegated to ingestion service)
   const handleUpload = async (e) => {
     e.preventDefault();
-
-    // In a real implementation you’d:
-    // 1. Upload the musicFile and coverFile to Firebase Storage.
-    // 2. Obtain their URLs.
-    // 3. Construct your new song object using those URLs.
-    // For this example, we assume the file fields are simply used as placeholders.
-    const newSong = {
-      title: title.trim(),
-      artist: artist.trim() || "Unknown Artist",
-      category,
-      biography: biography.trim() || "No biography available.",
-      credits: credits.trim()
-        ? credits.split(",").map((item) => ({ name: item.trim(), role: "Contributor" }))
-        : [],
-      onTour: onTour.trim()
-        ? onTour.split(";").map((entry) => {
-            const parts = entry.split(",");
-            return {
-              date: parts[0] ? parts[0].trim() : "",
-              location: parts[1] ? parts[1].trim() : "",
-              venue: parts[2] ? parts[2].trim() : "",
-            };
-          })
-        : [],
-      nextInQueue:
-        nextInQueueTitle && nextInQueueArtist && nextInQueueCover
-          ? {
-              title: nextInQueueTitle.trim(),
-              artist: nextInQueueArtist.trim(),
-              cover: nextInQueueCover.trim(),
-            }
-          : null,
-      videoSrc: videoSrc.trim() || null,
-      videoPoster: videoPoster.trim() || null,
-      // For the files, we just store their names as placeholders.
-      fileName: musicFile ? musicFile.name : "",
-      cover: coverFile ? coverFile.name : "",
-    };
-
     try {
-      // Add the new song to the "songs" collection in Firestore
-      await addDoc(collection(db, "songs"), newSong);
+      await uploadSongWithMetadata({
+        title,
+        artist,
+        category,
+        biography,
+        credits,
+        onTour,
+        nextInQueueTitle,
+        nextInQueueArtist,
+        nextInQueueCover,
+        videoSrc,
+        videoPoster,
+        musicFile,
+        coverFile
+      });
       showSuccessToast("Song uploaded successfully!");
       // Reset form fields
       setTitle("");
@@ -90,7 +63,7 @@ const AdminMusicUpload = () => {
   const handleUpdateMusicData = async () => {
     try {
       const response = await fetch("/api/updateMusicData", {
-        method: "POST",
+        method: "POST"
       });
       if (!response.ok) throw new Error("Failed to update music data");
       showSuccessToast("Music data updated successfully.");
@@ -165,7 +138,8 @@ const AdminMusicUpload = () => {
         {/* On Tour */}
         <div>
           <label className="block mb-1">
-            On Tour (separate entries with ";" and each as "date, location, venue"):
+            On Tour (separate entries with ";" and each as "date, location,
+            venue"):
           </label>
           <input
             type="text"

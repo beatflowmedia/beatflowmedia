@@ -6,7 +6,7 @@ export default function DropdownMenu({
   onClose = () => {},
   children,
   className = "",
-  position = "top-full mt-2 right-0",
+  position = "top-full mt-2 right-0"
 }) {
   const ref = useRef();
 
@@ -30,7 +30,7 @@ export default function DropdownMenu({
         maxWidth: "calc(100vw - 1rem)", // Prevent overflow on small screens
         right: "0",
         overflowWrap: "break-word",
-        wordBreak: "break-word",
+        wordBreak: "break-word"
       }}
     >
       {children}

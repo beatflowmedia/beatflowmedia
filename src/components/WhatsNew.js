@@ -32,7 +32,9 @@ const WhatsNew = () => {
           />
           <div className="song-details">
             <h3 className="song-title">Sometimes</h3>
-            <p className="song-meta">Tiago PZK, Teddy Swims • Single • 1 week ago</p>
+            <p className="song-meta">
+              Tiago PZK, Teddy Swims • Single • 1 week ago
+            </p>
           </div>
           <button className="play-button">▶</button>
         </div>

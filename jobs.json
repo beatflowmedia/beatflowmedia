@@ -1,0 +1,338 @@
+[
+  {
+    "title": "Frontend Engineer (React)",
+    "department": "Engineering",
+    "location": "Remote, US/EU preferred",
+    "type": "Full-time",
+    "description": "Develop user-facing features in React, Tailwind, and UI/UX polish for BeatFlow Media. Work closely with product and design teams to create fast, accessible, beautiful experiences.",
+    "responsibilities": [
+      "Build and ship React UI components.",
+      "Collaborate with designers and backend engineers.",
+      "Ensure cross-browser compatibility and responsive design.",
+      "Contribute to UX polish and accessibility."
+    ],
+    "requirements": [
+      "2+ years React experience.",
+      "Proficient in JavaScript/TypeScript and Tailwind CSS.",
+      "Familiarity with React Hooks, Context API.",
+      "Experience with testing (Jest/Cypress) is a plus."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Backend Engineer (Firebase/Cloud Functions)",
+    "department": "Engineering",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Build and optimize Firestore queries, implement serverless logic using Firebase Cloud Functions, and ensure data integrity and security.",
+    "responsibilities": [
+      "Design and implement backend logic in Cloud Functions.",
+      "Optimize Firestore data models and queries.",
+      "Work with authentication, security rules, and integrations.",
+      "Support analytics and business logic."
+    ],
+    "requirements": [
+      "2+ years backend experience (Node.js preferred).",
+      "Experience with Firebase/Firestore.",
+      "Understanding of serverless/cloud functions.",
+      "Familiarity with authentication and security best practices."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Full Stack Engineer",
+    "department": "Engineering",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Work across frontend and backend, integrate features end-to-end, and ensure seamless functionality throughout the product.",
+    "responsibilities": [
+      "Contribute to both frontend (React) and backend (Firebase) codebases.",
+      "Build and integrate new features end-to-end.",
+      "Maintain high code quality and documentation.",
+      "Participate in code reviews and team discussions."
+    ],
+    "requirements": [
+      "3+ years full stack experience.",
+      "Strong in both React and Node.js/Firebase.",
+      "Familiarity with CI/CD and cloud infrastructure.",
+      "Excellent communication skills."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "DevOps/Cloud Engineer",
+    "department": "Engineering",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Manage deployments, Netlify CI/CD pipelines, and cloud infrastructure. Ensure the reliability, scalability, and security of the BeatFlow Media platform.",
+    "responsibilities": [
+      "Configure and maintain CI/CD (Netlify, GitHub).",
+      "Monitor cloud resources and performance.",
+      "Automate deployments and environment management.",
+      "Contribute to security and compliance best practices."
+    ],
+    "requirements": [
+      "2+ years in DevOps/cloud infrastructure.",
+      "Experience with Netlify, Firebase Hosting, or AWS.",
+      "Proficiency in scripting and automation.",
+      "Understanding of security, monitoring, and backups."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Mobile Engineer (React Native)",
+    "department": "Engineering",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Develop and maintain BeatFlow mobile applications using React Native. Collaborate with design and backend teams to deliver high-quality mobile experiences.",
+    "responsibilities": [
+      "Build and optimize mobile app features.",
+      "Integrate with backend and authentication services.",
+      "Ensure cross-platform compatibility (iOS/Android).",
+      "Participate in app store submissions and updates."
+    ],
+    "requirements": [
+      "2+ years React Native experience.",
+      "Published apps on iOS/Android stores.",
+      "Experience with mobile testing and debugging.",
+      "Strong knowledge of mobile UX best practices."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Product Manager",
+    "department": "Product",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Define product roadmap, prioritize features, and work closely with designers and engineers to deliver exceptional user experiences.",
+    "responsibilities": [
+      "Own the product roadmap and feature prioritization.",
+      "Gather requirements and feedback from users and stakeholders.",
+      "Work with design/dev to deliver product improvements.",
+      "Define and measure product success metrics."
+    ],
+    "requirements": [
+      "2+ years as Product Manager.",
+      "Strong communication and organization skills.",
+      "Experience in music/entertainment or SaaS products is a plus.",
+      "Analytical mindset."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "UX/UI Designer",
+    "department": "Design",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Design user flows, visual assets, and deliver a beautiful, user-friendly UI for BeatFlow Media using Figma or similar tools.",
+    "responsibilities": [
+      "Design user journeys and app screens.",
+      "Develop wireframes, prototypes, and high-fidelity mockups.",
+      "Collaborate with product and engineering teams.",
+      "Conduct usability tests and gather user feedback."
+    ],
+    "requirements": [
+      "2+ years in UX/UI design.",
+      "Strong portfolio in digital/web/mobile products.",
+      "Proficient in Figma or similar.",
+      "Experience with music, media, or entertainment apps is a plus."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "QA Engineer / Test Automation Engineer",
+    "department": "Engineering",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Write tests (unit/integration) and perform manual QA for new releases. Ensure product reliability and quality.",
+    "responsibilities": [
+      "Write automated and manual tests.",
+      "Collaborate with devs to catch bugs early.",
+      "Document test cases and track issues.",
+      "Work on test automation pipelines."
+    ],
+    "requirements": [
+      "1+ years in QA/testing.",
+      "Familiarity with Jest, Cypress, or similar.",
+      "Detail-oriented and organized.",
+      "Experience with web/mobile apps."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Content Manager",
+    "department": "Content",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Curate song/artist data, manage playlists, and approve uploads for BeatFlow Media. Work closely with artists and community.",
+    "responsibilities": [
+      "Curate song/artist data and manage editorial playlists.",
+      "Approve new music uploads and monitor content quality.",
+      "Coordinate with artists and rights holders.",
+      "Assist with content marketing initiatives."
+    ],
+    "requirements": [
+      "Experience managing digital music or content platforms.",
+      "Passion for music and strong knowledge of genres/artists.",
+      "Attention to detail.",
+      "Great communication and organization."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Community Manager",
+    "department": "Community",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Manage social media, help users, gather feedback, and support a thriving BeatFlow Media community.",
+    "responsibilities": [
+      "Run social media accounts and engage with users.",
+      "Handle feedback and support requests.",
+      "Organize community events or contests.",
+      "Work with product to advocate for user needs."
+    ],
+    "requirements": [
+      "Experience as a community manager or social media lead.",
+      "Strong written/verbal communication skills.",
+      "Empathy and conflict resolution abilities.",
+      "Passion for music and online communities."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Data Analyst",
+    "department": "Data & Analytics",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Track shares, plays, likes, and build dashboards from analytics to inform product and marketing decisions.",
+    "responsibilities": [
+      "Track key user and product metrics.",
+      "Build analytics dashboards (Looker, Tableau, etc.).",
+      "Analyze campaigns, growth, and retention data.",
+      "Work with engineering to improve analytics pipelines."
+    ],
+    "requirements": [
+      "1+ years as data/analytics specialist.",
+      "Strong SQL and dashboarding skills.",
+      "Experience with Google Analytics, BigQuery, etc.",
+      "Curiosity and problem-solving mindset."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Machine Learning Engineer",
+    "department": "Engineering",
+    "location": "Remote",
+    "type": "Contract/Part-time",
+    "description": "Future-facing role for building recommendation engines, music suggestions, and personalizing the BeatFlow Media experience.",
+    "responsibilities": [
+      "Prototype and deploy music recommendation models.",
+      "Analyze listening and interaction data.",
+      "Work with data/engineering teams to productionize models.",
+      "Evaluate model effectiveness and user satisfaction."
+    ],
+    "requirements": [
+      "Experience with ML and recommender systems.",
+      "Python, TensorFlow/PyTorch, cloud ML pipelines.",
+      "Familiarity with music/audio data is a plus.",
+      "Ability to explain complex ideas to product teams."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Growth Marketer",
+    "department": "Marketing",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Drive social media campaigns, user acquisition, and SEO strategies to grow BeatFlow Media.",
+    "responsibilities": [
+      "Develop and execute user acquisition strategies.",
+      "Run and analyze marketing campaigns.",
+      "Manage SEO/SEM for maximum visibility.",
+      "Collaborate with content, community, and product."
+    ],
+    "requirements": [
+      "Experience in digital/growth marketing.",
+      "Strong analytics and copywriting skills.",
+      "Hands-on with social/ad platforms.",
+      "Interest in music/entertainment industry."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Copywriter",
+    "department": "Marketing",
+    "location": "Remote",
+    "type": "Contract/Part-time",
+    "description": "Write content for landing pages, onboarding, sharing features, email, and push notifications for BeatFlow Media.",
+    "responsibilities": [
+      "Create clear, concise, and engaging copy.",
+      "Support marketing and onboarding campaigns.",
+      "Write for web, email, and social.",
+      "Ensure brand voice and consistency."
+    ],
+    "requirements": [
+      "Experience in copywriting for web/apps.",
+      "Creative portfolio.",
+      "Attention to tone, grammar, and clarity.",
+      "Love for music and storytelling."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "Customer Support Specialist",
+    "department": "Support",
+    "location": "Remote",
+    "type": "Full-time",
+    "description": "Handle user questions, bug reports, account issues, and help users have a great experience with BeatFlow Media.",
+    "responsibilities": [
+      "Respond to user questions and support requests.",
+      "Troubleshoot account and technical issues.",
+      "Document feedback and escalate bugs.",
+      "Help onboard new users."
+    ],
+    "requirements": [
+      "Experience in customer support.",
+      "Clear communication and empathy.",
+      "Ability to troubleshoot web/app issues.",
+      "Organized and efficient."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  },
+  {
+    "title": "HR / Recruiter",
+    "department": "Admin/HR",
+    "location": "Remote",
+    "type": "Contract/Part-time",
+    "description": "Handle hiring and onboarding of new team members as BeatFlow Media grows.",
+    "responsibilities": [
+      "Manage hiring pipeline and post new jobs.",
+      "Screen applicants and coordinate interviews.",
+      "Onboard new employees.",
+      "Support team growth and company culture."
+    ],
+    "requirements": [
+      "Experience in HR or recruiting.",
+      "Familiarity with ATS or hiring tools.",
+      "Strong communication and coordination.",
+      "Interest in music/entertainment industry."
+    ],
+    "postedAt": 1716000000000,
+    "status": "open"
+  }
+]

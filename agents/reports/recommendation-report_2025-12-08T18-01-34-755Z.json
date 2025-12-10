@@ -1,0 +1,163 @@
+{
+  "title": "BeatFlow Recommendation Report",
+  "generated": "2025-12-08T18:01:34.755Z",
+  "agent": "Recommendation",
+  "status": "completed",
+  "userId": "test-user-123",
+  "context": "home",
+  "algorithm": "hybrid",
+  "recommendations": [
+    {
+      "trackId": "track5",
+      "title": "Track track5",
+      "artist": "Unknown Artist",
+      "score": 3.4499999999999997,
+      "confidence": 1,
+      "reason": "Recommended for you",
+      "factors": {
+        "collaborative": 5.75
+      }
+    },
+    {
+      "trackId": "track6",
+      "title": "Track track6",
+      "artist": "Unknown Artist",
+      "score": 1.6560000000000001,
+      "confidence": 1,
+      "reason": "Recommended for you",
+      "factors": {
+        "collaborative": 4.6000000000000005
+      }
+    },
+    {
+      "trackId": "track7",
+      "title": "Track track7",
+      "artist": "Unknown Artist",
+      "score": 1.2419999999999998,
+      "confidence": 1,
+      "reason": "Recommended for you",
+      "factors": {
+        "collaborative": 3.45
+      }
+    },
+    {
+      "trackId": "catalog_track_21",
+      "title": "Catalog Track 21",
+      "artist": "Artist 1",
+      "score": 0.39999999999999997,
+      "confidence": 0.49999999999999994,
+      "reason": "You like Artist 1. Matches your preferred genre. Fits your listening mood",
+      "factors": {
+        "genre": 1,
+        "artist": 1,
+        "mood": 1,
+        "tempo": 1
+      }
+    },
+    {
+      "trackId": "catalog_track_22",
+      "title": "Catalog Track 22",
+      "artist": "Artist 2",
+      "score": 0.2396,
+      "confidence": 0.2995,
+      "reason": "You like Artist 2. Fits your listening mood",
+      "factors": {
+        "genre": 0,
+        "artist": 1,
+        "mood": 1,
+        "tempo": 0.99
+      }
+    },
+    {
+      "trackId": "catalog_track_16",
+      "title": "Catalog Track 16",
+      "artist": "Artist 1",
+      "score": 0.23879999999999996,
+      "confidence": 0.49749999999999994,
+      "reason": "You like Artist 1. Matches your preferred genre. Fits your listening mood",
+      "factors": {
+        "genre": 1,
+        "artist": 1,
+        "mood": 1,
+        "tempo": 0.95
+      }
+    },
+    {
+      "trackId": "catalog_track_26",
+      "title": "Catalog Track 26",
+      "artist": "Artist 1",
+      "score": 0.23879999999999996,
+      "confidence": 0.49749999999999994,
+      "reason": "You like Artist 1. Matches your preferred genre. Fits your listening mood",
+      "factors": {
+        "genre": 1,
+        "artist": 1,
+        "mood": 1,
+        "tempo": 0.95
+      }
+    },
+    {
+      "trackId": "catalog_track_11",
+      "title": "Catalog Track 11",
+      "artist": "Artist 1",
+      "score": 0.23759999999999998,
+      "confidence": 0.49499999999999994,
+      "reason": "You like Artist 1. Matches your preferred genre. Fits your listening mood",
+      "factors": {
+        "genre": 1,
+        "artist": 1,
+        "mood": 1,
+        "tempo": 0.9
+      }
+    },
+    {
+      "trackId": "catalog_track_31",
+      "title": "Catalog Track 31",
+      "artist": "Artist 1",
+      "score": 0.23759999999999998,
+      "confidence": 0.49499999999999994,
+      "reason": "You like Artist 1. Matches your preferred genre. Fits your listening mood",
+      "factors": {
+        "genre": 1,
+        "artist": 1,
+        "mood": 1,
+        "tempo": 0.9
+      }
+    },
+    {
+      "trackId": "catalog_track_6",
+      "title": "Catalog Track 6",
+      "artist": "Artist 1",
+      "score": 0.23639999999999997,
+      "confidence": 0.49249999999999994,
+      "reason": "You like Artist 1. Matches your preferred genre. Fits your listening mood",
+      "factors": {
+        "genre": 1,
+        "artist": 1,
+        "mood": 1,
+        "tempo": 0.85
+      }
+    }
+  ],
+  "metadata": {
+    "totalCandidates": 43,
+    "filteredCount": 43,
+    "diversityScore": 0.09302325581395349
+  },
+  "startTime": "2025-12-08T18:01:34.716Z",
+  "endTime": "2025-12-08T18:01:34.726Z",
+  "metrics": {
+    "generated": 10,
+    "clicked": 0,
+    "played": 0,
+    "completed": 0,
+    "clickThroughRate": 0,
+    "completionRate": 0
+  },
+  "summary": {
+    "totalRecommendations": 10,
+    "avgScore": 0.81768,
+    "avgConfidence": 0.6276999999999999,
+    "diversityScore": 0.09302325581395349
+  }
+}

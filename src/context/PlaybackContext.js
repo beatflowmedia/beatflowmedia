@@ -7,7 +7,9 @@ export const PlaybackProvider = ({ children }) => {
   const [duration, setDuration] = useState(0);
 
   return (
-    <PlaybackContext.Provider value={{ currentSongId, setCurrentSongId, duration, setDuration }}>
+    <PlaybackContext.Provider
+      value={{ currentSongId, setCurrentSongId, duration, setDuration }}
+    >
       {children}
     </PlaybackContext.Provider>
   );

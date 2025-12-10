@@ -1,0 +1,12 @@
+// services/analytics/collector.js
+// Analytics Agent: collects and processes playback events
+
+const eventLog = [];
+
+function collectEvent(event) {
+  // event: { event, user_id, asset_id, ts, session_id, playback_token_jti, meta }
+  eventLog.push(event);
+  // TODO: Forward to Kafka/Kinesis or DB in production
+}
+
+module.exports = { collectEvent };

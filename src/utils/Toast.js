@@ -11,7 +11,7 @@ export const initToast = () => {
     closeOnClick: true,
     pauseOnHover: false,
     draggable: true,
-    theme: "dark",
+    theme: "dark"
   });
 };
 
