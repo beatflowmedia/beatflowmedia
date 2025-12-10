@@ -30,6 +30,7 @@ const About = lazy(() => import("./pages/About"));
 const ForTheRecord = lazy(() => import("./pages/ForTheRecord"));
 const Support = lazy(() => import("./pages/Support"));
 const SupportCategory = lazy(() => import("./pages/SupportCategory"));
+const Contact = lazy(() => import("./pages/Contact"));
 const Investors = lazy(() => import("./pages/Investors"));
 const Wrapped2024 = lazy(() => import("./pages/Wrapped2024"));
 
@@ -123,6 +124,7 @@ export default function AppRoutes() {
         <Route path="for-the-record" element={<ForTheRecord />} />
         <Route path="support" element={<Support />} />
         <Route path="support/:region/category/:category" element={<SupportCategory />} />
+        <Route path="contact" element={<Contact />} />
         <Route path="investors" element={<Investors />} />
         <Route path="wrapped2024" element={<Wrapped2024 />} />
 
