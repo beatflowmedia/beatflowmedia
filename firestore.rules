@@ -211,6 +211,19 @@ service cloud.firestore {
       allow update, delete: if request.auth.token.admin == true;
     }
 
+    // Jobs - allow anyone to read open positions
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth.token.admin == true;
+    }
+
+    // Job applications - allow authenticated users to submit
+    match /applications/{applicationId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth.uid == resource.data.userId || request.auth.token.admin == true;
+      allow update, delete: if request.auth.token.admin == true;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
