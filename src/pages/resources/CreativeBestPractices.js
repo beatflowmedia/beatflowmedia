@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FiCheckCircle, FiXCircle, FiLightbulb, FiHeadphones } from "react-icons/fi";
+import { FiCheckCircle, FiXCircle, FiZap, FiHeadphones } from "react-icons/fi";
 
 export default function CreativeBestPractices() {
   const audioTips = [
@@ -56,7 +56,7 @@ export default function CreativeBestPractices() {
       description: "Understand the listening context. Commuters, gym-goers, and focused workers all engage differently. Tailor your message to their mindset and environment."
     },
     {
-      icon: <FiLightbulb className="text-4xl text-bf-green" />,
+      icon: <FiZap className="text-4xl text-bf-green" />,
       title: "Tell a Story",
       description: "Even in 15 seconds, you can create an emotional connection. Focus on the problem you solve or the feeling your brand evokes, not just features."
     },
