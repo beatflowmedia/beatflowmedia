@@ -77,33 +77,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Custom Scrollbar Styling */
-.sidebar::-webkit-scrollbar,
-.main::-webkit-scrollbar,
-.rightPanel::-webkit-scrollbar {
-  width: 12px;
-}
-
-.sidebar::-webkit-scrollbar-track,
-.main::-webkit-scrollbar-track,
-.rightPanel::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar::-webkit-scrollbar-thumb,
-.main::-webkit-scrollbar-thumb,
-.rightPanel::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  border: 3px solid transparent;
-  background-clip: content-box;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover,
-.main::-webkit-scrollbar-thumb:hover,
-.rightPanel::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.5);
-}
+/* Custom Scrollbar Styling - Now using global styles from index.css (DRY) */
 
 /* Responsive Breakpoints */
 

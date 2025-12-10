@@ -1,5 +1,5 @@
 // src/components/MusicPlayer.js
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaRandom,
   FaStepBackward,
@@ -14,6 +14,7 @@ import {
 import AddToPlaylistButton from "../utils/AddToPlaylistButton";
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePlayerActions } from "../hooks/usePlayerActions";
+import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
 import { usePlaybackResume } from "../utils/usePlaybackResume";
 import MiniPlayerPortal from "./MiniPlayerPortal";
@@ -21,7 +22,8 @@ import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
 const playerAnalytics = new PlayerAnalyticsClass();
 
 const MusicPlayer = () => {
-  // Get player state from context
+  // Get player state and audioRef from context - SINGLE SOURCE OF TRUTH
+  const { audioRef } = usePlayer();
   const {
     currentSong: song,
     isPlaying,
@@ -31,82 +33,41 @@ const MusicPlayer = () => {
     toggleShuffle,
     cycleRepeat,
     shuffleOn,
-    repeatMode
+    repeatMode,
+    currentTime,
+    duration,
+    volume: contextVolume,
+    setVolume: setContextVolume,
+    queue
   } = usePlayerActions();
 
   const { playlists, addSong } = usePlaylistManager();
   const { user } = useAuth();
 
-  // Create our own audio element for playback (like the working version)
-  const audioRef = useRef(new Audio());
-
-  // Local state for audio controls
-  const [volume, setVolume] = useState(1);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  // Local state for UI only (mute toggle and mini player)
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
 
-  // Hybrid resume hook (from working version)
+  // Hybrid resume hook - now uses PlayerContext's audioRef
   usePlaybackResume(audioRef, song, user);
 
-  // Audio Playback Logic (from working version)
+  // Analytics tracking only - playback is handled by PlayerContext
   useEffect(() => {
     if (!song) return;
-    const audio = audioRef.current;
-    audio.src = `/music/${song.fileName}`;
-    audio.load();
-
-    // Analytics
     playerAnalytics.trackTrackLoad(song, {});
-
     if (isPlaying) {
-      audio.play().catch((err) => console.error("Autoplay failed:", err));
       playerAnalytics.trackPlayStart(song);
     }
   }, [song, isPlaying]);
 
-  // Sync volume
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
-
-  // Track time and duration
-  useEffect(() => {
-    const audio = audioRef.current;
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
-
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("loadedmetadata", updateDuration);
-
-    return () => {
-      audio.removeEventListener("timeupdate", updateTime);
-      audio.removeEventListener("loadedmetadata", updateDuration);
-    };
-  }, [song]);
-
-  // Handle song end
-  useEffect(() => {
-    const audio = audioRef.current;
-    const handleEnded = () => {
-      playerAnalytics.trackPlayEnd('natural_end');
-      skipNext();
-    };
-    audio.addEventListener("ended", handleEnded);
-    return () => audio.removeEventListener("ended", handleEnded);
-  }, [skipNext]);
-
-  // Helpers
+  // Helpers - now use context volume and PlayerContext's controls
   const toggleMute = () => {
     if (isMuted) {
-      setVolume(previousVolume);
+      setContextVolume(previousVolume);
     } else {
-      setPreviousVolume(volume);
-      setVolume(0);
+      setPreviousVolume(contextVolume);
+      setContextVolume(0);
     }
     setIsMuted(!isMuted);
   };
@@ -121,20 +82,35 @@ const MusicPlayer = () => {
   const handleSeek = (e) => {
     const seekVal = parseFloat(e.target.value);
     playerAnalytics.trackSeek(currentTime, seekVal, 'user_seek');
-    audioRef.current.currentTime = seekVal;
-    setCurrentTime(seekVal);
+    // Seek via PlayerContext (which updates the engine)
+    if (audioRef.current) {
+      audioRef.current.currentTime = seekVal;
+    }
   };
 
   const handleOpenMiniPlayer = () => setMiniPlayerVisible(true);
 
-  // Fallback if no song in queue
-  if (!song) {
-    return (
-      <div className="bg-black text-white border-t border-gray-800 flex items-center justify-center px-4" style={{ height: "100%" }}>
-        <p className="text-gray-400">No song playing</p>
-      </div>
-    );
-  }
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setContextVolume(newVolume);
+    if (newVolume > 0 && isMuted) {
+      setIsMuted(false);
+    }
+  };
+
+  const handleMiniPlayerVolumeChange = (newVolume) => {
+    setContextVolume(newVolume);
+    if (newVolume > 0 && isMuted) {
+      setIsMuted(false);
+    }
+  };
+
+  const handleMiniPlayerSeek = (seekVal) => {
+    playerAnalytics.trackSeek(currentTime, seekVal, 'user_seek');
+    if (audioRef.current) {
+      audioRef.current.currentTime = seekVal;
+    }
+  };
 
   return (
     <>
@@ -144,15 +120,31 @@ const MusicPlayer = () => {
       >
         {/* LEFT: Cover + Title/Artist */}
         <div className="flex items-center min-w-[180px] w-1/5">
-          <img
-            src={song.cover || "https://via.placeholder.com/50"}
-            alt="cover"
-            className="w-12 h-12 object-cover rounded mr-3"
-          />
-          <div className="leading-tight">
-            <p className="font-bold text-sm">{song.title}</p>
-            <p className="text-xs text-gray-400">{song.artist}</p>
-          </div>
+          {song ? (
+            <>
+              <img
+                src={song.cover || "https://via.placeholder.com/50"}
+                alt="cover"
+                className="w-12 h-12 object-cover rounded mr-3"
+              />
+              <div className="leading-tight">
+                <p className="font-bold text-sm">{song.title}</p>
+                <p className="text-xs text-gray-400">{song.artist}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <img
+                src="/images/Logo.png"
+                alt="BeatFlow"
+                className="w-12 h-12 object-cover rounded mr-3"
+              />
+              <div className="leading-tight">
+                <p className="font-bold text-sm">No song playing</p>
+                <p className="text-xs text-gray-400">Select a song to play</p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* CENTER: Playback Controls + Seek */}
@@ -229,7 +221,7 @@ const MusicPlayer = () => {
 
         {/* RIGHT: AddToPlaylist, Volume, Mini Player Toggle */}
         <div className="flex items-center justify-end w-1/5 gap-3">
-          <AddToPlaylistButton song={song} playlists={playlists} addSong={addSong} />
+          {song && <AddToPlaylistButton song={song} playlists={playlists} addSong={addSong} />}
           <div className="flex items-center gap-2">
             <button onClick={toggleMute} className="text-gray-400 hover:text-white">
               {isMuted ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
@@ -240,8 +232,8 @@ const MusicPlayer = () => {
               min={0}
               max={1}
               step="0.01"
-              value={isMuted ? 0 : volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              value={isMuted ? 0 : contextVolume}
+              onChange={handleVolumeChange}
             />
           </div>
           <button
@@ -267,6 +259,14 @@ const MusicPlayer = () => {
         onNextSong={skipNext}
         repeatMode={repeatMode}
         onCycleRepeat={cycleRepeat}
+        currentTime={currentTime}
+        duration={duration}
+        volume={contextVolume}
+        onVolumeChange={handleMiniPlayerVolumeChange}
+        onSeek={handleMiniPlayerSeek}
+        queue={queue || []}
+        playlists={playlists}
+        addSong={addSong}
       />
     </>
   );

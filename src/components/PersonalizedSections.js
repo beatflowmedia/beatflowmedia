@@ -1,0 +1,223 @@
+import React from 'react';
+import { Box, Typography, Card, CardContent, CardMedia, IconButton, CircularProgress } from '@mui/material';
+import { PlayArrow, Favorite, FavoriteBorder } from '@mui/icons-material';
+import { usePersonalizedSections } from '../hooks/usePersonalizedSections';
+import { useAuth } from '../context/AuthContext';
+import { usePlaySong } from '../hooks/usePlaySong';
+import PlayingIndicator from './PlayingIndicator';
+import SongPlayCount from './SongPlayCount';
+import SongLikeCount from './SongLikeCount';
+
+/**
+ * Component to display all personalized sections
+ */
+export default function PersonalizedSections() {
+  const { user, addLike, removeLike } = useAuth();
+  const { sections, loading, error } = usePersonalizedSections(user);
+  const { playSong, isSongPlaying } = usePlaySong();
+
+  if (!user) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary">
+          Sign in to see personalized recommendations
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Typography color="error">Error loading personalized content: {error}</Typography>
+      </Box>
+    );
+  }
+
+  if (sections.length === 0) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+          Start exploring music to get personalized recommendations
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Like songs and follow artists to help us curate content for you
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      {sections.map((section) => (
+        <Box key={section.id} sx={{ mb: 6 }}>
+          {/* Section Header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h3" sx={{ mr: 1.5, fontSize: 32 }}>
+              {section.icon}
+            </Typography>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                {section.title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {section.description}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Horizontal Scrollable Grid */}
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              overflowX: 'auto',
+              pb: 2,
+              '&::-webkit-scrollbar': {
+                height: 8
+              },
+              '&::-webkit-scrollbar-track': {
+                bgcolor: 'background.paper',
+                borderRadius: 1
+              },
+              '&::-webkit-scrollbar-thumb': {
+                bgcolor: 'grey.600',
+                borderRadius: 1,
+                '&:hover': {
+                  bgcolor: 'grey.500'
+                }
+              }
+            }}
+          >
+            {section.songs.map((song) => {
+              const isPlaying = isSongPlaying(song);
+              const isLiked = user?.likes?.includes(song.id);
+
+              return (
+                <Card
+                  key={song.id}
+                  sx={{
+                    minWidth: 180,
+                    maxWidth: 180,
+                    bgcolor: 'background.paper',
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 4
+                    }
+                  }}
+                >
+                  {/* Album Art */}
+                  <Box sx={{ position: 'relative', paddingTop: '100%' }}>
+                    <CardMedia
+                      component="img"
+                      image={song.cover || '/images/default-cover.jpg'}
+                      alt={song.title}
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+
+                    {/* Play Button Overlay */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(0,0,0,0.4)',
+                        opacity: 0,
+                        transition: 'opacity 0.3s',
+                        '&:hover': { opacity: 1 }
+                      }}
+                    >
+                      {isPlaying ? (
+                        <PlayingIndicator isPlaying={isPlaying} size="large" />
+                      ) : (
+                        <IconButton
+                          size="large"
+                          onClick={() => playSong(song)}
+                          sx={{
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <PlayArrow />
+                        </IconButton>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                    {/* Song Title */}
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontWeight: 'bold', mb: 0.5, fontSize: '0.875rem' }}
+                      noWrap
+                      title={song.title}
+                    >
+                      {song.title}
+                    </Typography>
+
+                    {/* Artist */}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      noWrap
+                      title={song.artist}
+                      sx={{ display: 'block', mb: 1 }}
+                    >
+                      {song.artist}
+                    </Typography>
+
+                    {/* Stats */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <SongPlayCount songId={song.id} />
+                      <SongLikeCount songId={song.id} />
+                    </Box>
+
+                    {/* Like Button */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          if (!user) return;
+                          if (isLiked) {
+                            removeLike(song.id);
+                          } else {
+                            addLike(song.id);
+                          }
+                        }}
+                        sx={{
+                          color: isLiked ? '#e91e63' : 'grey.400',
+                          '&:hover': { color: isLiked ? '#ad1457' : '#e91e63' }
+                        }}
+                      >
+                        {isLiked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+}

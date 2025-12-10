@@ -19,7 +19,6 @@ import {
   ListItemText
 } from "@mui/material";
 import PlayArrow from '@mui/icons-material/PlayArrow';
-import Pause from '@mui/icons-material/Pause';
 import Favorite from '@mui/icons-material/Favorite';
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
 import MoreVert from '@mui/icons-material/MoreVert';
@@ -32,15 +31,24 @@ import MusicNote from '@mui/icons-material/MusicNote';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import PersonRemove from '@mui/icons-material/PersonRemove';
 import QueueMusic from '@mui/icons-material/QueueMusic';
+import PlayingIndicator from "../components/PlayingIndicator";
+import SongLikeCount from "../components/SongLikeCount";
+import SongPlayCount from "../components/SongPlayCount";
+import TrendingSongs from "../components/TrendingSongs";
+import PersonalizedSections from "../components/PersonalizedSections";
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
+import { usePlaySong } from "../hooks/usePlaySong";
 import { toast } from "react-toastify";
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
+import ShareButton from "../utils/ShareButton";
+import Footer from "../components/Footer";
 
 function Home() {
-  const { state, dispatch, actions } = usePlayer();
+  const { dispatch, actions } = usePlayer();
   const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
+  const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
   // Enhanced state management for discovery features
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -52,6 +60,8 @@ function Home() {
   const [recommendedSongs, setRecommendedSongs] = useState([]);
   const [featuredArtists, setFeaturedArtists] = useState([]);
   const [userActivity, setUserActivity] = useState([]);
+  const [podcasts, setPodcasts] = useState([]);
+  const [audiobooks, setAudiobooks] = useState([]);
 
   // UI state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -76,6 +86,7 @@ function Home() {
             ...doc.data(),
             playCount: doc.data().playCount || 0
           }));
+          console.log('Home: Loaded', trending.length, 'trending songs from Firebase');
           setTrendingSongs(trending);
         });
 
@@ -95,6 +106,7 @@ function Home() {
             id: doc.id,
             ...doc.data()
           }));
+          console.log('Home: Loaded', releases.length, 'new releases from Firebase');
           setNewReleases(releases);
         });
 
@@ -113,6 +125,42 @@ function Home() {
           setFeaturedArtists(featuredArtistsData);
         });
 
+        // Load podcasts
+        const podcastsQuery = query(
+          collection(db, "podcast_episodes"),
+          orderBy("releaseDate", "desc"),
+          limit(20)
+        );
+
+        onSnapshot(podcastsQuery, (snapshot) => {
+          const podcastsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setPodcasts(podcastsData);
+        }, (error) => {
+          console.log('Podcasts collection not available:', error.message);
+          setPodcasts([]);
+        });
+
+        // Load audiobooks
+        const audiobooksQuery = query(
+          collection(db, "audiobooks"),
+          orderBy("releaseDate", "desc"),
+          limit(20)
+        );
+
+        onSnapshot(audiobooksQuery, (snapshot) => {
+          const audiobooksData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setAudiobooks(audiobooksData);
+        }, (error) => {
+          console.log('Audiobooks collection not available:', error.message);
+          setAudiobooks([]);
+        });
+
         // Generate personalized recommendations if user is logged in
         if (user) {
           loadPersonalizedContent();
@@ -127,32 +175,7 @@ function Home() {
     };
 
     loadTrendingContent();
-  }, [user]);
-
-  // Load personalized content for authenticated users
-  const loadPersonalizedContent = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      // Load user's listening history for recommendations
-      const historyQuery = query(
-        collection(db, "userListeningHistory"),
-        where("userId", "==", user.uid),
-        orderBy("timestamp", "desc"),
-        limit(50)
-      );
-
-      onSnapshot(historyQuery, (snapshot) => {
-        const history = snapshot.docs.map(doc => doc.data());
-
-        // Generate recommendations based on listening history
-        generateRecommendations(history);
-        setUserActivity(history.slice(0, 10)); // Recent activity
-      });
-
-    } catch (err) {
-      console.error("Error loading personalized content:", err);
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Simple recommendation algorithm
@@ -183,23 +206,50 @@ function Home() {
     }
   }, []);
 
+  // Load personalized content for authenticated users
+  const loadPersonalizedContent = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Load user's listening history for recommendations
+      const historyQuery = query(
+        collection(db, "listening_history"),
+        where("userId", "==", user.uid),
+        orderBy("timestamp", "desc"),
+        limit(50)
+      );
+
+      onSnapshot(historyQuery, (snapshot) => {
+        const history = snapshot.docs.map(doc => doc.data());
+
+        // Generate recommendations based on listening history
+        generateRecommendations(history);
+        setUserActivity(history.slice(0, 10)); // Recent activity
+      });
+
+    } catch (err) {
+      console.error("Error loading personalized content:", err);
+    }
+  }, [user, generateRecommendations]);
+
   // Get current content based on active tab
   const getCurrentContent = () => {
     switch (activeTab) {
-      case 0: return trendingSongs; // For You (trending for non-users)
-      case 1: return trendingSongs;
-      case 2: return newReleases;
-      case 3: return recommendedSongs;
+      case 0: return trendingSongs; // All
+      case 1: return trendingSongs; // Music
+      case 2: return newReleases; // New Releases
+      case 3: return podcasts; // Podcasts
+      case 4: return audiobooks; // Audiobooks
       default: return trendingSongs;
     }
   };
 
   const currentContent = getCurrentContent();
 
-  // Enhanced interaction handlers
+  // Enhanced interaction handlers - using DRY hook
   const handlePlaySong = useCallback((song) => {
-    dispatch({ type: actions.PLAY_SONG, payload: song });
-  }, [dispatch, actions]);
+    playSelectedSong(song);
+  }, [playSelectedSong]);
 
   const handleToggleLike = useCallback(async (song) => {
     if (!user) {
@@ -337,8 +387,62 @@ function Home() {
         </Typography>
       </Box>
 
-      {/* Navigation Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+      {/* Category Filter Pills */}
+      <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        <Chip
+          label="All"
+          onClick={() => setActiveTab(0)}
+          sx={{
+            bgcolor: activeTab === 0 ? 'white' : 'transparent',
+            color: activeTab === 0 ? 'black' : 'white',
+            border: activeTab === 0 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 0 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="Music"
+          onClick={() => setActiveTab(1)}
+          sx={{
+            bgcolor: activeTab === 1 ? 'white' : 'transparent',
+            color: activeTab === 1 ? 'black' : 'white',
+            border: activeTab === 1 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 1 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="New Releases"
+          onClick={() => setActiveTab(2)}
+          sx={{
+            bgcolor: activeTab === 2 ? 'white' : 'transparent',
+            color: activeTab === 2 ? 'black' : 'white',
+            border: activeTab === 2 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 2 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="Podcasts"
+          onClick={() => setActiveTab(3)}
+          sx={{
+            bgcolor: activeTab === 3 ? 'white' : 'transparent',
+            color: activeTab === 3 ? 'black' : 'white',
+            border: activeTab === 3 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 3 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+        <Chip
+          label="Audiobooks"
+          onClick={() => setActiveTab(4)}
+          sx={{
+            bgcolor: activeTab === 4 ? 'white' : 'transparent',
+            color: activeTab === 4 ? 'black' : 'white',
+            border: activeTab === 4 ? 'none' : '1px solid grey',
+            '&:hover': { bgcolor: activeTab === 4 ? 'white' : 'rgba(255,255,255,0.1)' }
+          }}
+        />
+      </Box>
+
+      {/* Navigation Tabs - Hidden, kept for functionality */}
+      <Box sx={{ display: 'none' }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -378,6 +482,23 @@ function Home() {
           )}
         </Tabs>
       </Box>
+
+      {/* Personalized Sections (only for logged in users) */}
+      {user && (
+        <>
+          <Box sx={{ mb: 4 }}>
+            <PersonalizedSections />
+          </Box>
+          <Divider sx={{ my: 4 }} />
+        </>
+      )}
+
+      {/* Trending Songs Section */}
+      <Box sx={{ mb: 4 }}>
+        <TrendingSongs limit={10} daysBack={7} />
+      </Box>
+
+      <Divider sx={{ my: 4 }} />
 
       {/* Featured Artists Section */}
       {featuredArtists.length > 0 && (
@@ -440,16 +561,18 @@ function Home() {
       {/* Main Content Grid */}
       <Grid container spacing={2}>
         {currentContent.map((song, index) => {
-          const isCurrentSong = state.queue[state.currentIndex]?.id === song.id;
+          const isPlaying = isSongPlaying(song);
           const isLiked = user?.likes?.includes(song.id) || false;
 
           return (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={song.id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={song.id}>
               <Card
                 sx={{
                   bgcolor: 'background.paper',
                   position: 'relative',
                   transition: 'all 0.3s ease',
+                  maxWidth: 'clamp(200px, 100%, 280px)',
+                  margin: '0 auto',
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: 3
@@ -473,13 +596,18 @@ function Home() {
                   />
                 )}
 
-                <Box sx={{ position: 'relative' }}>
+                <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
                   <CardMedia
                     component="img"
-                    height="200"
                     image={song.coverUrl || song.cover || '/default-song-cover.jpg'}
                     alt={song.title}
-                    sx={{ cursor: 'pointer' }}
+                    sx={{
+                      cursor: 'pointer',
+                      width: '100%',
+                      height: 'auto',
+                      aspectRatio: '1 / 1',
+                      objectFit: 'cover'
+                    }}
                     onClick={() => handlePlaySong(song)}
                   />
 
@@ -495,33 +623,41 @@ function Home() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      opacity: 0,
+                      opacity: isPlaying ? 1 : 0,
                       transition: 'opacity 0.3s',
                       cursor: 'pointer',
                       '&:hover': { opacity: 1 }
                     }}
                     onClick={() => handlePlaySong(song)}
                   >
-                    <IconButton
-                      size="large"
-                      color="primary"
-                      sx={{
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.1)' }
-                      }}
-                    >
-                      {isCurrentSong && state.isPlaying ? <Pause /> : <PlayArrow />}
-                    </IconButton>
+                    {isPlaying ? (
+                      <PlayingIndicator isPlaying={isPlaying} size="large" />
+                    ) : (
+                      <IconButton
+                        size="large"
+                        color="primary"
+                        sx={{
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.1)' }
+                        }}
+                      >
+                        <PlayArrow />
+                      </IconButton>
+                    )}
                   </Box>
                 </Box>
 
-                <CardContent sx={{ pb: 1 }}>
+                <CardContent sx={{
+                  p: 'clamp(0.75rem, 2vw, 1rem)',
+                  '&:last-child': { pb: 'clamp(0.75rem, 2vw, 1rem)' }
+                }}>
                   <Typography
                     variant="subtitle1"
                     sx={{
                       color: 'text.primary',
                       fontWeight: 'bold',
+                      fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
                       cursor: 'pointer',
                       '&:hover': { color: 'primary.main' },
                       overflow: 'hidden',
@@ -537,6 +673,7 @@ function Home() {
                     variant="body2"
                     sx={{
                       color: 'text.secondary',
+                      fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                       cursor: 'pointer',
                       '&:hover': { color: 'primary.main' },
                       overflow: 'hidden',
@@ -563,18 +700,8 @@ function Home() {
 
                   {/* Stats */}
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <PlayArrow sx={{ fontSize: 14, color: 'grey.500' }} />
-                      <Typography variant="caption" sx={{ color: 'grey.500' }}>
-                        {song.playCount?.toLocaleString() || 0}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Favorite sx={{ fontSize: 14, color: 'grey.500' }} />
-                      <Typography variant="caption" sx={{ color: 'grey.500' }}>
-                        {song.likes?.toLocaleString() || 0}
-                      </Typography>
-                    </Box>
+                    <SongPlayCount songId={song.id} />
+                    <SongLikeCount songId={song.id} />
                   </Box>
 
                   {/* Action Buttons */}
@@ -588,7 +715,7 @@ function Home() {
                           '&:hover': { color: isLiked ? '#ad1457' : '#e91e63' }
                         }}
                       >
-                        {isLiked ? <Favorite /> : <FavoriteBorder />}
+                        {isLiked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
                       </IconButton>
 
                       <IconButton
@@ -596,8 +723,10 @@ function Home() {
                         onClick={() => handleAddToPlaylist(song)}
                         sx={{ color: 'grey.400', '&:hover': { color: '#1DB954' } }}
                       >
-                        <PlaylistAdd />
+                        <PlaylistAdd fontSize="small" />
                       </IconButton>
+
+                      <ShareButton song={song} iconSize="small" />
                     </Box>
 
                     <IconButton
@@ -715,6 +844,9 @@ function Home() {
           </Grid>
         </Box>
       )}
+
+      {/* Footer */}
+      <Footer />
     </Box>
   );
 }

@@ -46,6 +46,7 @@ import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
+import ShareButton from '../utils/ShareButton';
 import {
   doc,
   getDoc,
@@ -682,6 +683,8 @@ function Artist() {
                         >
                           {isLiked ? <Favorite /> : <FavoriteBorder />}
                         </IconButton>
+
+                        <ShareButton song={track} size="small" />
 
                         <Typography variant="body2" sx={{ color: 'grey.400', minWidth: 40 }}>
                           {formatDuration(track.duration || 0)}

@@ -36,6 +36,19 @@ body {
   color: var(--bf-text-primary);
 }
 
+/* Responsive Heading Styles */
+h1 {
+  font-size: clamp(1.8rem, calc(7vw + 1rem), 5rem);
+}
+
+h2 {
+  font-size: clamp(1.5rem, calc(5vw + 0.75rem), 3.5rem);
+}
+
+h3 {
+  font-size: clamp(1.25rem, calc(3vw + 0.5rem), 2.5rem);
+}
+
 a {
   @apply transition-all duration-200;
 }
@@ -222,4 +235,120 @@ input[type="range"] {
 /* Shuffle, Repeat, and Next/Previous buttons */
 .music-player .controls .control-buttons button:focus {
   outline: none;
+}
+
+/* ========================================
+   GLOBAL SCROLLBAR STYLING (DRY)
+   ======================================== */
+
+/* Dark scrollbar for all scrollable elements */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Darker scrollbar for main content areas */
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Ultra-smooth EQ bar animation for playing indicator */
+@keyframes eq-bar-1 {
+  0%, 100% { height: 40%; }
+  10% { height: 55%; }
+  20% { height: 75%; }
+  30% { height: 65%; }
+  40% { height: 85%; }
+  50% { height: 70%; }
+  60% { height: 90%; }
+  70% { height: 60%; }
+  80% { height: 50%; }
+  90% { height: 45%; }
+}
+
+@keyframes eq-bar-2 {
+  0%, 100% { height: 70%; }
+  10% { height: 55%; }
+  20% { height: 45%; }
+  30% { height: 60%; }
+  40% { height: 80%; }
+  50% { height: 95%; }
+  60% { height: 75%; }
+  70% { height: 50%; }
+  80% { height: 65%; }
+  90% { height: 80%; }
+}
+
+@keyframes eq-bar-3 {
+  0%, 100% { height: 50%; }
+  10% { height: 70%; }
+  20% { height: 85%; }
+  30% { height: 75%; }
+  40% { height: 55%; }
+  50% { height: 40%; }
+  60% { height: 60%; }
+  70% { height: 80%; }
+  80% { height: 65%; }
+  90% { height: 45%; }
+}
+
+@keyframes eq-bar-4 {
+  0%, 100% { height: 80%; }
+  10% { height: 65%; }
+  20% { height: 50%; }
+  30% { height: 70%; }
+  40% { height: 85%; }
+  50% { height: 75%; }
+  60% { height: 55%; }
+  70% { height: 45%; }
+  80% { height: 70%; }
+  90% { height: 85%; }
+}
+
+.animate-wave {
+  animation: eq-bar-1 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  transform-origin: bottom;
+}
+
+.animate-wave:nth-child(1) {
+  animation: eq-bar-1 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.animate-wave:nth-child(2) {
+  animation: eq-bar-2 1.4s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+}
+
+.animate-wave:nth-child(3) {
+  animation: eq-bar-3 1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.animate-wave:nth-child(4) {
+  animation: eq-bar-4 1.3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

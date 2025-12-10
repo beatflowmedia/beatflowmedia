@@ -1,63 +1,76 @@
 import { useState, useEffect, useCallback } from "react";
-import { auth, db, doc, setDoc } from "../firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
+import { db, doc, setDoc, auth } from "../firebaseConfig";
 import { onSnapshot } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 // Hook to manage user's playback queue in Firestore
 export default function useQueue() {
   // Determine test mode
   const isTest = process.env.NODE_ENV === "test";
 
+  // Track authenticated user ID
+  const [uid, setUid] = useState(null);
+
   // State hooks
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(isTest ? false : true);
   const [error, setError] = useState(null);
 
-  // Track authenticated user ID
-  const [uid, setUid] = useState(null);
-
   // Listen for auth state changes
   useEffect(() => {
     if (isTest) return;
-    console.log("useQueue: setting up auth listener");
+
     const unsubAuth = onAuthStateChanged(auth, (user) => {
-      console.log("useQueue: auth changed, uid:", user?.uid);
       setUid(user?.uid || null);
+      if (!user) {
+        setLoading(false);
+      }
     });
+
     return () => unsubAuth();
   }, [isTest]);
 
   // Subscribe to queue document
   useEffect(() => {
-    if (isTest) return;
+    if (isTest || !uid) {
+      setLoading(false);
+      return;
+    }
+
     console.log("useQueue: subscribing to queue document for uid:", uid);
-    if (!uid) return;
     const ref = doc(db, "queues", uid);
-    const unsubQueue = onSnapshot(ref, {
-      next(snapshot) {
-        if (!snapshot.exists()) {
-          setDoc(ref, { tracks: [] }, { merge: true }).catch(console.error);
-          setQueue([]);
+    const unsubQueue = onSnapshot(
+      ref,
+      {
+        next(snapshot) {
+          if (!snapshot.exists()) {
+            setDoc(ref, { tracks: [] }, { merge: true }).catch(console.error);
+            setQueue([]);
+            setLoading(false);
+            return;
+          }
+          const raw = snapshot.data()?.tracks || [];
+          const cleaned = raw.filter(Boolean);
+          if (cleaned.length !== raw.length) {
+            setDoc(ref, { tracks: cleaned }, { merge: true }).catch(
+              console.error,
+            );
+          }
+          setQueue(cleaned);
           setLoading(false);
-          return;
+        },
+        error(err) {
+          console.error("Queue subscription error:", err);
+          setError(err);
+          setLoading(false);
         }
-        const raw = snapshot.data()?.tracks || [];
-        const cleaned = raw.filter(Boolean);
-        if (cleaned.length !== raw.length) {
-          setDoc(ref, { tracks: cleaned }, { merge: true }).catch(
-            console.error,
-          );
-        }
-        setQueue(cleaned);
-        setLoading(false);
-      },
-      error(err) {
-        console.error("Queue subscription error:", err);
-        setError(err);
-        setLoading(false);
       }
-    });
-    return () => unsubQueue();
+    );
+
+    return () => {
+      console.log("useQueue: unsubscribing from queue document for uid:", uid);
+      unsubQueue();
+    };
   }, [uid, isTest]);
 
   // Persist queue to Firestore

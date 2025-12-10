@@ -27,14 +27,15 @@ export default function AddToPlaylistButton({ song, playlists, addSong }) {
         ➕
       </button>
       {showDropdown && (
-        <div className="absolute right-0 mt-2 bg-gray-800 text-white p-2 rounded shadow-lg w-40">
+        <div className="absolute right-0 bottom-full mb-2 bg-gray-800 text-white p-2 rounded shadow-lg w-40 max-h-48 overflow-y-auto z-50">
           {playlists.length === 0 ? (
-            <p className="text-gray-400">No playlists available</p>
+            <p className="text-gray-400 text-xs">No playlists available</p>
           ) : (
             playlists.map((playlist) => (
               <button
                 key={playlist.id}
-                className="block w-full text-left p-2 hover:bg-gray-700 rounded"
+                className="block w-full text-left text-xs p-2 hover:bg-gray-700 rounded"
+                style={{ textTransform: 'capitalize' }}
                 onClick={() => {
                   addSong(playlist.id, song);
                   setShowDropdown(false);

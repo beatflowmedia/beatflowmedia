@@ -35,35 +35,67 @@ export const AuthProvider = ({ children }) => {
         setFollowedArtists([]);
         return;
       }
-      setUser(firebaseUser);
-      const userRef = doc(db, "users", firebaseUser.uid);
-      const snap = await getDoc(userRef);
-      if (!snap.exists()) {
-        await setDoc(
+
+      try {
+        const userRef = doc(db, "users", firebaseUser.uid);
+        const snap = await getDoc(userRef);
+
+        // Set initial user with likes array
+        const userData = snap.exists() ? snap.data() : {};
+        setUser({
+          ...firebaseUser,
+          likes: userData?.likes || [],
+          follows: userData?.follows || [],
+          role: userData?.role || null
+        });
+
+        if (!snap.exists()) {
+          await setDoc(
+            userRef,
+            {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              favorites: [],
+              follows: [],
+              playlists: [],
+              likes: [],
+              role: "artist" // Default role, update as needed
+            },
+            { merge: true }
+          );
+          setRole("artist");
+        } else {
+          setRole(snap.data()?.role || null);
+        }
+
+        // Subscribe to follow list, role, and likes
+        const unsubFollows = onSnapshot(
           userRef,
-          {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            favorites: [],
-            follows: [],
-            playlists: [],
-            likes: [],
-            role: "artist" // Default role, update as needed
+          (ds) => {
+            const data = ds.data();
+            if (data) {
+              setFollowedArtists(data?.follows || []);
+              setRole(data?.role || null);
+              // Update user object with latest likes - ensure firebaseUser also has likes
+              const updatedUser = {
+                ...firebaseUser,
+                likes: data?.likes || [],
+                follows: data?.follows || [],
+                role: data?.role || null
+              };
+              setUser(updatedUser);
+            }
           },
-          { merge: true }
+          (error) => {
+            console.error("Error in user snapshot listener:", error);
+          }
         );
-        setRole("artist");
-      } else {
-        setRole(snap.data()?.role || null);
+        return () => unsubFollows();
+      } catch (error) {
+        console.error("Error setting up user data:", error);
       }
-      // Subscribe to follow list and role
-      const unsubFollows = onSnapshot(userRef, (ds) => {
-        setFollowedArtists(ds.data()?.follows || []);
-        setRole(ds.data()?.role || null);
-      });
-      return () => unsubFollows();
     });
     return () => unsubscribe();
   }, [auth]);
@@ -116,8 +148,8 @@ export const AuthProvider = ({ children }) => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     const songLikesRef = doc(db, "songLikes", songId);
-    // add to user's own likes
-    await updateDoc(userRef, { likes: arrayUnion(songId) });
+    // add to user's own likes (use setDoc with merge to handle non-existent docs)
+    await setDoc(userRef, { likes: arrayUnion(songId) }, { merge: true });
     // add this user's UID to likers list
     await setDoc(songLikesRef, { likers: arrayUnion(user.uid) }, { merge: true });
   };
@@ -125,10 +157,10 @@ export const AuthProvider = ({ children }) => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
     const songLikesRef = doc(db, "songLikes", songId);
-    // remove from user's own likes
-    await updateDoc(userRef, { likes: arrayRemove(songId) });
+    // remove from user's own likes (use setDoc with merge)
+    await setDoc(userRef, { likes: arrayRemove(songId) }, { merge: true });
     // remove this user's UID from likers list
-    await updateDoc(songLikesRef, { likers: arrayRemove(user.uid) });
+    await setDoc(songLikesRef, { likers: arrayRemove(user.uid) }, { merge: true });
   };
 
   return (

@@ -10,11 +10,11 @@ export default function MiniPlayerPortal({ visible, ...props }) {
   useEffect(() => {
     if (!visible) return;
 
-    // 1) Open a new window
+    // 1) Open a new window with 9:16 aspect ratio (not resizable)
     externalWindowRef.current = window.open(
       "",
       "_blank",
-      "width=300,height=400,left=200,top=200",
+      "width=350,height=622,left=200,top=200,resizable=no",
     );
 
     // 2) If the pop-up was blocked or failed
@@ -23,13 +23,37 @@ export default function MiniPlayerPortal({ visible, ...props }) {
       return;
     }
 
-    // 3) Write a minimal HTML doc
+    // 3) Write a minimal HTML doc with styles
     const newDoc = externalWindowRef.current.document;
+
+    // Copy all stylesheets from parent window
+    const stylesheets = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'));
+    const styleHTML = stylesheets.map(sheet => {
+      if (sheet.tagName === 'LINK') {
+        return `<link rel="stylesheet" href="${sheet.href}">`;
+      } else {
+        return `<style>${sheet.innerHTML}</style>`;
+      }
+    }).join('\n');
+
     newDoc.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Mini Player</title>
+          <title>BeatFlow Music Player</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta name="description" content="BeatFlow - Premium music streaming and licensing platform">
+          <link rel="icon" href="/images/Logo.svg" type="image/svg+xml">
+          ${styleHTML}
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: #000;
+              overflow: hidden;
+            }
+          </style>
         </head>
         <body></body>
       </html>
@@ -50,6 +74,6 @@ export default function MiniPlayerPortal({ visible, ...props }) {
     return null;
   }
 
-  // Render your <MiniPlayer> inside the new window
-  return ReactDOM.createPortal(<MiniPlayer {...props} />, containerEl.current);
+  // Render your <MiniPlayer> inside the new window with isPopup flag
+  return ReactDOM.createPortal(<MiniPlayer {...props} isPopup={true} />, containerEl.current);
 }

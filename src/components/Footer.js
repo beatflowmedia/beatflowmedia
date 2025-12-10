@@ -66,13 +66,13 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/mobile-app" className="hover:text-bf-text">
-                  Free Mobile App
+                <a href="/browse" className="hover:text-bf-text">
+                  Sync Licensing
                 </a>
               </li>
               <li>
-                <a href="/popular-by-country" className="hover:text-bf-text">
-                  Popular by Country
+                <a href="/curator-portal" className="hover:text-bf-text">
+                  Curator Portal
                 </a>
               </li>
             </ul>

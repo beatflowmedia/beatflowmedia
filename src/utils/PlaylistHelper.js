@@ -20,11 +20,21 @@ export const subscribeToPlaylists = (callback) => {
   });
 };
 
+// Helper function to capitalize playlist names
+const capitalizePlaylistName = (name) => {
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 // ✅ Create a new playlist in Firebase
 export const createPlaylist = async (playlistName) => {
   try {
+    const capitalizedName = capitalizePlaylistName(playlistName);
     const docRef = await addDoc(collection(db, "playlists"), {
-      name: playlistName,
+      name: capitalizedName,
       songs: [],
       createdAt: new Date()
     });

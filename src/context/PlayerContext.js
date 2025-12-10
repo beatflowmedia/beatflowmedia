@@ -8,6 +8,7 @@ import React, {
 import LegacyAudioEngine from "../engine/LegacyAudioEngine";
 import MseEngine from "../engine/MseEngine";
 import useQueue from "../hooks/useQueue";
+import { incrementPlayCount } from "../hooks/useSongPlays";
 
 // --------------------
 // Reducer & State
@@ -197,6 +198,8 @@ export const PlayerProvider = ({ children }) => {
   }, [EngineClass]);
   // Track if we've initialized queue from Firestore
   const [queueInitialized, setQueueInitialized] = React.useState(false);
+  // Track if play count has been incremented for current song
+  const playCountIncrementedRef = useRef(false);
   // Firestore-persisted queue hooks
   const {
     queue: persistedQueue,
@@ -225,6 +228,8 @@ export const PlayerProvider = ({ children }) => {
     const item = state.queue[state.currentIndex];
     if (!engine || !item) return;
     engine.load(item);
+    // Reset play count flag when loading new track
+    playCountIncrementedRef.current = false;
     // Auto-play when switching tracks if already playing
     if (state.isPlaying) {
       engine.play();
@@ -253,9 +258,21 @@ export const PlayerProvider = ({ children }) => {
   // Subscribe to engine events: time, duration, volume, ended
   useEffect(() => {
     const engine = engineRef.current;
-    const unsubTime = engine.onTimeUpdate((time) =>
-      dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: time }),
-    );
+    const unsubTime = engine.onTimeUpdate((time) => {
+      dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: time });
+
+      // Increment play count when song reaches 50% of duration
+      const item = state.queue[state.currentIndex];
+      if (
+        item?.id &&
+        state.duration > 0 &&
+        time >= state.duration / 2 &&
+        !playCountIncrementedRef.current
+      ) {
+        playCountIncrementedRef.current = true;
+        incrementPlayCount(item.id);
+      }
+    });
     const unsubDuration = engine.onDurationChange((duration) =>
       dispatchRaw({ type: actions.SET_DURATION, payload: duration }),
     );
@@ -271,7 +288,7 @@ export const PlayerProvider = ({ children }) => {
       unsubVolume();
       unsubEnded();
     };
-  }, []);
+  }, [state.queue, state.currentIndex, state.duration]);
 
   // Enhanced dispatch that also persists queue changes and syncs playback engine
   const dispatch = (action) => {
@@ -348,7 +365,7 @@ export const PlayerProvider = ({ children }) => {
   }, [state.currentIndex, state.queue, state.currentTime, state.duration]);
 
   return (
-    <PlayerContext.Provider value={{ state, dispatch, actions }}>
+    <PlayerContext.Provider value={{ state, dispatch, actions, audioRef }}>
       {children}
       {/* Single audio element, hidden and controlled via context; native controls removed to avoid duplicate cursors */}
       <audio

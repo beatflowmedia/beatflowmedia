@@ -52,11 +52,7 @@ const SideBar = ({
   playlists = [],
   onPlaylistSelect,
   onArtistSelect,
-  onShowRightPanel,
-  onCreatePlaylist,
-  onPlayArtist,
-  isCollapsed = false,
-  onToggleCollapse
+  onCreatePlaylist
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState("");
@@ -69,11 +65,11 @@ const SideBar = ({
   const { playlists: playlistItems, artists: artistItems } = sidebar;
 
   return (
-    <div className="bg-black text-white flex flex-col border-r border-gray-800" style={{ height: "100%" }}>
+    <div className="bg-black text-white flex flex-col border-r border-gray-800" style={{ height: "100%", overflow: "hidden", backgroundColor: "#000000" }}>
       {/* Grid handles positioning */}
 
       {/* Sidebar header: logo, filters, search */}
-      <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10 bg-gray-900">
+      <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10" style={{ flexShrink: 0, backgroundColor: "#000000" }}>
         {/* Filter chips */}
         <div className="flex space-x-2 px-4 mb-2">
           {FILTERS.map((f) => (
@@ -81,9 +77,12 @@ const SideBar = ({
               key={f.value}
               className={`px-3 py-1 rounded-full text-xs ${
                 filter === f.value
-                  ? "bg-gray-800 text-white"
-                  : "bg-gray-700 text-gray-300"
-              } hover:bg-gray-800`}
+                  ? "text-white"
+                  : "text-gray-400"
+              } hover:bg-gray-900`}
+              style={{
+                backgroundColor: filter === f.value ? "#1a1a1a" : "#0a0a0a"
+              }}
               onClick={() => setFilter(f.value)}
             >
               {f.label}
@@ -91,8 +90,11 @@ const SideBar = ({
           ))}
           <button
             className={`px-3 py-1 rounded-full text-xs ${
-              !filter ? "bg-gray-800 text-white" : "bg-gray-700 text-gray-300"
-            } hover:bg-gray-800`}
+              !filter ? "text-white" : "text-gray-400"
+            } hover:bg-gray-900`}
+            style={{
+              backgroundColor: !filter ? "#1a1a1a" : "#0a0a0a"
+            }}
             onClick={() => setFilter("")}
           >
             All
@@ -100,28 +102,30 @@ const SideBar = ({
         </div>
         {/* Search */}
         <div className="flex items-center px-4 mb-2">
-          <FaSearch className="text-gray-500 mr-2" />
+          <FaSearch className="text-gray-600 mr-2" />
           <input
-            className="w-full p-1 bg-gray-800 rounded text-sm text-white"
+            className="w-full p-1 rounded text-sm text-white border-none"
+            style={{ backgroundColor: "#1a1a1a" }}
             placeholder="Search in Your Library"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="ml-2 text-gray-400" title="Recents">
+          <button className="ml-2 text-gray-500 hover:text-gray-300" title="Recents">
             <FaList />
           </button>
           <button
-            className="bg-gray-700 rounded-full p-2 hover:bg-gray-600 ml-2"
+            className="rounded-full p-2 ml-2"
+            style={{ backgroundColor: "#1a1a1a" }}
             title="Create Playlist"
             onClick={() => setShowModal(true)}
           >
-            <FaPlus />
+            <FaPlus className="text-gray-400 hover:text-white" />
           </button>
         </div>
       </div>
 
       {/* Scrollable library: playlists & artists */}
-      <div className="overflow-y-auto flex-1 px-2 pb-2">
+      <div className="overflow-y-auto flex-1 px-2 pb-2" style={{ flexGrow: 1, flexShrink: 1, minHeight: 0, scrollbarColor: 'inherit', scrollbarWidth: 'inherit' }}>
         {playlistItems.length > 0 && (
           <div className="mb-4">
             <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
@@ -146,8 +150,6 @@ const SideBar = ({
                 key={item.id}
                 item={item}
                 onArtistSelect={onArtistSelect}
-                onShowRightPanel={onShowRightPanel}
-                onPlayArtist={onPlayArtist}
               />
             ))}
           </div>
@@ -175,11 +177,7 @@ SideBar.propTypes = {
   playlists: PropTypes.array,
   onPlaylistSelect: PropTypes.func.isRequired,
   onArtistSelect: PropTypes.func.isRequired,
-  onShowRightPanel: PropTypes.func.isRequired,
-  onCreatePlaylist: PropTypes.func.isRequired,
-  onPlayArtist: PropTypes.func,
-  isCollapsed: PropTypes.bool,
-  onToggleCollapse: PropTypes.func
+  onCreatePlaylist: PropTypes.func.isRequired
 };
 
 export default SideBar;

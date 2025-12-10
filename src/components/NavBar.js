@@ -1,5 +1,6 @@
 // src/components/NavBar.jsx
 import React, { memo } from "react";
+import { Link } from "react-router-dom";
 import classNames from "classnames";
 import { FaSearch, FaDownload, FaBell, FaCrown } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
@@ -23,9 +24,8 @@ const NavBar = ({
     >
       {/* LEFT: Logo & Home */}
       <div className="flex items-center space-x-4">
-        <button
-          type="button"
-          onClick={onHomeClick}
+        <Link
+          to="/"
           aria-label="Go to Home"
           className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-bf-green rounded"
         >
@@ -35,7 +35,7 @@ const NavBar = ({
             className="h-8 w-auto"
           />
           <span className="sr-only">BeatFlow Home</span>
-        </button>
+        </Link>
       </div>
 
       {/* CENTER: Search */}

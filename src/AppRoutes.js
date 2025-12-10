@@ -25,6 +25,7 @@ const SongPage = lazy(() => import("./pages/SongPage"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const ForArtists = lazy(() => import("./pages/ForArtists"));
 const AgentsDashboard = lazy(() => import("./pages/AgentsDashboard"));
+const Advertisements = lazy(() => import("./pages/Advertisements"));
 
 export default function AppRoutes() {
   const { user, role } = useAuth();
@@ -62,6 +63,12 @@ export default function AppRoutes() {
         {user && role === "investor" && (
           <Route path="investor-portal" element={<InvestorPortal />} />
         )}
+
+        {/* Admin routes inside AppShell */}
+        <Route element={<AppShell />}>
+          <Route path="ads" element={<Advertisements />} />
+          <Route path="advertisements" element={<Advertisements />} />
+        </Route>
 
         {/* Standalone routes outside of AppShell */}
         <Route path="agents-dashboard" element={<AgentsDashboard />} />
