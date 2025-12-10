@@ -26,6 +26,7 @@ const Jobs = lazy(() => import("./pages/Jobs"));
 const ForArtists = lazy(() => import("./pages/ForArtists"));
 const AgentsDashboard = lazy(() => import("./pages/AgentsDashboard"));
 const Advertisements = lazy(() => import("./pages/Advertisements"));
+const About = lazy(() => import("./pages/About"));
 
 export default function AppRoutes() {
   const { user, role } = useAuth();
@@ -75,6 +76,7 @@ export default function AppRoutes() {
         <Route path="song/:id" element={<SongPage />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="for-artists" element={<ForArtists />} />
+        <Route path="about" element={<About />} />
 
         {/* Catch-all for 404 */}
         <Route path="*" element={<div className="p-6 text-center text-white">404 – Page Not Found</div>} />
