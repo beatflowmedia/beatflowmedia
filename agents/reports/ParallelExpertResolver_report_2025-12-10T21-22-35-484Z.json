@@ -1,0 +1,15 @@
+{
+  "agent": "ParallelExpertResolver",
+  "duration": 5358,
+  "durationFormatted": "5.36s",
+  "startTime": 1765401750126,
+  "operations": 0,
+  "errors": 0,
+  "warnings": 0,
+  "filesCreated": 1,
+  "filesModified": 0,
+  "testsGenerated": 0,
+  "storiesCreated": 0,
+  "successRate": "100%",
+  "timestamp": "2025-12-10T21:22:35.484Z"
+}

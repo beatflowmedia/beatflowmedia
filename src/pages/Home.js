@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from "react";
+import React, { useState, useEffect, memo, useCallback, lazy, Suspense } from "react";
 import {
   Box,
   Grid,
@@ -16,7 +16,8 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  CircularProgress
 } from "@mui/material";
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Favorite from '@mui/icons-material/Favorite';
@@ -34,8 +35,6 @@ import QueueMusic from '@mui/icons-material/QueueMusic';
 import PlayingIndicator from "../components/PlayingIndicator";
 import SongLikeCount from "../components/SongLikeCount";
 import SongPlayCount from "../components/SongPlayCount";
-import TrendingSongs from "../components/TrendingSongs";
-import PersonalizedSections from "../components/PersonalizedSections";
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
 import { usePlaySong } from "../hooks/usePlaySong";
@@ -43,7 +42,12 @@ import { toast } from "react-toastify";
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
 import ShareButton from "../utils/ShareButton";
-import Footer from "../components/Footer";
+import firebaseCache from "../utils/firebaseCache";
+
+// Lazy load heavy components for better initial page load
+const TrendingSongs = lazy(() => import("../components/TrendingSongs"));
+const PersonalizedSections = lazy(() => import("../components/PersonalizedSections"));
+const Footer = lazy(() => import("../components/Footer"));
 
 function Home() {
   const { dispatch, actions } = usePlayer();
@@ -74,6 +78,14 @@ function Home() {
         setLoading(true);
 
         // Load trending songs (most played in last 7 days)
+        const cacheKey = firebaseCache.generateKey('songs', { orderBy: 'playCount', limit: 20 });
+        const cachedTrending = firebaseCache.get(cacheKey);
+
+        if (cachedTrending) {
+          console.log('Home: Loaded', cachedTrending.length, 'trending songs from cache');
+          setTrendingSongs(cachedTrending);
+        }
+
         const trendingQuery = query(
           collection(db, "songs"),
           orderBy("playCount", "desc"),
@@ -88,6 +100,7 @@ function Home() {
           }));
           console.log('Home: Loaded', trending.length, 'trending songs from Firebase');
           setTrendingSongs(trending);
+          firebaseCache.set(cacheKey, trending);
         });
 
         // Load new releases (last 30 days)
@@ -487,7 +500,13 @@ function Home() {
       {user && (
         <>
           <Box sx={{ mb: 4 }}>
-            <PersonalizedSections />
+            <Suspense fallback={
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                <CircularProgress />
+              </Box>
+            }>
+              <PersonalizedSections />
+            </Suspense>
           </Box>
           <Divider sx={{ my: 4 }} />
         </>
@@ -495,7 +514,13 @@ function Home() {
 
       {/* Trending Songs Section */}
       <Box sx={{ mb: 4 }}>
-        <TrendingSongs limit={10} daysBack={7} />
+        <Suspense fallback={
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        }>
+          <TrendingSongs limit={10} daysBack={7} />
+        </Suspense>
       </Box>
 
       <Divider sx={{ my: 4 }} />
@@ -524,6 +549,7 @@ function Home() {
                     height="120"
                     image={artist.imageUrl || '/default-artist.jpg'}
                     alt={artist.name}
+                    loading="lazy"
                     sx={{ borderRadius: '50%', width: 120, height: 120, mx: 'auto', mt: 2 }}
                   />
                   <CardContent sx={{ textAlign: 'center', pb: 1 }}>
@@ -601,6 +627,7 @@ function Home() {
                     component="img"
                     image={song.coverUrl || song.cover || '/default-song-cover.jpg'}
                     alt={song.title}
+                    loading="lazy"
                     sx={{
                       cursor: 'pointer',
                       width: '100%',
@@ -810,6 +837,7 @@ function Home() {
                     height="80"
                     image={activity.coverUrl || '/default-song-cover.jpg'}
                     alt={activity.title}
+                    loading="lazy"
                   />
                   <CardContent sx={{ p: 1 }}>
                     <Typography
@@ -846,7 +874,9 @@ function Home() {
       )}
 
       {/* Footer */}
-      <Footer />
+      <Suspense fallback={<Box sx={{ p: 2 }} />}>
+        <Footer />
+      </Suspense>
     </Box>
   );
 }

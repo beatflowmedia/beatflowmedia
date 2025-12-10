@@ -1,0 +1,2227 @@
+{
+  "timestamp": "2025-12-10T21:22:35.393Z",
+  "summary": {
+    "securityScore": 0,
+    "totalIssues": 299,
+    "criticalIssues": 45,
+    "highIssues": 77,
+    "recommendations": 4
+  },
+  "categories": {
+    "authentication": 130,
+    "dataExposure": 88,
+    "xss": 12,
+    "sensitiveData": 22,
+    "apiSecurity": 36,
+    "firebaseSecurity": 5,
+    "dependencies": 2
+  },
+  "details": {
+    "authVulnerabilities": [
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\A11yHelpers.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\admin\\SecurityDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\admin\\SecurityDashboard.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\admin\\SecurityMonitoring.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\admin\\SecurityMonitoring.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "CRITICAL",
+        "match": "Password: \"\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "CRITICAL",
+        "match": "Password: \"\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "CRITICAL",
+        "match": "password:\", error);\r\n      showNotification(\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\AdminMusicUpload.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\AgentLogViewer.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\AdminDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\AnalyticsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\analytics\\AnalyticsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\ArtistDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\BusinessIntelligence.tsx",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\components\\analytics\\ConsentManager.js",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\CuratorDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\analytics\\PerformanceMonitor.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\PlaybackAnalytics.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\RealtimeMetrics.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\RealtimeMetrics.tsx",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\analytics\\RealtimeMetrics.tsx",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\analytics\\UserEngagement.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\ContentIngestionDashboard.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\CrossfadeControls.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\CuratedForYou.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\CuratedForYou.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\DeviceSelector.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\DeviceSelector.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\MusicPlayer.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\OnboardStripe.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\PlayerProgress.stories.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\PlaylistHeader.stories.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\RequestPayout.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\SongOptionsMenu.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\StripeButton.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\components\\TrackRow.stories.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\UserMenu.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\components\\UserProfileMenu.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\design\\components\\atoms\\Image.stories.tsx",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\design\\components\\atoms\\Image.tsx",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\design\\ThemeProvider.tsx",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\design\\utils.ts",
+        "severity": "CRITICAL",
+        "match": "Token = \"xl\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\engine\\AdaptiveEngine.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\engine\\DrmEngine.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\engine\\DrmIntegrationExample.js",
+        "severity": "CRITICAL",
+        "match": "Token: \"your-auth-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\engine\\DrmIntegrationExample.js",
+        "severity": "CRITICAL",
+        "match": "Token: \"your-auth-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\engine\\DrmIntegrationExample.js",
+        "severity": "CRITICAL",
+        "match": "Token: \"your-session-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\engine\\DrmIntegrationExample.js",
+        "severity": "CRITICAL",
+        "match": "Token: \"custom-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\engine\\DrmProviders.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\engine\\EnhancedMseEngine.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\engine\\GaplessEngine.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\engine\\MseEngine.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\engine\\__tests__\\GaplessEngine.test.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\firebaseConfig.js",
+        "severity": "CRITICAL",
+        "match": "apiKey: \"AIzaSyCoXc1YonnH1uW3P4OlAO6eAi911DdyHgs\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\hooks\\useAnalytics.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\hooks\\useAnalytics.ts",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\hooks\\useCommercialBreaks.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\hooks\\useEnqueuePlaylist.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\hooks\\usePersonalizedSections.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\hooks\\usePodcastSections.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\hooks\\useTrendingSongs.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\hooks\\useTrendingSongs.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\AgentsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\pages\\AgentsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\Album.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\pages\\Album.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\AnalyticsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\pages\\AnalyticsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\Artist.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\ArtistSimple.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\CampaignWizard\\CampaignWizard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\pages\\CampaignWizard\\CampaignWizard.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\CampaignWizard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\CuratorCampaigns.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\pages\\CuratorCampaigns.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\CuratorInbox.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\InvestorPortal.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\PayoutDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\pages\\PayoutDashboard.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\Playlist.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\pages\\Search.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\analytics\\AlertingSystem.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\services\\analytics\\AnalyticsService.js",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\analytics\\AnalyticsService.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\analytics\\DataExporter.ts",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\analytics\\EventCollector.ts",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\analytics\\PerformanceMonitor.ts",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\analytics\\__tests__\\AnalyticsService.test.ts",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\analytics\\__tests__\\EventCollector.test.ts",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\services\\authService.js",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "WEAK_SESSION_MANAGEMENT",
+        "file": "src\\services\\authService.js",
+        "severity": "MEDIUM",
+        "message": "Using sessionStorage for user data",
+        "recommendation": "Implement proper session management with server-side validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\authService.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\services\\contentIngestionService.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "match": "Password = \"NewStr0ngP@ssw0rd!\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "match": "secret = \"JBSWY3DPEHPK3PXP\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "match": "secret = \"JBSWY3DPEHPK3PXP\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "match": "secret = \"api-secret-key\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.test....",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "match": "Token = \"expired.jwt.token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "WEAK_SESSION_MANAGEMENT",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "MEDIUM",
+        "message": "Using sessionStorage for user data",
+        "recommendation": "Implement proper session management with server-side validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"jwt-playback-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"new-jwt-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"integration-test-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"concurrent-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "WEAK_SESSION_MANAGEMENT",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "MEDIUM",
+        "message": "Using sessionStorage for user data",
+        "recommendation": "Implement proper session management with server-side validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "CRITICAL",
+        "match": "Token = \"old-jwt-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "CRITICAL",
+        "match": "Token = \"new-jwt-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"retry-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"load-test-token\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "WEAK_SESSION_MANAGEMENT",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "MEDIUM",
+        "message": "Using sessionStorage for user data",
+        "recommendation": "Implement proper session management with server-side validation"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "CRITICAL",
+        "match": "password: \"wrong-password\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "CRITICAL",
+        "match": "password: \"wrong\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "CRITICAL",
+        "match": "password: \"password\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "CRITICAL",
+        "match": "Token =\r\n        \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpX...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "CRITICAL",
+        "match": "token: \"new-session-token-123\"...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "HARDCODED_CREDENTIALS",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "CRITICAL",
+        "match": "Token =\r\n        \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpX...",
+        "message": "Hardcoded credentials detected",
+        "recommendation": "Move credentials to environment variables"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "INSECURE_TOKEN_STORAGE",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "JWT tokens stored in localStorage (vulnerable to XSS)",
+        "recommendation": "Use httpOnly cookies or secure session storage"
+      },
+      {
+        "type": "MISSING_CSRF_PROTECTION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "MEDIUM",
+        "message": "API calls without CSRF protection",
+        "recommendation": "Implement CSRF token validation"
+      },
+      {
+        "type": "MISSING_AUTH_CHECK",
+        "file": "src\\utils\\usePlaybackResume.js",
+        "severity": "MEDIUM",
+        "message": "Component accessing user data without auth verification",
+        "recommendation": "Add proper authentication checks"
+      }
+    ],
+    "dataExposureRisks": [
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\agent\\AgenticSuiteAgent.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\SecurityDashboard.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to load users:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\SecurityDashboard.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to suspend user:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\admin\\SecurityDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\admin\\SecurityMonitoring.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to load users:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to create user:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to update user:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to suspend user:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to reactivate user:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Failed to force email verification:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "PASSWORD_FIELD_EXPOSURE",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "CRITICAL",
+        "message": "Password field potentially exposed in queries",
+        "recommendation": "Exclude password fields from user data queries"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\AdminMusicUpload.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\AgentLogViewer.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\analytics\\AnalyticsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\analytics\\ConsentManager.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\analytics\\PerformanceMonitor.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\analytics\\RealtimeMetrics.tsx",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\ContentIngestionDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\ContentUpload.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\ContentUploadInterface.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\CrossfadeControls.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\CuratedForYou.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\DeviceSelector.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\LikeButton.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\PlaylistHeader.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\components\\TrackRow.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\context\\AuthContext.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Error in user snapshot listener:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\context\\AuthContext.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Error setting up user data:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\context\\AuthContext.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\context\\EnhancedPlayerContext.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\AdaptiveEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\CrossfadeEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\engine\\DrmEngine.js",
+        "severity": "HIGH",
+        "match": "console.log(\r\n      `[DrmEngine] Key status: ${this._arrayBufferToHex(keyId)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\DrmEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\DrmIntegrationExample.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\DrmProviders.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\EnhancedMseEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\GaplessEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\LegacyAudioEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\MseEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\ProductionMseEngine.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\engine\\WebAudioProcessor.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "UNRESTRICTED_DATA_QUERY",
+        "file": "src\\firebaseConfig.js",
+        "severity": "HIGH",
+        "message": "Database query without proper filtering",
+        "recommendation": "Add proper query restrictions and limits"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\hooks\\useFollowArtist.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\hooks\\useLibrary.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\hooks\\usePersonalizedSections.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\hooks\\usePodcastSections.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\hooks\\useQueue.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\hooks\\useSongPlays.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\hooks\\useTrendingSongs.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\middleware\\securityMiddleware.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\AdminPanel.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\Advertisements.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\AgentsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\Album.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\AnalyticsDashboard.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\Artist.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\ArtistSimple.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\CampaignWizard.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\CuratorInbox.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\ForArtists.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\Home.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\InvestorPortal.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\Investors.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\Playlist.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\pages\\Search.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\analytics\\AlertingSystem.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\analytics\\AnalyticsService.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\services\\analytics\\DataExporter.ts",
+        "severity": "HIGH",
+        "match": "console.error(\"Error generating user data export:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\analytics\\DataExporter.ts",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\analytics\\EventCollector.ts",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\analytics\\PlayerAnalytics.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\analytics\\RoyaltyCalculator.ts",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "SENSITIVE_DATA_LOGGING",
+        "file": "src\\services\\authService.js",
+        "severity": "HIGH",
+        "match": "console.error(\"Email sign-in error:\", error)",
+        "message": "Sensitive data being logged to console",
+        "recommendation": "Remove or sanitize sensitive data from logs"
+      },
+      {
+        "type": "PASSWORD_FIELD_EXPOSURE",
+        "file": "src\\services\\authService.js",
+        "severity": "CRITICAL",
+        "message": "Password field potentially exposed in queries",
+        "recommendation": "Exclude password fields from user data queries"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\authService.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\billing\\updatePayoutSummary.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\contentIngestionService.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\services\\entitlementService.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "PASSWORD_FIELD_EXPOSURE",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "CRITICAL",
+        "message": "Password field potentially exposed in queries",
+        "recommendation": "Exclude password fields from user data queries"
+      },
+      {
+        "type": "PASSWORD_FIELD_EXPOSURE",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "CRITICAL",
+        "message": "Password field potentially exposed in queries",
+        "recommendation": "Exclude password fields from user data queries"
+      },
+      {
+        "type": "PASSWORD_FIELD_EXPOSURE",
+        "file": "src\\tests\\security\\penetration.test.js",
+        "severity": "CRITICAL",
+        "message": "Password field potentially exposed in queries",
+        "recommendation": "Exclude password fields from user data queries"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\utils\\AdsHelper.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\utils\\PlaylistHelper.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      },
+      {
+        "type": "VERBOSE_ERROR_MESSAGES",
+        "file": "src\\utils\\ShareButton.js",
+        "severity": "MEDIUM",
+        "message": "Detailed error messages may expose internal information",
+        "recommendation": "Sanitize error messages before logging"
+      }
+    ],
+    "xssVulnerabilities": [
+      {
+        "type": "UNVALIDATED_USER_INPUT",
+        "file": "src\\components\\admin\\SecurityDashboard.js",
+        "severity": "MEDIUM",
+        "count": 4,
+        "message": "User input used without validation",
+        "recommendation": "Implement input validation and sanitization"
+      },
+      {
+        "type": "UNVALIDATED_USER_INPUT",
+        "file": "src\\components\\admin\\UserManagement.js",
+        "severity": "MEDIUM",
+        "count": 8,
+        "message": "User input used without validation",
+        "recommendation": "Implement input validation and sanitization"
+      },
+      {
+        "type": "DYNAMIC_SCRIPT_INJECTION",
+        "file": "src\\components\\analytics\\ConsentManager.js",
+        "severity": "CRITICAL",
+        "message": "Dynamic script creation detected",
+        "recommendation": "Avoid dynamic script creation or implement strict CSP"
+      },
+      {
+        "type": "UNVALIDATED_USER_INPUT",
+        "file": "src\\components\\analytics\\RealtimeMetrics.js",
+        "severity": "MEDIUM",
+        "count": 2,
+        "message": "User input used without validation",
+        "recommendation": "Implement input validation and sanitization"
+      },
+      {
+        "type": "DANGEROUS_HTML_INJECTION",
+        "file": "src\\components\\MiniPlayerPortal.js",
+        "severity": "HIGH",
+        "message": "Direct HTML injection detected",
+        "recommendation": "Sanitize HTML content or use safe alternatives"
+      },
+      {
+        "type": "DYNAMIC_SCRIPT_INJECTION",
+        "file": "src\\components\\MiniPlayerPortal.js",
+        "severity": "CRITICAL",
+        "message": "Dynamic script creation detected",
+        "recommendation": "Avoid dynamic script creation or implement strict CSP"
+      },
+      {
+        "type": "UNVALIDATED_USER_INPUT",
+        "file": "src\\context\\AuthContext.js",
+        "severity": "MEDIUM",
+        "count": 1,
+        "message": "User input used without validation",
+        "recommendation": "Implement input validation and sanitization"
+      },
+      {
+        "type": "DYNAMIC_SCRIPT_INJECTION",
+        "file": "src\\engine\\DrmProviders.js",
+        "severity": "CRITICAL",
+        "message": "Dynamic script creation detected",
+        "recommendation": "Avoid dynamic script creation or implement strict CSP"
+      },
+      {
+        "type": "UNVALIDATED_USER_INPUT",
+        "file": "src\\pages\\Album.js",
+        "severity": "MEDIUM",
+        "count": 2,
+        "message": "User input used without validation",
+        "recommendation": "Implement input validation and sanitization"
+      },
+      {
+        "type": "DYNAMIC_SCRIPT_INJECTION",
+        "file": "src\\pages\\InvestorPortal.js",
+        "severity": "CRITICAL",
+        "message": "Dynamic script creation detected",
+        "recommendation": "Avoid dynamic script creation or implement strict CSP"
+      },
+      {
+        "type": "DYNAMIC_SCRIPT_INJECTION",
+        "file": "src\\services\\authService.js",
+        "severity": "CRITICAL",
+        "message": "Dynamic script creation detected",
+        "recommendation": "Avoid dynamic script creation or implement strict CSP"
+      },
+      {
+        "type": "DYNAMIC_SCRIPT_INJECTION",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "CRITICAL",
+        "message": "Dynamic script creation detected",
+        "recommendation": "Avoid dynamic script creation or implement strict CSP"
+      }
+    ],
+    "sensitiveDataLeaks": [
+      {
+        "type": "EXPOSED_API_KEY",
+        "file": "src\\firebaseConfig.js",
+        "severity": "CRITICAL",
+        "keyType": "Google API Key",
+        "preview": "AIzaSyCoXc1YonnH1uW3...",
+        "message": "Google API Key exposed in source code",
+        "recommendation": "Move to environment variables immediately"
+      },
+      {
+        "type": "EXPOSED_API_KEY",
+        "file": "src\\pages\\ArtistSimple.js",
+        "severity": "CRITICAL",
+        "keyType": "Firebase Config",
+        "preview": "Firebase:', artistNa...",
+        "message": "Firebase Config exposed in source code",
+        "recommendation": "Move to environment variables immediately"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\AnalyticsService.ts",
+        "severity": "HIGH",
+        "field": "phone",
+        "message": "Personal data (phone) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\EventCollector.ts",
+        "severity": "HIGH",
+        "field": "phone",
+        "message": "Personal data (phone) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\PrivacyManager.js",
+        "severity": "HIGH",
+        "field": "email",
+        "message": "Personal data (email) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\PrivacyManager.js",
+        "severity": "HIGH",
+        "field": "phone",
+        "message": "Personal data (phone) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\PrivacyManager.js",
+        "severity": "HIGH",
+        "field": "address",
+        "message": "Personal data (address) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\PrivacyManager.ts",
+        "severity": "HIGH",
+        "field": "address",
+        "message": "Personal data (address) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\__tests__\\AnalyticsService.test.js",
+        "severity": "HIGH",
+        "field": "address",
+        "message": "Personal data (address) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\analytics\\__tests__\\PrivacyManager.test.ts",
+        "severity": "HIGH",
+        "field": "address",
+        "message": "Personal data (address) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\authService.js",
+        "severity": "HIGH",
+        "field": "email",
+        "message": "Personal data (email) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\authService.js",
+        "severity": "HIGH",
+        "field": "phone",
+        "message": "Personal data (phone) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\services\\authService.js",
+        "severity": "HIGH",
+        "field": "address",
+        "message": "Personal data (address) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "EXPOSED_API_KEY",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "keyType": "Firebase Config",
+        "preview": "Firebase:\");\r\n      ...",
+        "message": "Firebase Config exposed in source code",
+        "recommendation": "Move to environment variables immediately"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "HIGH",
+        "field": "email",
+        "message": "Personal data (email) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "HIGH",
+        "field": "phone",
+        "message": "Personal data (phone) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "HIGH",
+        "field": "address",
+        "message": "Personal data (address) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "DATABASE_CONNECTION_EXPOSED",
+        "file": "src\\tests\\security\\authenticationSecurity.test.js",
+        "severity": "CRITICAL",
+        "message": "Database connection string in source code",
+        "recommendation": "Move database credentials to secure environment variables"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "HIGH",
+        "field": "email",
+        "message": "Personal data (email) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\tests\\security\\authService.test.js",
+        "severity": "HIGH",
+        "field": "address",
+        "message": "Personal data (address) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\tests\\security\\integration.test.js",
+        "severity": "HIGH",
+        "field": "email",
+        "message": "Personal data (email) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      },
+      {
+        "type": "PERSONAL_DATA_IN_STORAGE",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "field": "email",
+        "message": "Personal data (email) stored in localStorage",
+        "recommendation": "Use secure server-side storage for personal data"
+      }
+    ],
+    "apiSecurityIssues": [
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\AdminMusicUpload.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\analytics\\RealtimeMetrics.tsx",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\ContentIngestionDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\ContentIngestionDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\ContentIngestionDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\OnboardStripe.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\RequestPayout.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\components\\StripeButton.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\engine\\AdaptiveEngine.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\engine\\DrmEngine.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\engine\\DrmEngine.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\engine\\DrmProviders.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\engine\\EnhancedMseEngine.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\engine\\GaplessEngine.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\engine\\GaplessEngine.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\pages\\AgentsDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\pages\\AgentsDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\pages\\AgentsDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\pages\\AnalyticsDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\pages\\PayoutDashboard.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\services\\analytics\\AlertingSystem.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\services\\analytics\\AlertingSystem.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\services\\analytics\\PerformanceMonitor.ts",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\services\\authService.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\services\\authService.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\services\\contentIngestionService.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\services\\contentIngestionService.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "INSECURE_HTTP_USAGE",
+        "file": "src\\stories\\Header.jsx",
+        "severity": "MEDIUM",
+        "message": "HTTP URLs detected (should use HTTPS)",
+        "recommendation": "Use HTTPS for all external communications"
+      },
+      {
+        "type": "INSECURE_HTTP_USAGE",
+        "file": "src\\stories\\Page.jsx",
+        "severity": "MEDIUM",
+        "message": "HTTP URLs detected (should use HTTPS)",
+        "recommendation": "Use HTTPS for all external communications"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      },
+      {
+        "type": "MISSING_AUTHORIZATION",
+        "file": "src\\utils\\authHelpers.js",
+        "severity": "HIGH",
+        "message": "API call without authorization header",
+        "recommendation": "Add proper authorization headers to API calls"
+      }
+    ],
+    "firebaseSecurityIssues": [
+      {
+        "type": "MISSING_CSP_HEADER",
+        "file": "public/index.html",
+        "severity": "HIGH",
+        "message": "Missing Content Security Policy",
+        "recommendation": "Add CSP meta tag or server headers"
+      },
+      {
+        "type": "MISSING_SECURITY_HEADERS",
+        "file": "public/index.html",
+        "severity": "MEDIUM",
+        "message": "Missing security headers",
+        "recommendation": "Add X-Content-Type-Options, X-Frame-Options headers"
+      },
+      {
+        "type": "MISSING_DATA_VALIDATION",
+        "file": "firestore.rules",
+        "severity": "MEDIUM",
+        "message": "Write operations without data validation",
+        "recommendation": "Add data type and content validation rules"
+      },
+      {
+        "type": "MISSING_DATA_VALIDATION",
+        "file": "storage.rules",
+        "severity": "MEDIUM",
+        "message": "Write operations without data validation",
+        "recommendation": "Add data type and content validation rules"
+      },
+      {
+        "type": "MISSING_RESOURCE_CHECKS",
+        "file": "storage.rules",
+        "severity": "MEDIUM",
+        "message": "Rules without resource-based security checks",
+        "recommendation": "Add checks for resource ownership and permissions"
+      }
+    ],
+    "dependencyVulnerabilities": [
+      {
+        "type": "KNOWN_VULNERABILITY",
+        "dependency": "react-dom@^19.0.0",
+        "severity": "MEDIUM",
+        "message": "Known vulnerability in react-dom",
+        "recommendation": "Update to latest secure version"
+      },
+      {
+        "type": "KNOWN_VULNERABILITY",
+        "dependency": "axios@^1.12.2",
+        "severity": "HIGH",
+        "message": "Known vulnerability in axios",
+        "recommendation": "Update to latest secure version"
+      }
+    ],
+    "securityScore": 0,
+    "recommendations": [
+      {
+        "priority": "CRITICAL",
+        "category": "Immediate Action Required",
+        "title": "Fix Critical Security Vulnerabilities",
+        "description": "45 critical security issues require immediate attention",
+        "actions": [
+          "Remove hardcoded credentials and API keys",
+          "Fix Firebase security rules",
+          "Address exposed sensitive data",
+          "Update vulnerable dependencies"
+        ],
+        "timeline": "Fix within 24 hours"
+      },
+      {
+        "priority": "HIGH",
+        "category": "Authentication Security",
+        "title": "Strengthen Authentication Security",
+        "description": "130 authentication security issues found",
+        "actions": [
+          "Implement secure token storage",
+          "Add proper authentication checks",
+          "Implement CSRF protection",
+          "Use secure session management"
+        ],
+        "timeline": "Fix within 1 week"
+      },
+      {
+        "priority": "HIGH",
+        "category": "Data Protection",
+        "title": "Protect Sensitive Data",
+        "description": "88 data exposure risks identified",
+        "actions": [
+          "Remove sensitive data from logs",
+          "Implement proper query restrictions",
+          "Sanitize error messages",
+          "Add data access controls"
+        ],
+        "timeline": "Fix within 1 week"
+      },
+      {
+        "priority": "MEDIUM",
+        "category": "XSS Prevention",
+        "title": "Prevent Cross-Site Scripting",
+        "description": "12 XSS vulnerabilities found",
+        "actions": [
+          "Sanitize all user inputs",
+          "Implement Content Security Policy",
+          "Avoid dangerous HTML injection",
+          "Validate and encode output"
+        ],
+        "timeline": "Fix within 2 weeks"
+      }
+    ]
+  }
+}
