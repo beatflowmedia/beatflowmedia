@@ -28,6 +28,29 @@ const AgentsDashboard = lazy(() => import("./pages/AgentsDashboard"));
 const Advertisements = lazy(() => import("./pages/Advertisements"));
 const About = lazy(() => import("./pages/About"));
 const ForTheRecord = lazy(() => import("./pages/ForTheRecord"));
+const Support = lazy(() => import("./pages/Support"));
+const Investors = lazy(() => import("./pages/Investors"));
+
+// Community pages
+const Developers = lazy(() => import("./pages/Developers"));
+const Vendors = lazy(() => import("./pages/Vendors"));
+
+// Premium plan pages
+const Individual = lazy(() => import("./pages/Individual"));
+const Student = lazy(() => import("./pages/Student"));
+const Duo = lazy(() => import("./pages/Duo"));
+const Family = lazy(() => import("./pages/Family"));
+const Audiobooks = lazy(() => import("./pages/Audiobooks"));
+
+// Legal pages
+const Legal = lazy(() => import("./pages/Legal"));
+const PrivacyCenter = lazy(() => import("./pages/PrivacyCenter"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Cookies = lazy(() => import("./pages/Cookies"));
+const AboutAds = lazy(() => import("./pages/AboutAds"));
+const Accessibility = lazy(() => import("./pages/Accessibility"));
+const NoticeAtCollection = lazy(() => import("./pages/NoticeAtCollection"));
+const PrivacyChoices = lazy(() => import("./pages/PrivacyChoices"));
 
 export default function AppRoutes() {
   const { user, role } = useAuth();
@@ -79,6 +102,29 @@ export default function AppRoutes() {
         <Route path="for-artists" element={<ForArtists />} />
         <Route path="about" element={<About />} />
         <Route path="for-the-record" element={<ForTheRecord />} />
+        <Route path="support" element={<Support />} />
+        <Route path="investors" element={<Investors />} />
+
+        {/* Community pages */}
+        <Route path="developers" element={<Developers />} />
+        <Route path="vendors" element={<Vendors />} />
+
+        {/* Premium plan pages */}
+        <Route path="individual" element={<Individual />} />
+        <Route path="student" element={<Student />} />
+        <Route path="duo" element={<Duo />} />
+        <Route path="family" element={<Family />} />
+        <Route path="audiobooks" element={<Audiobooks />} />
+
+        {/* Legal pages */}
+        <Route path="legal" element={<Legal />} />
+        <Route path="privacy-center" element={<PrivacyCenter />} />
+        <Route path="privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="cookies" element={<Cookies />} />
+        <Route path="about-ads" element={<AboutAds />} />
+        <Route path="accessibility" element={<Accessibility />} />
+        <Route path="notice-at-collection" element={<NoticeAtCollection />} />
+        <Route path="privacy-choices" element={<PrivacyChoices />} />
 
         {/* Catch-all for 404 */}
         <Route path="*" element={<div className="p-6 text-center text-white">404 – Page Not Found</div>} />
