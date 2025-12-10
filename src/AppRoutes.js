@@ -30,6 +30,7 @@ const About = lazy(() => import("./pages/About"));
 const ForTheRecord = lazy(() => import("./pages/ForTheRecord"));
 const Support = lazy(() => import("./pages/Support"));
 const Investors = lazy(() => import("./pages/Investors"));
+const Wrapped2024 = lazy(() => import("./pages/Wrapped2024"));
 
 // Community pages
 const Developers = lazy(() => import("./pages/Developers"));
@@ -104,6 +105,7 @@ export default function AppRoutes() {
         <Route path="for-the-record" element={<ForTheRecord />} />
         <Route path="support" element={<Support />} />
         <Route path="investors" element={<Investors />} />
+        <Route path="wrapped2024" element={<Wrapped2024 />} />
 
         {/* Community pages */}
         <Route path="developers" element={<Developers />} />
