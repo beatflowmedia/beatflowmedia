@@ -129,9 +129,11 @@ export default function HelpCenter() {
           <p className="text-gray-400 mb-8">
             Our support team is here to help you succeed with your advertising campaigns.
           </p>
-          <button className="bg-bf-green text-black px-8 py-3 rounded-full font-semibold hover:bg-green-400 transition">
-            Contact Support
-          </button>
+          <Link to="/contact">
+            <button className="bg-bf-green text-black px-8 py-3 rounded-full font-semibold hover:bg-green-400 transition">
+              Contact Support
+            </button>
+          </Link>
         </div>
       </section>
     </div>
