@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 export default function AdSignup() {
   const [formData, setFormData] = useState({
@@ -25,10 +27,38 @@ export default function AdSignup() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Ad signup form submitted:", formData);
-    alert("Thank you for your interest! Our team will contact you within 24 hours.");
+
+    try {
+      // Save to Firestore
+      const docRef = await addDoc(collection(db, "adSignups"), {
+        ...formData,
+        submittedAt: new Date(),
+        status: "pending",
+      });
+
+      console.log("Ad signup submitted with ID:", docRef.id);
+      alert("Thank you for your interest! Our team will contact you within 24 hours.");
+
+      // Reset form
+      setFormData({
+        businessType: "",
+        objective: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        company: "",
+        website: "",
+        country: "United States",
+        state: "",
+        estimatedBudget: "",
+        newsletter: false,
+      });
+    } catch (error) {
+      console.error("Error submitting ad signup:", error);
+      alert("There was an error submitting your information. Please try again.");
+    }
   };
 
   const features = [
@@ -46,7 +76,7 @@ export default function AdSignup() {
       <header className="bg-gray-800 py-6 px-6">
         <div className="max-w-6xl mx-auto">
           <Link to="/advertising" className="text-bf-green hover:underline mb-4 inline-block">
-            ê Back to Advertising
+            ÔøΩ Back to Advertising
           </Link>
           <h1 className="text-5xl font-bold mb-4">Create Your BeatFlow Ad Campaign</h1>
           <p className="text-gray-400 text-lg">
@@ -268,7 +298,7 @@ export default function AdSignup() {
           </div>
           <div className="text-center mt-8">
             <Link to="/resources/help-center" className="text-bf-green hover:underline">
-              View all FAQs í
+              View all FAQs ÔøΩ
             </Link>
           </div>
         </div>

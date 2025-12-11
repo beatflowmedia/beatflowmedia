@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase";
 import Footer from "../components/Footer";
 
 export default function VendorApplication() {
@@ -36,10 +38,41 @@ export default function VendorApplication() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Vendor application submitted:", formData);
-    alert("Thank you for your application! Our partnerships team will review your submission and contact you within 5-7 business days.");
+
+    try {
+      // Save to Firestore
+      const docRef = await addDoc(collection(db, "vendorApplications"), {
+        ...formData,
+        submittedAt: new Date(),
+        status: "pending",
+      });
+
+      console.log("Vendor application submitted with ID:", docRef.id);
+      alert("Thank you for your application! Our partnerships team will review your submission and contact you within 5-7 business days.");
+
+      // Reset form
+      setFormData({
+        partnershipType: "",
+        companyName: "",
+        website: "",
+        contactName: "",
+        email: "",
+        phone: "",
+        jobTitle: "",
+        companySize: "",
+        revenue: "",
+        description: "",
+        targetMarkets: [],
+        timeline: "",
+        experience: "",
+        references: "",
+      });
+    } catch (error) {
+      console.error("Error submitting vendor application:", error);
+      alert("There was an error submitting your application. Please try again.");
+    }
   };
 
   return (

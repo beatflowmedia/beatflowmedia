@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 export default function CreativeQuote() {
   const [formData, setFormData] = useState({
@@ -33,10 +35,39 @@ export default function CreativeQuote() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Quote request submitted:", formData);
-    alert("Thank you! We'll review your request and get back to you within 1 business day.");
+
+    try {
+      // Save to Firestore
+      const docRef = await addDoc(collection(db, "creativeQuotes"), {
+        ...formData,
+        submittedAt: new Date(),
+        status: "pending",
+      });
+
+      console.log("Quote request submitted with ID:", docRef.id);
+      alert("Thank you! We'll review your request and get back to you within 1 business day.");
+
+      // Reset form
+      setFormData({
+        serviceType: "",
+        companyName: "",
+        website: "",
+        contactName: "",
+        email: "",
+        phone: "",
+        projectDescription: "",
+        targetAudience: "",
+        budget: "",
+        timeline: "",
+        hasExistingBrand: "yes",
+        additionalServices: [],
+      });
+    } catch (error) {
+      console.error("Error submitting quote request:", error);
+      alert("There was an error submitting your request. Please try again.");
+    }
   };
 
   return (
