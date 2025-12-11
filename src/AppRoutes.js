@@ -37,6 +37,7 @@ const Wrapped2024 = lazy(() => import("./pages/Wrapped2024"));
 // Community pages
 const Developers = lazy(() => import("./pages/Developers"));
 const Vendors = lazy(() => import("./pages/Vendors"));
+const VendorApplication = lazy(() => import("./pages/VendorApplication"));
 const Advertising = lazy(() => import("./pages/Advertising"));
 
 // Advertising pages
@@ -133,6 +134,7 @@ export default function AppRoutes() {
         {/* Community pages */}
         <Route path="developers" element={<Developers />} />
         <Route path="vendors" element={<Vendors />} />
+        <Route path="vendor-application" element={<VendorApplication />} />
         <Route path="advertising" element={<Advertising />} />
 
         {/* Advertising pages */}

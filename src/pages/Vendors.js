@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 
 export default function Vendors() {
@@ -17,9 +18,11 @@ export default function Vendors() {
             <p className="text-lg mb-6">
               Join our network of trusted partners providing services and solutions to millions of BeatFlow Media users worldwide.
             </p>
-            <button className="bg-white text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-              Apply Now
-            </button>
+            <Link to="/vendor-application">
+              <button className="bg-white text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                Apply Now
+              </button>
+            </Link>
           </div>
 
           {/* Partnership Categories */}
@@ -161,12 +164,16 @@ export default function Vendors() {
               Join our ecosystem of innovative partners delivering exceptional music experiences to millions of users.
             </p>
             <div className="flex gap-4 justify-center">
-              <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors">
-                Submit Application
-              </button>
-              <button className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3 rounded-full font-semibold transition-colors">
-                Contact Sales
-              </button>
+              <Link to="/vendor-application">
+                <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors">
+                  Submit Application
+                </button>
+              </Link>
+              <Link to="/contact">
+                <button className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3 rounded-full font-semibold transition-colors">
+                  Contact Sales
+                </button>
+              </Link>
             </div>
           </div>
         </div>
