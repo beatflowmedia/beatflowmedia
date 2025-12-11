@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
 import { collection, addDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../firebaseConfig";
 import Footer from "../components/Footer";
 
 export default function VendorApplication() {
