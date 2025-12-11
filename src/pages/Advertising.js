@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 // Resources dropdown items
 const resourcesLinks = [
@@ -16,6 +18,59 @@ const resourcesLinks = [
 ];
 
 export default function Advertising() {
+  const [formData, setFormData] = useState({
+    businessType: "I am a brand/business",
+    objective: "Looking to drive revenue",
+    firstName: "",
+    lastName: "",
+    email: "",
+    company: "",
+    website: "",
+    country: "United States",
+    state: "",
+    newsletter: false,
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      // Save to Firestore
+      const docRef = await addDoc(collection(db, "advertisingInquiries"), {
+        ...formData,
+        submittedAt: new Date(),
+        status: "pending",
+      });
+
+      console.log("Advertising inquiry submitted with ID:", docRef.id);
+      alert("Thank you for your interest! Our advertising team will contact you within 24 hours.");
+
+      // Reset form
+      setFormData({
+        businessType: "I am a brand/business",
+        objective: "Looking to drive revenue",
+        firstName: "",
+        lastName: "",
+        email: "",
+        company: "",
+        website: "",
+        country: "United States",
+        state: "",
+        newsletter: false,
+      });
+    } catch (error) {
+      console.error("Error submitting advertising inquiry:", error);
+      alert("There was an error submitting your inquiry. Please try again.");
+    }
+  };
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       {/* Header nav */}
@@ -121,48 +176,87 @@ export default function Advertising() {
             </h2>
           </div>
           {/* Inquiry form */}
-          <form className="space-y-4 text-gray-300">
+          <form onSubmit={handleSubmit} className="space-y-4 text-gray-300">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <select className="bg-gray-700 p-3 rounded w-full">
+              <select
+                name="businessType"
+                value={formData.businessType}
+                onChange={handleChange}
+                className="bg-gray-700 p-3 rounded w-full"
+              >
                 <option>I am a brand/business</option>
                 <option>Agency/Partner</option>
               </select>
-              <select className="bg-gray-700 p-3 rounded w-full">
+              <select
+                name="objective"
+                value={formData.objective}
+                onChange={handleChange}
+                className="bg-gray-700 p-3 rounded w-full"
+              >
                 <option>Looking to drive revenue</option>
                 <option>Building brand awareness</option>
               </select>
             </div>
             <input
               type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
               placeholder="First Name"
+              required
               className="w-full bg-gray-700 p-3 rounded"
             />
             <input
               type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
               placeholder="Last Name"
+              required
               className="w-full bg-gray-700 p-3 rounded"
             />
             <input
               type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Email Address"
+              required
               className="w-full bg-gray-700 p-3 rounded"
             />
             <input
               type="text"
+              name="company"
+              value={formData.company}
+              onChange={handleChange}
               placeholder="Company"
+              required
               className="w-full bg-gray-700 p-3 rounded"
             />
             <input
               type="text"
+              name="website"
+              value={formData.website}
+              onChange={handleChange}
               placeholder="Website"
               className="w-full bg-gray-700 p-3 rounded"
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <select className="bg-gray-700 p-3 rounded w-full">
+              <select
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                className="bg-gray-700 p-3 rounded w-full"
+              >
                 <option>United States</option>
                 <option>United Kingdom</option>
               </select>
-              <select className="bg-gray-700 p-3 rounded w-full">
+              <select
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                className="bg-gray-700 p-3 rounded w-full"
+              >
                 <option value="">State</option>
                 <option value="AL">Alabama</option>
                 <option value="AK">Alaska</option>
@@ -219,7 +313,10 @@ export default function Advertising() {
             <div className="flex items-center space-x-2">
               <input
                 id="newsletter"
+                name="newsletter"
                 type="checkbox"
+                checked={formData.newsletter}
+                onChange={handleChange}
                 className="bg-gray-700 rounded text-bf-green"
               />
               <label htmlFor="newsletter" className="text-gray-300">

@@ -242,6 +242,12 @@ service cloud.firestore {
       allow read, update, delete: if request.auth.token.admin == true;
     }
 
+    // Advertising inquiries - allow anyone to submit, admin to read/manage
+    match /advertisingInquiries/{inquiryId} {
+      allow create: if true; // Allow unauthenticated submissions
+      allow read, update, delete: if request.auth.token.admin == true;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
