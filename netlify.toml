@@ -1,0 +1,40 @@
+[build]
+  command   = "npm run build"
+  publish   = "build"
+  functions = "netlify/functions"
+
+# Proxy all /player/queue requests to the player-queue Netlify Function
+[[redirects]]
+  from = "/player/queue"
+  to   = "/.netlify/functions/player-queue"
+  status = 200
+
+[[redirects]]
+  from   = "/player/queue/reorder"
+  to     = "/.netlify/functions/player-queue"
+  status = 200
+  methods = ["PATCH"]
+
+[[redirects]]
+  from   = "/player/queue/:id"
+  to     = "/.netlify/functions/player-queue/:id"
+  status = 200
+  methods = ["DELETE"]
+
+# Stripe webhook
+[[redirects]]
+  from = "/api/stripe-webhook"
+  to   = "/.netlify/functions/stripe-webhook"
+  status = 200
+
+# Stripe checkout
+[[redirects]]
+  from = "/api/create-checkout"
+  to   = "/.netlify/functions/create-checkout"
+  status = 200
+
+# Fallback for single-page app routing
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
