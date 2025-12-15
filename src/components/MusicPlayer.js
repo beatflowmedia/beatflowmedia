@@ -1,5 +1,5 @@
 // src/components/MusicPlayer.js
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaRandom,
   FaStepBackward,
@@ -152,8 +152,8 @@ const MusicPlayer = () => {
           <div className="flex items-center gap-4 mb-1">
             <button
               onClick={toggleShuffle}
-              className={`text-gray-400 hover:text-white ${shuffleOn ? "text-white" : ""}`}
-              title="Shuffle"
+              className={`transition-colors ${shuffleOn ? "text-green-500" : "text-gray-400 hover:text-white"}`}
+              title={shuffleOn ? "Disable shuffle" : "Enable shuffle"}
             >
               <FaRandom size={16} />
             </button>
@@ -180,8 +180,8 @@ const MusicPlayer = () => {
             </button>
             <button
               onClick={cycleRepeat}
-              className={`relative text-gray-400 hover:text-white ${
-                repeatMode !== "OFF" ? "text-white" : ""
+              className={`relative transition-colors ${
+                repeatMode !== "OFF" ? "text-green-500" : "text-gray-400 hover:text-white"
               }`}
               title={
                 repeatMode === "ONE"
@@ -192,9 +192,9 @@ const MusicPlayer = () => {
               }
             >
               {repeatMode === "ONE" ? (
-                <div className="relative">
+                <div className="relative inline-flex items-center justify-center">
                   <FaRedoAlt size={16} />
-                  <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-black">
+                  <span className="absolute text-[10px] font-bold" style={{ marginTop: '1px' }}>
                     1
                   </span>
                 </div>

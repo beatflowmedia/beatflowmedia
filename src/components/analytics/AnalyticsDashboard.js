@@ -1,7 +1,7 @@
 // src/components/analytics/AnalyticsDashboard.js
 // Real-time analytics dashboard with Material-UI components
 
-import React, { useState, useEffect , useCallback } from "react";
+import { useState, useEffect , useCallback } from "react";
 import {
   Box,
   Grid,

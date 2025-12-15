@@ -1,5 +1,5 @@
 // src/components/NowPlayingBar.stories.js
-import React, { useState } from "react";
+import { useState } from "react";
 import { action } from "@storybook/addon-actions";
 import NowPlayingBar from "./NowPlayingBar";
 import { PlayerProvider } from "../context/PlayerContext";

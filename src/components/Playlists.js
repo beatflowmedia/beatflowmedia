@@ -2,7 +2,7 @@ import React from "react";
 import { FaMusic, FaPlus, FaTrash } from "react-icons/fa";
 
 const Playlists = ({
-  playlists,
+  playlists = [],
   onCreateNewPlaylist,
   onAddSongToPlaylist,
   onRemoveSongFromPlaylist, // ✅ ADD THIS

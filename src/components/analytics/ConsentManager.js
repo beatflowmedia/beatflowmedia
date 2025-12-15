@@ -1,7 +1,7 @@
 // src/components/analytics/ConsentManager.js
 // GDPR-compliant consent management component for privacy compliance
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,

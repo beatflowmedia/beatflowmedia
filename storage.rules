@@ -13,7 +13,7 @@ service firebase.storage {
     match /artist-uploads/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
-        && request.resource.size < 50 * 1024 * 1024; // 50MB limit
+        && request.resource.size < 500 * 1024 * 1024; // 500MB limit for high-quality WAV files
     }
 
     // User profile pictures and avatars
@@ -22,6 +22,14 @@ service firebase.storage {
       allow write: if request.auth != null
         && request.auth.uid == userId
         && request.resource.size < 5 * 1024 * 1024; // 5MB limit for profiles
+    }
+
+    // User playlist covers
+    match /users/{userId}/playlist-covers/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024; // 5MB limit for playlist covers
     }
 
     // Audio files for streaming

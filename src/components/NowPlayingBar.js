@@ -1,5 +1,5 @@
 // src/components/NowPlayingBar.js
-import React, { useState, memo, useRef, useEffect , useCallback } from "react";
+import { useState, memo, useRef, useEffect , useCallback } from "react";
 import {
   FaPlay,
   FaPause,

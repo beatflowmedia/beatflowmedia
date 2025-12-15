@@ -1,5 +1,5 @@
 // MiniPlayerPortal.js
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import MiniPlayer from "./MiniPlayer";
 

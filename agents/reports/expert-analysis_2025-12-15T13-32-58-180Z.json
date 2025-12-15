@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "timestamp": "2025-12-15T13:32:58.176Z",
+    "targetPath": "src/components/PersonalizedSections.js",
+    "analysisProfile": "comprehensive",
+    "executionTime": "6.44s",
+    "parallelEfficiency": "49.9%",
+    "expertsExecuted": [
+      "performance",
+      "codeQuality",
+      "security"
+    ]
+  },
+  "summary": {
+    "compositeScore": 0,
+    "totalIssues": 0,
+    "uniqueIssues": 0,
+    "criticalIssues": 0,
+    "highPriorityIssues": 0,
+    "conflictsResolved": 0,
+    "autoRemediationCandidates": 0,
+    "expertScores": {
+      "security": 0,
+      "quality": 0,
+      "performance": 0,
+      "uiux": 0
+    }
+  },
+  "metrics": {
+    "compositeScore": 0,
+    "securityScore": 0,
+    "qualityScore": 0,
+    "performanceScore": 0,
+    "criticalIssues": 0,
+    "highPriorityIssues": 0,
+    "totalRecommendations": 0,
+    "autoRemediablePct": null
+  },
+  "recommendations": [],
+  "roadmap": {
+    "immediate": [],
+    "shortTerm": [],
+    "mediumTerm": [],
+    "longTerm": [],
+    "quickWins": []
+  },
+  "expertDetails": {
+    "codeQuality": {
+      "status": "failed",
+      "error": "Expert did not execute"
+    },
+    "performance": {
+      "status": "failed",
+      "error": "Expert did not execute"
+    },
+    "security": {
+      "status": "failed",
+      "error": "Expert did not execute"
+    }
+  },
+  "conflicts": [],
+  "deduplication": {
+    "totalIssues": 0,
+    "uniqueIssues": 0,
+    "duplicatesRemoved": 0
+  },
+  "remediation": null,
+  "execution": {
+    "startTime": 1765805571735,
+    "endTime": 1765805578176,
+    "expertsExecuted": [
+      "performance",
+      "codeQuality",
+      "security"
+    ],
+    "expertDurations": {
+      "performance": 62,
+      "codeQuality": 6419,
+      "security": 6377
+    },
+    "totalDuration": 6441,
+    "parallelEfficiency": 49.906672888474105
+  }
+}

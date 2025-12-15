@@ -3,7 +3,7 @@
 // A button that, when clicked, shows a dropdown of available playlists.
 // Selecting a playlist calls "addSong(playlistId, song)" to add the song.
 // ------------------------------------------------------
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function AddToPlaylistButton({ song, playlists, addSong }) {
   const [showDropdown, setShowDropdown] = useState(false);

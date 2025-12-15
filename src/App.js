@@ -5,6 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { AuthProvider } from "./context/AuthContext";
 import { LikesProvider } from "./context/LikesContext";
+import { FavoritesProvider } from "./context/FavoritesContext";
 import { PlayerProvider } from "./context/PlayerContext";
 import AppRoutes from "./AppRoutes";
 import beatflowTheme from "./theme/muiTheme";
@@ -16,11 +17,13 @@ export default function App() {
       <CssBaseline />
       <AuthProvider>
         <LikesProvider>
-          <PlayerProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </PlayerProvider>
+          <FavoritesProvider>
+            <PlayerProvider>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </PlayerProvider>
+          </FavoritesProvider>
         </LikesProvider>
       </AuthProvider>
     </ThemeProvider>

@@ -1,5 +1,5 @@
 // src/components/PlaylistHeader.js
-import React, { useState, memo, useEffect, useRef , useCallback } from "react";
+import { useState, memo, useEffect, useRef , useCallback } from "react";
 import {
   FaPlay,
   FaPause,

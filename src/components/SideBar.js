@@ -1,5 +1,5 @@
 // components/SideBar.js
-import React, { useState , useMemo } from "react";
+import { useState , useMemo } from "react";
 import SidebarListItem from "./SidebarListItem";
 import NewPlaylistModal from "./NewPlaylistModal";
 import { FaPlus, FaSearch, FaList } from "react-icons/fa";
@@ -28,9 +28,9 @@ function buildSidebarItems(musicData, playlists, filter, search) {
 
   const playlistItems = playlists.map((p) => ({
     ...p,
-    cover: p.cover || "/playlist-default.jpg",
+    cover: p.imageUrl || p.cover || "/playlist-default.jpg",
     type: "playlist",
-    id: `playlist-${p.id}`
+    id: p.id
   }));
 
   let items = [...playlistItems, ...artistItems];
@@ -52,7 +52,9 @@ const SideBar = ({
   playlists = [],
   onPlaylistSelect,
   onArtistSelect,
-  onCreatePlaylist
+  onCreatePlaylist,
+  onShowRightPanel,
+  onPlayArtist
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState("");
@@ -149,7 +151,9 @@ const SideBar = ({
               <SidebarListItem
                 key={item.id}
                 item={item}
-                onArtistSelect={onArtistSelect}
+                onViewArtist={onArtistSelect}
+                onShowRightPanel={onShowRightPanel}
+                onPlayArtist={onPlayArtist}
               />
             ))}
           </div>
@@ -161,8 +165,8 @@ const SideBar = ({
       {/* New Playlist Modal */}
       {showModal && (
         <NewPlaylistModal
-          onCreate={(name) => {
-            onCreatePlaylist(name);
+          onCreate={(name, image) => {
+            onCreatePlaylist(name, image);
             setShowModal(false);
           }}
           onCancel={() => setShowModal(false)}
@@ -177,7 +181,9 @@ SideBar.propTypes = {
   playlists: PropTypes.array,
   onPlaylistSelect: PropTypes.func.isRequired,
   onArtistSelect: PropTypes.func.isRequired,
-  onCreatePlaylist: PropTypes.func.isRequired
+  onCreatePlaylist: PropTypes.func.isRequired,
+  onShowRightPanel: PropTypes.func,
+  onPlayArtist: PropTypes.func
 };
 
 export default SideBar;

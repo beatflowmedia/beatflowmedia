@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useJobs } from "../hooks/useJobs";
 import Footer from "../components/Footer";
 import JobApplicationModal from "../components/JobApplicationModal";

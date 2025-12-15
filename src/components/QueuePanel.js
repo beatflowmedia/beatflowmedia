@@ -1,5 +1,5 @@
 // src/components/QueuePanel.js
-import React, { useState, memo , useCallback } from "react";
+import { useState, memo , useCallback } from "react";
 import { usePlayer } from "../context/PlayerContext";
 import PlayButton from "./PlayButton";
 import {

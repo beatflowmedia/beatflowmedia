@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import './AgentLogViewer.css';
 
 const AgentLogViewer = ({ agentId, onClose }) => {

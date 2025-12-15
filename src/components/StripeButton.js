@@ -1,5 +1,5 @@
 // src/components/StripeButton.jsx
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 
 export default function StripeButton({ priceId, children, className = "" }) {

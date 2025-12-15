@@ -1,7 +1,7 @@
 // src/components/analytics/PerformanceMonitor.js
 // Real-time performance monitoring dashboard with alerting capabilities
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,

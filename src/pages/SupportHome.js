@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FiChevronDown, FiChevronUp, FiChevronRight } from "react-icons/fi";
 

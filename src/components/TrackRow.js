@@ -1,5 +1,5 @@
 // src/components/TrackRow.js
-import React, { useState, memo , useCallback } from "react";
+import { useState, memo , useCallback, useEffect } from "react";
 import {
   FaPlay,
   FaPause,
@@ -7,11 +7,17 @@ import {
   FaRegHeart,
   FaEllipsisH,
   FaClock,
-  FaPlus
+  FaPlus,
+  FaShoppingCart,
+  FaCheckCircle,
+  FaDownload
 } from "react-icons/fa";
 import { usePlayer } from "../context/PlayerContext";
+import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import classNames from "classnames";
+import { useNavigate } from "react-router-dom";
+import { stripeService } from "../services/stripeService";
 
 /**
  * TrackRow - A comprehensive track listing component with play button, metadata, and actions
@@ -39,14 +45,29 @@ const TrackRow = memo(
   }) => {
     const { state, dispatch, actions } = usePlayer();
     const { isPlaying, currentIndex, queue } = state;
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [isLiked, setIsLiked] = useState(track?.isLiked || false);
     const [isHovered, setIsHovered] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isPurchased, setIsPurchased] = useState(track?.isPurchased || false);
 
     // Check if this track is currently playing
     const isActive = isCurrentTrack || queue[currentIndex]?.id === track?.id;
     const showPlayIcon = isHovered || isActive;
+
+    // Listen for purchase completion events to update UI in real-time
+    useEffect(() => {
+      const handlePurchaseComplete = (event) => {
+        if (event.detail?.itemId === track?.id) {
+          setIsPurchased(true);
+        }
+      };
+
+      window.addEventListener('purchaseComplete', handlePurchaseComplete);
+      return () => window.removeEventListener('purchaseComplete', handlePurchaseComplete);
+    }, [track?.id]);
 
     // Format duration
     const formatDuration = useCallback((seconds) => {
@@ -136,6 +157,33 @@ const TrackRow = memo(
         toast.success("Added to queue");
       },
       [track, dispatch, actions],
+    );
+
+    // Handle purchase
+    const handlePurchase = useCallback(
+      async (e) => {
+        e.stopPropagation();
+
+        if (!user) {
+          toast.error('Please sign in to purchase music');
+          return;
+        }
+
+        // If already purchased, go to downloads
+        if (isPurchased) {
+          navigate('/downloads');
+          return;
+        }
+
+        try {
+          // Create checkout session
+          await stripeService.createSongCheckout(user.uid, track.id, user.email);
+        } catch (error) {
+          console.error('Purchase error:', error);
+          toast.error(`Failed to initiate purchase: ${error.message}`);
+        }
+      },
+      [user, track, navigate, isPurchased],
     );
 
     // Keyboard navigation
@@ -271,6 +319,13 @@ const TrackRow = memo(
             >
               {track.title}
             </h3>
+            {isPurchased && (
+              <FaCheckCircle
+                className="ml-1.5 text-green-500"
+                size={12}
+                title="Purchased"
+              />
+            )}
             {track.isExplicit && (
               <span className="ml-1 px-1 py-0.5 bg-gray-600 text-white text-xs rounded">
                 E
@@ -341,11 +396,20 @@ const TrackRow = memo(
         {showMenu && !onContextMenu && (
           <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg z-50 border border-gray-700">
             <div className="py-1">
-              <button className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">
-                Add to playlist
+              <button
+                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                onClick={handlePlayPause}
+              >
+                Play Now
+              </button>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                onClick={handleAddToQueue}
+              >
+                Add to queue
               </button>
               <button className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">
-                Add to queue
+                Add to playlist
               </button>
               <button className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">
                 Go to artist
@@ -357,8 +421,22 @@ const TrackRow = memo(
               <button className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700">
                 Share
               </button>
-              <button className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700">
-                Remove from playlist
+              <hr className="border-gray-700 my-1" />
+              <button
+                className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700"
+                onClick={handlePurchase}
+              >
+                {isPurchased ? (
+                  <>
+                    <FaDownload className="mr-2 text-green-500" size={14} />
+                    Download
+                  </>
+                ) : (
+                  <>
+                    <FaShoppingCart className="mr-2 text-green-500" size={14} />
+                    Purchase ($1.99)
+                  </>
+                )}
               </button>
             </div>
           </div>

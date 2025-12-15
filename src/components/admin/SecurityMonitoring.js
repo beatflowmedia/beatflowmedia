@@ -5,7 +5,7 @@
  * Includes threat intelligence, anomaly detection, and incident response tools
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Grid,

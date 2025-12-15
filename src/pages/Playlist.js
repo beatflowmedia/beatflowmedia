@@ -6,6 +6,7 @@ import {
   Typography,
   Card,
   CardMedia,
+  CardContent,
   Button,
   IconButton,
   Menu,
@@ -20,39 +21,37 @@ import {
   TextField,
   Switch,
   FormControlLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Skeleton,
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon
 } from '@mui/material';
 import PlayArrow from '@mui/icons-material/PlayArrow';
+import Pause from '@mui/icons-material/Pause';
 import Favorite from '@mui/icons-material/Favorite';
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
+import ThumbUp from '@mui/icons-material/ThumbUp';
+import ThumbUpOffAlt from '@mui/icons-material/ThumbUpOffAlt';
 import MoreVert from '@mui/icons-material/MoreVert';
 import Share from '@mui/icons-material/Share';
 import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
+import AddToPlaylistButton from '../utils/AddToPlaylistButton';
+import ShareButton from '../utils/ShareButton';
+import PurchaseButton from '../components/PurchaseButton';
+import PlayingIndicator from '../components/PlayingIndicator';
 import Add from '@mui/icons-material/Add';
-import DragIndicator from '@mui/icons-material/DragIndicator';
 import People from '@mui/icons-material/People';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
-import AccessTime from '@mui/icons-material/AccessTime';
 import MusicNote from '@mui/icons-material/MusicNote';
 import ShoppingCart from '@mui/icons-material/ShoppingCart';
 import Search from '@mui/icons-material/Search';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
+import { useFavorites } from '../context/FavoritesContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import {
@@ -60,9 +59,6 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
-  collection,
-  query,
-  where,
   onSnapshot,
   serverTimestamp,
   arrayUnion
@@ -80,11 +76,12 @@ const SORT_OPTIONS = [
 ];
 
 function Playlist() {
-  const { playlistId } = useParams();
+  const { id: playlistId } = useParams();
   const navigate = useNavigate();
   const { state, dispatch, actions } = usePlayer();
   const { user } = useAuth();
   const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const { addFavorite, removeFavorite, isFavorited: checkIsFavorited } = useFavorites();
 
   // Playlist state
   const [playlist, setPlaylist] = useState(null);
@@ -115,33 +112,57 @@ function Playlist() {
     isPublic: false,
     allowCollaboration: false
   });
+  const [newImage, setNewImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   // Collaborator email state removed - will be needed when collaborator dialog is implemented
   // const [collaboratorEmail, setCollaboratorEmail] = useState('');
 
   // Load playlist data
   useEffect(() => {
-    if (!playlistId) return;
+    if (!playlistId) {
+      console.log('No playlistId provided');
+      return;
+    }
+
+    console.log('=== LOADING PLAYLIST ===', playlistId);
+    let unsubscribe;
+    let mounted = true;
 
     const loadPlaylist = async () => {
       try {
+        if (!mounted) return;
         setLoading(true);
+        setError(null);
 
-        // Load playlist metadata
-        const playlistDoc = await getDoc(doc(db, 'playlists', playlistId));
+        // Load playlist metadata from user's subcollection
+        console.log('Fetching playlist document...');
+        if (!user?.uid) {
+          console.error('User not authenticated');
+          setError('Please sign in to view playlists');
+          setLoading(false);
+          return;
+        }
+
+        const playlistDoc = await getDoc(doc(db, 'users', user.uid, 'playlists', playlistId));
+
+        if (!mounted) return;
+
         if (!playlistDoc.exists()) {
+          console.error('Playlist not found:', playlistId);
           setError('Playlist not found');
           setLoading(false);
           return;
         }
 
         const playlistData = { id: playlistDoc.id, ...playlistDoc.data() };
+        console.log('Playlist found:', playlistData.name);
+        console.log('Playlist songs:', playlistData.songs?.length || 0);
         setPlaylist(playlistData);
 
-        // Check permissions
-        const userId = user?.uid;
-        setIsOwner(playlistData.createdBy === userId);
-        setIsCollaborator(playlistData.collaborators?.includes(userId));
+        // Check permissions - user is always owner of their own playlists
+        setIsOwner(true);
+        setIsCollaborator(false);
 
         // Set form data for editing
         setEditForm({
@@ -151,26 +172,66 @@ function Playlist() {
           allowCollaboration: playlistData.allowCollaboration || false
         });
 
-        // Load tracks with real-time updates
-        const tracksQuery = query(
-          collection(db, 'playlistTracks'),
-          where('playlistId', '==', playlistId)
+        // Load tracks from playlist document
+        console.log('Setting up playlist listener...');
+        unsubscribe = onSnapshot(
+          doc(db, 'users', user.uid, 'playlists', playlistId),
+          async (snapshot) => {
+            if (!mounted) return;
+            const data = snapshot.data();
+            const playlistEntries = data?.songs || [];
+            console.log('Playlist entries received:', playlistEntries.length);
+
+            // Fetch full song data from songs collection (DRY - single source of truth)
+            const fullSongs = await Promise.all(
+              playlistEntries.map(async (entry) => {
+                // Handle both old format (full song object) and new format (just songId)
+                const songId = entry.songId || entry.id;
+                const addedAt = entry.addedAt;
+
+                if (!songId) {
+                  console.error('Playlist entry missing songId:', entry);
+                  return null;
+                }
+
+                try {
+                  console.log('Fetching song from Firestore:', songId);
+                  const songDoc = await getDoc(doc(db, 'songs', String(songId)));
+
+                  if (songDoc.exists()) {
+                    const songData = songDoc.data();
+                    return {
+                      id: songDoc.id,
+                      ...songData,
+                      addedAt: addedAt || entry.addedAt || new Date()
+                    };
+                  } else {
+                    console.error('Song not found in Firestore:', songId);
+                    return null;
+                  }
+                } catch (err) {
+                  console.error('Error fetching song:', songId, err);
+                  return null;
+                }
+              })
+            );
+
+            // Filter out null entries (failed fetches)
+            const validSongs = fullSongs.filter(song => song !== null);
+            console.log('Loaded', validSongs.length, 'songs from Firestore');
+
+            setTracks(validSongs);
+            setLoading(false);
+          },
+          (error) => {
+            if (!mounted) return;
+            console.error('Error in playlist snapshot:', error);
+            setError(error.message);
+            setLoading(false);
+          }
         );
-
-        const unsubscribe = onSnapshot(tracksQuery, (snapshot) => {
-          const tracksData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-
-          // Sort by order field for custom order
-          tracksData.sort((a, b) => (a.order || 0) - (b.order || 0));
-          setTracks(tracksData);
-          setLoading(false);
-        });
-
-        return unsubscribe;
       } catch (err) {
+        if (!mounted) return;
         console.error('Error loading playlist:', err);
         setError(err.message);
         setLoading(false);
@@ -178,7 +239,15 @@ function Playlist() {
     };
 
     loadPlaylist();
-  }, [playlistId, user]);
+
+    return () => {
+      mounted = false;
+      if (unsubscribe) {
+        console.log('Cleaning up playlist listener');
+        unsubscribe();
+      }
+    };
+  }, [playlistId, user?.uid]);
 
   // Filter and sort tracks
   const filteredAndSortedTracks = React.useMemo(() => {
@@ -232,11 +301,29 @@ function Playlist() {
     };
   }, [tracks, playlist]);
 
+  // Check if we're currently playing this playlist
+  const isPlayingThisPlaylist = React.useMemo(() => {
+    const currentTrack = state.queue[state.currentIndex];
+    return currentTrack && tracks.some(t => t.id === currentTrack.id) && state.isPlaying;
+  }, [state.queue, state.currentIndex, state.isPlaying, tracks]);
+
   // Event handlers
   const handlePlayPlaylist = useCallback(() => {
     if (tracks.length === 0) return;
 
-    // Set entire playlist as queue and start playing
+    // If already playing this playlist, just toggle pause
+    const currentTrack = state.queue[state.currentIndex];
+    const isThisPlaylist = currentTrack && tracks.some(t => t.id === currentTrack.id);
+
+    if (isThisPlaylist && state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+      return;
+    } else if (isThisPlaylist && !state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+      return;
+    }
+
+    // Otherwise, set entire playlist as queue and start playing
     dispatch({
       type: actions.SET_QUEUE,
       payload: {
@@ -244,8 +331,12 @@ function Playlist() {
         currentIndex: 0
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [tracks, dispatch, actions]);
+
+    // Only toggle if not already playing
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [tracks, dispatch, actions, state.isPlaying, state.queue, state.currentIndex]);
 
   const handleShufflePlay = useCallback(() => {
     if (tracks.length === 0) return;
@@ -259,8 +350,12 @@ function Playlist() {
         currentIndex: 0
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [tracks, dispatch, actions]);
+
+    // Only toggle if already playing, otherwise ensure it starts
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [tracks, dispatch, actions, state.isPlaying]);
 
   const handlePlayTrack = useCallback((track, index) => {
     // Set playlist as queue starting from selected track
@@ -271,8 +366,12 @@ function Playlist() {
         currentIndex: index
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [filteredAndSortedTracks, dispatch, actions]);
+
+    // Always start playing when clicking a track
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [filteredAndSortedTracks, dispatch, actions, state.isPlaying]);
 
   const handleToggleLike = useCallback(async (track) => {
     if (!user) {
@@ -292,7 +391,27 @@ function Playlist() {
     } catch (err) {
       toast.error('Failed to update likes');
     }
-  }, [checkIsLiked, addLike, removeLike]);
+  }, [user, checkIsLiked, addLike, removeLike]);
+
+  const handleToggleFavorite = useCallback(async (track) => {
+    if (!user) {
+      toast.error('Please sign in to favorite songs');
+      return;
+    }
+
+    try {
+      const favorited = checkIsFavorited(track.id);
+      if (favorited) {
+        await removeFavorite(track.id);
+        toast.success('Removed from favorites');
+      } else {
+        await addFavorite(track.id);
+        toast.success('Added to favorites');
+      }
+    } catch (err) {
+      toast.error('Failed to update favorites');
+    }
+  }, [user, checkIsFavorited, addFavorite, removeFavorite]);
 
   const handlePurchaseTrack = useCallback(async (track) => {
     setAnchorEl(null);
@@ -317,24 +436,41 @@ function Playlist() {
   }, [user, navigate]);
 
   const handleEditPlaylist = async () => {
-    if (!isOwner) return;
+    if (!isOwner || !user?.uid) return;
 
     try {
-      await updateDoc(doc(db, 'playlists', playlistId), {
+      let imageUrl = playlist?.imageUrl;
+
+      // Upload new image if provided
+      if (newImage) {
+        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+        const { storage } = await import('../firebaseConfig');
+        const timestamp = Date.now();
+        const storageRef = ref(storage, `users/${user.uid}/playlist-covers/${timestamp}_${newImage.name}`);
+        await uploadBytes(storageRef, newImage);
+        imageUrl = await getDownloadURL(storageRef);
+        console.log('✅ Playlist image uploaded:', imageUrl);
+      }
+
+      await updateDoc(doc(db, 'users', user.uid, 'playlists', playlistId), {
         name: editForm.name,
         description: editForm.description,
         isPublic: editForm.isPublic,
         allowCollaboration: editForm.allowCollaboration,
+        ...(imageUrl && { imageUrl }),
         updatedAt: serverTimestamp()
       });
 
       setPlaylist(prev => ({
         ...prev,
         ...editForm,
+        imageUrl,
         updatedAt: new Date()
       }));
 
       setEditDialogOpen(false);
+      setNewImage(null);
+      setImagePreview(null);
       toast.success('Playlist updated successfully');
     } catch (err) {
       console.error('Error updating playlist:', err);
@@ -343,17 +479,11 @@ function Playlist() {
   };
 
   const handleDeletePlaylist = async () => {
-    if (!isOwner) return;
+    if (!isOwner || !user?.uid) return;
 
     try {
-      // Delete playlist document
-      await deleteDoc(doc(db, 'playlists', playlistId));
-
-      // Delete all tracks in the playlist
-      const tracksToDelete = tracks.map(track =>
-        deleteDoc(doc(db, 'playlistTracks', track.id))
-      );
-      await Promise.all(tracksToDelete);
+      // Delete playlist document (songs are stored in the document, not separately)
+      await deleteDoc(doc(db, 'users', user.uid, 'playlists', playlistId));
 
       toast.success('Playlist deleted successfully');
       navigate('/playlists');
@@ -363,11 +493,15 @@ function Playlist() {
     }
   };
 
-  const handleRemoveTrack = async (trackId) => {
-    if (!isOwner && !isCollaborator) return;
+  const handleRemoveTrack = async (track) => {
+    if (!isOwner || !user?.uid) return;
 
     try {
-      await deleteDoc(doc(db, 'playlistTracks', trackId));
+      // Remove song from the songs array
+      const updatedSongs = tracks.filter((s) => s.id !== track.id);
+      await updateDoc(doc(db, 'users', user.uid, 'playlists', playlistId), {
+        songs: updatedSongs
+      });
       toast.success('Track removed from playlist');
     } catch (err) {
       console.error('Error removing track:', err);
@@ -375,8 +509,9 @@ function Playlist() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleReorderTracks = async (result) => {
-    if (!result.destination || !isOwner) return;
+    if (!result.destination || !isOwner || !user?.uid) return;
 
     const sourceIndex = result.source.index;
     const destIndex = result.destination.index;
@@ -384,16 +519,15 @@ function Playlist() {
     if (sourceIndex === destIndex) return;
 
     // Reorder tracks locally
-    const reorderedTracks = [...filteredAndSortedTracks];
+    const reorderedTracks = [...tracks];
     const [movedTrack] = reorderedTracks.splice(sourceIndex, 1);
     reorderedTracks.splice(destIndex, 0, movedTrack);
 
-    // Update order in database
+    // Update songs array in database
     try {
-      const updatePromises = reorderedTracks.map((track, index) =>
-        updateDoc(doc(db, 'playlistTracks', track.id), { order: index })
-      );
-      await Promise.all(updatePromises);
+      await updateDoc(doc(db, 'users', user.uid, 'playlists', playlistId), {
+        songs: reorderedTracks
+      });
       toast.success('Playlist order updated');
     } catch (err) {
       console.error('Error reordering tracks:', err);
@@ -439,10 +573,8 @@ function Playlist() {
     if (!user || isOwner) return;
 
     try {
-      await updateDoc(doc(db, 'playlists', playlistId), {
-        followers: arrayUnion(user.uid)
-      });
-
+      // Note: Following playlists only works for shared/public playlists
+      // Since playlists are in user subcollections, this feature may need redesign
       await updateDoc(doc(db, 'users', user.uid), {
         followedPlaylists: arrayUnion(playlistId)
       });
@@ -454,12 +586,14 @@ function Playlist() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // eslint-disable-next-line no-unused-vars
   const formatDate = (date) => {
     if (!date) return '';
     const d = date.toDate ? date.toDate() : new Date(date);
@@ -508,13 +642,28 @@ function Playlist() {
         }}
       >
         <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-end' }}>
-          <Card sx={{ width: 250, height: 250, boxShadow: 3 }}>
-            <CardMedia
-              component="img"
-              height="250"
-              image={playlist?.coverUrl || '/default-playlist-cover.jpg'}
-              alt={playlist?.name}
-            />
+          <Card sx={{ width: 250, height: 250, boxShadow: 3, bgcolor: 'grey.800' }}>
+            {playlist?.imageUrl || playlist?.coverUrl ? (
+              <CardMedia
+                component="img"
+                height="250"
+                image={playlist.imageUrl || playlist.coverUrl}
+                alt={playlist?.name}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: 250,
+                  height: 250,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'grey.800'
+                }}
+              >
+                <MusicNote sx={{ fontSize: 100, color: 'grey.600' }} />
+              </Box>
+            )}
           </Card>
 
           <Box sx={{ flex: 1 }}>
@@ -570,7 +719,7 @@ function Playlist() {
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<PlayArrow />}
+                startIcon={isPlayingThisPlaylist ? <Pause /> : <PlayArrow />}
                 onClick={handlePlayPlaylist}
                 disabled={tracks.length === 0}
                 sx={{
@@ -580,14 +729,18 @@ function Playlist() {
                   px: 3
                 }}
               >
-                Play
+                {isPlayingThisPlaylist ? 'Pause' : 'Play'}
               </Button>
 
               <IconButton
                 size="large"
-                onClick={handleShufflePlay}
+                onClick={() => dispatch({ type: actions.TOGGLE_SHUFFLE })}
                 disabled={tracks.length === 0}
-                sx={{ color: 'grey.300', '&:hover': { color: 'white' } }}
+                sx={{
+                  color: state.shuffleOn ? '#1DB954' : 'grey.300',
+                  '&:hover': { color: state.shuffleOn ? '#1ed760' : 'white' }
+                }}
+                title={state.shuffleOn ? 'Disable shuffle' : 'Enable shuffle'}
               >
                 <Shuffle />
               </IconButton>
@@ -676,176 +829,142 @@ function Playlist() {
           </Typography>
         </Box>
 
-        {/* Track Table */}
+        {/* Track List - Same as /artist page */}
         {filteredAndSortedTracks.length > 0 ? (
-          <DragDropContext onDragEnd={handleReorderTracks}>
-            <Droppable droppableId="playlist-tracks" isDropDisabled={!isOwner || sortBy !== 'custom'}>
-              {(provided) => (
-                <TableContainer
-                  component={Paper}
-                  sx={{ bgcolor: 'transparent' }}
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {filteredAndSortedTracks.map((track, index) => {
+              const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
+              const isPlaying = isCurrentTrack && state.isPlaying;
+              const isLiked = checkIsLiked(track.id);
+              const isFavorited = checkIsFavorited(track.id);
+
+              return (
+                <Card
+                  key={track.id}
+                  sx={{
+                    bgcolor: isCurrentTrack ? '#2a2a2a' : '#1a1a1a',
+                    '&:hover': { bgcolor: '#2a2a2a' },
+                    cursor: 'pointer',
+                    overflow: 'visible'
+                  }}
+                  onClick={() => handlePlayTrack(track, index)}
                 >
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ '& th': { color: 'grey.400', borderColor: 'grey.800' } }}>
-                        <TableCell padding="checkbox">#</TableCell>
-                        <TableCell>Title</TableCell>
-                        <TableCell>Album</TableCell>
-                        <TableCell>Date Added</TableCell>
-                        <TableCell align="right">
-                          <AccessTime />
-                        </TableCell>
-                        <TableCell padding="checkbox"></TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredAndSortedTracks.map((track, index) => {
-                        const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
-                        const isLiked = checkIsLiked(track.id);
-
-                        return (
-                          <Draggable
-                            key={track.id}
-                            draggableId={track.id}
-                            index={index}
-                            isDragDisabled={!isOwner || sortBy !== 'custom'}
-                          >
-                            {(provided, snapshot) => (
-                              <TableRow
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                sx={{
-                                  '&:hover': { bgcolor: 'grey.800' },
-                                  bgcolor: snapshot.isDragging ? 'grey.700' : 'transparent',
-                                  '& td': { borderColor: 'grey.800', color: 'white' }
-                                }}
-                              >
-                                <TableCell padding="checkbox">
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    {isOwner && sortBy === 'custom' && (
-                                      <Box {...provided.dragHandleProps}>
-                                        <DragIndicator sx={{ color: 'grey.500', cursor: 'grab' }} />
-                                      </Box>
-                                    )}
-                                    <Box
-                                      sx={{
-                                        width: 20,
-                                        textAlign: 'center',
-                                        cursor: 'pointer',
-                                        '&:hover .track-number': { display: 'none' },
-                                        '&:hover .play-button': { display: 'block' }
-                                      }}
-                                      onClick={() => handlePlayTrack(track, index)}
-                                    >
-                                      <Typography
-                                        variant="body2"
-                                        className="track-number"
-                                        sx={{
-                                          color: isCurrentTrack ? '#1DB954' : 'grey.400',
-                                          display: isCurrentTrack && state.isPlaying ? 'none' : 'block'
-                                        }}
-                                      >
-                                        {index + 1}
-                                      </Typography>
-                                      <PlayArrow
-                                        className="play-button"
-                                        sx={{
-                                          color: '#1DB954',
-                                          display: isCurrentTrack && state.isPlaying ? 'block' : 'none'
-                                        }}
-                                      />
-                                    </Box>
-                                  </Box>
-                                </TableCell>
-
-                                <TableCell>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Box
-                                      component="img"
-                                      src={track.coverUrl || '/default-song-cover.jpg'}
-                                      alt={track.title}
-                                      sx={{ width: 40, height: 40, borderRadius: 1 }}
-                                    />
-                                    <Box>
-                                      <Typography
-                                        variant="body2"
-                                        sx={{
-                                          fontWeight: 'bold',
-                                          color: isCurrentTrack ? '#1DB954' : 'white',
-                                          cursor: 'pointer',
-                                          '&:hover': { textDecoration: 'underline' }
-                                        }}
-                                        onClick={() => handlePlayTrack(track, index)}
-                                      >
-                                        {track.title}
-                                      </Typography>
-                                      <Typography variant="caption" sx={{ color: 'grey.400' }}>
-                                        {track.artist}
-                                      </Typography>
-                                    </Box>
-                                  </Box>
-                                </TableCell>
-
-                                <TableCell>
-                                  <Typography variant="body2" sx={{ color: 'grey.400' }}>
-                                    {track.album || 'Unknown Album'}
-                                  </Typography>
-                                </TableCell>
-
-                                <TableCell>
-                                  <Typography variant="body2" sx={{ color: 'grey.400' }}>
-                                    {formatDate(track.addedAt)}
-                                  </Typography>
-                                </TableCell>
-
-                                <TableCell align="right">
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleToggleLike(track)}
-                                      sx={{
-                                        color: isLiked ? '#e91e63' : 'transparent',
-                                        '&:hover': { color: '#e91e63' }
-                                      }}
-                                    >
-                                      {isLiked ? <Favorite /> : <FavoriteBorder />}
-                                    </IconButton>
-
-                                    <Typography variant="body2" sx={{ color: 'grey.400', minWidth: 40 }}>
-                                      {formatDuration(track.duration || 0)}
-                                    </Typography>
-                                  </Box>
-                                </TableCell>
-
-                                <TableCell padding="checkbox">
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                      setAnchorEl(e.currentTarget);
-                                      setSelectedTrack(track);
-                                    }}
-                                    sx={{
-                                      color: 'transparent',
-                                      '&:hover': { color: 'grey.400' }
-                                    }}
-                                  >
-                                    <MoreVert />
-                                  </IconButton>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </Draggable>
-                        );
-                      })}
-                      {provided.placeholder}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </Droppable>
-          </DragDropContext>
+                  <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5, overflow: 'visible' }}>
+                    <Typography sx={{ color: 'grey.500', minWidth: 30 }}>
+                      {index + 1}
+                    </Typography>
+                    <Box sx={{ position: 'relative', width: 40, height: 40 }}>
+                      <img
+                        src={track.coverUrl || track.cover || '/images/Logo.png'}
+                        alt={track.title}
+                        style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }}
+                      />
+                      {isPlaying && (
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'rgba(0,0,0,0.6)',
+                            borderRadius: 1
+                          }}
+                        >
+                          <PlayingIndicator isPlaying={isPlaying} size="small" />
+                        </Box>
+                      )}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography sx={{ color: 'white', fontWeight: 500 }}>
+                        {track.title}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'grey.400' }}>
+                        {track.artist}
+                      </Typography>
+                    </Box>
+                    {/* Purchase Button */}
+                    <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', zIndex: 10 }}>
+                      <PurchaseButton
+                        itemId={track.id}
+                        itemType="song"
+                        price={track.price || 199}
+                        compact={true}
+                      />
+                    </div>
+                    {/* Like Button (Thumbs Up) */}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleLike(track);
+                      }}
+                      sx={{
+                        color: isLiked ? '#1DB954' : 'grey.400',
+                        '&:hover': { color: isLiked ? '#1ed760' : '#1DB954' }
+                      }}
+                      title={isLiked ? 'Unlike' : 'Like'}
+                    >
+                      {isLiked ? <ThumbUp fontSize="small" /> : <ThumbUpOffAlt fontSize="small" />}
+                    </IconButton>
+                    {/* Favorite Button (Heart) */}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(track);
+                      }}
+                      sx={{
+                        color: isFavorited ? '#e91e63' : 'grey.400',
+                        '&:hover': { color: isFavorited ? '#f06292' : '#e91e63' }
+                      }}
+                      title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {isFavorited ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                    </IconButton>
+                    {/* Add to Playlist Button */}
+                    <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', zIndex: 10 }}>
+                      <AddToPlaylistButton song={track} playlists={[]} addSong={() => {}} />
+                    </div>
+                    {/* Share Button */}
+                    <ShareButton song={track} iconSize="small" />
+                    {/* Play/Pause Button */}
+                    <IconButton
+                      size="small"
+                      sx={{ color: '#1db954' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isCurrentTrack && isPlaying) {
+                          // If this track is playing, just pause it
+                          dispatch({ type: actions.TOGGLE_PLAY });
+                        } else if (isCurrentTrack && !isPlaying) {
+                          // If this track is paused, resume it
+                          dispatch({ type: actions.TOGGLE_PLAY });
+                        } else {
+                          // Different track, load and play it
+                          handlePlayTrack(track, index);
+                        }
+                      }}
+                    >
+                      {isPlaying ? <Pause fontSize="small" /> : <PlayArrow fontSize="small" />}
+                    </IconButton>
+                    {/* More Options Menu */}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAnchorEl(e.currentTarget);
+                        setSelectedTrack(track);
+                      }}
+                      sx={{ color: 'grey.400' }}
+                    >
+                      <MoreVert fontSize="small" />
+                    </IconButton>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
         ) : (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <MusicNote sx={{ fontSize: 64, color: 'grey.600', mb: 2 }} />
@@ -934,7 +1053,7 @@ function Playlist() {
         {(isOwner || isCollaborator) && (
           <MenuItem
             onClick={() => {
-              handleRemoveTrack(selectedTrack.id);
+              handleRemoveTrack(selectedTrack);
               setAnchorEl(null);
             }}
             sx={{ color: 'white' }}
@@ -975,7 +1094,11 @@ function Playlist() {
       {/* Edit Playlist Dialog */}
       <Dialog
         open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setNewImage(null);
+          setImagePreview(null);
+        }}
         maxWidth="sm"
         fullWidth
         PaperProps={{
@@ -984,6 +1107,85 @@ function Playlist() {
       >
         <DialogTitle>Edit Playlist</DialogTitle>
         <DialogContent>
+          {/* Playlist Cover Image */}
+          <Box sx={{ mb: 3, mt: 2 }}>
+            <Typography variant="body2" sx={{ color: 'grey.400', mb: 2 }}>
+              Playlist Cover
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Card sx={{ width: 150, height: 150, boxShadow: 3, bgcolor: 'grey.700' }}>
+                {imagePreview || playlist?.imageUrl ? (
+                  <CardMedia
+                    component="img"
+                    height="150"
+                    image={imagePreview || playlist?.imageUrl}
+                    alt="Playlist cover"
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: 150,
+                      height: 150,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <MusicNote sx={{ fontSize: 60, color: 'grey.600' }} />
+                  </Box>
+                )}
+              </Card>
+              <Box>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{
+                    borderColor: 'grey.600',
+                    color: 'white',
+                    '&:hover': { borderColor: '#1DB954' }
+                  }}
+                >
+                  Choose Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        if (!file.type.startsWith('image/')) {
+                          toast.error('Please select an image file');
+                          return;
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error('Image size must be less than 5MB');
+                          return;
+                        }
+                        setNewImage(file);
+                        setImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </Button>
+                {(newImage || playlist?.imageUrl) && (
+                  <Button
+                    variant="text"
+                    onClick={() => {
+                      setNewImage(null);
+                      setImagePreview(null);
+                    }}
+                    sx={{ color: 'error.main', ml: 1 }}
+                  >
+                    Remove
+                  </Button>
+                )}
+                <Typography variant="caption" sx={{ color: 'grey.500', display: 'block', mt: 1 }}>
+                  Max 5MB • JPG, PNG
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
           <TextField
             fullWidth
             label="Playlist Name"

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, Card, CardContent, CircularProgress, IconButton } from '@mui/material';
-import { PlayArrow, Pause, Favorite, FavoriteBorder } from '@mui/icons-material';
+import { Box, Typography, Button, Card, CardContent, CardMedia, CircularProgress, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { PlayArrow, Pause, Favorite, FavoriteBorder, MoreVert, QueueMusic, PlaylistAdd, Share, ShoppingCart } from '@mui/icons-material';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { usePlaySong } from '../hooks/usePlaySong';
@@ -11,6 +11,11 @@ import { usePlayer } from '../context/PlayerContext';
 import AddToPlaylistButton from '../utils/AddToPlaylistButton';
 import ShareButton from '../utils/ShareButton';
 import PlayingIndicator from '../components/PlayingIndicator';
+import PurchaseButton from '../components/PurchaseButton';
+import useFollowArtist from '../hooks/useFollowArtist';
+import { stripeService } from '../services/stripeService';
+import { toast } from 'react-toastify';
+import { getArtistMetrics } from '../services/engagementMetrics';
 
 export default function ArtistSimple() {
   console.log('[ArtistSimple] Component mounted/rendered');
@@ -26,8 +31,76 @@ export default function ArtistSimple() {
 
   const [artist, setArtist] = useState(null);
   const [artistSongs, setArtistSongs] = useState([]);
+  const [artistAlbums, setArtistAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [purchasedSongIds, setPurchasedSongIds] = useState(new Set());
+
+  // Use follow artist hook
+  const { isFollowing, toggleFollow } = useFollowArtist(artist?.name);
+
+  // Load user's purchases
+  useEffect(() => {
+    const loadUserPurchases = async () => {
+      if (!user) {
+        setPurchasedSongIds(new Set());
+        return;
+      }
+
+      try {
+        const purchases = await stripeService.getUserPurchases(user.uid);
+        const songIds = new Set(purchases.map(p => p.itemId));
+        setPurchasedSongIds(songIds);
+      } catch (error) {
+        console.error('Error loading purchases:', error);
+      }
+    };
+
+    loadUserPurchases();
+
+    // Listen for purchase completion events
+    const handlePurchaseComplete = (event) => {
+      if (event.detail?.itemId && event.detail?.itemType === 'song') {
+        setPurchasedSongIds(prev => new Set([...prev, event.detail.itemId]));
+      }
+    };
+
+    window.addEventListener('purchaseComplete', handlePurchaseComplete);
+    return () => window.removeEventListener('purchaseComplete', handlePurchaseComplete);
+  }, [user]);
+
+  // Load follower count from engagement metrics
+  useEffect(() => {
+    const loadFollowerCount = async () => {
+      if (!artistId) return;
+
+      try {
+        // Use engagement metrics service for accurate follower count
+        const metrics = await getArtistMetrics(artistId);
+        setFollowerCount(metrics.followerCount || 0);
+      } catch (error) {
+        console.error('Error loading follower metrics:', error);
+        // Fallback to old method if metrics service fails
+        if (artist?.name) {
+          try {
+            const usersQuery = query(
+              collection(db, 'users'),
+              where('followedArtists', 'array-contains', artist.name)
+            );
+            const usersSnapshot = await getDocs(usersQuery);
+            setFollowerCount(usersSnapshot.size);
+          } catch (fallbackError) {
+            console.error('Fallback follower count failed:', fallbackError);
+          }
+        }
+      }
+    };
+
+    loadFollowerCount();
+  }, [artistId, artist?.name, isFollowing]); // Reload when follow status changes
 
   // Load artist data from Firebase
   useEffect(() => {
@@ -52,45 +125,84 @@ export default function ArtistSimple() {
         const artistsSnapshot = await getDocs(artistsQuery);
         console.log('[ArtistSimple] Artists query returned:', artistsSnapshot.size, 'documents');
 
+        // Try to fetch songs first (using both artistName and artist fields)
+        console.log('Querying songs for artistName:', artistName);
+        const songsQuery = query(
+          collection(db, 'songs'),
+          where('artistName', '==', artistName)
+        );
+        const songsSnapshot = await getDocs(songsQuery);
+        let songs = songsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // If no songs found with artistName, try artist field
+        if (songs.length === 0) {
+          console.log('No songs found with artistName, trying artist field...');
+          const altQuery = query(
+            collection(db, 'songs'),
+            where('artist', '==', artistName)
+          );
+          const altSnapshot = await getDocs(altQuery);
+          songs = altSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('Found', songs.length, 'songs with artist field');
+        }
+
+        setArtistSongs(songs);
+
+        // Query albums by artist (try artistName field, then artist field)
+        console.log('Querying albums for artistName:', artistName);
+        const albumsQuery = query(
+          collection(db, 'albums'),
+          where('artistName', '==', artistName)
+        );
+        const albumsSnapshot = await getDocs(albumsQuery);
+        let albums = albumsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // If no albums found with artistName, try artist field
+        if (albums.length === 0) {
+          console.log('No albums found with artistName, trying artist field...');
+          const altAlbumsQuery = query(
+            collection(db, 'albums'),
+            where('artist', '==', artistName)
+          );
+          const altAlbumsSnapshot = await getDocs(altAlbumsQuery);
+          albums = altAlbumsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('Found', albums.length, 'albums with artist field');
+        }
+
+        setArtistAlbums(albums);
+        console.log('Loaded', albums.length, 'albums for artist:', artistName);
+
+        // Set artist data from artists collection if exists, otherwise create minimal artist object
         if (!artistsSnapshot.empty) {
           const artistDoc = artistsSnapshot.docs[0];
           const artistData = { id: artistDoc.id, ...artistDoc.data() };
           setArtist(artistData);
-
-          // Fetch songs for this artist (using artistName field)
-          console.log('Querying songs for artistName:', artistName);
-          const songsQuery = query(
-            collection(db, 'songs'),
-            where('artistName', '==', artistName)
-          );
-          const songsSnapshot = await getDocs(songsQuery);
-          const songs = songsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-
-          console.log('Found artist with', songs.length, 'songs');
-
-          // Debug: If no songs found, try querying with 'artist' field instead
-          if (songs.length === 0) {
-            console.log('No songs found with artistName, trying artist field...');
-            const altQuery = query(
-              collection(db, 'songs'),
-              where('artist', '==', artistName)
-            );
-            const altSnapshot = await getDocs(altQuery);
-            const altSongs = altSnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-            console.log('Found', altSongs.length, 'songs with artist field');
-            setArtistSongs(altSongs);
-          } else {
-            setArtistSongs(songs);
-          }
+          console.log('Found artist document with', songs.length, 'songs');
         } else {
-          console.log('Artist not found in Firebase:', artistName);
-          setError(`Artist "${artistName}" not found`);
+          // No artist document, but if we have songs, create a minimal artist object
+          if (songs.length > 0) {
+            console.log('No artist document, but found', songs.length, 'songs. Creating minimal artist object.');
+            setArtist({
+              name: artistName,
+              // Use cover from first song if available
+              imageUrl: songs[0]?.coverUrl || songs[0]?.cover || '/default-artist.jpg'
+            });
+          } else {
+            console.log('Artist not found and no songs found:', artistName);
+            setError(`Artist "${artistName}" not found`);
+          }
         }
       } catch (err) {
         console.error('[ArtistSimple] Error loading artist:', err);
@@ -119,6 +231,38 @@ export default function ArtistSimple() {
   }, [artistId]);
 
   // Like/favorite toggle handler (DRY - same as Home.js)
+  const handleMenuOpen = (event, song) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedSong(song);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setSelectedSong(null);
+  };
+
+  const handlePurchase = async (song) => {
+    handleMenuClose();
+    if (!user) {
+      toast.error('Please sign in to purchase music');
+      return;
+    }
+
+    try {
+      const hasPurchased = await stripeService.hasPurchasedSong(user.uid, song.id);
+      if (hasPurchased) {
+        toast.info('You already own this song! Redirecting to downloads...');
+        navigate('/downloads');
+        return;
+      }
+
+      await stripeService.createSongCheckout(user.uid, song.id, user.email);
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error(`Failed to initiate purchase: ${error.message}`);
+    }
+  };
+
   const handleToggleLike = async (song) => {
     if (!user) {
       console.log('No user logged in');
@@ -175,31 +319,110 @@ export default function ArtistSimple() {
   }
 
   return (
-    <Box sx={{ p: 4, height: '100%', overflow: 'auto', bgcolor: '#121212' }}>
-      {/* Artist Header with cover image */}
-      <Box sx={{ display: 'flex', gap: 3, mb: 4, alignItems: 'flex-end' }}>
-        <img
-          src={artist.profileImage || artist.cover || '/images/Logo.png'}
-          alt={artist.name}
-          style={{ width: 200, height: 200, borderRadius: 8, objectFit: 'cover' }}
-        />
-        <Box sx={{ flex: 1 }}>
+    <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#121212' }}>
+      {/* Artist Header with blurred background */}
+      <Box
+        sx={{
+          position: 'relative',
+          p: 4,
+          pb: 2,
+          mb: 4,
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `url(${artist.profileImage || artist.cover || '/images/Logo.png'})`,
+            backgroundSize: 'cover',
+            backgroundPosition: '50% 65%',
+            filter: 'blur(50px) brightness(0.5)',
+            transform: 'scale(1.1)',
+            zIndex: 0
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(18,18,18,0.9) 70%, rgba(18,18,18,1) 100%)',
+            zIndex: 1
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-end', position: 'relative', zIndex: 2 }}>
+          <img
+            src={artist.profileImage || artist.cover || '/images/Logo.png'}
+            alt={artist.name}
+            style={{ width: 200, height: 200, borderRadius: 8, objectFit: 'cover' }}
+          />
+          <Box sx={{ flex: 1 }}>
           <Typography variant="h3" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
             {artist.name}
           </Typography>
-          <Typography variant="body1" sx={{ color: 'grey.400', mb: 1 }}>
-            {artist.monthlyListeners
-              ? `${Number(artist.monthlyListeners).toLocaleString()} monthly listeners`
-              : 'Music Artist'
-            }
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'grey.500' }}>
-            {artistSongs.length} {artistSongs.length === 1 ? 'song' : 'songs'}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
+            {/* Show real follower count from Firestore */}
+            {followerCount > 0 && (
+              <Typography variant="body1" sx={{ color: 'grey.400' }}>
+                {followerCount.toLocaleString()} {followerCount === 1 ? 'follower' : 'followers'}
+              </Typography>
+            )}
+
+            {/* Calculate and show total plays from all songs */}
+            {(() => {
+              const totalPlays = artistSongs.reduce((sum, song) => sum + (song.playCount || 0), 0);
+              if (totalPlays > 0) {
+                return (
+                  <>
+                    {followerCount > 0 && (
+                      <Typography variant="body1" sx={{ color: 'grey.600' }}>•</Typography>
+                    )}
+                    <Typography variant="body1" sx={{ color: 'grey.400' }}>
+                      {totalPlays.toLocaleString()} total plays
+                    </Typography>
+                  </>
+                );
+              }
+              return null;
+            })()}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+            <Typography variant="body2" sx={{ color: 'grey.500' }}>
+              {artistSongs.length} {artistSongs.length === 1 ? 'song' : 'songs'}
+            </Typography>
+            {user && (
+              <Button
+                variant={isFollowing ? "outlined" : "contained"}
+                size="small"
+                onClick={toggleFollow}
+                sx={{
+                  bgcolor: isFollowing ? 'transparent' : '#1DB954',
+                  borderColor: '#1DB954',
+                  color: isFollowing ? '#1DB954' : 'white',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 3,
+                  borderRadius: '20px',
+                  '&:hover': {
+                    bgcolor: isFollowing ? 'rgba(29, 185, 84, 0.1)' : '#1ed760',
+                    borderColor: '#1ed760'
+                  }
+                }}
+              >
+                {isFollowing ? 'Following' : 'Follow'}
+              </Button>
+            )}
+          </Box>
         </Box>
+      </Box>
       </Box>
 
       {/* Biography */}
+      <Box sx={{ p: 4, pt: 0 }}>
       {artist.bio && artist.bio !== 'No biography available.' && (
         <Box sx={{ mb: 4 }}>
           <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
@@ -226,6 +449,65 @@ export default function ArtistSimple() {
         >
           Play All
         </Button>
+      )}
+
+      {/* Albums Section */}
+      {artistAlbums.length > 0 && (
+        <Box sx={{ mb: 6 }}>
+          <Typography variant="h5" sx={{ color: 'white', mb: 3 }}>
+            Albums ({artistAlbums.length})
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 3 }}>
+            {artistAlbums.map((album) => (
+              <Card
+                key={album.id}
+                onClick={() => navigate(`/album/${album.id}`)}
+                sx={{
+                  bgcolor: '#181818',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    bgcolor: '#282828',
+                    transform: 'translateY(-4px)',
+                    boxShadow: 4
+                  }
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  height="180"
+                  image={album.coverUrl || '/default-album.jpg'}
+                  alt={album.title}
+                  sx={{ objectFit: 'cover' }}
+                />
+                <CardContent>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      color: 'white',
+                      fontWeight: 'bold',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      mb: 0.5
+                    }}
+                  >
+                    {album.title}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'grey.400' }}>
+                    {album.releaseDate ? new Date(album.releaseDate.seconds * 1000 || album.releaseDate).getFullYear() : 'Album'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                    <QueueMusic sx={{ fontSize: 14, color: '#1DB954' }} />
+                    <Typography variant="caption" sx={{ color: 'grey.500' }}>
+                      {album.trackCount || 0} tracks
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        </Box>
       )}
 
       {/* Songs List */}
@@ -288,6 +570,15 @@ export default function ArtistSimple() {
                       {song.artistName || artist.name}
                     </Typography>
                   </Box>
+                  {/* Purchase Button */}
+                  <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', zIndex: 10 }}>
+                    <PurchaseButton
+                      itemId={song.id}
+                      itemType="song"
+                      price={song.price || 199}
+                      compact={true}
+                    />
+                  </div>
                   {/* Like/Favorite Button */}
                   <IconButton
                     size="small"
@@ -319,12 +610,79 @@ export default function ArtistSimple() {
                   >
                     {isPlaying ? <Pause fontSize="small" /> : <PlayArrow fontSize="small" />}
                   </IconButton>
+                  {/* More Options Menu */}
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuOpen(e, song);
+                    }}
+                    sx={{ color: 'grey.400' }}
+                  >
+                    <MoreVert fontSize="small" />
+                  </IconButton>
                 </CardContent>
               </Card>
             );
           })}
         </Box>
       )}
+
+      {/* Context Menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          sx: {
+            bgcolor: 'grey.800',
+            border: '1px solid',
+            borderColor: 'grey.700'
+          }
+        }}
+      >
+        <MenuItem onClick={() => { playSong(selectedSong); handleMenuClose(); }} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <PlayArrow sx={{ color: '#1DB954' }} />
+          </ListItemIcon>
+          <ListItemText>Play Now</ListItemText>
+        </MenuItem>
+
+        <MenuItem onClick={() => { dispatch({ type: actions.ENQUEUE, payload: { item: selectedSong } }); handleMenuClose(); }} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <QueueMusic sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Add to Queue</ListItemText>
+        </MenuItem>
+
+        <Divider sx={{ bgcolor: 'grey.700' }} />
+
+        <MenuItem onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <PlaylistAdd sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Add to Playlist</ListItemText>
+        </MenuItem>
+
+        <MenuItem onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <Share sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Share</ListItemText>
+        </MenuItem>
+
+        <Divider sx={{ bgcolor: 'grey.700' }} />
+
+        {!purchasedSongIds.has(selectedSong?.id) && (
+          <MenuItem onClick={() => handlePurchase(selectedSong)} sx={{ color: 'white' }}>
+            <ListItemIcon>
+              <ShoppingCart sx={{ color: '#1DB954' }} />
+            </ListItemIcon>
+            <ListItemText>Purchase ($1.99)</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
+    </Box>
     </Box>
   );
 }

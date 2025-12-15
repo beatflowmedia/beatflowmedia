@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import { usePlayer } from '../context/PlayerContext';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';

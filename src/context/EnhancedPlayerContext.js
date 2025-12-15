@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useReducer,
@@ -650,6 +650,22 @@ export const EnhancedPlayerProvider = ({ children }) => {
         ]
       });
 
+      // Set playback state
+      navigator.mediaSession.playbackState = state.isPlaying ? "playing" : "paused";
+
+      // Update position state
+      if (state.duration > 0 && "setPositionState" in navigator.mediaSession) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: state.duration,
+            playbackRate: 1.0,
+            position: state.currentTime
+          });
+        } catch (error) {
+          console.log("setPositionState not supported or invalid values");
+        }
+      }
+
       const mediaSessionHandlers = {
         play: () => dispatchRaw({ type: actions.TOGGLE_PLAY }),
         pause: () => dispatchRaw({ type: actions.TOGGLE_PLAY }),
@@ -664,6 +680,11 @@ export const EnhancedPlayerProvider = ({ children }) => {
           const offset = details.seekOffset || 10;
           const newTime = Math.min(state.currentTime + offset, state.duration);
           dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: newTime });
+        },
+        seekto: (details) => {
+          if (details.seekTime !== null && details.seekTime >= 0) {
+            dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: details.seekTime });
+          }
         }
       };
 
@@ -671,7 +692,7 @@ export const EnhancedPlayerProvider = ({ children }) => {
         navigator.mediaSession.setActionHandler(action, handler);
       });
     }
-  }, [state.currentIndex, state.queue, state.currentTime, state.duration]);
+  }, [state.currentIndex, state.queue, state.currentTime, state.duration, state.isPlaying]);
 
   // Enhanced dispatch function with persistence and engine sync
   const dispatch = (action) => {

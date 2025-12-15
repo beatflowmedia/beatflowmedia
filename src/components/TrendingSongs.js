@@ -4,6 +4,7 @@ import { PlayArrow, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useTrendingSongs } from '../hooks/useTrendingSongs';
 import { usePlaySong } from '../hooks/usePlaySong';
 import { useAuth } from '../context/AuthContext';
+import { useLikes } from '../context/LikesContext';
 import PlayingIndicator from './PlayingIndicator';
 import SongPlayCount from './SongPlayCount';
 import SongLikeCount from './SongLikeCount';
@@ -14,7 +15,8 @@ import SongLikeCount from './SongLikeCount';
 export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
   const { songs, loading, error } = useTrendingSongs(limit, daysBack);
   const { playSong, isSongPlaying } = usePlaySong();
-  const { user, addLike, removeLike } = useAuth();
+  const { user } = useAuth();
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
 
   if (loading) {
     return (
@@ -49,7 +51,7 @@ export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {songs.map((song, index) => {
           const isPlaying = isSongPlaying(song);
-          const isLiked = user?.likes?.includes(song.id);
+          const isLiked = checkIsLiked(song.id);
 
           return (
             <Card key={song.id} sx={{ bgcolor: 'background.paper' }}>
@@ -118,12 +120,16 @@ export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                   <IconButton
                     size="small"
-                    onClick={() => {
+                    onClick={async () => {
                       if (!user) return;
-                      if (isLiked) {
-                        removeLike(song.id);
-                      } else {
-                        addLike(song.id);
+                      try {
+                        if (isLiked) {
+                          await removeLike(song.id);
+                        } else {
+                          await addLike(song.id);
+                        }
+                      } catch (error) {
+                        console.error('Error toggling like:', error);
                       }
                     }}
                     sx={{

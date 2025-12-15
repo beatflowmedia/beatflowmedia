@@ -5,7 +5,14 @@
       "Bash(npm run:*)",
       "Bash(node:*)",
       "Bash(npm start)",
-      "Read(//c/Users/percy/Pictures/Screenshots/**)"
+      "Read(//c/Users/percy/Pictures/Screenshots/**)",
+      "Bash(npm install:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(npx eslint:*)",
+      "Bash(sed:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

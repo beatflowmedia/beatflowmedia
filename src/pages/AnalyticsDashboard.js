@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { Card, CardContent, Typography, Grid } from '@mui/material';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';

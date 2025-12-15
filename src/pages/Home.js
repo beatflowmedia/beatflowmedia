@@ -9,8 +9,6 @@ import {
   Button,
   Chip,
   Skeleton,
-  Tabs,
-  Tab,
   Divider,
   IconButton,
   Menu,
@@ -22,13 +20,12 @@ import {
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Favorite from '@mui/icons-material/Favorite';
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
+import ThumbUp from '@mui/icons-material/ThumbUp';
+import ThumbUpOffAlt from '@mui/icons-material/ThumbUpOffAlt';
 import MoreVert from '@mui/icons-material/MoreVert';
 import Share from '@mui/icons-material/Share';
 import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
 import TrendingUp from '@mui/icons-material/TrendingUp';
-import Whatshot from '@mui/icons-material/Whatshot';
-import NewReleases from '@mui/icons-material/NewReleases';
-import MusicNote from '@mui/icons-material/MusicNote';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import PersonRemove from '@mui/icons-material/PersonRemove';
 import QueueMusic from '@mui/icons-material/QueueMusic';
@@ -41,6 +38,7 @@ import SongPlayCount from "../components/SongPlayCount";
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
 import { useLikes } from "../context/LikesContext";
+import { useFavorites } from "../context/FavoritesContext";
 import { usePlaySong } from "../hooks/usePlaySong";
 import { toast } from "react-toastify";
 import { db } from "../firebaseConfig";
@@ -59,10 +57,12 @@ function Home() {
   const { dispatch, actions } = usePlayer();
   const { user, followArtist, unfollowArtist, isArtistFollowed } = useAuth();
   const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const { addFavorite, removeFavorite, isFavorited: checkIsFavorited } = useFavorites();
   const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
   const navigate = useNavigate();
   // Enhanced state management for discovery features
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeCategory, setActiveCategory] = useState('all'); // 'all', 'music', 'podcasts', 'audiobooks'
+  const [showFollowingOnly, setShowFollowingOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -236,6 +236,8 @@ function Home() {
           setAudiobooks([]);
         });
 
+        // Following filter is handled in getCurrentContent() function, no separate state needed
+
         // Generate personalized recommendations if user is logged in
         if (user) {
           loadPersonalizedContent();
@@ -307,16 +309,46 @@ function Home() {
     }
   }, [user, generateRecommendations]);
 
-  // Get current content based on active tab
+  // Get current content based on active category and following filter
   const getCurrentContent = () => {
-    switch (activeTab) {
-      case 0: return trendingSongs; // All
-      case 1: return trendingSongs; // Music
-      case 2: return newReleases; // New Releases
-      case 3: return podcasts; // Podcasts
-      case 4: return audiobooks; // Audiobooks
-      default: return trendingSongs;
+    let content = [];
+
+    // Get base content by category
+    switch (activeCategory) {
+      case 'all':
+        content = trendingSongs;
+        break;
+      case 'music':
+        content = trendingSongs;
+        break;
+      case 'new-releases':
+        content = newReleases;
+        break;
+      case 'podcasts':
+        content = podcasts;
+        break;
+      case 'audiobooks':
+        content = audiobooks;
+        break;
+      default:
+        content = trendingSongs;
     }
+
+    // Filter by following if enabled
+    if (showFollowingOnly && user?.followedArtists && user.followedArtists.length > 0) {
+      console.log('Following filter active. Followed artists:', user.followedArtists);
+      content = content.filter(item => {
+        const artistName = item.artist || item.creator || '';
+        const isFollowed = user.followedArtists.includes(artistName);
+        if (isFollowed) {
+          console.log('Including item from followed artist:', artistName, item.title);
+        }
+        return isFollowed;
+      });
+      console.log('Filtered content count:', content.length);
+    }
+
+    return content;
   };
 
   const currentContent = getCurrentContent();
@@ -346,7 +378,29 @@ function Home() {
     } catch (err) {
       toast.error("Failed to update likes");
     }
-  }, [checkIsLiked, addLike, removeLike]);
+  }, [user, checkIsLiked, addLike, removeLike]);
+
+  const handleToggleFavorite = useCallback(async (song) => {
+    if (!user) {
+      toast.error("Please sign in to favorite songs");
+      return;
+    }
+
+    try {
+      // Check if already favorited
+      const favorited = checkIsFavorited(song.id);
+
+      if (favorited) {
+        await removeFavorite(song.id);
+        toast.success("Removed from favorites");
+      } else {
+        await addFavorite(song.id);
+        toast.success("Added to favorites");
+      }
+    } catch (err) {
+      toast.error("Failed to update favorites");
+    }
+  }, [user, checkIsFavorited, addFavorite, removeFavorite]);
 
   const handleFollowArtist = useCallback(async (artistName) => {
     if (!user) {
@@ -413,9 +467,6 @@ function Home() {
   }, [user, navigate, handleMenuClose, purchasedSongIds]);
 
   // Tab change handler
-  const handleTabChange = useCallback((event, newValue) => {
-    setActiveTab(newValue);
-  }, []);
 
   // Render loading state
   if (loading) {
@@ -486,100 +537,77 @@ function Home() {
       </Box>
 
       {/* Category Filter Pills */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <Chip
-          label="All"
-          onClick={() => setActiveTab(0)}
-          sx={{
-            bgcolor: activeTab === 0 ? 'white' : 'transparent',
-            color: activeTab === 0 ? 'black' : 'white',
-            border: activeTab === 0 ? 'none' : '1px solid grey',
-            '&:hover': { bgcolor: activeTab === 0 ? 'white' : 'rgba(255,255,255,0.1)' }
-          }}
-        />
-        <Chip
-          label="Music"
-          onClick={() => setActiveTab(1)}
-          sx={{
-            bgcolor: activeTab === 1 ? 'white' : 'transparent',
-            color: activeTab === 1 ? 'black' : 'white',
-            border: activeTab === 1 ? 'none' : '1px solid grey',
-            '&:hover': { bgcolor: activeTab === 1 ? 'white' : 'rgba(255,255,255,0.1)' }
-          }}
-        />
-        <Chip
-          label="New Releases"
-          onClick={() => setActiveTab(2)}
-          sx={{
-            bgcolor: activeTab === 2 ? 'white' : 'transparent',
-            color: activeTab === 2 ? 'black' : 'white',
-            border: activeTab === 2 ? 'none' : '1px solid grey',
-            '&:hover': { bgcolor: activeTab === 2 ? 'white' : 'rgba(255,255,255,0.1)' }
-          }}
-        />
-        <Chip
-          label="Podcasts"
-          onClick={() => setActiveTab(3)}
-          sx={{
-            bgcolor: activeTab === 3 ? 'white' : 'transparent',
-            color: activeTab === 3 ? 'black' : 'white',
-            border: activeTab === 3 ? 'none' : '1px solid grey',
-            '&:hover': { bgcolor: activeTab === 3 ? 'white' : 'rgba(255,255,255,0.1)' }
-          }}
-        />
-        <Chip
-          label="Audiobooks"
-          onClick={() => setActiveTab(4)}
-          sx={{
-            bgcolor: activeTab === 4 ? 'white' : 'transparent',
-            color: activeTab === 4 ? 'black' : 'white',
-            border: activeTab === 4 ? 'none' : '1px solid grey',
-            '&:hover': { bgcolor: activeTab === 4 ? 'white' : 'rgba(255,255,255,0.1)' }
-          }}
-        />
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+          <Chip
+            label="All"
+            onClick={() => setActiveCategory('all')}
+            sx={{
+              bgcolor: activeCategory === 'all' ? 'white' : 'transparent',
+              color: activeCategory === 'all' ? 'black' : 'white',
+              border: activeCategory === 'all' ? 'none' : '1px solid grey',
+              '&:hover': { bgcolor: activeCategory === 'all' ? 'white' : 'rgba(255,255,255,0.1)' }
+            }}
+          />
+          <Chip
+            label="Music"
+            onClick={() => setActiveCategory('music')}
+            sx={{
+              bgcolor: activeCategory === 'music' ? 'white' : 'transparent',
+              color: activeCategory === 'music' ? 'black' : 'white',
+              border: activeCategory === 'music' ? 'none' : '1px solid grey',
+              '&:hover': { bgcolor: activeCategory === 'music' ? 'white' : 'rgba(255,255,255,0.1)' }
+            }}
+          />
+          <Chip
+            label="New Releases"
+            onClick={() => setActiveCategory('new-releases')}
+            sx={{
+              bgcolor: activeCategory === 'new-releases' ? 'white' : 'transparent',
+              color: activeCategory === 'new-releases' ? 'black' : 'white',
+              border: activeCategory === 'new-releases' ? 'none' : '1px solid grey',
+              '&:hover': { bgcolor: activeCategory === 'new-releases' ? 'white' : 'rgba(255,255,255,0.1)' }
+            }}
+          />
+          <Chip
+            label="Podcasts"
+            onClick={() => setActiveCategory('podcasts')}
+            sx={{
+              bgcolor: activeCategory === 'podcasts' ? 'white' : 'transparent',
+              color: activeCategory === 'podcasts' ? 'black' : 'white',
+              border: activeCategory === 'podcasts' ? 'none' : '1px solid grey',
+              '&:hover': { bgcolor: activeCategory === 'podcasts' ? 'white' : 'rgba(255,255,255,0.1)' }
+            }}
+          />
+          <Chip
+            label="Audiobooks"
+            onClick={() => setActiveCategory('audiobooks')}
+            sx={{
+              bgcolor: activeCategory === 'audiobooks' ? 'white' : 'transparent',
+              color: activeCategory === 'audiobooks' ? 'black' : 'white',
+              border: activeCategory === 'audiobooks' ? 'none' : '1px solid grey',
+              '&:hover': { bgcolor: activeCategory === 'audiobooks' ? 'white' : 'rgba(255,255,255,0.1)' }
+            }}
+          />
+        </Box>
+
+        {/* Following Filter (only show if user is logged in) */}
+        {user && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Chip
+              label="Following"
+              onClick={() => setShowFollowingOnly(!showFollowingOnly)}
+              sx={{
+                bgcolor: showFollowingOnly ? '#1DB954' : 'transparent',
+                color: 'white',
+                border: showFollowingOnly ? 'none' : '1px solid grey',
+                '&:hover': { bgcolor: showFollowingOnly ? '#1ed760' : 'rgba(255,255,255,0.1)' }
+              }}
+            />
+          </Box>
+        )}
       </Box>
 
-      {/* Navigation Tabs - Hidden, kept for functionality */}
-      <Box sx={{ display: 'none' }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          sx={{
-            '& .MuiTab-root': {
-              color: 'text.secondary',
-              '&.Mui-selected': {
-                color: 'primary.main'
-              }
-            },
-            '& .MuiTabs-indicator': {
-              backgroundColor: 'primary.main'
-            }
-          }}
-        >
-          <Tab
-            icon={<TrendingUp />}
-            label={user ? "For You" : "Trending"}
-            iconPosition="start"
-          />
-          <Tab
-            icon={<Whatshot />}
-            label="Trending"
-            iconPosition="start"
-          />
-          <Tab
-            icon={<NewReleases />}
-            label="New Releases"
-            iconPosition="start"
-          />
-          {user && (
-            <Tab
-              icon={<MusicNote />}
-              label="Recommended"
-              iconPosition="start"
-            />
-          )}
-        </Tabs>
-      </Box>
 
       {/* Personalized Sections (only for logged in users) */}
       {user && (
@@ -745,6 +773,8 @@ function Home() {
         {currentContent.map((song, index) => {
           const isPlaying = isSongPlaying(song);
           const isLiked = checkIsLiked(song.id);
+          const isFavorited = checkIsFavorited(song.id);
+          const isFollowingArtist = song.artist && isArtistFollowed(song.artist);
           const isPurchased = purchasedSongIds.has(song.id);
 
           return (
@@ -763,7 +793,7 @@ function Home() {
                 }}
               >
                 {/* Trending Badge */}
-                {activeTab === 1 && index < 3 && (
+                {activeCategory === 'music' && index < 3 && (
                   <Chip
                     icon={<TrendingUp />}
                     label={`#${index + 1}`}
@@ -888,7 +918,7 @@ function Home() {
                     {song.artist}
                   </Typography>
 
-                  {song.genre && activeTab !== 2 && (
+                  {song.genre && (
                     <Chip
                       label={song.genre}
                       size="small"
@@ -914,17 +944,45 @@ function Home() {
                         size="small"
                         onClick={() => handleToggleLike(song)}
                         sx={{
-                          color: isLiked ? '#e91e63' : 'grey.400',
-                          '&:hover': { color: isLiked ? '#ad1457' : '#e91e63' }
+                          color: isLiked ? '#1DB954' : 'grey.400',
+                          '&:hover': { color: isLiked ? '#1ed760' : '#1DB954' }
                         }}
+                        title={isLiked ? 'Unlike' : 'Like'}
                       >
-                        {isLiked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                        {isLiked ? <ThumbUp fontSize="small" /> : <ThumbUpOffAlt fontSize="small" />}
                       </IconButton>
+
+                      <IconButton
+                        size="small"
+                        onClick={() => handleToggleFavorite(song)}
+                        sx={{
+                          color: isFavorited ? '#e91e63' : 'grey.400',
+                          '&:hover': { color: isFavorited ? '#f06292' : '#e91e63' }
+                        }}
+                        title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {isFavorited ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+                      </IconButton>
+
+                      {song.artist && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleFollowArtist(song.artist)}
+                          sx={{
+                            color: isFollowingArtist ? '#1DB954' : 'grey.400',
+                            '&:hover': { color: isFollowingArtist ? '#1ed760' : '#1DB954' }
+                          }}
+                          title={isFollowingArtist ? `Unfollow ${song.artist}` : `Follow ${song.artist}`}
+                        >
+                          {isFollowingArtist ? <PersonRemove fontSize="small" /> : <PersonAdd fontSize="small" />}
+                        </IconButton>
+                      )}
 
                       <IconButton
                         size="small"
                         onClick={() => handleAddToPlaylist(song)}
                         sx={{ color: 'grey.400', '&:hover': { color: '#1DB954' } }}
+                        title="Add to playlist"
                       >
                         <PlaylistAdd fontSize="small" />
                       </IconButton>
@@ -936,6 +994,7 @@ function Home() {
                       size="small"
                       onClick={(e) => handleMenuOpen(e, song)}
                       sx={{ color: 'grey.400', '&:hover': { color: 'white' } }}
+                      title="More options"
                     >
                       <MoreVert />
                     </IconButton>

@@ -168,67 +168,71 @@ function Search() {
   }, [user]);
 
   // Perform search across all collections
-  const performSearch = async (query) => {
-    const searchTerm = query.toLowerCase();
+  const performSearch = async (searchQuery) => {
+    console.log('Performing search for:', searchQuery);
+    const searchTerm = searchQuery.toLowerCase();
     const results = { songs: [], artists: [], albums: [], playlists: [] };
 
     try {
-      // Search songs
-      const songsQuery = query(
-        collection(db, "songs"),
-        where("searchTerms", "array-contains", searchTerm),
-        orderBy("playCount", "desc"),
-        limit(20),
-      );
-      const songsSnapshot = await getDocs(songsQuery);
-      results.songs = songsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        type: "song"
-      }));
+      // Search songs - load all and filter client-side (Firestore doesn't support text search)
+      console.log('Fetching songs from Firestore...');
+      const songsSnapshot = await getDocs(collection(db, "songs"));
+      console.log('Songs fetched:', songsSnapshot.docs.length);
+      results.songs = songsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          type: "song"
+        }))
+        .filter((song) => {
+          const title = (song.title || "").toLowerCase();
+          const artist = (song.artist || song.artistName || "").toLowerCase();
+          const album = (song.album || song.albumName || "").toLowerCase();
+          const genre = (song.genre || song.category || "").toLowerCase();
+          return (
+            title.includes(searchTerm) ||
+            artist.includes(searchTerm) ||
+            album.includes(searchTerm) ||
+            genre.includes(searchTerm)
+          );
+        })
+        .slice(0, 20);
+
+      console.log('Songs after filtering:', results.songs.length);
 
       // Search artists
-      const artistsQuery = query(
-        collection(db, "artists"),
-        where("searchTerms", "array-contains", searchTerm),
-        orderBy("followers", "desc"),
-        limit(10),
-      );
-      const artistsSnapshot = await getDocs(artistsQuery);
-      results.artists = artistsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        type: "artist"
-      }));
+      const artistsSnapshot = await getDocs(collection(db, "artists"));
+      results.artists = artistsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          type: "artist"
+        }))
+        .filter((artist) => {
+          const name = (artist.name || "").toLowerCase();
+          const genre = (artist.genre || "").toLowerCase();
+          return name.includes(searchTerm) || genre.includes(searchTerm);
+        })
+        .slice(0, 10);
 
       // Search albums
-      const albumsQuery = query(
-        collection(db, "albums"),
-        where("searchTerms", "array-contains", searchTerm),
-        orderBy("releaseDate", "desc"),
-        limit(15),
-      );
-      const albumsSnapshot = await getDocs(albumsQuery);
-      results.albums = albumsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        type: "album"
-      }));
+      const albumsSnapshot = await getDocs(collection(db, "albums"));
+      results.albums = albumsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          type: "album"
+        }))
+        .filter((album) => {
+          const title = (album.title || album.name || "").toLowerCase();
+          const artist = (album.artist || album.artistName || "").toLowerCase();
+          return title.includes(searchTerm) || artist.includes(searchTerm);
+        })
+        .slice(0, 15);
 
-      // Search playlists
-      const playlistsQuery = query(
-        collection(db, "playlists"),
-        where("searchTerms", "array-contains", searchTerm),
-        where("public", "==", true),
-        orderBy("followers", "desc"),
-        limit(10),
-      );
-      const playlistsSnapshot = await getDocs(playlistsQuery);
-      results.playlists = playlistsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        type: "playlist"
-      }));
+      // Search public playlists - skip user playlists (they're in subcollections)
+      // Public playlists would need to be in a top-level collection
+      results.playlists = [];
 
       // Apply filters if any
       if (Object.values(filters).some((f) => f.length > 0)) {
@@ -241,6 +245,7 @@ function Search() {
       });
     } catch (error) {
       console.error("Search error:", error);
+      toast.error("Search failed: " + error.message);
     }
 
     return results;
@@ -375,6 +380,7 @@ function Search() {
   // Event handlers
   const handleSearchChange = (event) => {
     const query = event.target.value;
+    console.log('Search query changed:', query);
     setSearchQuery(query);
     debouncedSearch(query);
   };
