@@ -1,4 +1,4 @@
-import React, { useState, useEffect , useCallback } from "react";
+import { useState, useEffect , useCallback } from "react";
 import {
   Box,
   Grid,
@@ -37,10 +37,12 @@ import {
   Person,
   Album,
   History,
-  TrendingUp
+  TrendingUp,
+  ShoppingCart
 } from "@mui/icons-material";
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
+import { useLikes } from '../context/LikesContext';
 import { db } from "../firebaseConfig";
 import {
   collection,
@@ -57,6 +59,8 @@ import { addDoc } from 'firebase/firestore';
 import CircularProgress from '@mui/material/CircularProgress';
 import Pause from '@mui/icons-material/Pause';
 import Fade from '@mui/material/Fade';
+import { useNavigate } from 'react-router-dom';
+import { stripeService } from '../services/stripeService';
 
 const SEARCH_CATEGORIES = [
   { label: "All", value: "all", icon: <SearchIcon /> },
@@ -91,14 +95,9 @@ const FILTER_OPTIONS = {
 
 function Search() {
   const { state, dispatch, actions } = usePlayer();
-  const {
-    user,
-    addLike,
-    removeLike,
-    followArtist,
-    unfollowArtist,
-    isArtistFollowed
-  } = useAuth();
+  const { user } = useAuth();
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const navigate = useNavigate();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,14 +127,19 @@ function Search() {
 
   // Load search history and trending searches on mount
   useEffect(() => {
-    loadSearchHistory();
-    loadTrendingSearches();
+    const loadData = async () => {
+      await loadSearchHistory();
+      await loadTrendingSearches();
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (query) => {
-      if (!query.trim()) {
+  const debouncedSearch = useCallback((query) => {
+    const debouncedFn = debounce(async (searchQuery) => {
+      if (!searchQuery.trim()) {
         setSearchResults({ songs: [], artists: [], albums: [], playlists: [] });
         setHasSearched(false);
         return;
@@ -143,13 +147,13 @@ function Search() {
 
       setLoading(true);
       try {
-        const results = await performSearch(query);
+        const results = await performSearch(searchQuery);
         setSearchResults(results);
         setHasSearched(true);
 
         // Save to search history
         if (user) {
-          await saveSearchToHistory(query);
+          await saveSearchToHistory(searchQuery);
         }
       } catch (error) {
         console.error("Search error:", error);
@@ -157,9 +161,11 @@ function Search() {
       } finally {
         setLoading(false);
       }
-    }, 300),
-    [user],
-  );
+    }, 300);
+
+    debouncedFn(query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Perform search across all collections
   const performSearch = async (query) => {
@@ -421,6 +427,33 @@ function Search() {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setSelectedItem(null);
+  };
+
+  const handlePurchase = async (item) => {
+    handleMenuClose();
+    if (!user) {
+      toast.error('Please sign in to purchase music');
+      return;
+    }
+
+    if (item.type !== 'song') {
+      toast.error('Only songs can be purchased individually');
+      return;
+    }
+
+    try {
+      const hasPurchased = await stripeService.hasPurchasedSong(user.uid, item.id);
+      if (hasPurchased) {
+        toast.info('You already own this song! Redirecting to downloads...');
+        navigate('/downloads');
+        return;
+      }
+
+      await stripeService.createSongCheckout(user.uid, item.id, user.email);
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error(`Failed to initiate purchase: ${error.message}`);
+    }
   };
 
   const handleFilterChange = (filterType, value) => {
@@ -1007,6 +1040,18 @@ function Search() {
           </ListItemIcon>
           <ListItemText>Share</ListItemText>
         </MenuItem>
+
+        {selectedItem?.type === "song" && (
+          <>
+            <Divider sx={{ bgcolor: "grey.700" }} />
+            <MenuItem onClick={() => handlePurchase(selectedItem)} sx={{ color: "white" }}>
+              <ListItemIcon>
+                <ShoppingCart sx={{ color: "#1DB954" }} />
+              </ListItemIcon>
+              <ListItemText>Purchase ($0.99)</ListItemText>
+            </MenuItem>
+          </>
+        )}
       </Menu>
     </Box>
   );

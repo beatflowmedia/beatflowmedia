@@ -1,29 +1,56 @@
 // src/pages/SongPage.js
-import React, { useEffect, useState , useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlayButton from "../components/PlayButton";
 import LikeButton from "../components/LikeButton";
+import PurchaseButton from "../components/PurchaseButton";
 import { useAuth } from "../context/AuthContext";
-import musicData from "../musicData.json";
-import PropTypes from 'prop-types';
+import { useLikes } from '../context/LikesContext';
+import { usePlayer } from "../context/PlayerContext";
+import { db } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 
-function SongPage({ onPlaySong, onToggleFavorite }) {
+function SongPage() {
   const { id } = useParams();
   const { user, signInWithGoogle } = useAuth();
-  const song = useMemo(() => musicData.find((s) => String(s.id) === id), [id]);
-  const [isLiked, setIsLiked] = useState(false);
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const { dispatch, actions } = usePlayer();
+  const [song, setSong] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 1) If the song exists, queue it on mount
+  // 1) Fetch song from Firebase
   useEffect(() => {
-    if (song) {
-      onPlaySong(song);
-    }
-  }, [song, onPlaySong]);
+    const fetchSong = async () => {
+      try {
+        setLoading(true);
+        const songDoc = await getDoc(doc(db, "songs", id));
+        if (songDoc.exists()) {
+          const songData = { id: songDoc.id, ...songDoc.data() };
+          setSong(songData);
+          // Auto-play the song when page loads
+          dispatch({ type: actions.PLAY_SONG, payload: songData });
+        } else {
+          setSong(null);
+        }
+      } catch (error) {
+        console.error("Error fetching song:", error);
+        setSong(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // 2) Keep local like state in sync with user profile
-  useEffect(() => {
-    setIsLiked(user?.likes?.includes(song?.id) ?? false);
-  }, [user, song]);
+    fetchSong();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-6 text-white">
+        <h2 className="text-2xl">Loading...</h2>
+      </div>
+    );
+  }
 
   if (!song) {
     return (
@@ -39,9 +66,23 @@ function SongPage({ onPlaySong, onToggleFavorite }) {
       await signInWithGoogle();
       return;
     }
-    // Optimistically update UI
-    setIsLiked((prev) => !prev);
-    onToggleFavorite(song);
+    // Toggle like in Firebase
+    try {
+      const liked = checkIsLiked(song.id);
+      if (liked) {
+        await removeLike(song.id);
+      } else {
+        await addLike(song.id);
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+
+  const isLiked = checkIsLiked(song?.id);
+
+  const handlePlay = () => {
+    dispatch({ type: actions.PLAY_SONG, payload: song });
   };
 
   return (
@@ -49,10 +90,10 @@ function SongPage({ onPlaySong, onToggleFavorite }) {
       <h1 className="text-3xl font-bold mb-4">{song.title}</h1>
       <p className="text-gray-400 mb-4">by {song.artist}</p>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 mb-6">
         <PlayButton
           isPlaying={false}
-          onClick={() => onPlaySong(song)}
+          onClick={handlePlay}
           size={32}
         />
         <LikeButton
@@ -60,6 +101,11 @@ function SongPage({ onPlaySong, onToggleFavorite }) {
           isLiked={isLiked}
           onToggleFavorite={handleToggle}
           size={24}
+        />
+        <PurchaseButton
+          itemId={id}
+          itemType="song"
+          price={song.price || 0.99}
         />
       </div>
 
@@ -82,11 +128,4 @@ function SongPage({ onPlaySong, onToggleFavorite }) {
   );
 }
 
-SongPage.propTypes = {
-  /** Callback to queue/play a song */
-  onPlaySong: PropTypes.func.isRequired,
-  /** Callback to toggle like/unlike in parent state */
-  onToggleFavorite: PropTypes.func.isRequired
-};
-
-export default React.memo(SongPage);
+export default SongPage;

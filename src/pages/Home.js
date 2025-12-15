@@ -40,6 +40,7 @@ import SongLikeCount from "../components/SongLikeCount";
 import SongPlayCount from "../components/SongPlayCount";
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
+import { useLikes } from "../context/LikesContext";
 import { usePlaySong } from "../hooks/usePlaySong";
 import { toast } from "react-toastify";
 import { db } from "../firebaseConfig";
@@ -56,7 +57,8 @@ const Footer = lazy(() => import("../components/Footer"));
 
 function Home() {
   const { dispatch, actions } = usePlayer();
-  const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
+  const { user, followArtist, unfollowArtist, isArtistFollowed } = useAuth();
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
   const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
   const navigate = useNavigate();
   // Enhanced state management for discovery features
@@ -332,9 +334,9 @@ function Home() {
 
     try {
       // Check if already liked
-      const isLiked = user.likes?.includes(song.id);
+      const liked = checkIsLiked(song.id);
 
-      if (isLiked) {
+      if (liked) {
         await removeLike(song.id);
         toast.success("Removed from liked songs");
       } else {
@@ -344,7 +346,7 @@ function Home() {
     } catch (err) {
       toast.error("Failed to update likes");
     }
-  }, [user, addLike, removeLike]);
+  }, [checkIsLiked, addLike, removeLike]);
 
   const handleFollowArtist = useCallback(async (artistName) => {
     if (!user) {
@@ -742,7 +744,7 @@ function Home() {
       <Grid container spacing={2}>
         {currentContent.map((song, index) => {
           const isPlaying = isSongPlaying(song);
-          const isLiked = user?.likes?.includes(song.id) || false;
+          const isLiked = checkIsLiked(song.id);
           const isPurchased = purchasedSongIds.has(song.id);
 
           return (
