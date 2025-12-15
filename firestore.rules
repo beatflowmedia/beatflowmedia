@@ -224,6 +224,30 @@ service cloud.firestore {
       allow update, delete: if request.auth.token.admin == true;
     }
 
+    // Vendor applications - allow anyone to submit, admin to read/manage
+    match /vendorApplications/{applicationId} {
+      allow create: if true; // Allow unauthenticated submissions
+      allow read, update, delete: if request.auth.token.admin == true;
+    }
+
+    // Creative quote requests - allow anyone to submit, admin to read/manage
+    match /creativeQuotes/{quoteId} {
+      allow create: if true; // Allow unauthenticated submissions
+      allow read, update, delete: if request.auth.token.admin == true;
+    }
+
+    // Ad signups - allow anyone to submit, admin to read/manage
+    match /adSignups/{signupId} {
+      allow create: if true; // Allow unauthenticated submissions
+      allow read, update, delete: if request.auth.token.admin == true;
+    }
+
+    // Advertising inquiries - allow anyone to submit, admin to read/manage
+    match /advertisingInquiries/{inquiryId} {
+      allow create: if true; // Allow unauthenticated submissions
+      allow read, update, delete: if request.auth.token.admin == true;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

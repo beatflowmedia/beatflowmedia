@@ -1,10 +1,11 @@
 // src/AppRoutes.js
-import React, { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import AppShell from "./layouts/AppShell";
 import { useAuth } from "./context/AuthContext";
 import ArtistPortal from "./pages/ArtistPortal";
 import CuratorPortal from "./pages/CuratorPortal";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Lazy-loaded pages
 const Home = lazy(() => import("./pages/Home"));
@@ -24,9 +25,71 @@ const BrowsePage = lazy(() => import("./pages/BrowsePage"));
 const SongPage = lazy(() => import("./pages/SongPage"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const ForArtists = lazy(() => import("./pages/ForArtists"));
+const ArtistSubmissionPricing = lazy(() => import("./pages/ArtistSubmissionPricing"));
+const CuratorPricing = lazy(() => import("./pages/CuratorPricing"));
+const CuratorApplication = lazy(() => import("./pages/CuratorApplication"));
 const AgentsDashboard = lazy(() => import("./pages/AgentsDashboard"));
 const Advertisements = lazy(() => import("./pages/Advertisements"));
+const AdminApplications = lazy(() => import("./pages/AdminApplications"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const PurchaseSuccess = lazy(() => import("./pages/PurchaseSuccess"));
+const PurchaseCancelled = lazy(() => import("./pages/PurchaseCancelled"));
+const Downloads = lazy(() => import("./pages/Downloads"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const GenrePage = lazy(() => import("./pages/GenrePage"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const GenreManagement = lazy(() => import("./pages/GenreManagement"));
 const About = lazy(() => import("./pages/About"));
+const ForTheRecord = lazy(() => import("./pages/ForTheRecord"));
+const Support = lazy(() => import("./pages/Support"));
+const ArtistDashboardNew = lazy(() => import("./pages/ArtistDashboardNew"));
+// const PodcasterDashboard = lazy(() => import("./pages/PodcasterDashboard"));
+const SupportCategory = lazy(() => import("./pages/SupportCategory"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Investors = lazy(() => import("./pages/Investors"));
+const Wrapped2024 = lazy(() => import("./pages/Wrapped2024"));
+
+// Community pages
+const Developers = lazy(() => import("./pages/Developers"));
+const Vendors = lazy(() => import("./pages/Vendors"));
+const VendorApplication = lazy(() => import("./pages/VendorApplication"));
+const Advertising = lazy(() => import("./pages/Advertising"));
+
+// Advertising pages
+const GetStarted = lazy(() => import("./pages/GetStarted"));
+const AdFormats = lazy(() => import("./pages/AdFormats"));
+const Goals = lazy(() => import("./pages/Goals"));
+const NewsInspiration = lazy(() => import("./pages/NewsInspiration"));
+const CreativeLab = lazy(() => import("./pages/CreativeLab"));
+const CreativeQuote = lazy(() => import("./pages/CreativeQuote"));
+const AdSignup = lazy(() => import("./pages/AdSignup"));
+
+// Advertising resource pages
+const HelpCenter = lazy(() => import("./pages/resources/HelpCenter"));
+const AdSpecs = lazy(() => import("./pages/resources/AdSpecs"));
+const WrappedAdvertisers2024 = lazy(() => import("./pages/resources/Wrapped2024"));
+const CreativeBestPractices = lazy(() => import("./pages/resources/CreativeBestPractices"));
+const Partners = lazy(() => import("./pages/resources/Partners"));
+const AnalyticsHelpCenter = lazy(() => import("./pages/resources/AnalyticsHelpCenter"));
+
+// Premium plan pages
+const Individual = lazy(() => import("./pages/Individual"));
+const Student = lazy(() => import("./pages/Student"));
+const Duo = lazy(() => import("./pages/Duo"));
+const Family = lazy(() => import("./pages/Family"));
+const Audiobooks = lazy(() => import("./pages/Audiobooks"));
+
+// Legal pages
+const Legal = lazy(() => import("./pages/Legal"));
+const Nda = lazy(() => import("./pages/Nda"));
+const PrivacyCenter = lazy(() => import("./pages/PrivacyCenter"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Cookies = lazy(() => import("./pages/Cookies"));
+const AboutAds = lazy(() => import("./pages/AboutAds"));
+const Accessibility = lazy(() => import("./pages/Accessibility"));
+const NoticeAtCollection = lazy(() => import("./pages/NoticeAtCollection"));
+const PrivacyChoices = lazy(() => import("./pages/PrivacyChoices"));
 
 export default function AppRoutes() {
   const { user, role } = useAuth();
@@ -39,6 +102,18 @@ export default function AppRoutes() {
           <Route path="search" element={<Search />} />
           <Route path="playlist/:id" element={<Playlist />} />
           <Route path="album/:id" element={<Album />} />
+
+          {/* Specific artist routes - must come BEFORE artist/:id */}
+          <Route
+            path="artist/genre-management"
+            element={
+              <ProtectedRoute requiredRole="artist" adminOnly={false}>
+                <GenreManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Dynamic artist route - must come AFTER specific routes */}
           <Route path="artist/:id" element={<Artist />} />
           <Route path="favorites" element={<Favorites />} />
           <Route path="playlists" element={<Playlists />} />
@@ -46,7 +121,20 @@ export default function AppRoutes() {
           <Route path="whats-new" element={<WhatsNew />} />
           <Route path="explore-premium" element={<ExplorePremium />} />
           <Route path="browse" element={<BrowsePage />} />
+          <Route path="genre/:genre" element={<GenrePage />} />
+          <Route path="category/:category" element={<CategoryPage />} />
+          <Route path="made-for-you" element={<CategoryPage />} />
+          <Route path="new-releases" element={<CategoryPage />} />
+          <Route path="discover" element={<CategoryPage />} />
+          <Route path="charts/:type" element={<CategoryPage />} />
         </Route>
+
+        {/* Standalone Artist Dashboard - outside AppShell */}
+        <Route path="artist/dashboard" element={<ArtistDashboardNew />} />
+
+        {/* Standalone Curator Portal - outside AppShell */}
+        <Route path="curator-portal" element={<CuratorPortal />} />
+        <Route path="curator-inbox" element={<CuratorInbox />} />
 
         {/* Role-based portals (protected routes) */}
         {user && role === "artist" && (
@@ -55,17 +143,34 @@ export default function AppRoutes() {
             <Route path="campaign-wizard" element={<CampaignWizard />} />
           </>
         )}
-        {user && role === "curator" && (
+        {/* {user && role === "podcaster" && (
           <>
-            <Route path="curator-portal" element={<CuratorPortal userId={user.uid} stripeAccountId={user.stripeAccountId} />} />
-            <Route path="curator-inbox" element={<CuratorInbox />} />
+            <Route path="podcaster/dashboard" element={<PodcasterDashboard />} />
           </>
-        )}
+        )} */}
         {user && role === "investor" && (
           <Route path="investor-portal" element={<InvestorPortal />} />
         )}
 
-        {/* Admin routes inside AppShell */}
+        {/* Admin routes - protected */}
+        <Route
+          path="admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/applications"
+          element={
+            <ProtectedRoute>
+              <AdminApplications />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Public admin routes inside AppShell */}
         <Route element={<AppShell />}>
           <Route path="ads" element={<Advertisements />} />
           <Route path="advertisements" element={<Advertisements />} />
@@ -75,8 +180,63 @@ export default function AppRoutes() {
         <Route path="agents-dashboard" element={<AgentsDashboard />} />
         <Route path="song/:id" element={<SongPage />} />
         <Route path="jobs" element={<Jobs />} />
+        <Route path="artist-pricing" element={<ArtistSubmissionPricing />} />
+        <Route path="become-curator" element={<CuratorPricing />} />
+        <Route path="curator-application" element={<CuratorApplication />} />
+        <Route path="purchase/success" element={<PurchaseSuccess />} />
+        <Route path="purchase/cancelled" element={<PurchaseCancelled />} />
+        <Route path="downloads" element={<Downloads />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="for-artists" element={<ForArtists />} />
         <Route path="about" element={<About />} />
+        <Route path="for-the-record" element={<ForTheRecord />} />
+        <Route path="support" element={<Support />} />
+        <Route path="support/:region/category/:category" element={<SupportCategory />} />
+        <Route path="contact" element={<Contact />} />
+        <Route path="investors" element={<Investors />} />
+        <Route path="wrapped2024" element={<Wrapped2024 />} />
+
+        {/* Community pages */}
+        <Route path="developers" element={<Developers />} />
+        <Route path="vendors" element={<Vendors />} />
+        <Route path="vendor-application" element={<VendorApplication />} />
+        <Route path="advertising" element={<Advertising />} />
+
+        {/* Advertising pages */}
+        <Route path="get-started" element={<GetStarted />} />
+        <Route path="ad-formats" element={<AdFormats />} />
+        <Route path="goals" element={<Goals />} />
+        <Route path="news-inspiration" element={<NewsInspiration />} />
+        <Route path="creative-lab" element={<CreativeLab />} />
+        <Route path="creative-quote" element={<CreativeQuote />} />
+        <Route path="ad-signup" element={<AdSignup />} />
+
+        {/* Advertising resource pages */}
+        <Route path="resources/help-center" element={<HelpCenter />} />
+        <Route path="resources/ad-specs" element={<AdSpecs />} />
+        <Route path="resources/wrapped-2024" element={<WrappedAdvertisers2024 />} />
+        <Route path="resources/creative-best-practices" element={<CreativeBestPractices />} />
+        <Route path="resources/partners" element={<Partners />} />
+        <Route path="resources/analytics-help-center" element={<AnalyticsHelpCenter />} />
+
+        {/* Premium plan pages */}
+        <Route path="individual" element={<Individual />} />
+        <Route path="student" element={<Student />} />
+        <Route path="duo" element={<Duo />} />
+        <Route path="family" element={<Family />} />
+        <Route path="audiobooks" element={<Audiobooks />} />
+
+        {/* Legal pages */}
+        <Route path="legal" element={<Legal />} />
+        <Route path="nda" element={<Nda />} />
+        <Route path="privacy-center" element={<PrivacyCenter />} />
+        <Route path="privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="cookies" element={<Cookies />} />
+        <Route path="about-ads" element={<AboutAds />} />
+        <Route path="accessibility" element={<Accessibility />} />
+        <Route path="notice-at-collection" element={<NoticeAtCollection />} />
+        <Route path="privacy-choices" element={<PrivacyChoices />} />
 
         {/* Catch-all for 404 */}
         <Route path="*" element={<div className="p-6 text-center text-white">404 – Page Not Found</div>} />

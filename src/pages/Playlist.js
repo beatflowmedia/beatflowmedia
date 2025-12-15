@@ -1,11 +1,10 @@
-import { getDocs } from 'firebase/firestore';
+// getDocs import removed - not currently used but needed for future collaborator functionality
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Avatar,
   Box,
   Typography,
   Card,
-  CardContent,
   CardMedia,
   Button,
   IconButton,
@@ -48,10 +47,12 @@ import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
 import AccessTime from '@mui/icons-material/AccessTime';
 import MusicNote from '@mui/icons-material/MusicNote';
+import ShoppingCart from '@mui/icons-material/ShoppingCart';
 import Search from '@mui/icons-material/Search';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
+import { useLikes } from '../context/LikesContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import {
@@ -63,12 +64,11 @@ import {
   query,
   where,
   onSnapshot,
-  addDoc,
   serverTimestamp,
-  arrayUnion,
-  arrayRemove
+  arrayUnion
 } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { stripeService } from '../services/stripeService';
 
 const SORT_OPTIONS = [
   { label: 'Custom Order', value: 'custom' },
@@ -83,7 +83,8 @@ function Playlist() {
   const { playlistId } = useParams();
   const navigate = useNavigate();
   const { state, dispatch, actions } = usePlayer();
-  const { user, addLike, removeLike } = useAuth();
+  const { user } = useAuth();
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
 
   // Playlist state
   const [playlist, setPlaylist] = useState(null);
@@ -96,12 +97,11 @@ function Playlist() {
   const [isCollaborator, setIsCollaborator] = useState(false);
   const [sortBy, setSortBy] = useState('custom');
   const [filterQuery, setFilterQuery] = useState('');
-  const [showCollaborators, setShowCollaborators] = useState(false);
 
   // Modal states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [collaboratorDialogOpen, setCollaboratorDialogOpen] = useState(false);
+  const [, setShareDialogOpen] = useState(false);
+  const [, setCollaboratorDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Menu states
@@ -115,7 +115,9 @@ function Playlist() {
     isPublic: false,
     allowCollaboration: false
   });
-  const [collaboratorEmail, setCollaboratorEmail] = useState('');
+
+  // Collaborator email state removed - will be needed when collaborator dialog is implemented
+  // const [collaboratorEmail, setCollaboratorEmail] = useState('');
 
   // Load playlist data
   useEffect(() => {
@@ -279,8 +281,8 @@ function Playlist() {
     }
 
     try {
-      const isLiked = user.likes?.includes(track.id);
-      if (isLiked) {
+      const liked = checkIsLiked(track.id);
+      if (liked) {
         await removeLike(track.id);
         toast.success('Removed from liked songs');
       } else {
@@ -290,7 +292,29 @@ function Playlist() {
     } catch (err) {
       toast.error('Failed to update likes');
     }
-  }, [user, addLike, removeLike]);
+  }, [checkIsLiked, addLike, removeLike]);
+
+  const handlePurchaseTrack = useCallback(async (track) => {
+    setAnchorEl(null);
+    if (!user) {
+      toast.error('Please sign in to purchase music');
+      return;
+    }
+
+    try {
+      const hasPurchased = await stripeService.hasPurchasedSong(user.uid, track.id);
+      if (hasPurchased) {
+        toast.info('You already own this song! Redirecting to downloads...');
+        navigate('/downloads');
+        return;
+      }
+
+      await stripeService.createSongCheckout(user.uid, track.id, user.email);
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error(`Failed to initiate purchase: ${error.message}`);
+    }
+  }, [user, navigate]);
 
   const handleEditPlaylist = async () => {
     if (!isOwner) return;
@@ -377,37 +401,39 @@ function Playlist() {
     }
   };
 
-  const handleAddCollaborator = async () => {
-    if (!isOwner || !collaboratorEmail) return;
-
-    try {
-      // Find user by email
-      const usersQuery = query(
-        collection(db, 'users'),
-        where('email', '==', collaboratorEmail)
-      );
-      const usersSnapshot = await getDocs(usersQuery);
-
-      if (usersSnapshot.empty) {
-        toast.error('User not found');
-        return;
-      }
-
-      const collaboratorId = usersSnapshot.docs[0].id;
-
-      // Add to collaborators
-      await updateDoc(doc(db, 'playlists', playlistId), {
-        collaborators: arrayUnion(collaboratorId)
-      });
-
-      setCollaboratorEmail('');
-      setCollaboratorDialogOpen(false);
-      toast.success('Collaborator added successfully');
-    } catch (err) {
-      console.error('Error adding collaborator:', err);
-      toast.error('Failed to add collaborator');
-    }
-  };
+  // Collaborator functionality - currently not used in UI
+  // Uncomment when share/collaborator dialogs are implemented
+  // const handleAddCollaborator = async () => {
+  //   if (!isOwner || !collaboratorEmail) return;
+  //
+  //   try {
+  //     // Find user by email
+  //     const usersQuery = query(
+  //       collection(db, 'users'),
+  //       where('email', '==', collaboratorEmail)
+  //     );
+  //     const usersSnapshot = await getDocs(usersQuery);
+  //
+  //     if (usersSnapshot.empty) {
+  //       toast.error('User not found');
+  //       return;
+  //     }
+  //
+  //     const collaboratorId = usersSnapshot.docs[0].id;
+  //
+  //     // Add to collaborators
+  //     await updateDoc(doc(db, 'playlists', playlistId), {
+  //       collaborators: arrayUnion(collaboratorId)
+  //     });
+  //
+  //     setCollaboratorEmail('');
+  //     setCollaboratorDialogOpen(false);
+  //     toast.success('Collaborator added successfully');
+  //   } catch (err) {
+  //     console.error('Error adding collaborator:', err);
+  //     toast.error('Failed to add collaborator');
+  //   }
+  // };
 
   const handleFollowPlaylist = async () => {
     if (!user || isOwner) return;
@@ -677,7 +703,7 @@ function Playlist() {
                     <TableBody>
                       {filteredAndSortedTracks.map((track, index) => {
                         const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
-                        const isLiked = user?.likes?.includes(track.id) || false;
+                        const isLiked = checkIsLiked(track.id);
 
                         return (
                           <Draggable
@@ -931,6 +957,18 @@ function Playlist() {
             <Share sx={{ color: 'grey.400' }} />
           </ListItemIcon>
           <ListItemText>Share</ListItemText>
+        </MenuItem>
+
+        <Divider sx={{ bgcolor: 'grey.700' }} />
+
+        <MenuItem
+          onClick={() => handlePurchaseTrack(selectedTrack)}
+          sx={{ color: 'white' }}
+        >
+          <ListItemIcon>
+            <ShoppingCart sx={{ color: '#1DB954' }} />
+          </ListItemIcon>
+          <ListItemText>Purchase ($0.99)</ListItemText>
         </MenuItem>
       </Menu>
 

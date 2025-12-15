@@ -222,7 +222,7 @@ export const PlayerProvider = ({ children }) => {
     }
   }, [persistedQueue, queueLoading, queueError, queueInitialized]);
 
-  // Load new track into engine when currentIndex, queue, or play state changes
+  // Load new track into engine when currentIndex changes
   useEffect(() => {
     const engine = engineRef.current;
     const item = state.queue[state.currentIndex];
@@ -234,7 +234,8 @@ export const PlayerProvider = ({ children }) => {
     if (state.isPlaying) {
       engine.play();
     }
-  }, [state.currentIndex, state.queue, state.isPlaying]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.currentIndex]);
 
   // Control play/pause when isPlaying flag changes
   useEffect(() => {

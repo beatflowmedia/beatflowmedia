@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -15,13 +16,6 @@ import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -29,37 +23,45 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import PlayArrow from '@mui/icons-material/PlayArrow';
-import Favorite from '@mui/icons-material/Favorite';
-import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
-import MoreVert from '@mui/icons-material/MoreVert';
 import Share from '@mui/icons-material/Share';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
 import ShoppingCart from '@mui/icons-material/ShoppingCart';
-import AccessTime from '@mui/icons-material/AccessTime';
 import MusicNote from '@mui/icons-material/MusicNote';
 import Star from '@mui/icons-material/Star';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useLikes } from '../context/LikesContext';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { toast } from 'react-toastify';
-import { getDocs, doc, collection, query, where, orderBy, onSnapshot, updateDoc, addDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, addDoc, serverTimestamp, increment } from 'firebase/firestore';
+import PurchaseButton from '../components/PurchaseButton';
+import TrackRowCard from '../components/TrackRowCard';
+import { stripeService } from '../services/stripeService';
+import { getSongMetrics } from '../services/engagementMetrics';
 
 function Album() {
-  const { albumId } = useParams();
+  const { id: albumId } = useParams();
   const navigate = useNavigate();
   const { state, dispatch, actions } = usePlayer();
-  const { user, addLike, removeLike, followArtist, unfollowArtist, isArtistFollowed } = useAuth();
+  const { user, followArtist, unfollowArtist, isArtistFollowed, signInWithGoogle } = useAuth();
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const outletContext = useOutletContext() || {};
+  const { onOpenRightPanel } = outletContext;
+
+  useEffect(() => {
+    console.log('Album page - onOpenRightPanel available:', !!onOpenRightPanel);
+  }, [onOpenRightPanel]);
 
   // State declarations
   const [album, setAlbum] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tracks, setTracks] = useState([]);
+  const [trackMetrics, setTrackMetrics] = useState({});
   const [reviews, setReviews] = useState([]);
-  const [relatedAlbums, setRelatedAlbums] = useState([]);
-  const [artist, setArtist] = useState(null);
   const [userRating, setUserRating] = useState(0);
   const [userReview, setUserReview] = useState('');
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -67,108 +69,118 @@ function Album() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
 
-  // ...existing code...
+  // Load album data
   useEffect(() => {
+    if (!albumId) {
+      console.log('No album ID provided');
+      return;
+    }
+
+    let unsubscribeTracks = null;
+    let unsubscribeReviews = null;
+
     async function loadAlbum() {
       setLoading(true);
       setError(null);
       try {
-        // Load album data
-        // ...existing album loading logic...
+        console.log('Loading album with ID:', albumId);
+
+        // Load album data from Firebase
+        const albumDocRef = doc(db, 'albums', albumId);
+        const albumSnapshot = await getDoc(albumDocRef);
+
+        if (!albumSnapshot.exists()) {
+          console.error('Album not found:', albumId);
+          setError('Album not found');
+          setLoading(false);
+          return;
+        }
+
+        const albumData = { id: albumSnapshot.id, ...albumSnapshot.data() };
+        setAlbum(albumData);
+        console.log('✅ Loaded album:', albumData.title, 'with', albumData.trackCount, 'tracks');
 
         // Load tracks with real-time updates
         const tracksQuery = query(
           collection(db, 'songs'),
-          where('albumId', '==', albumId),
-          orderBy('trackNumber', 'asc')
+          where('albumId', '==', albumId)
         );
-        const unsubscribeTracks = onSnapshot(tracksQuery, (snapshot) => {
+
+        unsubscribeTracks = onSnapshot(tracksQuery, (snapshot) => {
           const tracksData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
+
+          // Sort by trackNumber on client side (avoids Firestore index requirement)
+          tracksData.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+
+          console.log('✅ Loaded', tracksData.length, 'tracks for album');
           setTracks(tracksData);
+        }, (error) => {
+          console.error('Error loading tracks:', error);
         });
 
-        // Load reviews
+        // Load reviews (optional - may not exist)
         const reviewsQuery = query(
           collection(db, 'albumReviews'),
-          where('albumId', '==', albumId),
-          orderBy('createdAt', 'desc')
+          where('albumId', '==', albumId)
         );
-        const unsubscribeReviews = onSnapshot(reviewsQuery, (snapshot) => {
+
+        unsubscribeReviews = onSnapshot(reviewsQuery, (snapshot) => {
           const reviewsData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
+
+          // Sort by createdAt on client side
+          reviewsData.sort((a, b) => {
+            const aTime = a.createdAt?.seconds || 0;
+            const bTime = b.createdAt?.seconds || 0;
+            return bTime - aTime; // Descending order (newest first)
+          });
+
           setReviews(reviewsData);
+        }, (error) => {
+          // Reviews collection might not exist yet - that's okay
+          console.log('Album reviews not available:', error.message);
         });
 
-        // Load related albums
-        // You may need to fetch albumData first before this step
-        // if (albumData.artistId || albumData.genre) {
-        //   loadRelatedAlbums(albumData);
-        // }
-
-        // Update play count
-        // if (albumData.id) {
-        //   await updateDoc(doc(db, 'albums', albumData.id), {
-        //     viewCount: increment(1)
-        //   });
-        // }
-
         setLoading(false);
-
-        return () => {
-          unsubscribeTracks();
-          unsubscribeReviews();
-        };
       } catch (err) {
         console.error('Error loading album:', err);
         setError(err.message);
         setLoading(false);
       }
     }
+
     loadAlbum();
-    // Cleanup function for unsubscribing
+
+    // Cleanup function
     return () => {
-      // If you have unsubscribe functions, call them here
+      if (unsubscribeTracks) unsubscribeTracks();
+      if (unsubscribeReviews) unsubscribeReviews();
     };
   }, [albumId]);
 
-  // Load related albums
-  const loadRelatedAlbums = async (albumData) => {
-    try {
-      let relatedQuery;
+  // Load engagement metrics for all tracks
+  useEffect(() => {
+    async function loadTrackMetrics() {
+      if (tracks.length === 0) return;
 
-      if (albumData.artistId) {
-        // Get other albums by the same artist
-        relatedQuery = query(
-          collection(db, 'albums'),
-          where('artistId', '==', albumData.artistId),
-          orderBy('releaseDate', 'desc')
-        );
-      } else if (albumData.genre) {
-        // Get albums in the same genre
-        relatedQuery = query(
-          collection(db, 'albums'),
-          where('genre', '==', albumData.genre),
-          orderBy('popularity', 'desc')
-        );
-      }
+      const metricsPromises = tracks.map(track => getSongMetrics(track.id));
+      const metricsResults = await Promise.all(metricsPromises);
 
-      if (relatedQuery) {
-        const relatedSnapshot = await getDocs(relatedQuery);
-        const related = relatedSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(a => a.id !== albumId)
-          .slice(0, 6);
-        setRelatedAlbums(related);
-      }
-    } catch (err) {
-      console.error('Error loading related albums:', err);
+      const metricsMap = {};
+      tracks.forEach((track, index) => {
+        metricsMap[track.id] = metricsResults[index];
+      });
+
+      setTrackMetrics(metricsMap);
     }
-  };
+
+    loadTrackMetrics();
+  }, [tracks]);
 
   // Calculate album stats
   const albumStats = React.useMemo(() => {
@@ -238,38 +250,59 @@ function Album() {
     }
 
     try {
-      const isLiked = user.likes?.includes(track.id);
-      if (isLiked) {
+      const liked = checkIsLiked(track.id);
+      if (liked) {
         await removeLike(track.id);
-        toast.success('Removed from liked songs');
       } else {
         await addLike(track.id);
-        toast.success('Added to liked songs');
       }
     } catch (err) {
-      toast.error('Failed to update likes');
+      console.error('Failed to update likes:', err);
     }
-  }, [user, addLike, removeLike]);
+  }, [checkIsLiked, addLike, removeLike]);
 
   const handleFollowArtist = useCallback(async () => {
-    if (!user || !artist) {
+    if (!user || !album?.artist) {
       toast.error('Please sign in to follow artists');
       return;
     }
 
     try {
-      const isFollowing = isArtistFollowed(artist.name);
+      const artistName = album.artist || album.artistName;
+      const isFollowing = isArtistFollowed(artistName);
       if (isFollowing) {
-        await unfollowArtist(artist.name);
-        toast.success(`Unfollowed ${artist.name}`);
+        await unfollowArtist(artistName);
+        toast.success(`Unfollowed ${artistName}`);
       } else {
-        await followArtist(artist.name);
-        toast.success(`Following ${artist.name}`);
+        await followArtist(artistName);
+        toast.success(`Following ${artistName}`);
       }
     } catch (err) {
       toast.error('Failed to update follow status');
     }
-  }, [user, artist, followArtist, unfollowArtist, isArtistFollowed]);
+  }, [user, album, followArtist, unfollowArtist, isArtistFollowed]);
+
+  const handlePurchaseTrack = useCallback(async (track) => {
+    setAnchorEl(null);
+    if (!user) {
+      toast.error('Please sign in to purchase music');
+      return;
+    }
+
+    try {
+      const hasPurchased = await stripeService.hasPurchasedSong(user.uid, track.id);
+      if (hasPurchased) {
+        toast.info('You already own this song! Redirecting to downloads...');
+        navigate('/downloads');
+        return;
+      }
+
+      await stripeService.createSongCheckout(user.uid, track.id, user.email);
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error(`Failed to initiate purchase: ${error.message}`);
+    }
+  }, [user, navigate]);
 
   const handleSubmitReview = async () => {
     if (!user) {
@@ -294,7 +327,10 @@ function Album() {
       });
 
       // Update album average rating
-      const newAvgRating = (albumStats.averageRating * albumStats.reviewCount + userRating) / (albumStats.reviewCount + 1);
+      const currentAvgRating = album?.averageRating || 0;
+      const currentReviewCount = album?.reviewCount || 0;
+      const newAvgRating = (currentAvgRating * currentReviewCount + userRating) / (currentReviewCount + 1);
+
       await updateDoc(doc(db, 'albums', albumId), {
         averageRating: newAvgRating,
         reviewCount: increment(1)
@@ -313,12 +349,6 @@ function Album() {
   const handlePurchaseAlbum = () => {
     // Integrate with payment system
     setPurchaseDialogOpen(true);
-  };
-
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatDate = (date) => {
@@ -368,23 +398,58 @@ function Album() {
       {/* Album Header */}
       <Box
         sx={{
-          background: `linear-gradient(180deg, rgba(29,185,84,0.8) 0%, rgba(18,18,18,1) 100%)`,
-          p: 4,
-          pb: 2
+          position: 'relative',
+          p: 'clamp(16px, 2vw, 32px)',
+          pb: 'clamp(8px, 1vw, 16px)',
+          overflow: 'hidden',
+          minHeight: 'fit-content',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: '-20%',
+            left: '-20%',
+            width: '140%',
+            height: '140%',
+            backgroundImage: album?.coverUrl ? `url(${album.coverUrl})` : 'none',
+            backgroundSize: 'contain',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'no-repeat',
+            filter: 'blur(50px) brightness(0.5)',
+            zIndex: 0
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(18,18,18,0.9) 70%, rgba(18,18,18,1) 100%)',
+            zIndex: 1
+          }
         }}
       >
-        <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-end' }}>
-          <Card sx={{ width: 300, height: 300, boxShadow: 3 }}>
+        <Box sx={{ display: 'flex', gap: 'clamp(12px, 2vw, 32px)', alignItems: 'flex-end', position: 'relative', zIndex: 2 }}>
+          <Card sx={{
+            width: 'clamp(120px, 15vw, 300px)',
+            height: 'clamp(120px, 15vw, 300px)',
+            boxShadow: 3,
+            flexShrink: 0
+          }}>
             <CardMedia
               component="img"
-              height="300"
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
               image={album?.coverUrl || '/default-album-cover.jpg'}
               alt={album?.title}
             />
           </Card>
 
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" sx={{ color: 'white', opacity: 0.8, mb: 1 }}>
+            <Typography variant="body2" sx={{ color: 'white', opacity: 0.8, mb: 1, fontSize: 'calc(clamp(0.625rem, 0.75vw, 0.875rem))' }}>
               Album
             </Typography>
 
@@ -392,71 +457,117 @@ function Album() {
               variant="h1"
               sx={{
                 fontWeight: 'bold',
-                fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
-                mb: 2,
+                fontSize: 'calc(clamp(1rem, 2.5vw, 3.5rem))',
+                mb: 'clamp(8px, 1vw, 16px)',
                 background: 'linear-gradient(45deg, #fff, #ccc)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
+                WebkitTextFillColor: 'transparent',
+                lineHeight: 1.2,
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
               }}
             >
               {album?.title}
             </Typography>
 
             {/* Artist Info */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1vw, 16px)', mb: 'clamp(8px, 1vw, 16px)' }}>
               <Avatar
-                src={artist?.imageUrl}
-                sx={{ width: 32, height: 32, cursor: 'pointer' }}
-                onClick={() => navigate(`/artist/${artist?.id}`)}
+                sx={{
+                  width: 'clamp(24px, 2vw, 40px)',
+                  height: 'clamp(24px, 2vw, 40px)',
+                  fontSize: 'clamp(0.75rem, 1vw, 1rem)',
+                  cursor: onOpenRightPanel ? 'pointer' : 'default',
+                  '&:hover': onOpenRightPanel ? { opacity: 0.8 } : {}
+                }}
+                onClick={() => {
+                  if (onOpenRightPanel && album?.artist) {
+                    onOpenRightPanel({ type: 'artist', artistName: album.artist || album.artistName });
+                  }
+                }}
               >
-                {artist?.name?.[0]}
+                {album?.artist?.[0] || album?.artistName?.[0]}
               </Avatar>
               <Typography
                 variant="h6"
                 sx={{
                   color: 'white',
                   fontWeight: 'bold',
-                  cursor: 'pointer',
-                  '&:hover': { textDecoration: 'underline' }
+                  fontSize: 'calc(clamp(0.625rem, 0.85vw, 1.125rem))',
+                  cursor: onOpenRightPanel ? 'pointer' : 'default',
+                  '&:hover': onOpenRightPanel ? { textDecoration: 'underline' } : {}
                 }}
-                onClick={() => navigate(`/artist/${artist?.id}`)}
+                onClick={() => {
+                  if (onOpenRightPanel && album?.artist) {
+                    onOpenRightPanel({ type: 'artist', artistName: album.artist || album.artistName });
+                  }
+                }}
               >
-                {artist?.name || album?.artist}
+                {album?.artist || album?.artistName}
               </Typography>
-              {user && artist && (
+              {onOpenRightPanel && album?.artist && (
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    console.log('Opening artist panel for:', album.artist || album.artistName);
+                    onOpenRightPanel({ type: 'artist', artistName: album.artist || album.artistName });
+                  }}
+                  sx={{
+                    color: 'grey.400',
+                    '&:hover': { color: 'white' }
+                  }}
+                  title="View artist info"
+                >
+                  <InfoOutlined fontSize="small" />
+                </IconButton>
+              )}
+              {user && album?.artist && (
                 <Button
                   size="small"
-                  variant={isArtistFollowed(artist.name) ? "outlined" : "contained"}
+                  variant={isArtistFollowed(album.artist) ? "outlined" : "contained"}
                   onClick={handleFollowArtist}
                   sx={{
-                    bgcolor: isArtistFollowed(artist.name) ? 'transparent' : '#1DB954',
+                    bgcolor: isArtistFollowed(album.artist) ? 'transparent' : '#1DB954',
                     borderColor: '#1DB954',
-                    color: isArtistFollowed(artist.name) ? '#1DB954' : 'white',
+                    color: isArtistFollowed(album.artist) ? '#1DB954' : 'white',
+                    fontSize: 'calc(clamp(0.625rem, 0.75vw, 0.875rem))',
+                    px: 'clamp(8px, 1vw, 16px)',
+                    py: 'clamp(4px, 0.5vw, 8px)',
                     '&:hover': {
-                      bgcolor: isArtistFollowed(artist.name) ? 'rgba(29, 185, 84, 0.1)' : '#1ed760'
+                      bgcolor: isArtistFollowed(album.artist) ? 'rgba(29, 185, 84, 0.1)' : '#1ed760'
                     }
                   }}
                 >
-                  {isArtistFollowed(artist.name) ? 'Following' : 'Follow'}
+                  {isArtistFollowed(album.artist) ? 'Following' : 'Follow'}
                 </Button>
               )}
             </Box>
 
             {/* Album Info */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-              <Typography variant="body2" sx={{ color: 'grey.300' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 0.5vw, 8px)', mb: 'clamp(8px, 1vw, 16px)', flexWrap: 'wrap' }}>
+              <Typography variant="body2" sx={{ color: 'grey.300', fontSize: 'calc(clamp(0.5rem, 0.65vw, 0.8rem))' }}>
                 {formatDate(album?.releaseDate)}
               </Typography>
-              <Typography variant="body2" sx={{ color: 'grey.300' }}>
+              <Typography variant="body2" sx={{ color: 'grey.300', fontSize: 'calc(clamp(0.5rem, 0.65vw, 0.8rem))' }}>
                 •
               </Typography>
-              <Typography variant="body2" sx={{ color: 'grey.300' }}>
+              <Typography variant="body2" sx={{ color: 'grey.300', fontSize: 'calc(clamp(0.5rem, 0.65vw, 0.8rem))' }}>
                 {albumStats.trackCount} songs, {albumStats.formattedDuration}
               </Typography>
+              {albumStats.totalPlays > 0 && (
+                <>
+                  <Typography variant="body2" sx={{ color: 'grey.300', fontSize: 'calc(clamp(0.5rem, 0.65vw, 0.8rem))' }}>
+                    •
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'grey.300', fontSize: 'calc(clamp(0.5rem, 0.65vw, 0.8rem))' }}>
+                    {albumStats.totalPlays.toLocaleString()} plays
+                  </Typography>
+                </>
+              )}
               {album?.genre && (
                 <>
-                  <Typography variant="body2" sx={{ color: 'grey.300' }}>
+                  <Typography variant="body2" sx={{ color: 'grey.300', fontSize: 'calc(clamp(0.5rem, 0.65vw, 0.8rem))' }}>
                     •
                   </Typography>
                   <Chip
@@ -477,56 +588,74 @@ function Album() {
                   readOnly
                   sx={{
                     '& .MuiRating-iconFilled': { color: '#1DB954' },
-                    '& .MuiRating-iconEmpty': { color: 'grey.600' }
+                    '& .MuiRating-iconEmpty': { color: 'grey.600' },
+                    '& .MuiSvgIcon-root': { fontSize: 'calc(clamp(1rem, 1.2vw, 1.5rem))' }
                   }}
                 />
-                <Typography variant="body2" sx={{ color: 'grey.300' }}>
+                <Typography variant="body2" sx={{ color: 'grey.300', fontSize: 'calc(clamp(0.5rem, 0.65vw, 0.8rem))' }}>
                   {albumStats.averageRating.toFixed(1)} ({albumStats.reviewCount} reviews)
                 </Typography>
               </Box>
             )}
 
             {/* Action Buttons */}
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 3 }}>
+            <Box sx={{ display: 'flex', gap: 'clamp(6px, 0.8vw, 16px)', alignItems: 'center', mt: 'clamp(12px, 1.5vw, 24px)', flexWrap: 'wrap' }}>
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<PlayArrow />}
+                startIcon={<PlayArrow sx={{ fontSize: 'calc(clamp(0.875rem, 1vw, 1.25rem))' }} />}
                 onClick={handlePlayAlbum}
                 disabled={tracks.length === 0}
                 sx={{
                   bgcolor: '#1DB954',
                   '&:hover': { bgcolor: '#1ed760' },
                   borderRadius: '50px',
-                  px: 3
+                  px: 'clamp(12px, 1.5vw, 24px)',
+                  py: 'clamp(6px, 0.8vw, 12px)',
+                  fontSize: 'calc(clamp(0.625rem, 0.75vw, 0.875rem))'
                 }}
               >
                 Play
               </Button>
 
               <IconButton
-                size="large"
                 onClick={handleShufflePlay}
                 disabled={tracks.length === 0}
-                sx={{ color: 'grey.300', '&:hover': { color: 'white' } }}
+                sx={{
+                  color: 'grey.300',
+                  '&:hover': { color: 'white' },
+                  '& .MuiSvgIcon-root': { fontSize: 'calc(clamp(1rem, 1.2vw, 1.5rem))' }
+                }}
               >
                 <Shuffle />
               </IconButton>
 
               <IconButton
-                size="large"
                 onClick={() => setReviewDialogOpen(true)}
-                sx={{ color: 'grey.300', '&:hover': { color: 'white' } }}
+                sx={{
+                  color: 'grey.300',
+                  '&:hover': { color: 'white' },
+                  '& .MuiSvgIcon-root': { fontSize: 'calc(clamp(1rem, 1.2vw, 1.5rem))' }
+                }}
               >
                 <Star />
               </IconButton>
 
               <IconButton
-                size="large"
-                sx={{ color: 'grey.300', '&:hover': { color: 'white' } }}
+                sx={{
+                  color: 'grey.300',
+                  '&:hover': { color: 'white' },
+                  '& .MuiSvgIcon-root': { fontSize: 'calc(clamp(1rem, 1.2vw, 1.5rem))' }
+                }}
               >
                 <Share />
               </IconButton>
+
+              <PurchaseButton
+                itemId={albumId}
+                itemType="album"
+                price={album?.price || 1499}
+              />
 
               <Button
                 variant="outlined"
@@ -535,7 +664,8 @@ function Album() {
                 sx={{
                   borderColor: 'grey.500',
                   color: 'white',
-                  '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' }
+                  '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' },
+                  display: 'none' // Hide old purchase button
                 }}
               >
                 Buy Album
@@ -552,137 +682,35 @@ function Album() {
         </Typography>
 
         {tracks.length > 0 ? (
-          <TableContainer component={Paper} sx={{ bgcolor: 'transparent', mb: 4 }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ '& th': { color: 'grey.400', borderColor: 'grey.800' } }}>
-                  <TableCell padding="checkbox">#</TableCell>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Plays</TableCell>
-                  <TableCell align="right">
-                    <AccessTime />
-                  </TableCell>
-                  <TableCell padding="checkbox"></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {tracks.map((track, index) => {
-                  const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
-                  const isLiked = user?.likes?.includes(track.id) || false;
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 4 }}>
+            {tracks.map((track, index) => {
+              const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
+              const isPlaying = isCurrentTrack && state.isPlaying;
+              const isLiked = checkIsLiked(track.id);
+              const metrics = trackMetrics[track.id] || {};
 
-                  return (
-                    <TableRow
-                      key={track.id}
-                      sx={{
-                        '&:hover': { bgcolor: 'grey.800' },
-                        '& td': { borderColor: 'grey.800', color: 'white' }
-                      }}
-                    >
-                      <TableCell padding="checkbox">
-                        <Box
-                          sx={{
-                            width: 20,
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            '&:hover .track-number': { display: 'none' },
-                            '&:hover .play-button': { display: 'block' }
-                          }}
-                          onClick={() => handlePlayTrack(track, index)}
-                        >
-                          <Typography
-                            variant="body2"
-                            className="track-number"
-                            sx={{
-                              color: isCurrentTrack ? '#1DB954' : 'grey.400',
-                              display: isCurrentTrack && state.isPlaying ? 'none' : 'block'
-                            }}
-                          >
-                            {track.trackNumber || index + 1}
-                          </Typography>
-                          <PlayArrow
-                            className="play-button"
-                            sx={{
-                              color: '#1DB954',
-                              display: isCurrentTrack && state.isPlaying ? 'block' : 'none'
-                            }}
-                          />
-                        </Box>
-                      </TableCell>
-
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 'bold',
-                            color: isCurrentTrack ? '#1DB954' : 'white',
-                            cursor: 'pointer',
-                            '&:hover': { textDecoration: 'underline' }
-                          }}
-                          onClick={() => handlePlayTrack(track, index)}
-                        >
-                          {track.title}
-                        </Typography>
-                        {track.explicit && (
-                          <Chip
-                            label="E"
-                            size="small"
-                            sx={{
-                              ml: 1,
-                              bgcolor: 'grey.600',
-                              color: 'white',
-                              fontSize: '0.6rem',
-                              height: 16
-                            }}
-                          />
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        <Typography variant="body2" sx={{ color: 'grey.400' }}>
-                          {(track.playCount || 0).toLocaleString()}
-                        </Typography>
-                      </TableCell>
-
-                      <TableCell align="right">
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleToggleLike(track)}
-                            sx={{
-                              color: isLiked ? '#e91e63' : 'transparent',
-                              '&:hover': { color: '#e91e63' }
-                            }}
-                          >
-                            {isLiked ? <Favorite /> : <FavoriteBorder />}
-                          </IconButton>
-
-                          <Typography variant="body2" sx={{ color: 'grey.400', minWidth: 40 }}>
-                            {formatDuration(track.duration || 0)}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-
-                      <TableCell padding="checkbox">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            setAnchorEl(e.currentTarget);
-                            setSelectedTrack(track);
-                          }}
-                          sx={{
-                            color: 'transparent',
-                            '&:hover': { color: 'grey.400' }
-                          }}
-                        >
-                          <MoreVert />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              return (
+                <TrackRowCard
+                  key={track.id}
+                  track={track}
+                  index={index}
+                  isCurrentTrack={isCurrentTrack}
+                  isPlaying={isPlaying}
+                  isLiked={isLiked}
+                  likeCount={metrics.likeCount || 0}
+                  onPlay={handlePlayTrack}
+                  onToggleLike={handleToggleLike}
+                  onMoreOptions={(e, track) => {
+                    setAnchorEl(e.currentTarget);
+                    setSelectedTrack(track);
+                  }}
+                  showArtist={true}
+                  artistName={album?.artistName}
+                  showPurchase={true}
+                />
+              );
+            })}
+          </Box>
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <MusicNote sx={{ fontSize: 64, color: 'grey.600', mb: 2 }} />
@@ -739,7 +767,7 @@ function Album() {
             <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
               Reviews ({albumStats.reviewCount})
             </Typography>
-            {user && (
+            {user ? (
               <Button
                 variant="outlined"
                 onClick={() => setReviewDialogOpen(true)}
@@ -750,6 +778,25 @@ function Album() {
                 }}
               >
                 Write Review
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                onClick={async () => {
+                  try {
+                    await signInWithGoogle();
+                    toast.success('Signed in! You can now write a review.');
+                  } catch (error) {
+                    toast.error('Failed to sign in. Please try again.');
+                  }
+                }}
+                sx={{
+                  borderColor: 'grey.600',
+                  color: 'grey.400',
+                  '&:hover': { borderColor: '#1DB954', color: '#1DB954' }
+                }}
+              >
+                Sign in to Review
               </Button>
             )}
           </Box>
@@ -797,62 +844,6 @@ function Album() {
             </Box>
           )}
         </Box>
-
-        {/* Related Albums */}
-        {relatedAlbums.length > 0 && (
-          <Box>
-            <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
-              More by {artist?.name || album?.artist}
-            </Typography>
-            <Grid container spacing={2}>
-              {relatedAlbums.map((relatedAlbum) => (
-                <Grid item xs={12} sm={6} md={4} lg={2} key={relatedAlbum.id}>
-                  <Card
-                    sx={{
-                      bgcolor: 'grey.800',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                      '&:hover': { transform: 'scale(1.05)', bgcolor: 'grey.700' }
-                    }}
-                    onClick={() => navigate(`/album/${relatedAlbum.id}`)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={relatedAlbum.coverUrl || '/default-album-cover.jpg'}
-                      alt={relatedAlbum.title}
-                    />
-                    <CardContent sx={{ p: 2 }}>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          color: 'white',
-                          fontWeight: 'bold',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {relatedAlbum.title}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'grey.400',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {formatDate(relatedAlbum.releaseDate)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        )}
       </Box>
 
       {/* Context Menu */}
@@ -907,6 +898,18 @@ function Album() {
             <Share sx={{ color: 'grey.400' }} />
           </ListItemIcon>
           <ListItemText>Share</ListItemText>
+        </MenuItem>
+
+        <Divider sx={{ bgcolor: 'grey.700' }} />
+
+        <MenuItem
+          onClick={() => handlePurchaseTrack(selectedTrack)}
+          sx={{ color: 'white' }}
+        >
+          <ListItemIcon>
+            <ShoppingCart sx={{ color: '#1DB954' }} />
+          </ListItemIcon>
+          <ListItemText>Purchase ($1.99)</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -994,10 +997,10 @@ function Album() {
               {album?.title}
             </Typography>
             <Typography variant="body2" sx={{ color: 'grey.400', mb: 2 }}>
-              by {artist?.name || album?.artist}
+              by {album?.artist || album?.artistName}
             </Typography>
             <Typography variant="h4" sx={{ color: '#1DB954', fontWeight: 'bold' }}>
-              ${album?.price || '9.99'}
+              ${album?.price ? (album.price / 100).toFixed(2) : '14.99'}
             </Typography>
           </Box>
 

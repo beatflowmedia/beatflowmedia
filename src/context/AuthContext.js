@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import {
   getAuth,
   onAuthStateChanged,
@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }) => {
   const [followedArtists, setFollowedArtists] = useState([]);
 
   const auth = getAuth();
-  const provider = new GoogleAuthProvider();
 
   // Listen for auth state changes
   useEffect(() => {
@@ -40,11 +39,10 @@ export const AuthProvider = ({ children }) => {
         const userRef = doc(db, "users", firebaseUser.uid);
         const snap = await getDoc(userRef);
 
-        // Set initial user with likes array
+        // Set initial user WITHOUT likes (likes handled by separate LikesContext)
         const userData = snap.exists() ? snap.data() : {};
         setUser({
           ...firebaseUser,
-          likes: userData?.likes || [],
           follows: userData?.follows || [],
           role: userData?.role || null
         });
@@ -70,7 +68,7 @@ export const AuthProvider = ({ children }) => {
           setRole(snap.data()?.role || null);
         }
 
-        // Subscribe to follow list, role, and likes
+        // Subscribe to follow list and role (likes handled separately by LikesContext)
         const unsubFollows = onSnapshot(
           userRef,
           (ds) => {
@@ -78,14 +76,25 @@ export const AuthProvider = ({ children }) => {
             if (data) {
               setFollowedArtists(data?.follows || []);
               setRole(data?.role || null);
-              // Update user object with latest likes - ensure firebaseUser also has likes
-              const updatedUser = {
-                ...firebaseUser,
-                likes: data?.likes || [],
-                follows: data?.follows || [],
-                role: data?.role || null
-              };
-              setUser(updatedUser);
+              // Only update user if follows/role actually changed to prevent unnecessary re-renders
+              setUser(prevUser => {
+                const newFollows = data?.follows || [];
+                const newRole = data?.role || null;
+
+                // Check if anything actually changed
+                const followsChanged = JSON.stringify(prevUser?.follows) !== JSON.stringify(newFollows);
+                const roleChanged = prevUser?.role !== newRole;
+
+                if (!followsChanged && !roleChanged) {
+                  return prevUser; // No change, return same object to prevent re-render
+                }
+
+                return {
+                  ...firebaseUser,
+                  follows: newFollows,
+                  role: newRole
+                };
+              });
             }
           },
           (error) => {
@@ -101,8 +110,9 @@ export const AuthProvider = ({ children }) => {
   }, [auth]);
 
   // Sign in with Google
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     try {
+      const provider = new GoogleAuthProvider();
       const { user: fbUser } = await signInWithPopup(auth, provider);
       const userRef = doc(db, "users", fbUser.uid);
       await setDoc(
@@ -118,66 +128,50 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error("Google sign-in error:", e);
     }
-  };
+  }, [auth]);
 
   // Sign out
-  const signOutUser = async () => {
+  const signOutUser = useCallback(async () => {
     await signOut(auth);
     setUser(null);
-  };
+  }, [auth]);
 
   // Update favorites array
-  const updateFavorites = async (arr) => {
+  const updateFavorites = useCallback(async (arr) => {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid), { favorites: arr });
-  };
+  }, [user]);
 
   // Follow/unfollow artist
-  const followArtist = async (name) => {
+  const followArtist = useCallback(async (name) => {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid), { follows: arrayUnion(name) });
-  };
-  const unfollowArtist = async (name) => {
+  }, [user]);
+
+  const unfollowArtist = useCallback(async (name) => {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid), { follows: arrayRemove(name) });
-  };
-  const isArtistFollowed = (name) => followedArtists.includes(name);
+  }, [user]);
 
-  // Like/unlike uses a likers array in songLikes collection
-  const addLike = async (songId) => {
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    const songLikesRef = doc(db, "songLikes", songId);
-    // add to user's own likes (use setDoc with merge to handle non-existent docs)
-    await setDoc(userRef, { likes: arrayUnion(songId) }, { merge: true });
-    // add this user's UID to likers list
-    await setDoc(songLikesRef, { likers: arrayUnion(user.uid) }, { merge: true });
-  };
-  const removeLike = async (songId) => {
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    const songLikesRef = doc(db, "songLikes", songId);
-    // remove from user's own likes (use setDoc with merge)
-    await setDoc(userRef, { likes: arrayRemove(songId) }, { merge: true });
-    // remove this user's UID from likers list
-    await setDoc(songLikesRef, { likers: arrayRemove(user.uid) }, { merge: true });
-  };
+  const isArtistFollowed = useCallback((name) => followedArtists.includes(name), [followedArtists]);
+
+  // Likes are now handled by separate LikesContext to prevent re-renders
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    role,
+    followedArtists,
+    signInWithGoogle,
+    signOutUser,
+    updateFavorites,
+    followArtist,
+    unfollowArtist,
+    isArtistFollowed
+  }), [user, role, followedArtists, signInWithGoogle, signOutUser, updateFavorites, followArtist, unfollowArtist, isArtistFollowed]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        role,
-        signInWithGoogle,
-        signOutUser,
-        updateFavorites,
-        followArtist,
-        unfollowArtist,
-        isArtistFollowed,
-        addLike,
-        removeLike
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

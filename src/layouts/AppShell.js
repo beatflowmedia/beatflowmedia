@@ -1,5 +1,5 @@
 // src/layouts/AppShell.js
-import React, { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -12,6 +12,8 @@ import ErrorBoundary from "../components/ErrorBoundary";
 
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePlayerActions } from "../hooks/usePlayerActions";
+import { db } from "../firebaseConfig";
+import { collection, onSnapshot } from "firebase/firestore";
 import musicData from "../musicData.json";
 import { buildArtistInfo } from "../utils/buildArtistInfo";
 
@@ -34,6 +36,10 @@ export default function AppShell() {
   const navigate = useNavigate();
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
+  // Load songs from Firebase for sidebar (combines with local musicData.json)
+  const [firebaseSongs, setFirebaseSongs] = useState([]);
+  const allSongs = useMemo(() => [...musicData, ...firebaseSongs], [firebaseSongs]);
+
   // Use unified player actions hook (replaces local state + event system)
   const { playSong, playArtist, currentSong, isPlaying } = usePlayerActions(musicData);
 
@@ -46,36 +52,36 @@ export default function AppShell() {
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Favorites State
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("favorites")) || [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Persist favorites to localStorage
+  // Load songs from Firebase
   useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  }, [favorites]);
+    const unsubscribe = onSnapshot(collection(db, "songs"), (snapshot) => {
+      const songs = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.data().id || doc.id,  // Preserve original id if exists
+        artist: doc.data().artistName || doc.data().artist
+      }));
+      setFirebaseSongs(songs);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Right Panel Handlers
-  const openRightPanel = (content) => {
+  const openRightPanel = useCallback((content) => {
     let info = null;
     if (content?.type === "artist") {
-      info = buildArtistInfo(content.artistName, musicData);
+      info = buildArtistInfo(content.artistName, allSongs);
     } else if (content?.type === "playlist") {
       info = content;
     }
     setRightPanelContent(info ? { ...content, info } : content);
     setRightPanelVisible(true);
-  };
+  }, [allSongs]);
 
-  const closeRightPanel = () => {
+  const closeRightPanel = useCallback(() => {
     setRightPanelVisible(false);
     setRightPanelContent(null);
-  };
+  }, []);
 
   // NavBar Handlers
   const handleHomeClick = () => {
@@ -110,14 +116,19 @@ export default function AppShell() {
     navigate(`/artist/${encodeURIComponent(artistName)}`);
   };
 
-  // Toggle Favorite
-  const toggleFavorite = (song) => {
-    setFavorites((favs) =>
-      favs.some((s) => s.id === song.id)
-        ? favs.filter((s) => s.id !== song.id)
-        : [...favs, song]
-    );
-  };
+  // Memoize outlet context to prevent unnecessary re-renders
+  const outletContext = useMemo(() => ({
+    currentSong,
+    isPlaying,
+    playlists,
+    musicData,
+    playSong,
+    onAddSongToPlaylist: addSong,
+    onRemoveSongFromPlaylist: removeSong,
+    onCreatePlaylist: createNewPlaylist,
+    onOpenRightPanel: openRightPanel,
+    searchQuery,
+  }), [currentSong, isPlaying, playlists, playSong, addSong, removeSong, createNewPlaylist, openRightPanel, searchQuery]);
 
   // Compute container classes
   const containerClasses = [
@@ -145,7 +156,7 @@ export default function AppShell() {
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.collapsed : ""}`}>
         <SideBar
-          musicData={musicData}
+          musicData={allSongs}
           playlists={playlists}
           onPlaylistSelect={handlePlaylistSelect}
           onArtistSelect={handleArtistSelect}
@@ -169,37 +180,21 @@ export default function AppShell() {
               </div>
             }
           >
-            <Outlet
-              context={{
-                // Context passed to child routes
-                currentSong,
-                isPlaying,
-                favorites,
-                playlists,
-                musicData,
-                playSong,
-                toggleFavorite,
-                onAddSongToPlaylist: addSong,
-                onRemoveSongFromPlaylist: removeSong,
-                onCreatePlaylist: createNewPlaylist,
-                onOpenRightPanel: openRightPanel,
-                searchQuery,
-              }}
-            />
+            <Outlet context={outletContext} />
           </Suspense>
         </ErrorBoundary>
       </main>
 
       {/* Right Panel */}
-      {rightPanelVisible && (
-        <aside className={`${styles.rightPanel} ${!rightPanelVisible ? styles.hidden : ""}`}>
+      <aside className={`${styles.rightPanel} ${!rightPanelVisible ? styles.hidden : ""}`}>
+        {rightPanelVisible && (
           <RightPanel
             visible={rightPanelVisible}
             content={rightPanelContent}
             onClose={closeRightPanel}
           />
-        </aside>
-      )}
+        )}
+      </aside>
 
       {/* Music Player */}
       <footer className={styles.player}>

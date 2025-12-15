@@ -13,7 +13,7 @@ import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Search from '@mui/icons-material/Search';
 import { getDocs } from 'firebase/firestore';
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import RequestPayout from '../components/RequestPayout';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -61,6 +61,7 @@ import Notifications from '@mui/icons-material/Notifications';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import {
   collection,
@@ -104,8 +105,9 @@ const SORT_OPTIONS = [
 ];
 
 export default function CuratorInbox() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { state, dispatch, actions } = usePlayer();
+  const navigate = useNavigate();
 
   // State management
   const [submissions, setSubmissions] = useState([]);
@@ -141,9 +143,17 @@ export default function CuratorInbox() {
   });
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Check role and redirect if not curator
+  useEffect(() => {
+    if (role && role !== 'curator') {
+      navigate('/become-curator');
+    }
+  }, [role, navigate]);
+
   // Load submissions and curator data
   useEffect(() => {
     if (!user) return;
+    if (role && role !== 'curator') return; // Don't load data for non-curators
 
     setLoading(true);
 
@@ -407,6 +417,19 @@ export default function CuratorInbox() {
       default: return <Inbox />;
     }
   };
+
+  // Show loading for non-curators while redirecting
+  if (role && role !== 'curator') {
+    return null;
+  }
+
+  if (!user) {
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: 'grey.900', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="h5" color="white">Please sign in to access the Curator Inbox</Typography>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (

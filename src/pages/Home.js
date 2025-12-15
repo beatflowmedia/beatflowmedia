@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, memo, useCallback, lazy, Suspense } from "react";
 import {
   Box,
   Grid,
@@ -32,17 +32,23 @@ import MusicNote from '@mui/icons-material/MusicNote';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import PersonRemove from '@mui/icons-material/PersonRemove';
 import QueueMusic from '@mui/icons-material/QueueMusic';
+import ShoppingCart from '@mui/icons-material/ShoppingCart';
+import Download from '@mui/icons-material/Download';
+import CheckCircle from '@mui/icons-material/CheckCircle';
 import PlayingIndicator from "../components/PlayingIndicator";
 import SongLikeCount from "../components/SongLikeCount";
 import SongPlayCount from "../components/SongPlayCount";
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
+import { useLikes } from "../context/LikesContext";
 import { usePlaySong } from "../hooks/usePlaySong";
 import { toast } from "react-toastify";
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
 import ShareButton from "../utils/ShareButton";
 import firebaseCache from "../utils/firebaseCache";
+import { stripeService } from "../services/stripeService";
+import { useNavigate } from "react-router-dom";
 
 // Lazy load heavy components for better initial page load
 const TrendingSongs = lazy(() => import("../components/TrendingSongs"));
@@ -51,8 +57,10 @@ const Footer = lazy(() => import("../components/Footer"));
 
 function Home() {
   const { dispatch, actions } = usePlayer();
-  const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
+  const { user, followArtist, unfollowArtist, isArtistFollowed } = useAuth();
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
   const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
+  const navigate = useNavigate();
   // Enhanced state management for discovery features
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -61,15 +69,50 @@ function Home() {
   // Content state
   const [trendingSongs, setTrendingSongs] = useState([]);
   const [newReleases, setNewReleases] = useState([]);
-  const [recommendedSongs, setRecommendedSongs] = useState([]);
+  const [recentAlbums, setRecentAlbums] = useState([]);
+  const [setRecommendedSongs] = useState([]);
   const [featuredArtists, setFeaturedArtists] = useState([]);
   const [userActivity, setUserActivity] = useState([]);
   const [podcasts, setPodcasts] = useState([]);
   const [audiobooks, setAudiobooks] = useState([]);
+  const [purchasedSongIds, setPurchasedSongIds] = useState(new Set());
 
   // UI state
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
+
+  // Load user's purchases
+  useEffect(() => {
+    const loadUserPurchases = async () => {
+      if (!user) {
+        setPurchasedSongIds(new Set());
+        return;
+      }
+
+      try {
+        const purchases = await stripeService.getUserPurchases(user.uid);
+        const songIds = new Set(purchases.map(p => p.itemId));
+        setPurchasedSongIds(songIds);
+        console.log('Loaded', songIds.size, 'purchased songs for user');
+      } catch (error) {
+        console.error('Error loading purchases:', error);
+      }
+    };
+
+    loadUserPurchases();
+
+    // Listen for purchase completion events
+    const handlePurchaseComplete = (event) => {
+      if (event.detail?.itemId && event.detail?.itemType === 'song') {
+        setPurchasedSongIds(prev => new Set([...prev, event.detail.itemId]));
+        console.log('Purchase complete event received, added to purchased songs:', event.detail.itemId);
+      }
+    };
+
+    window.addEventListener('purchaseComplete', handlePurchaseComplete);
+    return () => window.removeEventListener('purchaseComplete', handlePurchaseComplete);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]); // Only reload when user logs in/out, not when user object changes
 
   // Load trending content
   useEffect(() => {
@@ -116,11 +159,30 @@ function Home() {
 
         onSnapshot(newReleasesQuery, (snapshot) => {
           const releases = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            id: doc.data().id || doc.id  // Preserve original id if exists
           }));
           console.log('Home: Loaded', releases.length, 'new releases from Firebase');
           setNewReleases(releases);
+        });
+
+        // Load recent albums
+        const recentAlbumsQuery = query(
+          collection(db, "albums"),
+          orderBy("releaseDate", "desc"),
+          limit(10)
+        );
+
+        onSnapshot(recentAlbumsQuery, (snapshot) => {
+          const albums = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('Home: Loaded', albums.length, 'recent albums from Firebase');
+          setRecentAlbums(albums);
+        }, (error) => {
+          console.log('Albums collection query failed:', error.message);
+          setRecentAlbums([]);
         });
 
         // Load featured artists
@@ -189,7 +251,7 @@ function Home() {
 
     loadTrendingContent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user?.uid]); // Only reload when user logs in/out, not when user object changes
 
   // Simple recommendation algorithm
   const generateRecommendations = useCallback(async (history) => {
@@ -217,7 +279,7 @@ function Home() {
     } catch (err) {
       console.error("Error generating recommendations:", err);
     }
-  }, []);
+  }, [setRecommendedSongs]);
 
   // Load personalized content for authenticated users
   const loadPersonalizedContent = useCallback(async () => {
@@ -272,9 +334,9 @@ function Home() {
 
     try {
       // Check if already liked
-      const isLiked = user.likes?.includes(song.id);
+      const liked = checkIsLiked(song.id);
 
-      if (isLiked) {
+      if (liked) {
         await removeLike(song.id);
         toast.success("Removed from liked songs");
       } else {
@@ -284,7 +346,7 @@ function Home() {
     } catch (err) {
       toast.error("Failed to update likes");
     }
-  }, [user, addLike, removeLike]);
+  }, [checkIsLiked, addLike, removeLike]);
 
   const handleFollowArtist = useCallback(async (artistName) => {
     if (!user) {
@@ -326,6 +388,29 @@ function Home() {
     setSelectedSong(song);
     handleMenuClose();
   }, [handleMenuClose]);
+
+  const handlePurchase = useCallback(async (song) => {
+    handleMenuClose();
+    if (!user) {
+      toast.error('Please sign in to purchase music');
+      return;
+    }
+
+    try {
+      // Check if already purchased
+      if (purchasedSongIds.has(song.id)) {
+        toast.info('You already own this song! Redirecting to downloads...');
+        navigate('/downloads');
+        return;
+      }
+
+      // Create checkout session
+      await stripeService.createSongCheckout(user.uid, song.id, user.email);
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error(`Failed to initiate purchase: ${error.message}`);
+    }
+  }, [user, navigate, handleMenuClose, purchasedSongIds]);
 
   // Tab change handler
   const handleTabChange = useCallback((event, newValue) => {
@@ -584,11 +669,83 @@ function Home() {
         </Box>
       )}
 
+      {/* Recently Released Albums Section */}
+      {recentAlbums.length > 0 && (
+        <>
+          <Divider sx={{ my: 4 }} />
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h5" sx={{ color: 'text.primary', mb: 2, fontWeight: 'bold' }}>
+              Recently Released Albums
+            </Typography>
+            <Grid container spacing={2}>
+              {recentAlbums.map((album) => (
+                <Grid item xs={6} sm={4} md={2.4} lg={2} key={album.id}>
+                  <Card
+                    onClick={() => navigate(`/album/${album.id}`)}
+                    sx={{
+                      bgcolor: '#1e1e1e',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 4,
+                        bgcolor: '#282828'
+                      }
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="160"
+                      image={album.coverUrl || '/default-album.jpg'}
+                      alt={album.title}
+                      loading="lazy"
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <CardContent sx={{ pb: 2 }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{
+                          color: 'text.primary',
+                          fontWeight: 'bold',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {album.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'text.secondary',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {album.artistName || album.artist}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                        <QueueMusic sx={{ fontSize: 14, color: '#1DB954' }} />
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {album.trackCount || 0} tracks
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </>
+      )}
+
       {/* Main Content Grid */}
       <Grid container spacing={2}>
         {currentContent.map((song, index) => {
           const isPlaying = isSongPlaying(song);
-          const isLiked = user?.likes?.includes(song.id) || false;
+          const isLiked = checkIsLiked(song.id);
+          const isPurchased = purchasedSongIds.has(song.id);
 
           return (
             <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={song.id}>
@@ -618,6 +775,25 @@ function Home() {
                       left: 8,
                       zIndex: 1,
                       fontWeight: 'bold'
+                    }}
+                  />
+                )}
+
+                {/* Purchased Badge */}
+                {isPurchased && (
+                  <Chip
+                    icon={<CheckCircle />}
+                    label="Owned"
+                    size="small"
+                    color="success"
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      zIndex: 1,
+                      fontWeight: 'bold',
+                      bgcolor: '#1DB954',
+                      color: 'white'
                     }}
                   />
                 )}
@@ -712,7 +888,7 @@ function Home() {
                     {song.artist}
                   </Typography>
 
-                  {song.genre && (
+                  {song.genre && activeTab !== 2 && (
                     <Chip
                       label={song.genre}
                       size="small"
@@ -812,6 +988,21 @@ function Home() {
             <Share sx={{ color: 'grey.400' }} />
           </ListItemIcon>
           <ListItemText>Share</ListItemText>
+        </MenuItem>
+
+        <Divider sx={{ bgcolor: 'grey.700' }} />
+
+        <MenuItem onClick={() => handlePurchase(selectedSong)} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            {purchasedSongIds.has(selectedSong?.id) ? (
+              <Download sx={{ color: '#1DB954' }} />
+            ) : (
+              <ShoppingCart sx={{ color: '#1DB954' }} />
+            )}
+          </ListItemIcon>
+          <ListItemText>
+            {purchasedSongIds.has(selectedSong?.id) ? 'Download' : 'Purchase ($0.99)'}
+          </ListItemText>
         </MenuItem>
       </Menu>
 
