@@ -5,8 +5,9 @@ import { db } from '../firebaseConfig';
 import { collection, addDoc, doc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 // Initialize Stripe with your publishable key
-// TODO: Add your Stripe publishable key to .env file as REACT_APP_STRIPE_PUBLISHABLE_KEY
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(
+  process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
 
 // Default prices (in cents - Stripe format)
 const DEFAULT_SONG_PRICE = 199;  // $1.99
