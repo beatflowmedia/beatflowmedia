@@ -1,10 +1,11 @@
 // src/AppRoutes.js
-import React, { lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import AppShell from "./layouts/AppShell";
 import { useAuth } from "./context/AuthContext";
 import ArtistPortal from "./pages/ArtistPortal";
 import CuratorPortal from "./pages/CuratorPortal";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Lazy-loaded pages
 const Home = lazy(() => import("./pages/Home"));
@@ -24,11 +25,26 @@ const BrowsePage = lazy(() => import("./pages/BrowsePage"));
 const SongPage = lazy(() => import("./pages/SongPage"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const ForArtists = lazy(() => import("./pages/ForArtists"));
+const ArtistSubmissionPricing = lazy(() => import("./pages/ArtistSubmissionPricing"));
+const CuratorPricing = lazy(() => import("./pages/CuratorPricing"));
+const CuratorApplication = lazy(() => import("./pages/CuratorApplication"));
 const AgentsDashboard = lazy(() => import("./pages/AgentsDashboard"));
 const Advertisements = lazy(() => import("./pages/Advertisements"));
+const AdminApplications = lazy(() => import("./pages/AdminApplications"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const PurchaseSuccess = lazy(() => import("./pages/PurchaseSuccess"));
+const PurchaseCancelled = lazy(() => import("./pages/PurchaseCancelled"));
+const Downloads = lazy(() => import("./pages/Downloads"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const GenrePage = lazy(() => import("./pages/GenrePage"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const GenreManagement = lazy(() => import("./pages/GenreManagement"));
 const About = lazy(() => import("./pages/About"));
 const ForTheRecord = lazy(() => import("./pages/ForTheRecord"));
 const Support = lazy(() => import("./pages/Support"));
+const ArtistDashboardNew = lazy(() => import("./pages/ArtistDashboardNew"));
+// const PodcasterDashboard = lazy(() => import("./pages/PodcasterDashboard"));
 const SupportCategory = lazy(() => import("./pages/SupportCategory"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Investors = lazy(() => import("./pages/Investors"));
@@ -86,6 +102,18 @@ export default function AppRoutes() {
           <Route path="search" element={<Search />} />
           <Route path="playlist/:id" element={<Playlist />} />
           <Route path="album/:id" element={<Album />} />
+
+          {/* Specific artist routes - must come BEFORE artist/:id */}
+          <Route
+            path="artist/genre-management"
+            element={
+              <ProtectedRoute requiredRole="artist" adminOnly={false}>
+                <GenreManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Dynamic artist route - must come AFTER specific routes */}
           <Route path="artist/:id" element={<Artist />} />
           <Route path="favorites" element={<Favorites />} />
           <Route path="playlists" element={<Playlists />} />
@@ -93,7 +121,20 @@ export default function AppRoutes() {
           <Route path="whats-new" element={<WhatsNew />} />
           <Route path="explore-premium" element={<ExplorePremium />} />
           <Route path="browse" element={<BrowsePage />} />
+          <Route path="genre/:genre" element={<GenrePage />} />
+          <Route path="category/:category" element={<CategoryPage />} />
+          <Route path="made-for-you" element={<CategoryPage />} />
+          <Route path="new-releases" element={<CategoryPage />} />
+          <Route path="discover" element={<CategoryPage />} />
+          <Route path="charts/:type" element={<CategoryPage />} />
         </Route>
+
+        {/* Standalone Artist Dashboard - outside AppShell */}
+        <Route path="artist/dashboard" element={<ArtistDashboardNew />} />
+
+        {/* Standalone Curator Portal - outside AppShell */}
+        <Route path="curator-portal" element={<CuratorPortal />} />
+        <Route path="curator-inbox" element={<CuratorInbox />} />
 
         {/* Role-based portals (protected routes) */}
         {user && role === "artist" && (
@@ -102,17 +143,34 @@ export default function AppRoutes() {
             <Route path="campaign-wizard" element={<CampaignWizard />} />
           </>
         )}
-        {user && role === "curator" && (
+        {/* {user && role === "podcaster" && (
           <>
-            <Route path="curator-portal" element={<CuratorPortal userId={user.uid} stripeAccountId={user.stripeAccountId} />} />
-            <Route path="curator-inbox" element={<CuratorInbox />} />
+            <Route path="podcaster/dashboard" element={<PodcasterDashboard />} />
           </>
-        )}
+        )} */}
         {user && role === "investor" && (
           <Route path="investor-portal" element={<InvestorPortal />} />
         )}
 
-        {/* Admin routes inside AppShell */}
+        {/* Admin routes - protected */}
+        <Route
+          path="admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/applications"
+          element={
+            <ProtectedRoute>
+              <AdminApplications />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Public admin routes inside AppShell */}
         <Route element={<AppShell />}>
           <Route path="ads" element={<Advertisements />} />
           <Route path="advertisements" element={<Advertisements />} />
@@ -122,6 +180,14 @@ export default function AppRoutes() {
         <Route path="agents-dashboard" element={<AgentsDashboard />} />
         <Route path="song/:id" element={<SongPage />} />
         <Route path="jobs" element={<Jobs />} />
+        <Route path="artist-pricing" element={<ArtistSubmissionPricing />} />
+        <Route path="become-curator" element={<CuratorPricing />} />
+        <Route path="curator-application" element={<CuratorApplication />} />
+        <Route path="purchase/success" element={<PurchaseSuccess />} />
+        <Route path="purchase/cancelled" element={<PurchaseCancelled />} />
+        <Route path="downloads" element={<Downloads />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="for-artists" element={<ForArtists />} />
         <Route path="about" element={<About />} />
         <Route path="for-the-record" element={<ForTheRecord />} />
