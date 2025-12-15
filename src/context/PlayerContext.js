@@ -222,7 +222,7 @@ export const PlayerProvider = ({ children }) => {
     }
   }, [persistedQueue, queueLoading, queueError, queueInitialized]);
 
-  // Load new track into engine when currentIndex changes
+  // Load new track into engine when currentIndex or queue changes
   useEffect(() => {
     const engine = engineRef.current;
     const item = state.queue[state.currentIndex];
@@ -235,7 +235,7 @@ export const PlayerProvider = ({ children }) => {
       engine.play();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.currentIndex]);
+  }, [state.currentIndex, state.queue]);
 
   // Control play/pause when isPlaying flag changes
   useEffect(() => {
@@ -340,6 +340,23 @@ export const PlayerProvider = ({ children }) => {
           },
         ]
       });
+
+      // Set playback state
+      navigator.mediaSession.playbackState = state.isPlaying ? "playing" : "paused";
+
+      // Update position state
+      if (state.duration > 0 && "setPositionState" in navigator.mediaSession) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: state.duration,
+            playbackRate: 1.0,
+            position: state.currentTime
+          });
+        } catch (error) {
+          console.log("setPositionState not supported or invalid values");
+        }
+      }
+
       navigator.mediaSession.setActionHandler("play", () =>
         dispatchRaw({ type: actions.TOGGLE_PLAY }),
       );
@@ -362,8 +379,13 @@ export const PlayerProvider = ({ children }) => {
         const newTime = Math.min(state.currentTime + offset, state.duration);
         dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: newTime });
       });
+      navigator.mediaSession.setActionHandler("seekto", (details) => {
+        if (details.seekTime !== null && details.seekTime >= 0) {
+          dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: details.seekTime });
+        }
+      });
     }
-  }, [state.currentIndex, state.queue, state.currentTime, state.duration]);
+  }, [state.currentIndex, state.queue, state.currentTime, state.duration, state.isPlaying]);
 
   return (
     <PlayerContext.Provider value={{ state, dispatch, actions, audioRef }}>

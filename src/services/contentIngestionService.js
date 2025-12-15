@@ -1,7 +1,6 @@
 // src/services/contentIngestionService.js
 // Frontend service for content ingestion workflow
-import { storage } from "../firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { auth } from "../firebaseConfig";
 
 // TUS client for resumable uploads
 class TusUploadClient {
@@ -418,6 +417,54 @@ export class ContentIngestionService {
       "Experimental",
       "Other",
     ];
+  }
+
+  // Approve artist submission and publish to platform
+  async approveSubmission(submissionId) {
+    try {
+      const response = await fetch(`/.netlify/functions/approve-submission`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await this.getAuthToken()}`
+        },
+        body: JSON.stringify({ submissionId })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to approve submission");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error approving submission:", error);
+      throw error;
+    }
+  }
+
+  // Reject artist submission with feedback
+  async rejectSubmission(submissionId, feedback) {
+    try {
+      const response = await fetch(`/.netlify/functions/reject-submission`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await this.getAuthToken()}`
+        },
+        body: JSON.stringify({ submissionId, feedback })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to reject submission");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error rejecting submission:", error);
+      throw error;
+    }
   }
 }
 

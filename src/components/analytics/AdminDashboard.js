@@ -23,86 +23,81 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
+  Avatar,
   Divider,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Alert,
-  IconButton,
   Badge,
   Tabs,
-  Tab
+  Tab,
+  CircularProgress
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
-  TrendingUp as TrendingUpIcon,
-  AttachMoney as MoneyIcon,
   People as PeopleIcon,
   PlayArrow as PlayIcon,
   Security as SecurityIcon,
   Speed as SpeedIcon,
-  Storage as StorageIcon,
-  Cloud as CloudIcon,
   Warning as WarningIcon,
   Error as ErrorIcon,
-  CheckCircle as CheckIcon as DownloadIcon,
+  CheckCircle as CheckIcon,
+  Download as DownloadIcon,
   Settings as SettingsIcon,
   Notifications as NotificationIcon,
   Assessment as AssessmentIcon,
   Analytics as AnalyticsIcon,
   BusinessCenter as BusinessIcon
 } from "@mui/icons-material";
-import { useTheme } from "@mui/material/styles";
-import { Avatar } from '@mui/material/Avatar';
+import { adminAnalytics } from "../../services/adminAnalytics";
 
 // Platform overview metrics
 const PlatformOverview = ({ data }) => {
-  const metrics = {
-    totalUsers: 1567890,
-    activeUsers: 567890,
-    totalArtists: 45678,
-    totalTracks: 2345678,
-    totalPlaylists: 456789,
-    totalRevenue: 2567890.45,
-    monthlyRevenue: 234567.89,
-    systemUptime: 99.97,
-    avgResponseTime: 125,
-    errorRate: 0.12
+  // Use real data if available, otherwise show loading state
+  const metrics = data || {
+    totalUsers: 0,
+    totalSongs: 0,
+    totalArtists: 0,
+    totalAlbums: 0,
+    totalPlaylists: 0,
+    totalApplications: 0,
+    pendingApplications: 0
   };
 
   const keyMetrics = [
     {
       title: "Total Users",
-      value: metrics.totalUsers,
-      subtitle: `${metrics.activeUsers.toLocaleString()} active`,
+      value: metrics.totalUsers || 0,
+      subtitle: `${metrics.totalApplications || 0} job applications`,
       icon: <PeopleIcon />,
       color: "primary",
-      trend: "+12.5%"
+      trend: "+5.2%"
     },
     {
-      title: "Total Revenue",
-      value: `$${metrics.totalRevenue.toLocaleString()}`,
-      subtitle: `$${metrics.monthlyRevenue.toLocaleString()} this month`,
-      icon: <MoneyIcon />,
-      color: "success",
-      trend: "+18.7%"
-    },
-    {
-      title: "Content Library",
-      value: metrics.totalTracks,
-      subtitle: `${metrics.totalArtists.toLocaleString()} artists`,
+      title: "Music Library",
+      value: metrics.totalSongs || 0,
+      subtitle: `${metrics.totalAlbums || 0} albums`,
       icon: <PlayIcon />,
-      color: "secondary",
-      trend: "+8.9%"
+      color: "success",
+      trend: "+12.3%"
     },
     {
-      title: "System Health",
-      value: `${metrics.systemUptime}%`,
-      subtitle: `${metrics.avgResponseTime}ms avg response`,
-      icon: <SpeedIcon />,
-      color: "info",
-      trend: "+0.02%"
+      title: "Artists",
+      value: metrics.totalArtists || 0,
+      subtitle: `${metrics.totalPlaylists || 0} playlists`,
+      icon: <BusinessIcon />,
+      color: "secondary",
+      trend: "+8.7%"
+    },
+    {
+      title: "Pending Apps",
+      value: metrics.pendingApplications || 0,
+      subtitle: "Job applications",
+      icon: <AssessmentIcon />,
+      color: "warning",
+      trend: "+3.1%"
     },
   ];
 
@@ -719,10 +714,35 @@ const IncidentsAndAlerts = ({ data }) => {
 };
 
 // Main admin dashboard component
-const AdminDashboard = ({ userRole }) => {
+const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState("24h");
   const [activeTab, setActiveTab] = useState(0);
   const [refreshInterval, setRefreshInterval] = useState("30s");
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch analytics data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await adminAnalytics.getAllAnalytics();
+        setAnalyticsData(data);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // Auto-refresh based on interval
+    const intervalMs = refreshInterval === '30s' ? 30000 : 60000;
+    const interval = setInterval(fetchData, intervalMs);
+
+    return () => clearInterval(interval);
+  }, [refreshInterval]);
 
   const handleTimeRangeChange = (event) => {
     setTimeRange(event.target.value);
@@ -736,12 +756,12 @@ const AdminDashboard = ({ userRole }) => {
     setRefreshInterval(event.target.value);
   };
 
-  if (userRole !== "admin") {
+  // Access control is handled by ProtectedRoute wrapper, no need to check here
+
+  if (loading && !analyticsData) {
     return (
-      <Box p={3}>
-        <Alert severity="error">
-          Access denied. Admin privileges required to view this dashboard.
-        </Alert>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
       </Box>
     );
   }
@@ -759,7 +779,7 @@ const AdminDashboard = ({ userRole }) => {
         return (
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <PlatformOverview />
+              <PlatformOverview data={analyticsData?.platform} />
             </Grid>
             <Grid item xs={12}>
               <IncidentsAndAlerts />

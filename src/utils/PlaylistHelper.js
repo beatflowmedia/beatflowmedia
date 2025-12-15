@@ -7,7 +7,8 @@ import {
   addDoc,
   arrayUnion
 } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../firebaseConfig";
 
 // ✅ Listen for playlist updates in Firebase
 export const subscribeToPlaylists = (callback) => {
@@ -30,12 +31,24 @@ const capitalizePlaylistName = (name) => {
 };
 
 // ✅ Create a new playlist in Firebase
-export const createPlaylist = async (playlistName) => {
+export const createPlaylist = async (playlistName, imageFile = null) => {
   try {
     const capitalizedName = capitalizePlaylistName(playlistName);
+    let imageUrl = null;
+
+    // Upload image to Firebase Storage if provided
+    if (imageFile) {
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `playlist-covers/${timestamp}_${imageFile.name}`);
+      await uploadBytes(storageRef, imageFile);
+      imageUrl = await getDownloadURL(storageRef);
+      console.log("✅ Playlist image uploaded:", imageUrl);
+    }
+
     const docRef = await addDoc(collection(db, "playlists"), {
       name: capitalizedName,
       songs: [],
+      imageUrl: imageUrl,
       createdAt: new Date()
     });
     console.log("✅ Playlist created with ID:", docRef.id);

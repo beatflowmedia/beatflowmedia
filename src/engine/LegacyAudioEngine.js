@@ -10,7 +10,7 @@ export default class LegacyAudioEngine extends CoreEngine {
   }
 
   load(track) {
-    const src = track.streamUrl || `/music/${track.fileName}`;
+    const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
     this.audio.src = src;
     this.audio.load();
   }

@@ -1,6 +1,7 @@
-import React, { memo, useState } from "react";
+import { memo, useState } from "react";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import { useLikes } from "../context/LikesContext";
 import PropTypes from 'prop-types';
 
 /**
@@ -16,7 +17,8 @@ const LikeButton = ({
   size,
   className
 }) => {
-  const { user, signInWithGoogle, addLike, removeLike } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
+  const { addLike, removeLike } = useLikes();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async (e) => {

@@ -1,7 +1,7 @@
 // src/components/analytics/RevenueAnalytics.js
 // Revenue analytics with music industry royalty tracking and compliance
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Grid,

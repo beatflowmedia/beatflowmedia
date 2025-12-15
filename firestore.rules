@@ -1,6 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper function to check if user is platform admin
+    function isPlatformAdmin() {
+      return request.auth != null &&
+             (request.auth.token.email == 'perriceconsulting@gmail.com' ||
+              request.auth.token.email == 'percyricemusic@gmail.com');
+    }
+
     // Allow anyone to read approved songs
     match /songs/{songId} {
       allow read: if true;
@@ -44,8 +51,8 @@ service cloud.firestore {
     // Artist submissions (for ForArtists.js upload form)
     match /artistSubmissions/{submissionId} {
       allow create: if request.auth.uid != null;
-      allow read: if request.auth.uid == resource.data.uploadedBy || request.auth.token.admin == true;
-      allow update: if request.auth.token.admin == true;
+      allow read: if request.auth.uid == resource.data.uploadedBy || isPlatformAdmin();
+      allow update: if isPlatformAdmin();
     }
 
     // Artist profiles and content
@@ -58,7 +65,18 @@ service cloud.firestore {
     match /albums/{albumId} {
       allow read: if true;
       allow create: if request.auth.uid != null;
-      allow update: if request.auth.uid == resource.data.artistId || request.auth.token.admin == true;
+      allow update: if request.auth.uid == resource.data.artistId ||
+                        request.auth.token.admin == true ||
+                        // Allow authenticated users to update rating/review fields
+                        (request.auth.uid != null &&
+                         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'reviewCount']));
+    }
+
+    // Album Reviews - authenticated users can create and read
+    match /albumReviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth.uid != null;
+      allow update, delete: if request.auth.uid == resource.data.userId || request.auth.token.admin == true;
     }
 
     // Playlists (public read, authenticated write)
@@ -66,6 +84,13 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.auth.uid != null;
       allow update: if request.auth.uid == resource.data.creatorId || request.auth.token.admin == true;
+    }
+
+    // Playlist tracks (public read, owners/collaborators can write)
+    match /playlistTracks/{trackId} {
+      allow read: if true;
+      allow create: if request.auth.uid != null;
+      allow update, delete: if request.auth.uid != null;
     }
 
     // Campaigns for artists
@@ -86,10 +111,10 @@ service cloud.firestore {
       allow create: if request.auth != null;
     }
 
-    // Analytics events
+    // Analytics events - only platform admins can read
     match /analytics/{eventId} {
       allow create: if request.auth.uid != null;
-      allow read: if request.auth.token.admin == true;
+      allow read: if isPlatformAdmin();
     }
 
     // Supervisors collection (contacts)
@@ -217,11 +242,11 @@ service cloud.firestore {
       allow create, update, delete: if request.auth.token.admin == true;
     }
 
-    // Job applications - allow authenticated users to submit
+    // Job applications - allow authenticated users to submit, platform admins to manage
     match /applications/{applicationId} {
       allow create: if request.auth != null;
-      allow read: if request.auth.uid == resource.data.userId || request.auth.token.admin == true;
-      allow update, delete: if request.auth.token.admin == true;
+      allow read: if request.auth.uid == resource.data.userId || isPlatformAdmin();
+      allow update, delete: if isPlatformAdmin();
     }
 
     // Vendor applications - allow anyone to submit, admin to read/manage
@@ -246,6 +271,140 @@ service cloud.firestore {
     match /advertisingInquiries/{inquiryId} {
       allow create: if true; // Allow unauthenticated submissions
       allow read, update, delete: if request.auth.token.admin == true;
+    }
+
+    // ========================================
+    // STRIPE PURCHASES & DOWNLOADS
+    // ========================================
+
+    // Purchases - users can read their own purchases, admins can read all
+    match /purchases/{purchaseId} {
+      allow create: if false; // Only created via webhook
+      allow read: if request.auth != null &&
+                     (resource.data.userId == request.auth.uid || isPlatformAdmin());
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // Downloads - users can create their own download records, read their own history
+    match /downloads/{downloadId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null &&
+                     (resource.data.userId == request.auth.uid || isPlatformAdmin());
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // Failed payments - admin only
+    match /failed_payments/{paymentId} {
+      allow read, write: if isPlatformAdmin();
+    }
+
+    // User sessions - for tracking active tokens
+    match /user_sessions/{sessionId} {
+      allow read, write: if request.auth != null &&
+                            (resource.data.userId == request.auth.uid || isPlatformAdmin());
+    }
+
+    // User devices - for device management
+    match /user_devices/{deviceId} {
+      allow read, write: if request.auth != null &&
+                            (resource.data.userId == request.auth.uid || isPlatformAdmin());
+    }
+
+    // Security alerts - admin only
+    match /security_alerts/{alertId} {
+      allow read, write: if isPlatformAdmin();
+    }
+
+    // Error logs - admin only
+    match /error_logs/{logId} {
+      allow read: if isPlatformAdmin();
+      allow write: if request.auth != null;
+    }
+
+    // Custom Genres - artists can create, admins can approve
+    match /customGenres/{genreId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update: if request.auth.uid == resource.data.createdBy || isPlatformAdmin();
+      allow delete: if request.auth.uid == resource.data.createdBy || isPlatformAdmin();
+    }
+
+    // Custom Categories - artists can create, admins can approve
+    match /customCategories/{categoryId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update: if request.auth.uid == resource.data.createdBy || isPlatformAdmin();
+      allow delete: if request.auth.uid == resource.data.createdBy || isPlatformAdmin();
+    }
+
+    // Custom Moods - artists can create, admins can approve
+    match /customMoods/{moodId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update: if request.auth.uid == resource.data.createdBy || isPlatformAdmin();
+      allow delete: if request.auth.uid == resource.data.createdBy || isPlatformAdmin();
+    }
+
+    // Credit Transactions - track submission credit purchases and usage (legacy)
+    match /creditTransactions/{transactionId} {
+      allow create: if false; // Only created via webhook
+      allow read: if request.auth != null &&
+                     (resource.data.userId == request.auth.uid || isPlatformAdmin());
+    }
+
+    // Artist Memberships - track membership subscriptions
+    match /artistMemberships/{membershipId} {
+      allow create: if false; // Only created via webhook
+      allow read: if request.auth != null &&
+                     (resource.data.userId == request.auth.uid || isPlatformAdmin());
+      allow update: if isPlatformAdmin();
+    }
+
+    // ========================================
+    // ENGAGEMENT METRICS FOR ML/AI ANALYSIS
+    // ========================================
+
+    // Play Events - individual play tracking for ML
+    match /playEvents/{eventId} {
+      allow create: if request.auth != null;
+      allow read: if isPlatformAdmin();
+    }
+
+    // Like Events - individual like/unlike tracking for ML
+    match /likeEvents/{eventId} {
+      allow create: if request.auth != null;
+      allow read: if isPlatformAdmin();
+    }
+
+    // Follow Events - individual follow/unfollow tracking for ML
+    match /followEvents/{eventId} {
+      allow create: if request.auth != null;
+      allow read: if isPlatformAdmin();
+    }
+
+    // Song Metrics - aggregate engagement data
+    match /songMetrics/{songId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Album Metrics - aggregate engagement data
+    match /albumMetrics/{albumId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Artist Metrics - aggregate engagement data
+    match /artistMetrics/{artistId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // User Metrics - aggregate user activity data
+    match /userMetrics/{userId} {
+      allow read: if request.auth != null &&
+                     (request.auth.uid == userId || isPlatformAdmin());
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Deny all other access

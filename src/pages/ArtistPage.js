@@ -1,4 +1,4 @@
-import React, { useState , useMemo } from "react";
+import { useState , useMemo } from "react";
 import musicData from "../musicData.json";
 import { buildArtistInfo } from "../utils/buildArtistInfo";
 import RightPanel from "../components/RightPanel";

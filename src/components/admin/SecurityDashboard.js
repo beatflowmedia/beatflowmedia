@@ -5,7 +5,7 @@
  * Includes user management, security alerts, audit trails, and access control
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -13,13 +13,6 @@ import {
   CardContent,
   CardHeader,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
   IconButton,
   Button,
@@ -36,7 +29,9 @@ import {
   Tabs,
   Tab,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  CircularProgress,
+  Tooltip
 } from "@mui/material";
 import {
   Security,
@@ -51,24 +46,25 @@ import {
   Key,
   DeviceHub,
   Timeline,
-  Assessment
+  Search,
+  Download
 } from "@mui/icons-material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useAuth } from "../../context/AuthContext";
-import { CircularProgress } from '@mui/material/CircularProgress';
-import { Tooltip } from '@mui/material/Tooltip';
+import { adminAnalytics } from "../../services/adminAnalytics";
+import { db } from "../../firebaseConfig";
+import { collection, getDocs, query, orderBy, limit, where, Timestamp } from "firebase/firestore";
 
 const SecurityDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [securityMetrics, setSecurityMetrics] = useState({});
   const [auditLogs, setAuditLogs] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeTokens, setActiveTokens] = useState([]);
   const [securityAlerts, setSecurityAlerts] = useState([]);
   const [devices, setDevices] = useState([]);
-  const [filterDialog, setFilterDialog] = useState(false);
+  const [, setFilterDialog] = useState(false);
   const [userDialog, setUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -83,7 +79,12 @@ const SecurityDashboard = () => {
   });
 
   useEffect(() => {
-    loadDashboardData();
+    const loadData = async () => {
+      await loadDashboardData();
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDashboardData = async () => {
@@ -106,85 +107,165 @@ const SecurityDashboard = () => {
 
   const loadSecurityMetrics = async () => {
     try {
-      const response = await fetch("/api/admin/security/metrics", {
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`
-        }
+      // Fetch real counts from Firestore
+      const [totalUsers, activeSessionsCount, failedLoginsCount, suspiciousCount] = await Promise.all([
+        adminAnalytics.getCollectionCount('users'),
+        adminAnalytics.getConditionalCount('analytics_events',
+          where('timestamp', '>=', Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000)))
+        ),
+        adminAnalytics.getConditionalCount('analytics_events',
+          where('eventType', '==', 'auth_failed'),
+          where('timestamp', '>=', Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000)))
+        ),
+        adminAnalytics.getConditionalCount('security_alerts',
+          where('severity', 'in', ['high', 'critical']),
+          where('timestamp', '>=', Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000)))
+        )
+      ]);
+
+      setMetrics({
+        totalUsers,
+        activeUsers: activeSessionsCount,
+        failedLogins: failedLoginsCount,
+        suspiciousActivity: suspiciousCount,
+        blockedIPs: 0, // Not tracking this yet
+        activeTokens: activeSessionsCount
       });
-      const data = await response.json();
-      setMetrics(data);
     } catch (error) {
       console.error("Failed to load security metrics:", error);
+      // Set defaults on error
+      setMetrics({
+        totalUsers: 0,
+        activeUsers: 0,
+        failedLogins: 0,
+        suspiciousActivity: 0,
+        blockedIPs: 0,
+        activeTokens: 0
+      });
     }
   };
 
   const loadAuditLogs = async () => {
     try {
-      const response = await fetch("/api/admin/security/audit-logs", {
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`
-        }
-      });
-      const data = await response.json();
-      setAuditLogs(data);
+      // Fetch recent analytics events from Firestore
+      const oneDayAgo = Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
+      const q = query(
+        collection(db, 'analytics_events'),
+        where('timestamp', '>=', oneDayAgo),
+        orderBy('timestamp', 'desc'),
+        limit(50)
+      );
+
+      const snapshot = await getDocs(q);
+      const logs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.() || new Date()
+      }));
+
+      setAuditLogs(logs);
     } catch (error) {
       console.error("Failed to load audit logs:", error);
+      setAuditLogs([]);
     }
   };
 
   const loadUsers = async () => {
     try {
-      const response = await fetch("/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`
-        }
-      });
-      const data = await response.json();
-      setUsers(data);
+      // Fetch users from Firestore
+      const q = query(
+        collection(db, 'users'),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      );
+
+      const snapshot = await getDocs(q);
+      const usersList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        role: doc.data().role || 'FREE',
+        subscriptionTier: doc.data().subscriptionTier || 'FREE',
+        status: doc.data().status || 'active',
+        lastLogin: doc.data().lastLogin?.toDate?.() || new Date()
+      }));
+
+      setUsers(usersList);
     } catch (error) {
       console.error("Failed to load users:", error);
+      setUsers([]);
     }
   };
 
   const loadActiveTokens = async () => {
     try {
-      const response = await fetch("/api/admin/security/active-tokens", {
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`
-        }
-      });
-      const data = await response.json();
-      setActiveTokens(data);
+      // Fetch active sessions/tokens from Firestore
+      const q = query(
+        collection(db, 'user_sessions'),
+        where('active', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      );
+
+      const snapshot = await getDocs(q);
+      const tokens = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+        expiresAt: doc.data().expiresAt?.toDate?.() || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      }));
+
+      setActiveTokens(tokens);
     } catch (error) {
       console.error("Failed to load active tokens:", error);
+      setActiveTokens([]);
     }
   };
 
   const loadSecurityAlerts = async () => {
     try {
-      const response = await fetch("/api/admin/security/alerts", {
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`
-        }
-      });
-      const data = await response.json();
-      setSecurityAlerts(data);
+      // Fetch recent security alerts from Firestore
+      const oneDayAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)); // Last 7 days
+      const q = query(
+        collection(db, 'security_alerts'),
+        where('timestamp', '>=', oneDayAgo),
+        orderBy('timestamp', 'desc'),
+        limit(20)
+      );
+
+      const snapshot = await getDocs(q);
+      const alerts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.() || new Date()
+      }));
+
+      setSecurityAlerts(alerts);
     } catch (error) {
       console.error("Failed to load security alerts:", error);
+      setSecurityAlerts([]);
     }
   };
 
   const loadDevices = async () => {
     try {
-      const response = await fetch("/api/admin/devices", {
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`
-        }
-      });
-      const data = await response.json();
-      setDevices(data);
+      // Fetch user devices from Firestore
+      const q = query(
+        collection(db, 'user_devices'),
+        orderBy('lastAccess', 'desc'),
+        limit(100)
+      );
+
+      const snapshot = await getDocs(q);
+      const devicesList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        lastAccess: doc.data().lastAccess?.toDate?.() || new Date()
+      }));
+
+      setDevices(devicesList);
     } catch (error) {
       console.error("Failed to load devices:", error);
+      setDevices([]);
     }
   };
 
@@ -589,18 +670,33 @@ const SecurityDashboard = () => {
         width: 180,
         renderCell: (params) => new Date(params.value).toLocaleString()
       },
-      { field: "type", headerName: "Event Type", width: 200 },
+      {
+        field: "eventType",
+        headerName: "Event Type",
+        width: 200,
+        valueGetter: (params) => params.row.eventType || params.row.type || 'Unknown'
+      },
       { field: "userId", headerName: "User", width: 200 },
-      { field: "ip", headerName: "IP Address", width: 150 },
-      { field: "userAgent", headerName: "User Agent", width: 300 },
+      {
+        field: "ip",
+        headerName: "IP Address",
+        width: 150,
+        valueGetter: (params) => params.row.ip || params.row.ipAddress || 'N/A'
+      },
+      {
+        field: "userAgent",
+        headerName: "User Agent",
+        width: 300,
+        valueGetter: (params) => params.row.userAgent || 'N/A'
+      },
       {
         field: "details",
         headerName: "Details",
         width: 300,
         renderCell: (params) => (
-          <Tooltip title={JSON.stringify(params.value, null, 2)}>
+          <Tooltip title={JSON.stringify(params.value || {}, null, 2)}>
             <Typography variant="body2" noWrap>
-              {JSON.stringify(params.value)}
+              {JSON.stringify(params.value || {})}
             </Typography>
           </Tooltip>
         )

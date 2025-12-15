@@ -1,18 +1,21 @@
 import React, { useCallback } from 'react';
 import { Box, Typography, Card, CardContent, CardMedia, IconButton, CircularProgress } from '@mui/material';
-import { PlayArrow, Favorite, FavoriteBorder } from '@mui/icons-material';
+import { PlayArrow, Favorite, FavoriteBorder, ThumbUp, ThumbUpOffAlt } from '@mui/icons-material';
 import { usePersonalizedSections } from '../hooks/usePersonalizedSections';
 import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
+import { useFavorites } from '../context/FavoritesContext';
 import { usePlaySong } from '../hooks/usePlaySong';
 import PlayingIndicator from './PlayingIndicator';
 import SongPlayCount from './SongPlayCount';
 import SongLikeCount from './SongLikeCount';
 
 // Memoized song card to prevent unnecessary re-renders
-const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike }) => {
+const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFavorite }) => {
   const { isLiked } = useLikes();
+  const { isFavorited } = useFavorites();
   const liked = isLiked(song.id);
+  const favorited = isFavorited(song.id);
 
   const handlePlayClick = useCallback(() => {
     onPlay(song);
@@ -23,6 +26,12 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike }) => {
     e.stopPropagation();
     onToggleLike(song.id, liked);
   }, [onToggleLike, song.id, liked]);
+
+  const handleFavoriteClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleFavorite(song.id, favorited);
+  }, [onToggleFavorite, song.id, favorited]);
 
   return (
     <Card
@@ -114,18 +123,31 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike }) => {
           <SongLikeCount songId={song.id} />
         </Box>
 
-        {/* Like Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+        {/* Like and Favorite Buttons */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 0.5 }}>
           <IconButton
             type="button"
             size="small"
             onClick={handleLikeClick}
             sx={{
-              color: liked ? '#e91e63' : 'grey.400',
-              '&:hover': { color: liked ? '#ad1457' : '#e91e63' }
+              color: liked ? '#1DB954' : 'grey.400',
+              '&:hover': { color: liked ? '#1ed760' : '#1DB954' }
             }}
+            title={liked ? 'Unlike' : 'Like'}
           >
-            {liked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+            {liked ? <ThumbUp fontSize="small" /> : <ThumbUpOffAlt fontSize="small" />}
+          </IconButton>
+          <IconButton
+            type="button"
+            size="small"
+            onClick={handleFavoriteClick}
+            sx={{
+              color: favorited ? '#e91e63' : 'grey.400',
+              '&:hover': { color: favorited ? '#f06292' : '#e91e63' }
+            }}
+            title={favorited ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            {favorited ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
           </IconButton>
         </Box>
       </CardContent>
@@ -139,6 +161,7 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike }) => {
 export default function PersonalizedSections() {
   const { user } = useAuth();
   const { addLike, removeLike } = useLikes();
+  const { addFavorite, removeFavorite } = useFavorites();
   const { sections, loading, error } = usePersonalizedSections(user);
   const { playSong, isSongPlaying } = usePlaySong();
 
@@ -151,6 +174,15 @@ export default function PersonalizedSections() {
       addLike(songId);
     }
   }, [addLike, removeLike]);
+
+  const handleToggleFavorite = useCallback((songId, isFavorited) => {
+    if (!songId) return;
+    if (isFavorited) {
+      removeFavorite(songId);
+    } else {
+      addFavorite(songId);
+    }
+  }, [addFavorite, removeFavorite]);
 
   const handlePlay = useCallback((song) => {
     playSong(song);
@@ -247,6 +279,7 @@ export default function PersonalizedSections() {
                   isPlaying={isPlaying}
                   onPlay={handlePlay}
                   onToggleLike={handleToggleLike}
+                  onToggleFavorite={handleToggleFavorite}
                 />
               );
             })}

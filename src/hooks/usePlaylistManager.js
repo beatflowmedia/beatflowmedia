@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { db } from "../firebaseConfig";
+import { db, storage } from "../firebaseConfig";
 import {
   getDoc,
   setDoc,
@@ -7,6 +7,7 @@ import {
   collection,
   updateDoc
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "./useAuth"; // ✅ Auth hook
 import { onSnapshot, arrayUnion } from 'firebase/firestore';
 
@@ -30,8 +31,15 @@ export function usePlaylistManager() {
     return () => unsubscribe();
   }, [user]);
 
-  const createNewPlaylist = async (name) => {
+  const createNewPlaylist = async (name, imageFile = null) => {
     if (!user?.uid) throw new Error("User not authenticated");
+
+    // Capitalize playlist name (Title Case)
+    const capitalizedName = name
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
 
     // Reference to the user's main doc
     const userDocRef = doc(db, "users", user.uid);
@@ -46,22 +54,41 @@ export function usePlaylistManager() {
     // Generate a new doc ref (with unique ID you control)
     const newPlaylistRef = doc(collection(db, "users", user.uid, "playlists"));
 
+    let imageUrl = null;
+
+    // Upload image to Firebase Storage if provided
+    if (imageFile) {
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `users/${user.uid}/playlist-covers/${timestamp}_${imageFile.name}`);
+      await uploadBytes(storageRef, imageFile);
+      imageUrl = await getDownloadURL(storageRef);
+      console.log("✅ Playlist image uploaded:", imageUrl);
+    }
+
     // Write the new playlist
     await setDoc(newPlaylistRef, {
-      name,
+      name: capitalizedName,
       songs: [],
+      imageUrl,
       createdAt: new Date()
     });
 
-    console.log("✅ Playlist created:", name, "→", newPlaylistRef.id);
+    console.log("✅ Playlist created:", capitalizedName, "→", newPlaylistRef.id);
     return newPlaylistRef;
   };
 
   const addSong = (playlistId, song) => {
     if (!user) return;
 
+    // DRY: Only store song ID and metadata, NOT the full song data
+    // Full song data will be fetched from the songs collection when needed
+    const playlistEntry = {
+      songId: song.id,
+      addedAt: new Date()
+    };
+
     const ref = doc(db, "users", user.uid, "playlists", playlistId);
-    return updateDoc(ref, { songs: arrayUnion(song) });
+    return updateDoc(ref, { songs: arrayUnion(playlistEntry) });
   };
 
   const removeSong = async (playlistId, song) => {
@@ -73,7 +100,12 @@ export function usePlaylistManager() {
 
     if (!data?.songs) return;
 
-    const updated = data.songs.filter((s) => s.id !== song.id);
+    // Handle both old format (full song object) and new format (songId entry)
+    const updated = data.songs.filter((entry) => {
+      const entryId = entry.songId || entry.id;
+      return entryId !== song.id;
+    });
+
     return updateDoc(ref, { songs: updated });
   };
 

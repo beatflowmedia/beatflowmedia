@@ -3,7 +3,7 @@
 // A standalone user profile dropdown menu example, similar to what's in NavBar.
 // If you're not using this file, remove it or integrate it as needed.
 // ------------------------------------------------------
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FaUser, FaSignOutAlt, FaCog, FaExternalLinkAlt } from "react-icons/fa";
 
 const UserProfileMenu = () => {

@@ -20,8 +20,11 @@ import ListItemText from '@mui/material/ListItemText';
 import Fade from '@mui/material/Fade';
 import Link from '@mui/material/Link';
 import PlayArrow from '@mui/icons-material/PlayArrow';
+import Pause from '@mui/icons-material/Pause';
 import Favorite from '@mui/icons-material/Favorite';
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
+import ThumbUp from '@mui/icons-material/ThumbUp';
+import ThumbUpOffAlt from '@mui/icons-material/ThumbUpOffAlt';
 import MoreVert from '@mui/icons-material/MoreVert';
 import Share from '@mui/icons-material/Share';
 import PersonAdd from '@mui/icons-material/PersonAdd';
@@ -44,6 +47,8 @@ import Visibility from '@mui/icons-material/Visibility';
 import { FaSpotify } from 'react-icons/fa';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
+import { useLikes } from '../context/LikesContext';
+import { useFavorites } from '../context/FavoritesContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import ShareButton from '../utils/ShareButton';
@@ -68,7 +73,9 @@ function Artist() {
   const { artistId } = useParams();
   const navigate = useNavigate();
   const { state, dispatch, actions } = usePlayer();
-  const { user, followArtist, unfollowArtist, isArtistFollowed, addLike, removeLike } = useAuth();
+  const { user, followArtist, unfollowArtist, isArtistFollowed } = useAuth();
+  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const { addFavorite, removeFavorite, isFavorited: checkIsFavorited } = useFavorites();
   const { musicData = [], playSong } = useOutletContext() || {};
 
   // Campaign analytics state
@@ -212,11 +219,29 @@ function Artist() {
     };
   }, [artist, topTracks, albums, playlists, events]);
 
+  // Check if we're currently playing this artist's tracks
+  const isPlayingThisArtist = React.useMemo(() => {
+    const currentTrack = state.queue[state.currentIndex];
+    return currentTrack && topTracks.some(t => t.id === currentTrack.id) && state.isPlaying;
+  }, [state.queue, state.currentIndex, state.isPlaying, topTracks]);
+
   // Event handlers
   const handlePlayArtist = useCallback(() => {
     if (topTracks.length === 0) return;
 
-    // Set top tracks as queue and start playing
+    // If already playing this artist, just toggle pause
+    const currentTrack = state.queue[state.currentIndex];
+    const isThisArtist = currentTrack && topTracks.some(t => t.id === currentTrack.id);
+
+    if (isThisArtist && state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+      return;
+    } else if (isThisArtist && !state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+      return;
+    }
+
+    // Otherwise, set top tracks as queue and start playing
     dispatch({
       type: actions.SET_QUEUE,
       payload: {
@@ -224,8 +249,12 @@ function Artist() {
         currentIndex: 0
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [topTracks, dispatch, actions]);
+
+    // Only toggle if not already playing
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [topTracks, dispatch, actions, state.isPlaying, state.queue, state.currentIndex]);
 
   const handleShufflePlay = useCallback(() => {
     if (topTracks.length === 0) return;
@@ -239,8 +268,12 @@ function Artist() {
         currentIndex: 0
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [topTracks, dispatch, actions]);
+
+    // Only toggle if already playing, otherwise ensure it starts
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [topTracks, dispatch, actions, state.isPlaying]);
 
   const handlePlayTrack = useCallback((track, index) => {
     // Set artist's tracks as queue starting from selected track
@@ -251,8 +284,12 @@ function Artist() {
         currentIndex: index
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [topTracks, dispatch, actions]);
+
+    // Always start playing when clicking a track
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [topTracks, dispatch, actions, state.isPlaying]);
 
   const handleToggleLike = useCallback(async (track) => {
     if (!user) {
@@ -261,8 +298,8 @@ function Artist() {
     }
 
     try {
-      const isLiked = user.likes?.includes(track.id);
-      if (isLiked) {
+      const liked = checkIsLiked(track.id);
+      if (liked) {
         await removeLike(track.id);
         toast.success('Removed from liked songs');
       } else {
@@ -272,7 +309,27 @@ function Artist() {
     } catch (err) {
       toast.error('Failed to update likes');
     }
-  }, [user, addLike, removeLike]);
+  }, [user, addLike, removeLike, checkIsLiked]);
+
+  const handleToggleFavorite = useCallback(async (track) => {
+    if (!user) {
+      toast.error('Please sign in to favorite songs');
+      return;
+    }
+
+    try {
+      const favorited = checkIsFavorited(track.id);
+      if (favorited) {
+        await removeFavorite(track.id);
+        toast.success('Removed from favorites');
+      } else {
+        await addFavorite(track.id);
+        toast.success('Added to favorites');
+      }
+    } catch (err) {
+      toast.error('Failed to update favorites');
+    }
+  }, [user, addFavorite, removeFavorite, checkIsFavorited]);
 
   const handleFollowArtist = useCallback(async () => {
     if (!user || !artist) {
@@ -477,7 +534,7 @@ function Artist() {
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<PlayArrow />}
+                startIcon={isPlayingThisArtist ? <Pause /> : <PlayArrow />}
                 onClick={handlePlayArtist}
                 disabled={topTracks.length === 0}
                 sx={{
@@ -487,14 +544,18 @@ function Artist() {
                   px: 3
                 }}
               >
-                Play
+                {isPlayingThisArtist ? 'Pause' : 'Play'}
               </Button>
 
               <IconButton
                 size="large"
-                onClick={handleShufflePlay}
+                onClick={() => dispatch({ type: actions.TOGGLE_SHUFFLE })}
                 disabled={topTracks.length === 0}
-                sx={{ color: 'grey.300', '&:hover': { color: 'white' } }}
+                sx={{
+                  color: state.shuffleOn ? '#1DB954' : 'grey.300',
+                  '&:hover': { color: state.shuffleOn ? '#1ed760' : 'white' }
+                }}
+                title={state.shuffleOn ? 'Disable shuffle' : 'Enable shuffle'}
               >
                 <Shuffle />
               </IconButton>
@@ -582,7 +643,8 @@ function Artist() {
                 <Box sx={{ mb: 4 }}>
                   {displayedTracks.map((track, index) => {
                     const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
-                    const isLiked = user?.likes?.includes(track.id) || false;
+                    const isLiked = checkIsLiked(track.id);
+                    const isFavorited = checkIsFavorited(track.id);
 
                     return (
                       <Box
@@ -597,7 +659,8 @@ function Artist() {
                             bgcolor: 'grey.800',
                             '& .track-number': { display: 'none' },
                             '& .play-button': { display: 'block' },
-                            '& .like-button': { opacity: 1 }
+                            '& .like-button': { opacity: 1 },
+                            '& .favorite-button': { opacity: 1 }
                           }
                         }}
                       >
@@ -607,7 +670,18 @@ function Artist() {
                             textAlign: 'center',
                             cursor: 'pointer'
                           }}
-                          onClick={() => handlePlayTrack(track, index)}
+                          onClick={() => {
+                            if (isCurrentTrack && isPlaying) {
+                              // If this track is playing, just pause it
+                              dispatch({ type: actions.TOGGLE_PLAY });
+                            } else if (isCurrentTrack && !isPlaying) {
+                              // If this track is paused, resume it
+                              dispatch({ type: actions.TOGGLE_PLAY });
+                            } else {
+                              // Different track, load and play it
+                              handlePlayTrack(track, index);
+                            }
+                          }}
                         >
                           <Typography
                             variant="body2"
@@ -619,13 +693,22 @@ function Artist() {
                           >
                             {index + 1}
                           </Typography>
-                          <PlayArrow
-                            className="play-button"
-                            sx={{
-                              color: '#1DB954',
-                              display: isCurrentTrack && state.isPlaying ? 'block' : 'none'
-                            }}
-                          />
+                          {isCurrentTrack && isPlaying ? (
+                            <Pause
+                              className="play-button"
+                              sx={{
+                                color: '#1DB954'
+                              }}
+                            />
+                          ) : (
+                            <PlayArrow
+                              className="play-button"
+                              sx={{
+                                color: '#1DB954',
+                                display: 'none'
+                              }}
+                            />
+                          )}
                         </Box>
 
                         <Box
@@ -647,7 +730,15 @@ function Artist() {
                               whiteSpace: 'nowrap',
                               '&:hover': { textDecoration: 'underline' }
                             }}
-                            onClick={() => handlePlayTrack(track, index)}
+                            onClick={() => {
+                              if (isCurrentTrack && isPlaying) {
+                                dispatch({ type: actions.TOGGLE_PLAY });
+                              } else if (isCurrentTrack && !isPlaying) {
+                                dispatch({ type: actions.TOGGLE_PLAY });
+                              } else {
+                                handlePlayTrack(track, index);
+                              }
+                            }}
                           >
                             {track.title}
                           </Typography>
@@ -675,13 +766,29 @@ function Artist() {
                           className="like-button"
                           onClick={() => handleToggleLike(track)}
                           sx={{
-                            color: isLiked ? '#e91e63' : 'grey.400',
+                            color: isLiked ? '#1DB954' : 'grey.400',
                             opacity: isLiked ? 1 : 0,
+                            transition: 'opacity 0.2s',
+                            '&:hover': { color: '#1DB954' }
+                          }}
+                          title={isLiked ? 'Unlike' : 'Like'}
+                        >
+                          {isLiked ? <ThumbUp /> : <ThumbUpOffAlt />}
+                        </IconButton>
+
+                        <IconButton
+                          size="small"
+                          className="favorite-button"
+                          onClick={() => handleToggleFavorite(track)}
+                          sx={{
+                            color: isFavorited ? '#e91e63' : 'grey.400',
+                            opacity: isFavorited ? 1 : 0,
                             transition: 'opacity 0.2s',
                             '&:hover': { color: '#e91e63' }
                           }}
+                          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                         >
-                          {isLiked ? <Favorite /> : <FavoriteBorder />}
+                          {isFavorited ? <Favorite /> : <FavoriteBorder />}
                         </IconButton>
 
                         <ShareButton song={track} size="small" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import './AgentsDashboard.css';
 import AgentLogViewer from '../components/AgentLogViewer';
 

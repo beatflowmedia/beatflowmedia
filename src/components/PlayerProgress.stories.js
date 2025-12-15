@@ -1,5 +1,5 @@
 // src/components/PlayerProgress.stories.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { action } from "@storybook/addon-actions";
 import PlayerProgress from "./PlayerProgress";
 import { PlayerProvider } from "../context/PlayerContext";

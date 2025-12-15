@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Box, Typography, Grid, Card, CardContent, CardMedia, IconButton, CircularProgress, Chip } from '@mui/material';
 import { PlayArrow, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { collection, query, where, getDocs, limit as firestoreLimit, orderBy } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../context/AuthContext';
+import { useLikes } from '../context/LikesContext';
 import { usePlaySong } from '../hooks/usePlaySong';
 import PlayingIndicator from './PlayingIndicator';
 import SongPlayCount from './SongPlayCount';
@@ -13,7 +14,8 @@ import SongLikeCount from './SongLikeCount';
  * Curated content for the listener based on their preferences and listening history
  */
 export default function CuratedForYou() {
-  const { user, addLike, removeLike } = useAuth();
+  const { user } = useAuth();
+  const { likes, addLike, removeLike, isLiked: checkIsLiked } = useLikes();
   const { playSong, isSongPlaying } = usePlaySong();
 
   const [loading, setLoading] = useState(true);
@@ -31,15 +33,15 @@ export default function CuratedForYou() {
         const sections = [];
 
         // 1. Based on your liked songs
-        if (user.likes && user.likes.length > 0) {
-          const likedSongsData = await fetchLikedSongs(user.likes);
+        if (likes && likes.length > 0) {
+          const likedSongsData = await fetchLikedSongs(likes);
           if (likedSongsData.length > 0) {
             const genres = extractGenres(likedSongsData);
             const artists = extractArtists(likedSongsData);
 
             // Get more songs from liked genres
             if (genres.length > 0) {
-              const genreSongs = await fetchSongsByGenres(genres, user.likes);
+              const genreSongs = await fetchSongsByGenres(genres, likes);
               if (genreSongs.length > 0) {
                 sections.push({
                   title: `Because you like ${genres[0]}`,
@@ -52,7 +54,7 @@ export default function CuratedForYou() {
 
             // Get more songs from liked artists
             if (artists.length > 0) {
-              const artistSongs = await fetchSongsByArtists(artists, user.likes);
+              const artistSongs = await fetchSongsByArtists(artists, likes);
               if (artistSongs.length > 0) {
                 sections.push({
                   title: `More from ${artists[0]}`,
@@ -67,7 +69,7 @@ export default function CuratedForYou() {
 
         // 2. Based on followed artists
         if (user.follows && user.follows.length > 0) {
-          const followedSongs = await fetchSongsByArtists(user.follows, user.likes || []);
+          const followedSongs = await fetchSongsByArtists(user.follows, likes || []);
           if (followedSongs.length > 0) {
             sections.push({
               title: 'New from artists you follow',
@@ -79,7 +81,7 @@ export default function CuratedForYou() {
         }
 
         // 3. Discover new music (songs not played much yet but from popular genres)
-        const discoverySongs = await fetchDiscoverySongs(user.likes || []);
+        const discoverySongs = await fetchDiscoverySongs(likes || []);
         if (discoverySongs.length > 0) {
           sections.push({
             title: 'Discover new music',
@@ -90,7 +92,7 @@ export default function CuratedForYou() {
         }
 
         // 4. Hidden gems (good songs with low play counts)
-        const hiddenGems = await fetchHiddenGems(user.likes || []);
+        const hiddenGems = await fetchHiddenGems(likes || []);
         if (hiddenGems.length > 0) {
           sections.push({
             title: 'Hidden gems',
@@ -101,11 +103,11 @@ export default function CuratedForYou() {
         }
 
         // 5. Trending in your genres
-        if (user.likes && user.likes.length > 0) {
-          const likedSongsData = await fetchLikedSongs(user.likes);
+        if (likes && likes.length > 0) {
+          const likedSongsData = await fetchLikedSongs(likes);
           const genres = extractGenres(likedSongsData);
           if (genres.length > 0) {
-            const trendingInGenre = await fetchTrendingByGenre(genres[0], user.likes);
+            const trendingInGenre = await fetchTrendingByGenre(genres[0], likes);
             if (trendingInGenre.length > 0) {
               sections.push({
                 title: `Trending in ${genres[0]}`,
@@ -126,7 +128,8 @@ export default function CuratedForYou() {
     };
 
     loadCuratedContent();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, likes]);
 
   // Helper functions
   const fetchLikedSongs = async (likedIds) => {
@@ -311,7 +314,7 @@ export default function CuratedForYou() {
           <Grid container spacing={2}>
             {section.songs.map((song) => {
               const isPlaying = isSongPlaying(song);
-              const isLiked = user?.likes?.includes(song.id);
+              const isLiked = checkIsLiked(song.id);
 
               return (
                 <Grid item xs={12} sm={6} md={4} lg={2} key={song.id}>
@@ -407,12 +410,16 @@ export default function CuratedForYou() {
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
                         <IconButton
                           size="small"
-                          onClick={() => {
+                          onClick={async () => {
                             if (!user) return;
-                            if (isLiked) {
-                              removeLike(song.id);
-                            } else {
-                              addLike(song.id);
+                            try {
+                              if (isLiked) {
+                                await removeLike(song.id);
+                              } else {
+                                await addLike(song.id);
+                              }
+                            } catch (error) {
+                              console.error('Error toggling like:', error);
                             }
                           }}
                           sx={{

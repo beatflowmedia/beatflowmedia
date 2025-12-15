@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -23,6 +24,11 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import PlayArrow from '@mui/icons-material/PlayArrow';
+import Pause from '@mui/icons-material/Pause';
+import Favorite from '@mui/icons-material/Favorite';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
+import ThumbUp from '@mui/icons-material/ThumbUp';
+import ThumbUpOffAlt from '@mui/icons-material/ThumbUpOffAlt';
 import Share from '@mui/icons-material/Share';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
@@ -33,6 +39,7 @@ import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
+import { useFavorites } from '../context/FavoritesContext';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { toast } from 'react-toastify';
@@ -48,6 +55,7 @@ function Album() {
   const { state, dispatch, actions } = usePlayer();
   const { user, followArtist, unfollowArtist, isArtistFollowed, signInWithGoogle } = useAuth();
   const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const { addFavorite, removeFavorite, isFavorited: checkIsFavorited } = useFavorites();
   const outletContext = useOutletContext() || {};
   const { onOpenRightPanel } = outletContext;
 
@@ -201,11 +209,29 @@ function Album() {
     };
   }, [tracks, reviews]);
 
+  // Check if we're currently playing this album
+  const isPlayingThisAlbum = React.useMemo(() => {
+    const currentTrack = state.queue[state.currentIndex];
+    return currentTrack && tracks.some(t => t.id === currentTrack.id) && state.isPlaying;
+  }, [state.queue, state.currentIndex, state.isPlaying, tracks]);
+
   // Event handlers
   const handlePlayAlbum = useCallback(() => {
     if (tracks.length === 0) return;
 
-    // Set entire album as queue and start playing
+    // If already playing this album, just toggle pause
+    const currentTrack = state.queue[state.currentIndex];
+    const isThisAlbum = currentTrack && tracks.some(t => t.id === currentTrack.id);
+
+    if (isThisAlbum && state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+      return;
+    } else if (isThisAlbum && !state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+      return;
+    }
+
+    // Otherwise, set entire album as queue and start playing
     dispatch({
       type: actions.SET_QUEUE,
       payload: {
@@ -213,8 +239,12 @@ function Album() {
         currentIndex: 0
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [tracks, dispatch, actions]);
+
+    // Only toggle if not already playing
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [tracks, dispatch, actions, state.isPlaying, state.queue, state.currentIndex]);
 
   const handleShufflePlay = useCallback(() => {
     if (tracks.length === 0) return;
@@ -228,8 +258,12 @@ function Album() {
         currentIndex: 0
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [tracks, dispatch, actions]);
+
+    // Only toggle if already playing, otherwise ensure it starts
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [tracks, dispatch, actions, state.isPlaying]);
 
   const handlePlayTrack = useCallback((track, index) => {
     // Set album as queue starting from selected track
@@ -240,8 +274,12 @@ function Album() {
         currentIndex: index
       }
     });
-    dispatch({ type: actions.TOGGLE_PLAY });
-  }, [tracks, dispatch, actions]);
+
+    // Always start playing when clicking a track
+    if (!state.isPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  }, [tracks, dispatch, actions, state.isPlaying]);
 
   const handleToggleLike = useCallback(async (track) => {
     if (!user) {
@@ -259,7 +297,25 @@ function Album() {
     } catch (err) {
       console.error('Failed to update likes:', err);
     }
-  }, [checkIsLiked, addLike, removeLike]);
+  }, [user, checkIsLiked, addLike, removeLike]);
+
+  const handleToggleFavorite = useCallback(async (track) => {
+    if (!user) {
+      toast.error('Please sign in to favorite songs');
+      return;
+    }
+
+    try {
+      const favorited = checkIsFavorited(track.id);
+      if (favorited) {
+        await removeFavorite(track.id);
+      } else {
+        await addFavorite(track.id);
+      }
+    } catch (err) {
+      console.error('Failed to update favorites:', err);
+    }
+  }, [user, checkIsFavorited, addFavorite, removeFavorite]);
 
   const handleFollowArtist = useCallback(async () => {
     if (!user || !album?.artist) {
@@ -603,7 +659,7 @@ function Album() {
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<PlayArrow sx={{ fontSize: 'calc(clamp(0.875rem, 1vw, 1.25rem))' }} />}
+                startIcon={isPlayingThisAlbum ? <Pause sx={{ fontSize: 'calc(clamp(0.875rem, 1vw, 1.25rem))' }} /> : <PlayArrow sx={{ fontSize: 'calc(clamp(0.875rem, 1vw, 1.25rem))' }} />}
                 onClick={handlePlayAlbum}
                 disabled={tracks.length === 0}
                 sx={{
@@ -615,17 +671,18 @@ function Album() {
                   fontSize: 'calc(clamp(0.625rem, 0.75vw, 0.875rem))'
                 }}
               >
-                Play
+                {isPlayingThisAlbum ? 'Pause' : 'Play'}
               </Button>
 
               <IconButton
-                onClick={handleShufflePlay}
+                onClick={() => dispatch({ type: actions.TOGGLE_SHUFFLE })}
                 disabled={tracks.length === 0}
                 sx={{
-                  color: 'grey.300',
-                  '&:hover': { color: 'white' },
+                  color: state.shuffleOn ? '#1DB954' : 'grey.300',
+                  '&:hover': { color: state.shuffleOn ? '#1ed760' : 'white' },
                   '& .MuiSvgIcon-root': { fontSize: 'calc(clamp(1rem, 1.2vw, 1.5rem))' }
                 }}
+                title={state.shuffleOn ? 'Disable shuffle' : 'Enable shuffle'}
               >
                 <Shuffle />
               </IconButton>
@@ -687,6 +744,7 @@ function Album() {
               const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
               const isPlaying = isCurrentTrack && state.isPlaying;
               const isLiked = checkIsLiked(track.id);
+              const isFavorited = checkIsFavorited(track.id);
               const metrics = trackMetrics[track.id] || {};
 
               return (
@@ -697,9 +755,11 @@ function Album() {
                   isCurrentTrack={isCurrentTrack}
                   isPlaying={isPlaying}
                   isLiked={isLiked}
+                  isFavorited={isFavorited}
                   likeCount={metrics.likeCount || 0}
                   onPlay={handlePlayTrack}
                   onToggleLike={handleToggleLike}
+                  onToggleFavorite={handleToggleFavorite}
                   onMoreOptions={(e, track) => {
                     setAnchorEl(e.currentTarget);
                     setSelectedTrack(track);

@@ -1,5 +1,5 @@
 // src/components/ExplorePremium.jsx
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { FaCcVisa, FaCcMastercard, FaCcStripe } from "react-icons/fa";
 import StripeButton from "./StripeButton";
 import Footer from "./Footer";

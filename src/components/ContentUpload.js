@@ -1,6 +1,6 @@
 // src/components/ContentUpload.js
 // Advanced content upload component with progress tracking and validation
-import React, { useState, useRef , useCallback } from "react";
+import { useState, useRef , useCallback } from "react";
 import { contentIngestionService } from "../services/contentIngestionService";
 import "./ContentUpload.css";
 

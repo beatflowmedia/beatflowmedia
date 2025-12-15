@@ -1,5 +1,5 @@
 // src/components/PlayerProgress.js
-import React, { useState, useRef, useEffect, memo , useCallback } from "react";
+import { useState, useRef, useEffect, memo , useCallback } from "react";
 import { usePlayer } from "../context/PlayerContext";
 import classNames from "classnames";
 

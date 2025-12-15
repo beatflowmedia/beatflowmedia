@@ -59,13 +59,13 @@ export const AuthProvider = ({ children }) => {
               follows: [],
               playlists: [],
               likes: [],
-              role: "artist" // Default role, update as needed
+              role: "listener" // Default role for new users
             },
             { merge: true }
           );
-          setRole("artist");
+          setRole("listener");
         } else {
-          setRole(snap.data()?.role || null);
+          setRole(snap.data()?.role || "listener");
         }
 
         // Subscribe to follow list and role (likes handled separately by LikesContext)
@@ -155,6 +155,26 @@ export const AuthProvider = ({ children }) => {
 
   const isArtistFollowed = useCallback((name) => followedArtists.includes(name), [followedArtists]);
 
+  // Update user role (for creator onboarding)
+  const updateUserRole = useCallback(async (newRole) => {
+    if (!user) return;
+    // Valid roles: "listener", "artist", "podcaster", "author", "admin"
+    const validRoles = ["listener", "artist", "podcaster", "author", "admin"];
+    if (!validRoles.includes(newRole)) {
+      console.error("Invalid role:", newRole);
+      return;
+    }
+    await updateDoc(doc(db, "users", user.uid), { role: newRole });
+  }, [user]);
+
+  // Check if user has a specific role
+  const hasRole = useCallback((checkRole) => role === checkRole, [role]);
+
+  // Check if user is any type of creator
+  const isCreator = useCallback(() => {
+    return ["artist", "podcaster", "author"].includes(role);
+  }, [role]);
+
   // Likes are now handled by separate LikesContext to prevent re-renders
 
   // Memoize context value to prevent unnecessary re-renders
@@ -167,8 +187,11 @@ export const AuthProvider = ({ children }) => {
     updateFavorites,
     followArtist,
     unfollowArtist,
-    isArtistFollowed
-  }), [user, role, followedArtists, signInWithGoogle, signOutUser, updateFavorites, followArtist, unfollowArtist, isArtistFollowed]);
+    isArtistFollowed,
+    updateUserRole,
+    hasRole,
+    isCreator
+  }), [user, role, followedArtists, signInWithGoogle, signOutUser, updateFavorites, followArtist, unfollowArtist, isArtistFollowed, updateUserRole, hasRole, isCreator]);
 
   return (
     <AuthContext.Provider value={contextValue}>

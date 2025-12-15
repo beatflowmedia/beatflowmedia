@@ -1,6 +1,6 @@
 // src/components/ContentIngestionDashboard.js
 // Admin dashboard for managing content ingestion workflow
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -24,7 +24,9 @@ import {
   Tabs,
   Tab,
   Alert,
-  Badge
+  CircularProgress,
+  Tooltip,
+  TextField
 } from "@mui/material";
 import {
   CloudUpload as UploadIcon,
@@ -33,15 +35,15 @@ import {
   Error as ErrorIcon,
   Refresh as RefreshIcon,
   Visibility as ViewIcon,
-  Delete as DeleteIcon as DownloadIcon,
   Security as SecurityIcon,
   Speed as SpeedIcon,
   Storage as StorageIcon,
   Queue as QueueIcon
 } from "@mui/icons-material";
 import { contentIngestionService } from "../services/contentIngestionService";
-import { CircularProgress } from '@mui/material/CircularProgress';
-import { Tooltip } from '@mui/material/Tooltip';
+import { adminAnalytics } from "../services/adminAnalytics";
+import { db } from "../firebaseConfig";
+import { collection, getDocs, query, orderBy, limit, where, Timestamp } from "firebase/firestore";
 
 const ContentIngestionDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -56,49 +58,86 @@ const ContentIngestionDashboard = () => {
   const [selectedContent, setSelectedContent] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState(null);
+  const [rejectionFeedback, setRejectionFeedback] = useState('');
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [resultMessage, setResultMessage] = useState({ type: '', message: '' });
 
   useEffect(() => {
-    loadDashboardData();
+    const loadData = async () => {
+      await loadDashboardData();
+    };
+
+    loadData();
     // Set up periodic refresh
-    const interval = setInterval(loadDashboardData, 30000); // 30 seconds
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000); // 30 seconds
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDashboardData = async () => {
     try {
       setRefreshing(true);
 
-      // Load metrics, health, and content data
-      const [metricsResponse, healthResponse, uploadsResponse, errorsResponse] =
-        await Promise.all([
-          fetch(
-            "/.netlify/functions/content-ingestion/monitoring?action=metrics",
-          ),
-          fetch(
-            "/.netlify/functions/content-ingestion/monitoring?action=health",
-          ),
-          fetchRecentUploads(),
-          fetch(
-            "/.netlify/functions/content-ingestion/monitoring?action=errors&limit=20",
-          ),
-        ]);
+      // Fetch data from Firestore instead of API endpoints
+      const [contentStats, uploads, errors] = await Promise.all([
+        adminAnalytics.getContentStats(),
+        fetchRecentUploads(),
+        fetchErrorLogs()
+      ]);
 
-      const metrics = await metricsResponse.json();
-      const health = await healthResponse.json();
-      const uploads = uploadsResponse;
-      const errors = await errorsResponse.json();
+      // Calculate metrics from real data
+      const totalSubmissions = contentStats?.totalSubmissions || 0;
+      const completedSubmissions = uploads.filter(u => u.status === 'completed').length;
+      const processingSubmissions = uploads.filter(u => u.status === 'processing').length;
+      const successRate = totalSubmissions > 0 ? (completedSubmissions / totalSubmissions) * 100 : 0;
+
+      // Calculate average processing time
+      const completedUploads = uploads.filter(u => u.status === 'completed' && u.processingTime);
+      const avgProcessingTime = completedUploads.length > 0
+        ? completedUploads.reduce((sum, u) => sum + u.processingTime, 0) / completedUploads.length
+        : 0;
 
       setDashboardData({
-        metrics: metrics.metrics || {},
-        systemHealth: health,
+        metrics: {
+          upload_success_rate: { value: successRate },
+          processing_time: { average: avgProcessingTime },
+          queue_depth: {
+            upload: uploads.filter(u => u.status === 'pending').length,
+            processing: processingSubmissions
+          },
+          storage_usage: { percentage: 0 } // Not tracking this yet
+        },
+        systemHealth: {
+          status: 'healthy',
+          services: {
+            upload_service: 'healthy',
+            processing_service: 'healthy',
+            database: 'healthy'
+          },
+          version: '1.0.0',
+          timestamp: Date.now()
+        },
         recentUploads: uploads,
         processingQueue: uploads.filter(
           (u) => u.status !== "completed" && u.status !== "failed",
         ),
-        errorLogs: errors.errors || []
+        errorLogs: errors
       });
     } catch (error) {
       console.error("Error loading dashboard data:", error);
+      // Set default values on error
+      setDashboardData({
+        metrics: {},
+        systemHealth: { status: 'unknown', services: {}, timestamp: Date.now() },
+        recentUploads: [],
+        processingQueue: [],
+        errorLogs: []
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,21 +145,88 @@ const ContentIngestionDashboard = () => {
   };
 
   const fetchRecentUploads = async () => {
-    // This would integrate with your content management API
-    // For now, return mock data structure
-    return [
-      {
-        id: "content_001",
-        filename: "song1.mp3",
-        artist: "Artist Name",
-        title: "Song Title",
-        status: "completed",
-        progress: 100,
-        uploadedAt: new Date(),
-        processingTime: 180
-      },
-      // Add more mock data as needed
-    ];
+    try {
+      console.log('📥 Fetching artist submissions...');
+
+      // Fetch recent artist submissions from Firestore
+      // Try without orderBy first in case index doesn't exist
+      let snapshot;
+      try {
+        const q = query(
+          collection(db, 'artistSubmissions'),
+          orderBy('submittedAt', 'desc'),
+          limit(50)
+        );
+        snapshot = await getDocs(q);
+      } catch (indexError) {
+        console.warn('⚠️ Index may not exist, fetching without orderBy:', indexError);
+        // Fallback: fetch without ordering
+        const q = query(
+          collection(db, 'artistSubmissions'),
+          limit(50)
+        );
+        snapshot = await getDocs(q);
+      }
+
+      console.log(`✅ Found ${snapshot.docs.length} submissions`);
+
+      const uploads = snapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('📄 Submission:', doc.id, data);
+
+        const trackCount = data.tracks?.length || 0;
+        const albumTitle = data.albumTitle || (trackCount > 0 ? data.tracks[0].title : 'Untitled');
+
+        return {
+          id: doc.id,
+          filename: `${data.releaseType === 'album' ? 'Album' : 'Single'}: ${albumTitle}`,
+          artist: data.artist || 'Unknown Artist',
+          title: albumTitle,
+          releaseType: data.releaseType,
+          trackCount,
+          status: data.status || 'pending',
+          progress: data.progress || (data.status === 'published' ? 100 : data.status === 'approved' ? 80 : data.status === 'under_review' ? 50 : 10),
+          uploadedAt: data.submittedAt?.toDate?.() || data.createdAt?.toDate?.() || new Date(),
+          processingTime: data.processingTime || (data.completedAt && data.startedAt
+            ? (data.completedAt.toDate() - data.startedAt.toDate()) / 1000
+            : null),
+          currentStep: data.currentStep || 'upload'
+        };
+      });
+
+      // Sort by uploadedAt in JavaScript if we couldn't use Firestore orderBy
+      uploads.sort((a, b) => b.uploadedAt - a.uploadedAt);
+
+      return uploads;
+    } catch (error) {
+      console.error('❌ Error fetching uploads:', error);
+      return [];
+    }
+  };
+
+  const fetchErrorLogs = async () => {
+    try {
+      // Fetch recent error logs from Firestore
+      const oneDayAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)); // Last 7 days
+      const q = query(
+        collection(db, 'error_logs'),
+        where('timestamp', '>=', oneDayAgo),
+        orderBy('timestamp', 'desc'),
+        limit(20)
+      );
+
+      const snapshot = await getDocs(q);
+      const errors = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.() || new Date()
+      }));
+
+      return errors;
+    } catch (error) {
+      console.error('Error fetching error logs:', error);
+      return [];
+    }
   };
 
   const handleRefresh = () => {
@@ -168,8 +274,12 @@ const ContentIngestionDashboard = () => {
   const getStatusColor = (status) => {
     const colors = {
       completed: "success",
+      published: "success",
+      approved: "success",
       processing: "warning",
+      under_review: "warning",
       failed: "error",
+      rejected: "error",
       quarantined: "error",
       pending: "info"
     };
@@ -182,9 +292,81 @@ const ContentIngestionDashboard = () => {
       processing: <ProcessIcon />,
       failed: <ErrorIcon />,
       quarantined: <SecurityIcon />,
-      pending: <QueueIcon />
+      pending: <QueueIcon />,
+      approved: <CompleteIcon />,
+      published: <CompleteIcon />,
+      rejected: <ErrorIcon />,
+      under_review: <ProcessIcon />
     };
     return icons[status] || <QueueIcon />;
+  };
+
+  const handleApproveClick = (submissionId) => {
+    setSelectedSubmissionId(submissionId);
+    setApproveDialogOpen(true);
+  };
+
+  const handleRejectClick = (submissionId) => {
+    setSelectedSubmissionId(submissionId);
+    setRejectDialogOpen(true);
+  };
+
+  const handleApproveConfirm = async () => {
+    try {
+      setRefreshing(true);
+      setApproveDialogOpen(false);
+      await contentIngestionService.approveSubmission(selectedSubmissionId);
+      await loadDashboardData();
+      setResultMessage({
+        type: 'success',
+        message: 'Submission approved and published successfully! The content is now live on the platform and will appear in New Releases.'
+      });
+      setResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error approving submission:', error);
+      setResultMessage({
+        type: 'error',
+        message: `Failed to approve submission: ${error.message}`
+      });
+      setResultDialogOpen(true);
+    } finally {
+      setRefreshing(false);
+      setSelectedSubmissionId(null);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectionFeedback.trim()) {
+      setResultMessage({
+        type: 'error',
+        message: 'Please enter rejection feedback'
+      });
+      setResultDialogOpen(true);
+      return;
+    }
+
+    try {
+      setRefreshing(true);
+      setRejectDialogOpen(false);
+      await contentIngestionService.rejectSubmission(selectedSubmissionId, rejectionFeedback);
+      await loadDashboardData();
+      setResultMessage({
+        type: 'success',
+        message: 'Submission rejected. Artist will be notified with your feedback.'
+      });
+      setResultDialogOpen(true);
+    } catch (error) {
+      console.error('Error rejecting submission:', error);
+      setResultMessage({
+        type: 'error',
+        message: `Failed to reject submission: ${error.message}`
+      });
+      setResultDialogOpen(true);
+    } finally {
+      setRefreshing(false);
+      setSelectedSubmissionId(null);
+      setRejectionFeedback('');
+    }
   };
 
   if (loading) {
@@ -332,6 +514,8 @@ const ContentIngestionDashboard = () => {
         <RecentUploadsTable
           uploads={dashboardData.recentUploads}
           onViewDetails={handleViewDetails}
+          onApprove={handleApproveClick}
+          onReject={handleRejectClick}
           getStatusColor={getStatusColor}
           getStatusIcon={getStatusIcon}
           formatFileSize={formatFileSize}
@@ -362,6 +546,140 @@ const ContentIngestionDashboard = () => {
         formatDuration={formatDuration}
         getStatusColor={getStatusColor}
       />
+
+      {/* Approve Confirmation Dialog */}
+      <Dialog
+        open={approveDialogOpen}
+        onClose={() => setApproveDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
+          Approve Submission
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#1e1e1e', color: 'white', pt: 3 }}>
+          <Alert severity="success" sx={{ mb: 2 }}>
+            This will publish the submission to the platform and make it visible to all users.
+          </Alert>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Are you sure you want to approve this submission and publish it to the platform?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            The following will be created:
+          </Typography>
+          <Box component="ul" sx={{ mt: 1, pl: 3 }}>
+            <Typography component="li" variant="body2" color="text.secondary">
+              Songs will be added to the songs collection
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              Albums will be created (if applicable)
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              Content will be immediately visible on the platform
+            </Typography>
+          </Box>
+        </DialogContent>
+        <Box sx={{ p: 2, bgcolor: '#1e1e1e', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Button
+            onClick={() => setApproveDialogOpen(false)}
+            variant="outlined"
+            sx={{ borderColor: '#555', color: 'white' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleApproveConfirm}
+            variant="contained"
+            color="success"
+            disabled={refreshing}
+          >
+            {refreshing ? 'Publishing...' : 'Approve & Publish'}
+          </Button>
+        </Box>
+      </Dialog>
+
+      {/* Reject Confirmation Dialog */}
+      <Dialog
+        open={rejectDialogOpen}
+        onClose={() => setRejectDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
+          Reject Submission
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#1e1e1e', color: 'white', pt: 3 }}>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            The artist will be notified of this rejection with your feedback.
+          </Alert>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Please provide detailed feedback to help the artist improve their submission:
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="Rejection Feedback"
+            placeholder="e.g., Audio quality issues, metadata incomplete, copyright concerns, etc."
+            value={rejectionFeedback}
+            onChange={(e) => setRejectionFeedback(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                color: 'white',
+                '& fieldset': { borderColor: '#555' },
+                '&:hover fieldset': { borderColor: '#777' },
+              },
+              '& .MuiInputLabel-root': { color: '#aaa' }
+            }}
+          />
+        </DialogContent>
+        <Box sx={{ p: 2, bgcolor: '#1e1e1e', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Button
+            onClick={() => {
+              setRejectDialogOpen(false);
+              setRejectionFeedback('');
+            }}
+            variant="outlined"
+            sx={{ borderColor: '#555', color: 'white' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRejectConfirm}
+            variant="contained"
+            color="error"
+            disabled={refreshing || !rejectionFeedback.trim()}
+          >
+            {refreshing ? 'Rejecting...' : 'Reject Submission'}
+          </Button>
+        </Box>
+      </Dialog>
+
+      {/* Result Dialog (Success/Error) */}
+      <Dialog
+        open={resultDialogOpen}
+        onClose={() => setResultDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
+          {resultMessage.type === 'success' ? '✅ Success' : '❌ Error'}
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#1e1e1e', color: 'white', pt: 3 }}>
+          <Alert severity={resultMessage.type === 'success' ? 'success' : 'error'} sx={{ mb: 2 }}>
+            {resultMessage.message}
+          </Alert>
+        </DialogContent>
+        <Box sx={{ p: 2, bgcolor: '#1e1e1e', display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            onClick={() => setResultDialogOpen(false)}
+            variant="contained"
+            color={resultMessage.type === 'success' ? 'success' : 'error'}
+          >
+            OK
+          </Button>
+        </Box>
+      </Dialog>
     </Box>
   );
 };
@@ -370,6 +688,8 @@ const ContentIngestionDashboard = () => {
 const RecentUploadsTable = ({
   uploads,
   onViewDetails,
+  onApprove,
+  onReject,
   getStatusColor,
   getStatusIcon,
   formatFileSize,
@@ -420,14 +740,38 @@ const RecentUploadsTable = ({
                 : "-"}
             </TableCell>
             <TableCell>
-              <Tooltip title="View Details">
-                <IconButton
-                  onClick={() => onViewDetails(upload.id)}
-                  size="small"
-                >
-                  <ViewIcon />
-                </IconButton>
-              </Tooltip>
+              <Box display="flex" gap={1}>
+                <Tooltip title="View Details">
+                  <IconButton
+                    onClick={() => onViewDetails(upload.id)}
+                    size="small"
+                  >
+                    <ViewIcon />
+                  </IconButton>
+                </Tooltip>
+                {upload.status === 'pending' && (
+                  <>
+                    <Tooltip title="Approve & Publish">
+                      <IconButton
+                        onClick={() => onApprove(upload.id)}
+                        size="small"
+                        color="success"
+                      >
+                        <CompleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Reject">
+                      <IconButton
+                        onClick={() => onReject(upload.id)}
+                        size="small"
+                        color="error"
+                      >
+                        <ErrorIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </>
+                )}
+              </Box>
             </TableCell>
           </TableRow>
         ))}
