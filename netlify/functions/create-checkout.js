@@ -4,8 +4,15 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event, context) => {
+  console.log('🔔 create-checkout function invoked');
+  console.log('Environment check:', {
+    hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+    stripeKeyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 7)
+  });
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
+    console.log('❌ Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({ error: 'Method not allowed' })
@@ -13,6 +20,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('📦 Parsing request body...');
     const {
       userId,
       itemId,
@@ -26,6 +34,8 @@ exports.handler = async (event, context) => {
       recurring,
       metadata
     } = JSON.parse(event.body);
+
+    console.log('✅ Request data:', { userId, itemId, itemType, price, userEmail });
 
     // Validate required fields
     if (!userId || !itemId || !itemType) {
@@ -109,7 +119,9 @@ exports.handler = async (event, context) => {
     }
 
     // Create the checkout session
+    console.log('💳 Creating Stripe checkout session...');
     const session = await stripe.checkout.sessions.create(checkoutConfig);
+    console.log('✅ Session created successfully:', session.id);
 
     return {
       statusCode: 200,
@@ -124,11 +136,23 @@ exports.handler = async (event, context) => {
       })
     };
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('💥 Error creating checkout session:', error);
+    console.error('Error details:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode
+    });
     return {
       statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
       body: JSON.stringify({
-        error: error.message || 'Failed to create checkout session'
+        error: error.message || 'Failed to create checkout session',
+        type: error.type,
+        code: error.code
       })
     };
   }

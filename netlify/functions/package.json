@@ -1,0 +1,9 @@
+{
+  "name": "beatflow-netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for BeatFlow Media",
+  "main": "index.js",
+  "dependencies": {
+    "stripe": "^18.5.0"
+  }
+}
