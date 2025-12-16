@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
+import OptimizedImage from '../components/OptimizedImage';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Avatar from '@mui/material/Avatar';
@@ -842,11 +843,12 @@ function Artist() {
                     onClick={() => navigate(`/album/${albums[0].id}`)}
                   >
                     <Box sx={{ display: 'flex' }}>
-                      <CardMedia
-                        component="img"
-                        sx={{ width: 120, height: 120 }}
-                        image={albums[0].coverUrl || '/default-album-cover.jpg'}
+                      <OptimizedImage
+                        src={albums[0].coverUrl}
                         alt={albums[0].title}
+                        width={120}
+                        height={120}
+                        fallback="/default-album-cover.jpg"
                       />
                       <CardContent sx={{ flex: 1 }}>
                         <Typography variant="subtitle2" sx={{ color: 'grey.400', mb: 1 }}>
@@ -937,11 +939,11 @@ function Artist() {
                         }}
                         onClick={() => navigate(`/album/${album.id}`)}
                       >
-                        <CardMedia
-                          component="img"
-                          height="200"
-                          image={album.coverUrl || '/default-album-cover.jpg'}
+                        <OptimizedImage
+                          src={album.coverUrl}
                           alt={album.title}
+                          height={200}
+                          fallback="/default-album-cover.jpg"
                         />
                         <CardContent>
                           <Typography
@@ -996,11 +998,11 @@ function Artist() {
                         }}
                         onClick={() => navigate(`/playlist/${playlist.id}`)}
                       >
-                        <CardMedia
-                          component="img"
-                          height="200"
-                          image={playlist.coverUrl || '/default-playlist-cover.jpg'}
+                        <OptimizedImage
+                          src={playlist.coverUrl}
                           alt={playlist.name}
+                          height={200}
+                          fallback="/default-playlist-cover.jpg"
                         />
                         <CardContent>
                           <Typography

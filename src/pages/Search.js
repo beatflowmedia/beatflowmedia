@@ -6,6 +6,9 @@ import {
   Card,
   CardContent,
   CardMedia,
+} from '@mui/material';
+import OptimizedImage from '../components/OptimizedImage';
+import {
   TextField,
   Tabs,
   Tab,
@@ -812,20 +815,12 @@ function Search() {
                         }}
                       >
                         <Box sx={{ position: "relative" }}>
-                          <CardMedia
-                            component="img"
-                            height="200"
-                            image={
-                              item.coverUrl ||
-                              item.imageUrl ||
-                              item.cover ||
-                              "/default-cover.jpg"
-                            }
+                          <OptimizedImage
+                            src={item.coverUrl || item.imageUrl || item.cover}
                             alt={item.title || item.name}
+                            height={200}
+                            fallback="/default-cover.jpg"
                             sx={{ cursor: "pointer" }}
-                            onClick={() =>
-                              item.type === "song" && handlePlaySong(item)
-                            }
                           />
 
                           {/* Type Badge */}

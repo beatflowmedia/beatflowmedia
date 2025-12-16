@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
+import OptimizedImage from '../components/OptimizedImage';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Avatar from '@mui/material/Avatar';
@@ -492,15 +493,13 @@ function Album() {
             boxShadow: 3,
             flexShrink: 0
           }}>
-            <CardMedia
-              component="img"
-              sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
-              image={album?.coverUrl || '/default-album-cover.jpg'}
+            <OptimizedImage
+              src={album?.coverUrl}
               alt={album?.title}
+              width="100%"
+              height={300}
+              fallback="/default-album-cover.jpg"
+              sx={{ objectFit: 'cover' }}
             />
           </Card>
 
@@ -1046,12 +1045,13 @@ function Album() {
         <DialogTitle>Purchase Album</DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <CardMedia
-              component="img"
-              height="200"
-              image={album?.coverUrl || '/default-album-cover.jpg'}
+            <OptimizedImage
+              src={album?.coverUrl}
               alt={album?.title}
-              sx={{ width: 200, height: 200, mx: 'auto', mb: 2, borderRadius: 2 }}
+              width={200}
+              height={200}
+              fallback="/default-album-cover.jpg"
+              sx={{ mx: 'auto', mb: 2, borderRadius: 2 }}
             />
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               {album?.title}
