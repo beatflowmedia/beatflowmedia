@@ -65,6 +65,9 @@ export default function OptimizedImage({
     };
   }, [src, fallback]);
 
+  // Create WebP source URL
+  const webpSrc = src ? src.replace(/\.(jpg|jpeg|png)$/i, '.webp') : null;
+
   return (
     <Box
       sx={{
@@ -88,7 +91,8 @@ export default function OptimizedImage({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'grey.900'
+            bgcolor: 'grey.900',
+            zIndex: 1
           }}
         >
           <MusicNote sx={{ fontSize: 48, color: 'grey.700' }} />
@@ -105,16 +109,28 @@ export default function OptimizedImage({
             position: 'absolute',
             top: 0,
             left: 0,
-            bgcolor: 'grey.800'
+            bgcolor: 'grey.800',
+            zIndex: 2
           }}
         />
       )}
 
-      {imageSrc && (
+      {/* Use picture element for better WebP support */}
+      <picture style={{ width: '100%', height: '100%' }}>
+        {webpSrc && (
+          <source srcSet={webpSrc} type="image/webp" />
+        )}
         <img
-          src={imageSrc}
+          src={imageSrc || src || fallback}
           alt={alt}
           loading="lazy"
+          width={typeof width === 'number' ? width : undefined}
+          height={typeof height === 'number' ? height : undefined}
+          onLoad={() => setLoading(false)}
+          onError={() => {
+            setError(true);
+            setLoading(false);
+          }}
           style={{
             width: '100%',
             height: '100%',
@@ -124,7 +140,7 @@ export default function OptimizedImage({
             display: 'block'
           }}
         />
-      )}
+      </picture>
     </Box>
   );
 }
