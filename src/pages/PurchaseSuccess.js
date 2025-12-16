@@ -105,13 +105,13 @@ export default function PurchaseSuccess() {
         }));
         console.log('✅ Dispatched purchaseComplete event:', purchaseData.itemId);
       } else {
-        // Fallback to most recent purchase if session not found yet (webhook still processing)
-        const purchases = await stripeService.getUserPurchases(user.uid);
-        if (purchases.length > 0) {
-          setPurchase(purchases[0]);
-        } else {
-          setError('Purchase not found. Please check your downloads page.');
-        }
+        // Webhook still processing - show a generic success message
+        console.log('⏳ Webhook still processing, showing generic success');
+        setPurchase({
+          itemName: 'Your Purchase',
+          price: 0,
+          itemType: 'processing'
+        });
       }
 
       setLoading(false);
@@ -190,38 +190,69 @@ export default function PurchaseSuccess() {
                     mb: 3
                   }}
                 />
-                <Typography variant="h4" gutterBottom>
-                  Purchase Successful!
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                  Thank you for your purchase
-                </Typography>
+                {purchase.itemType === 'premium_subscription' || purchase.itemType === 'processing' ? (
+                  <>
+                    <Typography variant="h4" gutterBottom>
+                      Welcome to BeatFlow Premium!
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                      Your subscription is now active
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                      Enjoy ad-free music, high-quality audio, and unlimited downloads
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="h4" gutterBottom>
+                      Purchase Successful!
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                      Thank you for your purchase
+                    </Typography>
 
-                <Card sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', mb: 4 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {purchase.itemName}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      by {purchase.artistName}
-                    </Typography>
-                    <Typography variant="h5" sx={{ mt: 2, fontWeight: 'bold' }}>
-                      ${purchase.price.toFixed(2)}
-                    </Typography>
-                  </CardContent>
-                </Card>
+                    <Card sx={{ bgcolor: 'rgba(0, 0, 0, 0.05)', mb: 4 }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          {purchase.itemName}
+                        </Typography>
+                        {purchase.artistName && (
+                          <Typography variant="body2" color="text.secondary">
+                            by {purchase.artistName}
+                          </Typography>
+                        )}
+                        <Typography variant="h5" sx={{ mt: 2, fontWeight: 'bold' }}>
+                          ${purchase.price.toFixed(2)}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
 
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="large"
-                    startIcon={<Download />}
-                    onClick={handleGoToDownloads}
-                    sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
-                  >
-                    Go to Downloads
-                  </Button>
+                  {purchase.itemType === 'premium_subscription' ? (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      startIcon={<Home />}
+                      onClick={() => navigate('/')}
+                      sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                    >
+                      Start Listening
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      startIcon={<Download />}
+                      onClick={handleGoToDownloads}
+                      sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                    >
+                      Go to Downloads
+                    </Button>
+                  )}
                   <Button
                     variant="outlined"
                     size="large"

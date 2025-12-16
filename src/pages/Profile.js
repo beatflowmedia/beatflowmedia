@@ -30,12 +30,14 @@ import {
   History,
   ShoppingCart,
   Logout,
-  Edit
+  Edit,
+  Star,
+  ManageAccounts
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { stripeService } from '../services/stripeService';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 
 export default function Profile() {
   const { user, signOutUser } = useAuth();
@@ -48,6 +50,8 @@ export default function Profile() {
     recentlyPlayed: 0
   });
   const [recentPurchases, setRecentPurchases] = useState([]);
+  const [subscriptionInfo, setSubscriptionInfo] = useState(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
 
   useEffect(() => {
     if (!user) {
@@ -63,34 +67,87 @@ export default function Profile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
+  const handleManageSubscription = async () => {
+    try {
+      // Call Netlify function to create customer portal session
+      const response = await fetch('/.netlify/functions/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create portal session');
+      }
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating portal session:', error);
+      alert('Failed to open subscription management. Please try again.');
+    }
+  };
+
   const loadUserStats = async () => {
     try {
       setLoading(true);
+
+      // Load subscription info from user document
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.premiumActive) {
+          setSubscriptionInfo({
+            active: true,
+            tier: userData.premiumTier || 'individual',
+            stripeCustomerId: userData.stripeCustomerId
+          });
+        }
+      }
+      setLoadingSubscription(false);
 
       // Load purchases
       const purchases = await stripeService.getUserPurchases(user.uid);
       setRecentPurchases(purchases.slice(0, 5));
 
-      // Load listening history count
-      const historyQuery = query(
-        collection(db, 'listening_history'),
-        where('userId', '==', user.uid),
-        limit(100)
-      );
-      const historySnapshot = await getDocs(historyQuery);
+      // Load playlists count from subcollection
+      let playlistsCount = 0;
+      try {
+        const playlistsRef = collection(db, 'users', user.uid, 'playlists');
+        const playlistsSnapshot = await getDocs(playlistsRef);
+        playlistsCount = playlistsSnapshot.size;
+      } catch (error) {
+        console.error('Error loading playlists:', error);
+      }
 
-      // Load playlists count
-      const playlistsQuery = query(
-        collection(db, 'playlists'),
-        where('creatorId', '==', user.uid)
-      );
-      const playlistsSnapshot = await getDocs(playlistsQuery);
+      // Load favorites count from user document
+      let favoritesCount = 0;
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        favoritesCount = userData.likes?.length || 0;
+      }
+
+      // Load listening history count
+      let historyCount = 0;
+      try {
+        const historyQuery = query(
+          collection(db, 'listening_history'),
+          where('userId', '==', user.uid),
+          limit(100)
+        );
+        const historySnapshot = await getDocs(historyQuery);
+        historyCount = historySnapshot.size;
+      } catch (error) {
+        console.error('Error loading listening history:', error);
+      }
 
       setStats({
         totalPurchases: purchases.length,
-        totalFavorites: user.likes?.length || 0,
-        totalPlaylists: playlistsSnapshot.size,
-        recentlyPlayed: historySnapshot.size
+        totalFavorites: favoritesCount,
+        totalPlaylists: playlistsCount,
+        recentlyPlayed: historyCount
       });
     } catch (error) {
       console.error('Error loading user stats:', error);
@@ -131,9 +188,9 @@ export default function Profile() {
                   variant="outlined"
                 />
                 <Chip
-                  icon={<Favorite />}
-                  label={`${stats.totalFavorites} Favorites`}
-                  color="error"
+                  icon={<PlayCircle />}
+                  label={`${stats.recentlyPlayed} Played`}
+                  color="success"
                   variant="outlined"
                 />
                 <Chip
@@ -155,6 +212,56 @@ export default function Profile() {
             </Grid>
           </Grid>
         </Paper>
+
+        {/* Subscription Info */}
+        {!loadingSubscription && subscriptionInfo?.active && (
+          <Paper sx={{ p: 3, mb: 4, bgcolor: 'background.paper', borderLeft: '4px solid #1DB954' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Star sx={{ fontSize: 40, color: '#1DB954' }} />
+                <Box>
+                  <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+                    BeatFlow Premium {subscriptionInfo.tier.charAt(0).toUpperCase() + subscriptionInfo.tier.slice(1)}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Active subscription • Cancel anytime
+                  </Typography>
+                </Box>
+              </Box>
+              <Button
+                variant="outlined"
+                startIcon={<ManageAccounts />}
+                onClick={handleManageSubscription}
+                sx={{ borderColor: '#1DB954', color: '#1DB954', '&:hover': { borderColor: '#1ed760', bgcolor: 'rgba(29, 185, 84, 0.1)' } }}
+              >
+                Manage Subscription
+              </Button>
+            </Box>
+          </Paper>
+        )}
+
+        {/* Upgrade to Premium Banner */}
+        {!loadingSubscription && !subscriptionInfo?.active && (
+          <Paper sx={{ p: 3, mb: 4, bgcolor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  Unlock BeatFlow Premium
+                </Typography>
+                <Typography variant="body2">
+                  Ad-free music, unlimited downloads, and high-quality audio
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                onClick={() => navigate('/explore-premium')}
+                sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+              >
+                Explore Plans
+              </Button>
+            </Box>
+          </Paper>
+        )}
 
         <Grid container spacing={3}>
           {/* Quick Actions */}

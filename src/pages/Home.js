@@ -47,6 +47,7 @@ import ShareButton from "../utils/ShareButton";
 import firebaseCache from "../utils/firebaseCache";
 import { stripeService } from "../services/stripeService";
 import { useNavigate } from "react-router-dom";
+import OptimizedImage from "../components/OptimizedImage";
 
 // Lazy load heavy components for better initial page load
 const TrendingSongs = lazy(() => import("../components/TrendingSongs"));
@@ -721,13 +722,11 @@ function Home() {
                       }
                     }}
                   >
-                    <CardMedia
-                      component="img"
-                      height="160"
-                      image={album.coverUrl || '/default-album.jpg'}
+                    <OptimizedImage
+                      src={album.coverUrl}
                       alt={album.title}
-                      loading="lazy"
-                      sx={{ objectFit: 'cover' }}
+                      height={160}
+                      fallback="/default-album.jpg"
                     />
                     <CardContent sx={{ pb: 2 }}>
                       <Typography
@@ -1082,12 +1081,11 @@ function Home() {
                   }}
                   onClick={() => handlePlaySong(activity)}
                 >
-                  <CardMedia
-                    component="img"
-                    height="80"
-                    image={activity.coverUrl || '/default-song-cover.jpg'}
+                  <OptimizedImage
+                    src={activity.coverUrl}
                     alt={activity.title}
-                    loading="lazy"
+                    height={80}
+                    fallback="/default-song-cover.jpg"
                   />
                   <CardContent sx={{ p: 1 }}>
                     <Typography

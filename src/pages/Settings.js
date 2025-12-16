@@ -101,7 +101,12 @@ export default function Settings() {
   };
 
   const handleSaveProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
+
+    console.log('💾 Saving profile:', { displayName, bio, userId: user.uid });
 
     try {
       setLoading(true);
@@ -116,10 +121,11 @@ export default function Settings() {
         { merge: true }
       );
 
+      console.log('✅ Profile saved successfully');
       toast.success('Profile updated successfully');
       setEditing(false);
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('❌ Error saving profile:', error);
       toast.error('Failed to update profile');
     } finally {
       setLoading(false);
@@ -127,7 +133,12 @@ export default function Settings() {
   };
 
   const handleSavePreferences = async () => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
+
+    console.log('💾 Saving preferences:', { preferences, userId: user.uid });
 
     try {
       setLoading(true);
@@ -141,9 +152,10 @@ export default function Settings() {
         { merge: true }
       );
 
+      console.log('✅ Preferences saved successfully');
       toast.success('Preferences saved successfully');
     } catch (error) {
-      console.error('Error saving preferences:', error);
+      console.error('❌ Error saving preferences:', error);
       toast.error('Failed to save preferences');
     } finally {
       setLoading(false);
