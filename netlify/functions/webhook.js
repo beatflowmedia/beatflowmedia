@@ -9,14 +9,24 @@ if (!admin.apps.length) {
   console.log('Initializing Firebase Admin...');
   console.log('Project ID:', process.env.FIREBASE_PROJECT_ID);
   console.log('Client Email:', process.env.FIREBASE_CLIENT_EMAIL);
-  console.log('Private Key exists:', !!process.env.FIREBASE_PRIVATE_KEY);
+  console.log('Private Key (base64) exists:', !!process.env.FIREBASE_PRIVATE_KEY_BASE64);
+  console.log('Private Key (plain) exists:', !!process.env.FIREBASE_PRIVATE_KEY);
 
   try {
+    // Support both base64 encoded and plain private keys
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY_BASE64
+      ? Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, 'base64').toString('utf8')
+      : process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (!privateKey) {
+      throw new Error('Firebase private key not found. Set either FIREBASE_PRIVATE_KEY_BASE64 or FIREBASE_PRIVATE_KEY');
+    }
+
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        privateKey: privateKey
       })
     });
     console.log('✅ Firebase Admin initialized successfully');
