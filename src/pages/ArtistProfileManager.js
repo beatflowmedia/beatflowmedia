@@ -28,7 +28,8 @@ import {
   Chip,
   CircularProgress,
   Menu,
-  MenuItem
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import {
   CloudUpload,
@@ -52,6 +53,7 @@ import { db, storage } from '../firebaseConfig';
 import { doc, getDoc, setDoc, collection, addDoc, deleteDoc, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
+import StripeConnectOnboarding from '../components/StripeConnectOnboarding';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -102,6 +104,8 @@ export default function ArtistProfileManager() {
   // Music management
   const [songs, setSongs] = useState([]);
   const [albums, setAlbums] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
   const [albumMenuAnchor, setAlbumMenuAnchor] = useState(null);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -267,6 +271,68 @@ export default function ArtistProfileManager() {
       const submissionsData = submissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSubmissions(submissionsData);
       console.log('Found submissions:', submissionsData.length, submissionsData);
+
+      // Load purchases/revenue for this artist
+      let purchasesData = [];
+
+      // Try querying by artistId first (for new purchases with artistId field)
+      if (user.uid) {
+        const purchasesByIdQuery = query(
+          collection(db, 'purchases'),
+          where('artistId', '==', user.uid),
+          where('status', '==', 'completed')
+        );
+        const purchasesByIdSnapshot = await getDocs(purchasesByIdQuery);
+        purchasesData = purchasesByIdSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('Found', purchasesData.length, 'purchases by artistId');
+      }
+
+      // If no purchases found by artistId, try by artistName from profile
+      if (purchasesData.length === 0 && artistNameForQuery) {
+        const purchasesByNameQuery = query(
+          collection(db, 'purchases'),
+          where('artistName', '==', artistNameForQuery),
+          where('status', '==', 'completed')
+        );
+        const purchasesByNameSnapshot = await getDocs(purchasesByNameQuery);
+        purchasesData = purchasesByNameSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('Found', purchasesData.length, 'purchases by artistName from profile:', artistNameForQuery);
+      }
+
+      // If still no purchases, try by artist name from user's songs (fallback)
+      if (purchasesData.length === 0 && songsData.length > 0) {
+        // Get unique artist names from the songs
+        const artistNames = [...new Set(songsData.map(s => s.artist || s.artistName).filter(Boolean))];
+        console.log('Trying artist names from songs:', artistNames);
+
+        for (const name of artistNames) {
+          const purchasesByNameQuery = query(
+            collection(db, 'purchases'),
+            where('artistName', '==', name),
+            where('status', '==', 'completed')
+          );
+          const purchasesByNameSnapshot = await getDocs(purchasesByNameQuery);
+          const foundPurchases = purchasesByNameSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          if (foundPurchases.length > 0) {
+            purchasesData.push(...foundPurchases);
+            console.log('Found', foundPurchases.length, 'purchases by artistName from songs:', name);
+          }
+        }
+      }
+
+      setPurchases(purchasesData);
+
+      // Calculate total artist payout (70% of sales after platform fee)
+      // Use artistPayout if available (new purchases), otherwise calculate from price (old purchases)
+      const revenue = purchasesData.reduce((sum, purchase) => {
+        if (purchase.artistPayout !== undefined) {
+          return sum + purchase.artistPayout;
+        }
+        // Fallback for old purchases without artistPayout field - calculate 70%
+        return sum + (purchase.price || 0) * 0.70;
+      }, 0);
+      setTotalRevenue(revenue);
+      console.log('Total artist payout calculated:', revenue, 'from', purchasesData.length, 'purchases');
     } catch (error) {
       console.error('Error loading artist profile:', error);
       toast.error('Failed to load profile');
@@ -705,6 +771,7 @@ export default function ArtistProfileManager() {
             <Tab label="Social Links" />
             <Tab label="Tour Dates" />
             <Tab label="Statistics" />
+            <Tab label="Payouts" />
           </Tabs>
 
           {/* Profile Tab */}
@@ -1197,7 +1264,14 @@ export default function ArtistProfileManager() {
               {/* Overview Stats */}
               <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                  <Card sx={{
+                    bgcolor: 'background.default',
+                    p: 2,
+                    aspectRatio: '1 / 1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Total Songs
                     </Typography>
@@ -1213,7 +1287,14 @@ export default function ArtistProfileManager() {
                 </Grid>
 
                 <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                  <Card sx={{
+                    bgcolor: 'background.default',
+                    p: 2,
+                    aspectRatio: '1 / 1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Total Albums
                     </Typography>
@@ -1229,7 +1310,14 @@ export default function ArtistProfileManager() {
                 </Grid>
 
                 <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                  <Card sx={{
+                    bgcolor: 'background.default',
+                    p: 2,
+                    aspectRatio: '1 / 1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Total Plays
                     </Typography>
@@ -1243,7 +1331,14 @@ export default function ArtistProfileManager() {
                 </Grid>
 
                 <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                  <Card sx={{
+                    bgcolor: 'background.default',
+                    p: 2,
+                    aspectRatio: '1 / 1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Total Likes
                     </Typography>
@@ -1257,106 +1352,283 @@ export default function ArtistProfileManager() {
                 </Grid>
               </Grid>
 
-              {/* Estimated Earnings */}
+              {/* Revenue Overview */}
               <Divider sx={{ my: 3 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                Estimated Earnings
+                Revenue Overview
               </Typography>
-              <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid item xs={12} md={6}>
-                  <Card sx={{ bgcolor: 'background.default', p: 3 }}>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                {/* Sales Revenue - Active */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card sx={{ bgcolor: 'background.default', p: { xs: 2, sm: 3 }, height: '100%' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Typography variant="body2" color="text.secondary">
-                        Estimated Streaming Revenue
+                        Sales Revenue
                       </Typography>
-                      <IconButton size="small" sx={{ color: 'primary.main' }}>
-                        <InfoOutlined fontSize="small" />
-                      </IconButton>
+                      <Tooltip
+                        title="Your earnings from song/album sales. Artists receive 70% of each sale, with 30% going to platform fees (payment processing, hosting, bandwidth). Payouts are processed monthly via Stripe."
+                        arrow
+                        placement="top"
+                      >
+                        <IconButton size="small" sx={{ color: 'primary.main' }}>
+                          <InfoOutlined fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
-                    <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-                      ${(songs.reduce((sum, song) => sum + (song.playCount || 0), 0) * 0.003).toFixed(2)}
+                    <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '2rem', sm: '3rem' }, color: totalRevenue > 0 ? 'success.main' : 'text.primary' }}>
+                      ${totalRevenue.toFixed(2)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Based on {songs.reduce((sum, song) => sum + (song.playCount || 0), 0).toLocaleString()} plays at ~$0.003 per stream
+                      From {purchases.length} {purchases.length === 1 ? 'purchase' : 'purchases'}
                     </Typography>
                   </Card>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <Card sx={{ bgcolor: 'background.default', p: 3 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      How Plays Are Calculated
+
+                {/* Sync Licensing - Coming Soon */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card sx={{ bgcolor: 'background.default', p: { xs: 2, sm: 3 }, height: '100%' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Sync Licensing
+                      </Typography>
+                      <Tooltip
+                        title="License your music for use in videos, films, commercials, TV shows, and other media. This feature is coming soon and will allow creators to license your music for their projects."
+                        arrow
+                        placement="top"
+                      >
+                        <IconButton size="small" sx={{ color: 'primary.main' }}>
+                          <InfoOutlined fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                      Coming Soon
                     </Typography>
-                    <Typography variant="body2" sx={{ mb: 1.5 }}>
-                      • A play counts when a listener streams at least 30 seconds of your song
+                    <Typography variant="caption" color="text.secondary">
+                      License for videos/films
                     </Typography>
-                    <Typography variant="body2" sx={{ mb: 1.5 }}>
-                      • Plays are tracked in real-time and updated instantly
+                  </Card>
+                </Grid>
+
+                {/* Streaming - Coming Soon */}
+                <Grid item xs={12} sm={6} md={4}>
+                  <Card sx={{ bgcolor: 'background.default', p: { xs: 2, sm: 3 }, height: '100%' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Streaming Revenue
+                      </Typography>
+                      <Tooltip
+                        title="Earn revenue from listeners streaming your music. Payment structure and per-stream rates to be determined. Currently, plays are tracked for engagement metrics only."
+                        arrow
+                        placement="top"
+                      >
+                        <IconButton size="small" sx={{ color: 'primary.main' }}>
+                          <InfoOutlined fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                      Coming Soon
                     </Typography>
-                    <Typography variant="body2" sx={{ mb: 1.5 }}>
-                      • Estimated earnings: ~$0.003 per stream (industry average)
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      • Actual payouts may vary based on listener location, subscription type, and other factors
+                    <Typography variant="caption" color="text.secondary">
+                      Per-stream payouts
                     </Typography>
                   </Card>
                 </Grid>
               </Grid>
 
-              {/* Top Performing Songs */}
-              <Divider sx={{ my: 3 }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                Top Performing Songs
-              </Typography>
-              {songs.length === 0 ? (
-                <Alert severity="info">
-                  No songs uploaded yet.
-                </Alert>
-              ) : (
-                <List>
-                  {[...songs]
-                    .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
-                    .slice(0, 10)
-                    .map((song, index) => (
-                      <ListItem key={song.id} sx={{ bgcolor: 'background.default', mb: 1, borderRadius: 1 }}>
-                        <Avatar
-                          src={song.coverUrl || song.cover}
-                          variant="rounded"
-                          sx={{ mr: 2, width: 48, height: 48 }}
-                        >
-                          <MusicNote />
-                        </Avatar>
-                        <ListItemText
-                          primary={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                #{index + 1} {song.title}
-                              </Typography>
-                              {song.isVisible === false && (
-                                <Chip
-                                  label="Hidden"
-                                  size="small"
-                                  color="warning"
-                                  sx={{ height: 20 }}
-                                />
-                              )}
-                            </Box>
+              {/* Purchase Breakdown */}
+              {purchases.length > 0 && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                    Sales Breakdown
+                  </Typography>
+                  <Card sx={{ bgcolor: 'background.default', mb: 3 }}>
+                    <List>
+                      {(() => {
+                        // Group purchases by item
+                        const purchasesByItem = purchases.reduce((acc, purchase) => {
+                          const key = `${purchase.itemId}_${purchase.itemType}`;
+                          if (!acc[key]) {
+                            acc[key] = {
+                              itemName: purchase.itemName,
+                              itemType: purchase.itemType,
+                              count: 0,
+                              totalRevenue: 0,
+                              artistPayout: 0
+                            };
                           }
-                          secondary={
-                            <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
-                              <Typography variant="caption" color="text.secondary">
-                                {(song.playCount || 0).toLocaleString()} plays
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {(song.likeCount || 0).toLocaleString()} likes
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                    ))}
-                </List>
+                          acc[key].count++;
+                          acc[key].totalRevenue += purchase.price || 0;
+                          acc[key].artistPayout += purchase.artistPayout || (purchase.price || 0) * 0.70;
+                          return acc;
+                        }, {});
+
+                        // Convert to array and sort by count
+                        return Object.values(purchasesByItem)
+                          .sort((a, b) => b.count - a.count)
+                          .map((item, index) => (
+                            <ListItem key={index} sx={{ borderBottom: index < Object.values(purchasesByItem).length - 1 ? '1px solid' : 'none', borderColor: 'divider' }}>
+                              <ListItemText
+                                primary={
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                      {item.itemName}
+                                    </Typography>
+                                    <Chip
+                                      label={item.itemType}
+                                      size="small"
+                                      sx={{ height: 20 }}
+                                    />
+                                  </Box>
+                                }
+                                secondary={
+                                  <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {item.count} {item.count === 1 ? 'sale' : 'sales'}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      Total: ${item.totalRevenue.toFixed(2)}
+                                    </Typography>
+                                    <Typography variant="caption" color="success.main" sx={{ fontWeight: 'bold' }}>
+                                      Your cut: ${item.artistPayout.toFixed(2)}
+                                    </Typography>
+                                  </Box>
+                                }
+                              />
+                            </ListItem>
+                          ));
+                      })()}
+                    </List>
+                  </Card>
+                </>
+              )}
+
+              {/* Top Performing & Most Favorited Songs */}
+              <Grid container spacing={3}>
+                {/* Top Performing Songs - only show if there are actual plays */}
+                {songs.some(s => (s.playCount || 0) > 0) && (
+                  <Grid item xs={12} lg={6}>
+                    <Divider sx={{ my: 3 }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                      Top Performing Songs
+                    </Typography>
+                    <List>
+                      {[...songs]
+                        .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+                        .slice(0, 10)
+                        .map((song, index) => (
+                          <ListItem key={song.id} sx={{ bgcolor: 'background.default', mb: 1, borderRadius: 1 }}>
+                            <Avatar
+                              src={song.coverUrl || song.cover}
+                              variant="rounded"
+                              sx={{ mr: 2, width: 48, height: 48 }}
+                            >
+                              <MusicNote />
+                            </Avatar>
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                    #{index + 1} {song.title}
+                                  </Typography>
+                                  {song.isVisible === false && (
+                                    <Chip
+                                      label="Hidden"
+                                      size="small"
+                                      color="warning"
+                                      sx={{ height: 20 }}
+                                    />
+                                  )}
+                                </Box>
+                              }
+                              secondary={
+                                <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {(song.playCount || 0).toLocaleString()} plays
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {(song.likeCount || 0).toLocaleString()} likes
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                        ))}
+                    </List>
+                  </Grid>
+                )}
+
+                {/* Most Favorited Songs - only show if there are actual likes */}
+                {songs.some(s => (s.likeCount || 0) > 0) && (
+                  <Grid item xs={12} lg={6}>
+                    <Divider sx={{ my: 3 }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                      Most Favorited Songs
+                    </Typography>
+                    <List>
+                      {[...songs]
+                        .sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+                        .slice(0, 10)
+                        .map((song, index) => (
+                          <ListItem key={song.id} sx={{ bgcolor: 'background.default', mb: 1, borderRadius: 1 }}>
+                            <Avatar
+                              src={song.coverUrl || song.cover}
+                              variant="rounded"
+                              sx={{ mr: 2, width: 48, height: 48 }}
+                            >
+                              <MusicNote />
+                            </Avatar>
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                    #{index + 1} {song.title}
+                                  </Typography>
+                                  {song.isVisible === false && (
+                                    <Chip
+                                      label="Hidden"
+                                      size="small"
+                                      color="warning"
+                                      sx={{ height: 20 }}
+                                    />
+                                  )}
+                                </Box>
+                              }
+                              secondary={
+                                <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {(song.likeCount || 0).toLocaleString()} likes
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {(song.playCount || 0).toLocaleString()} plays
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                        ))}
+                    </List>
+                  </Grid>
+                )}
+              </Grid>
+
+              {/* Show message when no play data yet */}
+              {songs.length > 0 && songs.every(s => (s.playCount || 0) === 0) && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Alert severity="info">
+                    No play data yet. Your top performing songs will appear here once they start getting played!
+                  </Alert>
+                </>
               )}
             </CardContent>
+          </TabPanel>
+
+          {/* Payouts Tab */}
+          <TabPanel value={activeTab} index={5}>
+            <StripeConnectOnboarding />
           </TabPanel>
         </Card>
 

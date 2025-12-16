@@ -32,7 +32,7 @@ export default function Footer() {
             <ul className="space-y-1">
               <li>
                 <a href="/artist-profile" className="hover:text-bf-text">
-                  For Artists
+                  Artists
                 </a>
               </li>
               <li>

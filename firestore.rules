@@ -300,6 +300,18 @@ service cloud.firestore {
       allow read, update, delete: if request.auth.token.admin == true;
     }
 
+    // Sync licensing inquiries - allow anyone to submit, admin to read/manage
+    match /syncLicensingInquiries/{inquiryId} {
+      allow create: if true; // Allow unauthenticated submissions
+      allow read, update, delete: if isPlatformAdmin();
+    }
+
+    // Investor requests - allow anyone to submit, admin to read/manage
+    match /investorRequests/{requestId} {
+      allow create: if true; // Allow unauthenticated submissions
+      allow read, update, delete: if isPlatformAdmin();
+    }
+
     // ========================================
     // STRIPE PURCHASES & DOWNLOADS
     // ========================================
@@ -432,6 +444,55 @@ service cloud.firestore {
       allow read: if request.auth != null &&
                      (request.auth.uid == userId || isPlatformAdmin());
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ========================================
+    // STRIPE CONNECT & PAYOUTS
+    // ========================================
+
+    // Artist Balances - artists can read their own balance, admins can read all
+    match /artistBalances/{artistId} {
+      allow read: if request.auth != null &&
+                     (request.auth.uid == artistId || isPlatformAdmin());
+      allow write: if false; // Only written by Cloud Functions
+    }
+
+    // Revenue Allocations - artists can read their own allocations, admins can read all
+    match /revenueAllocations/{allocationId} {
+      allow read: if request.auth != null &&
+                     (resource.data.artistId == request.auth.uid || isPlatformAdmin());
+      allow write: if false; // Only written by Cloud Functions
+    }
+
+    // Payout Requests - artists can read their own requests, admins can read all
+    match /payoutRequests/{requestId} {
+      allow read: if request.auth != null &&
+                     (resource.data.artistId == request.auth.uid || isPlatformAdmin());
+      allow write: if false; // Only written by Cloud Functions
+    }
+
+    // Failed Payouts - admin only
+    match /failedPayouts/{payoutId} {
+      allow read, write: if isPlatformAdmin();
+    }
+
+    // Pending Payouts - artists can read their own pending payouts, admins can manage
+    match /pendingPayouts/{payoutId} {
+      allow read: if request.auth != null &&
+                     (resource.data.artistId == request.auth.uid || isPlatformAdmin());
+      allow write: if isPlatformAdmin(); // Only admins can manually process
+    }
+
+    // Failed Transfers - admin only
+    match /failedTransfers/{transferId} {
+      allow read, write: if isPlatformAdmin();
+    }
+
+    // Payout Summaries - artists can read their own summaries
+    match /payoutSummaries/{userId} {
+      allow read: if request.auth != null &&
+                     (request.auth.uid == userId || isPlatformAdmin());
+      allow write: if false; // Only written by Cloud Functions
     }
 
     // Deny all other access
