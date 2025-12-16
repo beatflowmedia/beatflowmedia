@@ -125,13 +125,18 @@ async function handleCheckoutSessionCompleted(session) {
   console.log('💳 Session mode:', session.mode);
   console.log('💰 Amount:', session.amount_total);
 
-  const { userId, itemId, itemType } = session.metadata || {};
+  const { userId, itemId, itemType, priceId } = session.metadata || {};
 
-  if (!userId || !itemId || !itemType) {
-    console.error('❌ Missing metadata in checkout session');
+  if (!userId) {
+    console.error('❌ Missing userId in checkout session');
     console.error('Session metadata received:', JSON.stringify(session.metadata, null, 2));
-    console.error('Full session object keys:', Object.keys(session));
-    throw new Error(`Missing required metadata: userId=${userId}, itemId=${itemId}, itemType=${itemType}`);
+    throw new Error(`Missing required metadata: userId=${userId}`);
+  }
+
+  if (!itemType) {
+    console.error('❌ Missing itemType in checkout session');
+    console.error('Session metadata received:', JSON.stringify(session.metadata, null, 2));
+    throw new Error(`Missing required metadata: itemType=${itemType}`);
   }
 
   console.log(`✅ Processing purchase: userId=${userId}, itemId=${itemId}, itemType=${itemType}`);
@@ -201,6 +206,53 @@ async function handleCheckoutSessionCompleted(session) {
 
       console.log(`✅ Artist membership activated for user ${userId}`);
       return; // Exit early for artist membership
+    }
+
+    // Handle premium subscription
+    if (itemType === 'premium_subscription') {
+      console.log(`🎵 Processing premium subscription for user ${userId}`);
+
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+
+      // Determine subscription tier from priceId
+      let subscriptionTier = 'individual';
+      if (priceId && priceId.includes('Student')) subscriptionTier = 'student';
+      else if (priceId && priceId.includes('Duo')) subscriptionTier = 'duo';
+      else if (priceId && priceId.includes('Family')) subscriptionTier = 'family';
+
+      const subscriptionData = {
+        premiumActive: true,
+        premiumTier: subscriptionTier,
+        stripeSubscriptionId: session.subscription,
+        stripeCustomerId: session.customer,
+        premiumStartedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (userDoc.exists) {
+        await userRef.update(subscriptionData);
+      } else {
+        await userRef.set(subscriptionData);
+      }
+
+      // Record the purchase
+      await db.collection('purchases').add({
+        userId,
+        itemId: priceId || 'premium',
+        itemType: 'premium_subscription',
+        itemName: `BeatFlow Premium - ${subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)}`,
+        price: session.amount_total / 100,
+        currency: session.currency,
+        status: 'completed',
+        stripeSessionId: session.id,
+        stripeSubscriptionId: session.subscription,
+        customerEmail: session.customer_email,
+        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        metadata: session.metadata
+      });
+
+      console.log(`✅ Premium subscription activated for user ${userId}: ${subscriptionTier}`);
+      return; // Exit early for premium subscription
     }
 
     // Check for duplicate purchase (song/album only)
