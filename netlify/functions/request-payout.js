@@ -43,7 +43,7 @@ exports.handler = async (event, context) => {
     // Get artist's balance
     const balanceDoc = await db.collection('artistBalances').doc(artistId).get();
 
-    if (!balanceDoc.exists()) {
+    if (!balanceDoc.exists) {
       return {
         statusCode: 404,
         body: JSON.stringify({ error: 'Artist balance not found' })

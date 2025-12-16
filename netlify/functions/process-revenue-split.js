@@ -44,7 +44,7 @@ exports.handler = async (event, context) => {
 
     if (itemType === 'song') {
       const songDoc = await db.collection('songs').doc(itemId).get();
-      if (!songDoc.exists()) {
+      if (!songDoc.exists) {
         throw new Error('Song not found');
       }
       const songData = songDoc.data();
@@ -52,7 +52,7 @@ exports.handler = async (event, context) => {
       customSplit = songData.revenueSplit; // Optional custom split
     } else if (itemType === 'album') {
       const albumDoc = await db.collection('albums').doc(itemId).get();
-      if (!albumDoc.exists()) {
+      if (!albumDoc.exists) {
         throw new Error('Album not found');
       }
       const albumData = albumDoc.data();
@@ -66,7 +66,7 @@ exports.handler = async (event, context) => {
 
     // Get artist's Stripe Connect account ID
     const artistDoc = await db.collection('users').doc(artistId).get();
-    if (!artistDoc.exists()) {
+    if (!artistDoc.exists) {
       throw new Error('Artist not found');
     }
 
@@ -129,7 +129,7 @@ exports.handler = async (event, context) => {
     const artistBalanceRef = db.collection('artistBalances').doc(artistId);
     const balanceDoc = await artistBalanceRef.get();
 
-    if (balanceDoc.exists()) {
+    if (balanceDoc.exists) {
       await artistBalanceRef.update({
         availableBalance: admin.firestore.FieldValue.increment(artistAmount / 100),
         totalEarnings: admin.firestore.FieldValue.increment(artistAmount / 100),
