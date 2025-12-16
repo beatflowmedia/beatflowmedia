@@ -6,7 +6,6 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
 import OptimizedImage from '../components/OptimizedImage';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -26,10 +25,6 @@ import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Pause from '@mui/icons-material/Pause';
-import Favorite from '@mui/icons-material/Favorite';
-import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
-import ThumbUp from '@mui/icons-material/ThumbUp';
-import ThumbUpOffAlt from '@mui/icons-material/ThumbUpOffAlt';
 import Share from '@mui/icons-material/Share';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
@@ -44,7 +39,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { toast } from 'react-toastify';
-import { doc, getDoc, collection, query, where, onSnapshot, updateDoc, addDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, collection, query, where, onSnapshot, updateDoc, addDoc, serverTimestamp, increment } from 'firebase/firestore';
 import PurchaseButton from '../components/PurchaseButton';
 import TrackRowCard from '../components/TrackRowCard';
 import { stripeService } from '../services/stripeService';
@@ -85,6 +80,7 @@ function Album() {
       return;
     }
 
+    let unsubscribeAlbum = null;
     let unsubscribeTracks = null;
     let unsubscribeReviews = null;
 
@@ -94,20 +90,36 @@ function Album() {
       try {
         console.log('Loading album with ID:', albumId);
 
-        // Load album data from Firebase
+        // Load album data with real-time updates
         const albumDocRef = doc(db, 'albums', albumId);
-        const albumSnapshot = await getDoc(albumDocRef);
 
-        if (!albumSnapshot.exists()) {
-          console.error('Album not found:', albumId);
-          setError('Album not found');
+        unsubscribeAlbum = onSnapshot(albumDocRef, (albumSnapshot) => {
+          if (!albumSnapshot.exists()) {
+            console.error('Album not found:', albumId);
+            setError('Album not found');
+            setLoading(false);
+            return;
+          }
+
+          const albumData = { id: albumSnapshot.id, ...albumSnapshot.data() };
+
+          // Check if album is hidden
+          if (albumData.isVisible === false) {
+            console.log('Album is hidden from public');
+            setError('This album is not available');
+            setAlbum(null);
+            setLoading(false);
+            return;
+          }
+
+          setAlbum(albumData);
+          console.log('✅ Loaded album:', albumData.title, 'with', albumData.trackCount, 'tracks');
           setLoading(false);
-          return;
-        }
-
-        const albumData = { id: albumSnapshot.id, ...albumSnapshot.data() };
-        setAlbum(albumData);
-        console.log('✅ Loaded album:', albumData.title, 'with', albumData.trackCount, 'tracks');
+        }, (error) => {
+          console.error('Error loading album:', error);
+          setError('Failed to load album');
+          setLoading(false);
+        });
 
         // Load tracks with real-time updates
         const tracksQuery = query(
@@ -116,10 +128,12 @@ function Album() {
         );
 
         unsubscribeTracks = onSnapshot(tracksQuery, (snapshot) => {
-          const tracksData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
+          const tracksData = snapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+            .filter(track => track.isVisible !== false); // Filter hidden tracks
 
           // Sort by trackNumber on client side (avoids Firestore index requirement)
           tracksData.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
@@ -155,7 +169,6 @@ function Album() {
           console.log('Album reviews not available:', error.message);
         });
 
-        setLoading(false);
       } catch (err) {
         console.error('Error loading album:', err);
         setError(err.message);
@@ -167,6 +180,7 @@ function Album() {
 
     // Cleanup function
     return () => {
+      if (unsubscribeAlbum) unsubscribeAlbum();
       if (unsubscribeTracks) unsubscribeTracks();
       if (unsubscribeReviews) unsubscribeReviews();
     };
@@ -247,6 +261,7 @@ function Album() {
     }
   }, [tracks, dispatch, actions, state.isPlaying, state.queue, state.currentIndex]);
 
+  // eslint-disable-next-line no-unused-vars
   const handleShufflePlay = useCallback(() => {
     if (tracks.length === 0) return;
 

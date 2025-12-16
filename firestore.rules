@@ -8,9 +8,17 @@ service cloud.firestore {
               request.auth.token.email == 'percyricemusic@gmail.com');
     }
 
-    // Allow anyone to read approved songs
+    // Allow anyone to read approved songs (both individual docs and queries)
     match /songs/{songId} {
       allow read: if true;
+      allow list: if true; // Allow collection queries
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+                      (request.auth.uid == resource.data.uploadedBy ||
+                       isPlatformAdmin());
+      allow delete: if request.auth != null &&
+                      (request.auth.uid == resource.data.uploadedBy ||
+                       isPlatformAdmin());
     }
 
     // Allow anyone to read track documents for playlist search
@@ -61,15 +69,28 @@ service cloud.firestore {
       allow write: if request.auth.uid == artistId || request.auth.token.admin == true;
     }
 
+    // Tour dates - artists can manage their own, anyone can read
+    match /tours/{tourId} {
+      allow read: if true;
+      allow create: if request.auth.uid != null;
+      allow update, delete: if request.auth.uid == resource.data.artistId || isPlatformAdmin();
+    }
+
     // Albums collection
     match /albums/{albumId} {
       allow read: if true;
+      allow list: if true; // Allow collection queries
       allow create: if request.auth.uid != null;
       allow update: if request.auth.uid == resource.data.artistId ||
+                        request.auth.uid == resource.data.uploadedBy ||
                         request.auth.token.admin == true ||
                         // Allow authenticated users to update rating/review fields
                         (request.auth.uid != null &&
                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'reviewCount']));
+      allow delete: if request.auth != null &&
+                      (request.auth.uid == resource.data.uploadedBy ||
+                       request.auth.uid == resource.data.artistId ||
+                       isPlatformAdmin());
     }
 
     // Album Reviews - authenticated users can create and read

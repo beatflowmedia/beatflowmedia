@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Card, CardContent, CardMedia, CircularProgress, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { PlayArrow, Pause, Favorite, FavoriteBorder, MoreVert, QueueMusic, PlaylistAdd, Share, ShoppingCart } from '@mui/icons-material';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { usePlaySong } from '../hooks/usePlaySong';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistManager } from '../hooks/usePlaylistManager';
@@ -105,6 +105,8 @@ export default function ArtistSimple() {
   // Load artist data from Firebase
   useEffect(() => {
     let isCancelled = false;
+    let unsubscribeSongs = null;
+    let unsubscribeAlbums = null;
 
     const loadArtist = async () => {
       try {
@@ -125,85 +127,100 @@ export default function ArtistSimple() {
         const artistsSnapshot = await getDocs(artistsQuery);
         console.log('[ArtistSimple] Artists query returned:', artistsSnapshot.size, 'documents');
 
-        // Try to fetch songs first (using both artistName and artist fields)
-        console.log('Querying songs for artistName:', artistName);
+        // Set up real-time listener for songs (try artistName first)
+        console.log('Setting up real-time listener for songs with artistName:', artistName);
         const songsQuery = query(
           collection(db, 'songs'),
           where('artistName', '==', artistName)
         );
-        const songsSnapshot = await getDocs(songsQuery);
-        let songs = songsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
 
-        // If no songs found with artistName, try artist field
-        if (songs.length === 0) {
-          console.log('No songs found with artistName, trying artist field...');
-          const altQuery = query(
-            collection(db, 'songs'),
-            where('artist', '==', artistName)
-          );
-          const altSnapshot = await getDocs(altQuery);
-          songs = altSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          console.log('Found', songs.length, 'songs with artist field');
-        }
+        unsubscribeSongs = onSnapshot(songsQuery, (snapshot) => {
+          let songs = snapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+            .filter(song => song.isVisible !== false); // Filter hidden songs
 
-        setArtistSongs(songs);
+          // If no songs found with artistName, try artist field
+          if (songs.length === 0) {
+            console.log('No songs with artistName, trying artist field...');
+            const altQuery = query(
+              collection(db, 'songs'),
+              where('artist', '==', artistName)
+            );
 
-        // Query albums by artist (try artistName field, then artist field)
-        console.log('Querying albums for artistName:', artistName);
+            // Set up listener for alternate query
+            const unsubscribeAlt = onSnapshot(altQuery, (altSnapshot) => {
+              const altSongs = altSnapshot.docs
+                .map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                }))
+                .filter(song => song.isVisible !== false);
+              console.log('Found', altSongs.length, 'visible songs with artist field (real-time)');
+              setArtistSongs(altSongs);
+            });
+
+            // Store cleanup for alternate listener
+            return () => unsubscribeAlt();
+          } else {
+            console.log('Found', songs.length, 'visible songs with artistName (real-time)');
+            setArtistSongs(songs);
+          }
+        });
+
+        // Set up real-time listener for albums (try artistName field first)
+        console.log('Setting up real-time listener for albums with artistName:', artistName);
         const albumsQuery = query(
           collection(db, 'albums'),
           where('artistName', '==', artistName)
         );
-        const albumsSnapshot = await getDocs(albumsQuery);
-        let albums = albumsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
 
-        // If no albums found with artistName, try artist field
-        if (albums.length === 0) {
-          console.log('No albums found with artistName, trying artist field...');
-          const altAlbumsQuery = query(
-            collection(db, 'albums'),
-            where('artist', '==', artistName)
-          );
-          const altAlbumsSnapshot = await getDocs(altAlbumsQuery);
-          albums = altAlbumsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          console.log('Found', albums.length, 'albums with artist field');
-        }
+        unsubscribeAlbums = onSnapshot(albumsQuery, (snapshot) => {
+          let albums = snapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+            .filter(album => album.isVisible !== false); // Filter hidden albums
 
-        setArtistAlbums(albums);
-        console.log('Loaded', albums.length, 'albums for artist:', artistName);
+          // If no albums found with artistName, try artist field
+          if (albums.length === 0) {
+            console.log('No albums with artistName, trying artist field...');
+            const altAlbumsQuery = query(
+              collection(db, 'albums'),
+              where('artist', '==', artistName)
+            );
 
-        // Set artist data from artists collection if exists, otherwise create minimal artist object
+            // Set up listener for alternate query
+            const unsubscribeAlt = onSnapshot(altAlbumsQuery, (altSnapshot) => {
+              const altAlbums = altSnapshot.docs
+                .map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                }))
+                .filter(album => album.isVisible !== false);
+              console.log('Found', altAlbums.length, 'visible albums with artist field (real-time)');
+              setArtistAlbums(altAlbums);
+            });
+
+            // Store cleanup for alternate listener
+            return () => unsubscribeAlt();
+          } else {
+            console.log('Found', albums.length, 'visible albums with artistName (real-time)');
+            setArtistAlbums(albums);
+          }
+        });
+
+        // Set artist data from artists collection if exists
         if (!artistsSnapshot.empty) {
           const artistDoc = artistsSnapshot.docs[0];
           const artistData = { id: artistDoc.id, ...artistDoc.data() };
           setArtist(artistData);
-          console.log('Found artist document with', songs.length, 'songs');
-        } else {
-          // No artist document, but if we have songs, create a minimal artist object
-          if (songs.length > 0) {
-            console.log('No artist document, but found', songs.length, 'songs. Creating minimal artist object.');
-            setArtist({
-              name: artistName,
-              // Use cover from first song if available
-              imageUrl: songs[0]?.coverUrl || songs[0]?.cover || '/default-artist.jpg'
-            });
-          } else {
-            console.log('Artist not found and no songs found:', artistName);
-            setError(`Artist "${artistName}" not found`);
-          }
+          console.log('Found artist document');
         }
+        // Note: Minimal artist object creation moved to separate useEffect that depends on artistSongs state
       } catch (err) {
         console.error('[ArtistSimple] Error loading artist:', err);
         if (!isCancelled) {
@@ -227,8 +244,32 @@ export default function ArtistSimple() {
 
     return () => {
       isCancelled = true;
+      // Cleanup onSnapshot listeners if they exist
+      if (typeof unsubscribeSongs === 'function') {
+        unsubscribeSongs();
+      }
+      if (typeof unsubscribeAlbums === 'function') {
+        unsubscribeAlbums();
+      }
     };
   }, [artistId]);
+
+  // Create minimal artist object if we have songs but no artist document
+  useEffect(() => {
+    if (!artist && artistSongs.length > 0 && artistId) {
+      const artistName = decodeURIComponent(artistId);
+      console.log('No artist document, but found', artistSongs.length, 'songs. Creating minimal artist object.');
+      setArtist({
+        name: artistName,
+        // Use cover from first song if available
+        imageUrl: artistSongs[0]?.coverUrl || artistSongs[0]?.cover || '/default-artist.jpg'
+      });
+    } else if (!artist && artistSongs.length === 0 && !loading && artistId) {
+      const artistName = decodeURIComponent(artistId);
+      console.log('Artist not found and no songs found:', artistName);
+      setError(`Artist "${artistName}" not found`);
+    }
+  }, [artist, artistSongs, loading, artistId]);
 
   // Like/favorite toggle handler (DRY - same as Home.js)
   const handleMenuOpen = (event, song) => {

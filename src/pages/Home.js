@@ -117,6 +117,8 @@ function Home() {
 
   // Load trending content
   useEffect(() => {
+    const unsubscribers = [];
+
     const loadTrendingContent = async () => {
       try {
         setLoading(true);
@@ -136,16 +138,19 @@ function Home() {
           limit(20)
         );
 
-        onSnapshot(trendingQuery, (snapshot) => {
-          const trending = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            playCount: doc.data().playCount || 0
-          }));
-          console.log('Home: Loaded', trending.length, 'trending songs from Firebase');
+        const unsubTrending = onSnapshot(trendingQuery, (snapshot) => {
+          const trending = snapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              playCount: doc.data().playCount || 0
+            }))
+            .filter(song => song.isVisible !== false); // Filter out hidden songs
+          console.log('Home: Loaded', trending.length, 'visible trending songs from Firebase');
           setTrendingSongs(trending);
           firebaseCache.set(cacheKey, trending);
         });
+        unsubscribers.push(unsubTrending);
 
         // Load new releases (last 30 days)
         const thirtyDaysAgo = new Date();
@@ -158,14 +163,17 @@ function Home() {
           limit(15)
         );
 
-        onSnapshot(newReleasesQuery, (snapshot) => {
-          const releases = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.data().id || doc.id  // Preserve original id if exists
-          }));
-          console.log('Home: Loaded', releases.length, 'new releases from Firebase');
+        const unsubReleases = onSnapshot(newReleasesQuery, (snapshot) => {
+          const releases = snapshot.docs
+            .map(doc => ({
+              ...doc.data(),
+              id: doc.data().id || doc.id  // Preserve original id if exists
+            }))
+            .filter(song => song.isVisible !== false); // Filter out hidden songs
+          console.log('Home: Loaded', releases.length, 'new releases from Firebase (visible only)');
           setNewReleases(releases);
         });
+        unsubscribers.push(unsubReleases);
 
         // Load recent albums
         const recentAlbumsQuery = query(
@@ -174,17 +182,20 @@ function Home() {
           limit(10)
         );
 
-        onSnapshot(recentAlbumsQuery, (snapshot) => {
-          const albums = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          console.log('Home: Loaded', albums.length, 'recent albums from Firebase');
+        const unsubAlbums = onSnapshot(recentAlbumsQuery, (snapshot) => {
+          const albums = snapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+            .filter(album => album.isVisible !== false); // Filter hidden albums
+          console.log('Home: Loaded', albums.length, 'visible recent albums from Firebase (real-time)');
           setRecentAlbums(albums);
         }, (error) => {
           console.log('Albums collection query failed:', error.message);
           setRecentAlbums([]);
         });
+        unsubscribers.push(unsubAlbums);
 
         // Load featured artists
         const artistsQuery = query(
@@ -193,13 +204,14 @@ function Home() {
           limit(10)
         );
 
-        onSnapshot(artistsQuery, (snapshot) => {
+        const unsubArtists = onSnapshot(artistsQuery, (snapshot) => {
           const featuredArtistsData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
           setFeaturedArtists(featuredArtistsData);
         });
+        unsubscribers.push(unsubArtists);
 
         // Load podcasts
         const podcastsQuery = query(
@@ -208,7 +220,7 @@ function Home() {
           limit(20)
         );
 
-        onSnapshot(podcastsQuery, (snapshot) => {
+        const unsubPodcasts = onSnapshot(podcastsQuery, (snapshot) => {
           const podcastsData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -218,6 +230,7 @@ function Home() {
           console.log('Podcasts collection not available:', error.message);
           setPodcasts([]);
         });
+        unsubscribers.push(unsubPodcasts);
 
         // Load audiobooks
         const audiobooksQuery = query(
@@ -226,7 +239,7 @@ function Home() {
           limit(20)
         );
 
-        onSnapshot(audiobooksQuery, (snapshot) => {
+        const unsubAudiobooks = onSnapshot(audiobooksQuery, (snapshot) => {
           const audiobooksData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -236,6 +249,7 @@ function Home() {
           console.log('Audiobooks collection not available:', error.message);
           setAudiobooks([]);
         });
+        unsubscribers.push(unsubAudiobooks);
 
         // Following filter is handled in getCurrentContent() function, no separate state needed
 
@@ -253,6 +267,13 @@ function Home() {
     };
 
     loadTrendingContent();
+
+    // Cleanup all listeners
+    return () => {
+      unsubscribers.forEach(unsub => {
+        if (typeof unsub === 'function') unsub();
+      });
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]); // Only reload when user logs in/out, not when user object changes
 
@@ -272,11 +293,13 @@ function Home() {
       );
 
       onSnapshot(recommendationsQuery, (snapshot) => {
-        const recommendations = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          reason: "Based on your listening history"
-        }));
+        const recommendations = snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            reason: "Based on your listening history"
+          }))
+          .filter(song => song.isVisible !== false); // Filter out hidden songs
         setRecommendedSongs(recommendations);
       });
     } catch (err) {

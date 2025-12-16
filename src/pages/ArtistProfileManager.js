@@ -1,0 +1,1533 @@
+// src/pages/ArtistProfileManager.js
+// Artist profile management portal - manage bio, images, tour dates, social links
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  TextField,
+  Grid,
+  Avatar,
+  IconButton,
+  Tabs,
+  Tab,
+  Alert,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  CircularProgress,
+  Menu,
+  MenuItem
+} from '@mui/material';
+import {
+  CloudUpload,
+  Delete,
+  Add,
+  MusicNote,
+  Image as ImageIcon,
+  CalendarToday,
+  Link as LinkIcon,
+  Save,
+  ArrowBack,
+  MoreVert,
+  Visibility,
+  VisibilityOff,
+  Edit,
+  Album as AlbumIcon,
+  InfoOutlined
+} from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
+import { db, storage } from '../firebaseConfig';
+import { doc, getDoc, setDoc, collection, addDoc, deleteDoc, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { toast } from 'react-toastify';
+
+function TabPanel({ children, value, index }) {
+  return (
+    <div hidden={value !== index} role="tabpanel">
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+export default function ArtistProfileManager() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Profile state
+  const [artistName, setArtistName] = useState('');
+  const [bio, setBio] = useState('');
+  const [genre, setGenre] = useState('');
+  const [profileImage, setProfileImage] = useState('');
+  const [bannerImage, setBannerImage] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  // Social links
+  const [socialLinks, setSocialLinks] = useState({
+    website: '',
+    spotify: '',
+    instagram: '',
+    facebook: '',
+    twitter: '',
+    youtube: '',
+    soundcloud: '',
+    tiktok: ''
+  });
+
+  // Tour dates
+  const [tourDates, setTourDates] = useState([]);
+  const [tourDialogOpen, setTourDialogOpen] = useState(false);
+  const [newTourDate, setNewTourDate] = useState({
+    date: '',
+    venue: '',
+    city: '',
+    country: '',
+    ticketLink: ''
+  });
+
+  // Music management
+  const [songs, setSongs] = useState([]);
+  const [albums, setAlbums] = useState([]);
+  const [albumMenuAnchor, setAlbumMenuAnchor] = useState(null);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [songMenuAnchor, setSongMenuAnchor] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingSong, setEditingSong] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    genre: '',
+    lyrics: '',
+    explicit: false,
+    coverUrl: '',
+    isVisible: true
+  });
+  const [newCoverFile, setNewCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+
+  useEffect(() => {
+    // Wait a moment for auth to initialize before redirecting
+    const timer = setTimeout(() => {
+      if (!user) {
+        navigate('/');
+      }
+    }, 1000);
+
+    if (user) {
+      clearTimeout(timer);
+      loadArtistProfile();
+    }
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line
+  }, [user, navigate]);
+
+  // Real-time listener for albums
+  useEffect(() => {
+    if (!user) return;
+
+    const albumsQuery = query(
+      collection(db, 'albums'),
+      where('uploadedBy', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(albumsQuery, (snapshot) => {
+      const albumsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAlbums(albumsData);
+      console.log('Real-time albums update:', albumsData.length, albumsData);
+    }, (error) => {
+      console.error('Error loading albums:', error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const loadArtistProfile = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Loading profile for user:', user.uid, user.email);
+
+      // Load artist profile
+      const artistDoc = await getDoc(doc(db, 'artists', user.uid));
+      let artistNameForQuery = '';
+      if (artistDoc.exists()) {
+        const data = artistDoc.data();
+        setArtistName(data.name || '');
+        artistNameForQuery = data.name || '';
+        setBio(data.bio || '');
+        setGenre(data.genre || '');
+        setProfileImage(data.profileImage || '');
+        setBannerImage(data.bannerImage || '');
+        setSocialLinks(data.socialLinks || {});
+      }
+
+      // Load tour dates
+      const toursQuery = query(
+        collection(db, 'tours'),
+        where('artistId', '==', user.uid)
+      );
+      const toursSnapshot = await getDocs(toursQuery);
+      const tours = toursSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTourDates(tours.sort((a, b) => new Date(a.date) - new Date(b.date)));
+
+      // Load songs - try both uploadedBy (for submissions) and artist name (for imported songs)
+      let songsData = [];
+
+      // First, get songs by uploadedBy (approved submissions)
+      const songsQueryByUser = query(
+        collection(db, 'songs'),
+        where('uploadedBy', '==', user.uid)
+      );
+      const songsSnapshotByUser = await getDocs(songsQueryByUser);
+      songsData = songsSnapshotByUser.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Loaded songs by uploadedBy:', songsData.length);
+
+      // Also get songs by artist name (imported from musicData.json)
+      if (artistNameForQuery) {
+        const songsQueryByName = query(
+          collection(db, 'songs'),
+          where('artist', '==', artistNameForQuery)
+        );
+        const songsSnapshotByName = await getDocs(songsQueryByName);
+        const songsByName = songsSnapshotByName.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('Loaded songs by artist name:', songsByName.length, artistNameForQuery);
+
+        // Merge, avoiding duplicates
+        const existingIds = new Set(songsData.map(s => s.id));
+        songsByName.forEach(song => {
+          if (!existingIds.has(song.id)) {
+            songsData.push(song);
+          }
+        });
+      }
+
+      // Also try user's email and display name
+      if (user.email) {
+        const emailPrefix = user.email.split('@')[0];
+        const songsQueryByEmail = query(
+          collection(db, 'songs'),
+          where('artist', '==', emailPrefix)
+        );
+        const songsSnapshotByEmail = await getDocs(songsQueryByEmail);
+        const songsByEmail = songsSnapshotByEmail.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('Loaded songs by email prefix:', songsByEmail.length, emailPrefix);
+
+        const existingIds = new Set(songsData.map(s => s.id));
+        songsByEmail.forEach(song => {
+          if (!existingIds.has(song.id)) {
+            songsData.push(song);
+          }
+        });
+
+        // Special handling for percyricemusic@gmail.com -> Percy Rice
+        if (user.email === 'percyricemusic@gmail.com') {
+          const percyQuery = query(
+            collection(db, 'songs'),
+            where('artist', '==', 'Percy Rice')
+          );
+          const percySnapshot = await getDocs(percyQuery);
+          const percySongs = percySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log('Loaded Percy Rice songs:', percySongs.length);
+
+          const existingIds2 = new Set(songsData.map(s => s.id));
+          percySongs.forEach(song => {
+            if (!existingIds2.has(song.id)) {
+              songsData.push(song);
+            }
+          });
+        }
+      }
+
+      setSongs(songsData);
+      console.log('Total songs loaded:', songsData.length, songsData);
+
+      // Albums are now loaded via real-time listener (see useEffect above)
+
+      // Also check for pending submissions
+      const submissionsQuery = query(
+        collection(db, 'artistSubmissions'),
+        where('uploadedBy', '==', user.uid)
+      );
+      const submissionsSnapshot = await getDocs(submissionsQuery);
+      const submissionsData = submissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSubmissions(submissionsData);
+      console.log('Found submissions:', submissionsData.length, submissionsData);
+    } catch (error) {
+      console.error('Error loading artist profile:', error);
+      toast.error('Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (file, type) => {
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Image is too large! Maximum size is 5MB.');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Optimize image before upload
+      const optimizedFile = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDimension = type === 'profile' ? 800 : 1920; // Profile: 800px, Banner: 1920px
+
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              const webpFile = new File([blob], file.name.replace(/\.(jpg|jpeg|png)$/i, '.webp'), {
+                type: 'image/webp'
+              });
+              console.log(`${type} image optimized:`, (file.size / 1024).toFixed(2), 'KB →', (webpFile.size / 1024).toFixed(2), 'KB');
+              resolve(webpFile);
+            },
+            'image/webp',
+            0.85
+          );
+        };
+        img.src = URL.createObjectURL(file);
+      });
+
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `artists/${user.uid}/${type}_${timestamp}.webp`);
+
+      await uploadBytes(storageRef, optimizedFile);
+      const url = await getDownloadURL(storageRef);
+
+      if (type === 'profile') {
+        setProfileImage(url);
+      } else {
+        setBannerImage(url);
+      }
+
+      toast.success(`${type === 'profile' ? 'Profile' : 'Banner'} image uploaded!`);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      console.log('Saving profile for user:', user.uid);
+
+      const profileData = {
+        name: artistName,
+        bio,
+        genre,
+        profileImage,
+        bannerImage,
+        socialLinks,
+        userId: user.uid,
+        updatedAt: new Date().toISOString()
+      };
+
+      console.log('Profile data:', profileData);
+
+      await setDoc(doc(db, 'artists', user.uid), profileData, { merge: true });
+
+      console.log('Profile saved successfully!');
+      toast.success('Profile saved successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddTourDate = async () => {
+    if (!newTourDate.date || !newTourDate.venue || !newTourDate.city) {
+      toast.error('Please fill in date, venue, and city');
+      return;
+    }
+
+    try {
+      const tourDoc = await addDoc(collection(db, 'tours'), {
+        ...newTourDate,
+        artistId: user.uid,
+        artistName,
+        createdAt: new Date().toISOString()
+      });
+
+      setTourDates([...tourDates, { id: tourDoc.id, ...newTourDate }].sort((a, b) => new Date(a.date) - new Date(b.date)));
+      setTourDialogOpen(false);
+      setNewTourDate({ date: '', venue: '', city: '', country: '', ticketLink: '' });
+      toast.success('Tour date added!');
+    } catch (error) {
+      console.error('Error adding tour date:', error);
+      toast.error('Failed to add tour date');
+    }
+  };
+
+  const handleDeleteTourDate = async (tourId) => {
+    try {
+      await deleteDoc(doc(db, 'tours', tourId));
+      setTourDates(tourDates.filter(t => t.id !== tourId));
+      toast.success('Tour date deleted');
+    } catch (error) {
+      console.error('Error deleting tour date:', error);
+      toast.error('Failed to delete tour date');
+    }
+  };
+
+  const handleOpenEditSong = (song) => {
+    setEditingSong(song);
+    setEditForm({
+      title: song.title || '',
+      genre: song.genre || '',
+      lyrics: song.lyrics || '',
+      explicit: song.explicit || false,
+      coverUrl: song.coverUrl || song.cover || '',
+      isVisible: song.isVisible !== undefined ? song.isVisible : true
+    });
+    setNewCoverFile(null);
+    setCoverPreview(null);
+    setEditDialogOpen(true);
+    setSongMenuAnchor(null);
+  };
+
+  const handleCoverChange = async (file) => {
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('Image is too large! Maximum size is 5MB. Please compress or resize the image.');
+      return;
+    }
+
+    // Check if it's an image
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (JPG, PNG, WebP, etc.)');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCoverPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Convert to WebP for optimization
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const maxDimension = 1000; // Max 1000x1000px
+
+      let width = img.width;
+      let height = img.height;
+
+      // Resize if needed
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = (height / width) * maxDimension;
+          width = maxDimension;
+        } else {
+          width = (width / height) * maxDimension;
+          height = maxDimension;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to WebP with quality 0.85
+      canvas.toBlob(
+        (blob) => {
+          const webpFile = new File([blob], file.name.replace(/\.(jpg|jpeg|png)$/i, '.webp'), {
+            type: 'image/webp'
+          });
+          setNewCoverFile(webpFile);
+          console.log('Original size:', (file.size / 1024).toFixed(2), 'KB');
+          console.log('Optimized size:', (webpFile.size / 1024).toFixed(2), 'KB');
+          console.log('Compression:', ((1 - webpFile.size / file.size) * 100).toFixed(1), '% smaller');
+        },
+        'image/webp',
+        0.85
+      );
+    };
+
+    img.src = URL.createObjectURL(file);
+  };
+
+  // Generic toggle visibility function (DRY)
+  const handleToggleItemVisibility = async (item, itemType) => {
+    try {
+      const currentVisibility = item.isVisible !== undefined ? item.isVisible : true;
+      const newVisibility = !currentVisibility;
+
+      console.log(`Toggling ${itemType} visibility:`, item.id, 'from', currentVisibility, 'to', newVisibility);
+
+      // Update Firestore
+      const collectionName = itemType === 'song' ? 'songs' : 'albums';
+      await setDoc(doc(db, collectionName, item.id), {
+        isVisible: newVisibility,
+        updatedAt: new Date()
+      }, { merge: true });
+
+      // If hiding an album, also hide all its tracks
+      if (itemType === 'album') {
+        console.log(`🔍 Looking for songs with albumId: "${item.id}" for album: "${item.title}"`);
+
+        // Query for songs by albumId
+        const albumSongsQuery = query(
+          collection(db, 'songs'),
+          where('albumId', '==', item.id)
+        );
+        const albumSongsSnapshot = await getDocs(albumSongsQuery);
+
+        console.log(`✅ Found ${albumSongsSnapshot.size} songs in album "${item.title}":`,
+          albumSongsSnapshot.docs.map(d => d.data().title));
+
+        if (albumSongsSnapshot.size > 0) {
+          console.log(`📝 Updating visibility to ${newVisibility} for ${albumSongsSnapshot.size} songs...`);
+
+          // Update visibility for all songs in the album
+          const updatePromises = albumSongsSnapshot.docs.map(songDoc =>
+            setDoc(doc(db, 'songs', songDoc.id), {
+              isVisible: newVisibility,
+              updatedAt: new Date()
+            }, { merge: true })
+          );
+
+          await Promise.all(updatePromises);
+          console.log(`✅ Successfully updated all songs!`);
+
+          // Update songs state to reflect the visibility change
+          const songIds = albumSongsSnapshot.docs.map(doc => doc.id);
+          setSongs(songs.map(s =>
+            songIds.includes(s.id) ? { ...s, isVisible: newVisibility } : s
+          ));
+
+          toast.success(`Album and ${albumSongsSnapshot.size} song(s) ${newVisibility ? 'shown' : 'hidden'} on platform`);
+        } else {
+          console.warn(`⚠️ No songs found for album "${item.title}" (ID: ${item.id})`);
+          toast.success(`Album ${newVisibility ? 'shown' : 'hidden'} on platform (no tracks found)`);
+        }
+      } else {
+        toast.success(`Song ${newVisibility ? 'shown' : 'hidden'} on platform`);
+      }
+
+      // Update local state
+      if (itemType === 'song') {
+        setSongs(songs.map(s => s.id === item.id ? { ...s, isVisible: newVisibility } : s));
+        setSongMenuAnchor(null);
+      } else {
+        setAlbums(albums.map(a => a.id === item.id ? { ...a, isVisible: newVisibility } : a));
+        setAlbumMenuAnchor(null);
+      }
+    } catch (error) {
+      console.error(`Error toggling ${itemType} visibility:`, error);
+      toast.error(`Failed to update ${itemType} visibility: ` + error.message);
+    }
+  };
+
+  // Wrapper functions for backwards compatibility
+  const handleToggleVisibility = (song) => handleToggleItemVisibility(song, 'song');
+  const handleToggleAlbumVisibility = (album) => handleToggleItemVisibility(album, 'album');
+
+  const handleSaveSongEdit = async () => {
+    if (!editingSong) return;
+
+    try {
+      setSaving(true);
+      console.log('Saving song edit:', editingSong.id);
+      let coverUrl = editForm.coverUrl;
+
+      // Upload new cover art if one was selected
+      if (newCoverFile) {
+        console.log('Uploading new cover art...');
+        const coverRef = ref(
+          storage,
+          `song-covers/${editingSong.id}_${Date.now()}_${newCoverFile.name}`
+        );
+        await uploadBytes(coverRef, newCoverFile);
+        coverUrl = await getDownloadURL(coverRef);
+        console.log('New cover URL:', coverUrl);
+      }
+
+      const updateData = {
+        ...editingSong,
+        title: editForm.title,
+        genre: editForm.genre,
+        lyrics: editForm.lyrics,
+        explicit: editForm.explicit,
+        isVisible: editForm.isVisible,
+        coverUrl: coverUrl,
+        cover: coverUrl, // Update both fields for compatibility
+        updatedAt: new Date()
+      };
+
+      console.log('Updating song with data:', updateData);
+
+      await setDoc(doc(db, 'songs', editingSong.id), updateData, { merge: true });
+
+      // Update local state
+      setSongs(songs.map(s =>
+        s.id === editingSong.id
+          ? { ...s, ...editForm, coverUrl, cover: coverUrl }
+          : s
+      ));
+
+      console.log('Song updated successfully!');
+      toast.success('Song updated successfully!');
+      setEditDialogOpen(false);
+      setNewCoverFile(null);
+      setCoverPreview(null);
+    } catch (error) {
+      console.error('Error updating song:', error);
+      toast.error('Failed to update song: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
+      <Container maxWidth="lg">
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton onClick={() => navigate('/for-artists')} sx={{ mr: 2, color: 'text.primary' }}>
+              <ArrowBack />
+            </IconButton>
+            <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+              Artist Profile
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<MusicNote />}
+            onClick={() => {
+              // Check if profile is complete before allowing upload
+              if (!artistName || !bio) {
+                toast.warning('Please complete your profile (Name & Bio) before uploading music!');
+                setActiveTab(0); // Switch to Profile tab
+              } else {
+                navigate('/for-artists?upload=true');
+              }
+            }}
+            sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+          >
+            Upload Music
+          </Button>
+        </Box>
+
+        {/* Banner Image */}
+        {bannerImage && (
+          <Box
+            sx={{
+              width: '100%',
+              height: 200,
+              backgroundImage: `url(${bannerImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              borderRadius: 2,
+              mb: 3
+            }}
+          />
+        )}
+
+        <Card sx={{ bgcolor: 'background.paper' }}>
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            sx={{
+              borderBottom: 1,
+              borderColor: 'divider',
+              px: 2,
+              '& .MuiTab-root': { color: 'text.secondary' },
+              '& .Mui-selected': { color: 'primary.main' }
+            }}
+          >
+            <Tab label="Profile" />
+            <Tab label="Music" />
+            <Tab label="Social Links" />
+            <Tab label="Tour Dates" />
+            <Tab label="Statistics" />
+          </Tabs>
+
+          {/* Profile Tab */}
+          <TabPanel value={activeTab} index={0}>
+            <CardContent>
+              <Grid container spacing={3}>
+                {/* Profile Image */}
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Avatar
+                      src={profileImage}
+                      alt={artistName}
+                      sx={{ width: 200, height: 200, mx: 'auto', mb: 2 }}
+                    >
+                      <ImageIcon sx={{ fontSize: 80 }} />
+                    </Avatar>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      disabled={uploading}
+                      startIcon={<CloudUpload />}
+                    >
+                      Upload Profile Image
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e.target.files[0], 'profile')}
+                      />
+                    </Button>
+                    <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                      Recommended: 800x800px
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                {/* Profile Details */}
+                <Grid item xs={12} md={8}>
+                  <TextField
+                    fullWidth
+                    label="Artist/Band Name"
+                    value={artistName}
+                    onChange={(e) => setArtistName(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Genre"
+                    value={genre}
+                    onChange={(e) => setGenre(e.target.value)}
+                    sx={{ mb: 2 }}
+                    helperText="Primary music genre"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Bio"
+                    multiline
+                    rows={6}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    helperText="Tell fans about your music, story, and journey"
+                  />
+                </Grid>
+
+                {/* Banner Image */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Banner Image
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    disabled={uploading}
+                    startIcon={<CloudUpload />}
+                  >
+                    Upload Banner Image
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e.target.files[0], 'banner')}
+                    />
+                  </Button>
+                  <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                    Recommended: 1920x400px - Displays at the top of your artist page
+                  </Typography>
+                </Grid>
+
+                {/* Save Button */}
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<Save />}
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                  >
+                    {saving ? 'Saving...' : 'Save Profile'}
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </TabPanel>
+
+          {/* Music Tab */}
+          <TabPanel value={activeTab} index={1}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3 }}>Your Music</Typography>
+
+              {/* Pending Submissions */}
+              {submissions.length > 0 && (
+                <>
+                  <Alert severity="warning" sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      Pending Submissions ({submissions.length})
+                    </Typography>
+                    <Typography variant="body2">
+                      You have {submissions.length} submission(s) awaiting admin approval. Once approved, they will appear in your published songs below.
+                    </Typography>
+                  </Alert>
+                  <List sx={{ mb: 3, bgcolor: 'rgba(255, 152, 0, 0.05)', borderRadius: 1, p: 1 }}>
+                    {submissions.map((submission) => (
+                      <ListItem key={submission.id} sx={{ border: '1px solid rgba(255, 152, 0, 0.3)', borderRadius: 1, mb: 1 }}>
+                        <Avatar src={submission.coverUrl} variant="rounded" sx={{ mr: 2, width: 56, height: 56 }}>
+                          <MusicNote />
+                        </Avatar>
+                        <ListItemText
+                          primary={submission.albumTitle || submission.tracks?.[0]?.title || 'Untitled'}
+                          secondary={
+                            <>
+                              <Chip label={submission.status} size="small" color="warning" sx={{ mr: 1 }} />
+                              <Chip label={`${submission.tracks?.length || 0} track(s)`} size="small" />
+                            </>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </>
+              )}
+
+              {/* Songs */}
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                Published Singles & Tracks ({songs.length})
+              </Typography>
+              {songs.length === 0 && submissions.length === 0 ? (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  No songs uploaded yet. Click "Upload New Release" to get started!
+                </Alert>
+              ) : songs.length === 0 ? (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  No published songs yet. Your submissions are awaiting approval.
+                </Alert>
+              ) : (
+                <List sx={{ mb: 4 }}>
+                  {songs.map((song) => (
+                    <ListItem
+                      key={song.id}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        mb: 1
+                      }}
+                    >
+                      <Avatar
+                        src={song.coverUrl || song.albumArt}
+                        variant="rounded"
+                        sx={{ mr: 2, width: 56, height: 56 }}
+                      >
+                        <MusicNote />
+                      </Avatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {song.title}
+                            {song.isVisible === false && (
+                              <Chip
+                                label="Hidden"
+                                size="small"
+                                color="warning"
+                                sx={{ fontSize: '0.7rem', height: '20px' }}
+                              />
+                            )}
+                          </Box>
+                        }
+                        secondary={
+                          <>
+                            <Typography component="span" variant="body2" color="text.secondary">
+                              {song.artist} • {song.genre}
+                            </Typography>
+                            <br />
+                            <Chip
+                              label={`$${song.price ? (song.price / 100).toFixed(2) : '0.99'}`}
+                              size="small"
+                              sx={{ mt: 0.5, mr: 1 }}
+                            />
+                            {song.playCount > 0 && <Chip label={`${song.playCount.toLocaleString()} plays`} size="small" sx={{ mt: 0.5 }} />}
+                          </>
+                        }
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={(e) => {
+                            setSelectedSong(song);
+                            setSongMenuAnchor(e.currentTarget);
+                          }}
+                        >
+                          <MoreVert />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+
+              {/* Albums */}
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                Albums ({albums.length})
+              </Typography>
+              {albums.length === 0 ? (
+                <Alert severity="info">
+                  No albums uploaded yet.
+                </Alert>
+              ) : (
+                <Grid container spacing={2}>
+                  {albums.map((album) => (
+                    <Grid item xs={12} sm={6} md={4} key={album.id}>
+                      <Card sx={{ bgcolor: 'background.default' }}>
+                        <Avatar
+                          src={album.coverUrl}
+                          variant="rounded"
+                          sx={{ width: '100%', height: 160 }}
+                        >
+                          <AlbumIcon sx={{ fontSize: 60 }} />
+                        </Avatar>
+                        <CardContent sx={{ position: 'relative' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                              {album.title}
+                            </Typography>
+                            {album.isVisible === false && (
+                              <Chip
+                                label="Hidden"
+                                size="small"
+                                color="warning"
+                                sx={{ height: 20 }}
+                              />
+                            )}
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {album.trackCount || 0} tracks
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                console.log('Album menu clicked:', album.id, album.title);
+                                setSelectedAlbum(album);
+                                setAlbumMenuAnchor(e.currentTarget);
+                              }}
+                            >
+                              <MoreVert />
+                            </IconButton>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+
+              {/* Song Menu */}
+              <Menu
+                anchorEl={songMenuAnchor}
+                open={Boolean(songMenuAnchor)}
+                onClose={() => setSongMenuAnchor(null)}
+              >
+                <MenuItem onClick={() => {
+                  navigate(`/song/${selectedSong?.id}`);
+                  setSongMenuAnchor(null);
+                }}>
+                  <Visibility sx={{ mr: 1 }} /> View Details
+                </MenuItem>
+                <MenuItem onClick={() => handleOpenEditSong(selectedSong)}>
+                  <Edit sx={{ mr: 1 }} /> Edit
+                </MenuItem>
+                <MenuItem onClick={() => handleToggleVisibility(selectedSong)}>
+                  {selectedSong?.isVisible === false ? (
+                    <>
+                      <Visibility sx={{ mr: 1 }} /> Show on Platform
+                    </>
+                  ) : (
+                    <>
+                      <VisibilityOff sx={{ mr: 1 }} /> Hide from Platform
+                    </>
+                  )}
+                </MenuItem>
+                <MenuItem onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this song?')) {
+                    deleteDoc(doc(db, 'songs', selectedSong.id))
+                      .then(() => {
+                        setSongs(songs.filter(s => s.id !== selectedSong.id));
+                        toast.success('Song deleted');
+                      })
+                      .catch((error) => {
+                        console.error('Error deleting song:', error);
+                        toast.error('Failed to delete song');
+                      });
+                  }
+                  setSongMenuAnchor(null);
+                }} sx={{ color: 'error.main' }}>
+                  <Delete sx={{ mr: 1 }} /> Delete
+                </MenuItem>
+              </Menu>
+
+              {/* Album Menu */}
+              <Menu
+                anchorEl={albumMenuAnchor}
+                open={Boolean(albumMenuAnchor)}
+                onClose={() => {
+                  console.log('Album menu closed');
+                  setAlbumMenuAnchor(null);
+                }}
+              >
+                <MenuItem onClick={() => {
+                  console.log('View album:', selectedAlbum);
+                  navigate(`/album/${selectedAlbum?.id}`);
+                  setAlbumMenuAnchor(null);
+                }}>
+                  <Visibility sx={{ mr: 1 }} /> View Album
+                </MenuItem>
+                <MenuItem onClick={() => {
+                  console.log('Toggle visibility for album:', selectedAlbum);
+                  handleToggleAlbumVisibility(selectedAlbum);
+                }}>
+                  {selectedAlbum?.isVisible === false ? (
+                    <>
+                      <Visibility sx={{ mr: 1 }} /> Show on Platform
+                    </>
+                  ) : (
+                    <>
+                      <VisibilityOff sx={{ mr: 1 }} /> Hide from Platform
+                    </>
+                  )}
+                </MenuItem>
+                <MenuItem onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this album?')) {
+                    console.log('Deleting album:', selectedAlbum);
+                    deleteDoc(doc(db, 'albums', selectedAlbum.id))
+                      .then(() => {
+                        setAlbums(albums.filter(a => a.id !== selectedAlbum.id));
+                        toast.success('Album deleted');
+                      })
+                      .catch((error) => {
+                        console.error('Error deleting album:', error);
+                        toast.error('Failed to delete album');
+                      });
+                  }
+                  setAlbumMenuAnchor(null);
+                }} sx={{ color: 'error.main' }}>
+                  <Delete sx={{ mr: 1 }} /> Delete
+                </MenuItem>
+              </Menu>
+            </CardContent>
+          </TabPanel>
+
+          {/* Social Links Tab */}
+          <TabPanel value={activeTab} index={2}>
+            <CardContent>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Add your social media links to connect with fans across platforms
+              </Alert>
+              <Grid container spacing={2}>
+                {Object.entries({
+                  website: 'Website',
+                  spotify: 'Spotify',
+                  instagram: 'Instagram',
+                  facebook: 'Facebook',
+                  twitter: 'Twitter/X',
+                  youtube: 'YouTube',
+                  soundcloud: 'SoundCloud',
+                  tiktok: 'TikTok'
+                }).map(([key, label]) => (
+                  <Grid item xs={12} sm={6} key={key}>
+                    <TextField
+                      fullWidth
+                      label={label}
+                      value={socialLinks[key] || ''}
+                      onChange={(e) => setSocialLinks({ ...socialLinks, [key]: e.target.value })}
+                      placeholder={`https://${key}.com/yourprofile`}
+                      InputProps={{
+                        startAdornment: <LinkIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                      }}
+                    />
+                  </Grid>
+                ))}
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<Save />}
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                  >
+                    {saving ? 'Saving...' : 'Save Social Links'}
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </TabPanel>
+
+          {/* Tour Dates Tab */}
+          <TabPanel value={activeTab} index={3}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6">Upcoming Shows</Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={() => setTourDialogOpen(true)}
+                  sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                >
+                  Add Tour Date
+                </Button>
+              </Box>
+
+              {tourDates.length === 0 ? (
+                <Alert severity="info">
+                  No tour dates scheduled. Add your upcoming shows to let fans know where to see you live!
+                </Alert>
+              ) : (
+                <List>
+                  {tourDates.map((tour) => (
+                    <ListItem
+                      key={tour.id}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        mb: 1
+                      }}
+                    >
+                      <CalendarToday sx={{ mr: 2, color: 'primary.main' }} />
+                      <ListItemText
+                        primary={`${tour.venue} - ${tour.city}, ${tour.country}`}
+                        secondary={new Date(tour.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      />
+                      {tour.ticketLink && (
+                        <Chip
+                          label="Tickets"
+                          component="a"
+                          href={tour.ticketLink}
+                          target="_blank"
+                          clickable
+                          sx={{ mr: 1 }}
+                        />
+                      )}
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={() => handleDeleteTourDate(tour.id)}
+                          sx={{ color: 'error.main' }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </TabPanel>
+
+          {/* Statistics Tab */}
+          <TabPanel value={activeTab} index={4}>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 3 }}>Your Statistics</Typography>
+
+              {/* Overview Stats */}
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Total Songs
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {songs.filter(s => s.isVisible !== false).length}
+                    </Typography>
+                    {songs.filter(s => s.isVisible === false).length > 0 && (
+                      <Typography variant="caption" color="text.secondary">
+                        ({songs.filter(s => s.isVisible === false).length} hidden)
+                      </Typography>
+                    )}
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Total Albums
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {albums.filter(a => a.isVisible !== false).length}
+                    </Typography>
+                    {albums.filter(a => a.isVisible === false).length > 0 && (
+                      <Typography variant="caption" color="text.secondary">
+                        ({albums.filter(a => a.isVisible === false).length} hidden)
+                      </Typography>
+                    )}
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Total Plays
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {songs.reduce((sum, song) => sum + (song.playCount || 0), 0).toLocaleString()}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      All time
+                    </Typography>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ bgcolor: 'background.default', p: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Total Likes
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {songs.reduce((sum, song) => sum + (song.likeCount || 0), 0).toLocaleString()}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Across all songs
+                    </Typography>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Estimated Earnings */}
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                Estimated Earnings
+              </Typography>
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={6}>
+                  <Card sx={{ bgcolor: 'background.default', p: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Estimated Streaming Revenue
+                      </Typography>
+                      <IconButton size="small" sx={{ color: 'primary.main' }}>
+                        <InfoOutlined fontSize="small" />
+                      </IconButton>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      ${(songs.reduce((sum, song) => sum + (song.playCount || 0), 0) * 0.003).toFixed(2)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Based on {songs.reduce((sum, song) => sum + (song.playCount || 0), 0).toLocaleString()} plays at ~$0.003 per stream
+                    </Typography>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Card sx={{ bgcolor: 'background.default', p: 3 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      How Plays Are Calculated
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1.5 }}>
+                      • A play counts when a listener streams at least 30 seconds of your song
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1.5 }}>
+                      • Plays are tracked in real-time and updated instantly
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1.5 }}>
+                      • Estimated earnings: ~$0.003 per stream (industry average)
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      • Actual payouts may vary based on listener location, subscription type, and other factors
+                    </Typography>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Top Performing Songs */}
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
+                Top Performing Songs
+              </Typography>
+              {songs.length === 0 ? (
+                <Alert severity="info">
+                  No songs uploaded yet.
+                </Alert>
+              ) : (
+                <List>
+                  {[...songs]
+                    .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+                    .slice(0, 10)
+                    .map((song, index) => (
+                      <ListItem key={song.id} sx={{ bgcolor: 'background.default', mb: 1, borderRadius: 1 }}>
+                        <Avatar
+                          src={song.coverUrl || song.cover}
+                          variant="rounded"
+                          sx={{ mr: 2, width: 48, height: 48 }}
+                        >
+                          <MusicNote />
+                        </Avatar>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                #{index + 1} {song.title}
+                              </Typography>
+                              {song.isVisible === false && (
+                                <Chip
+                                  label="Hidden"
+                                  size="small"
+                                  color="warning"
+                                  sx={{ height: 20 }}
+                                />
+                              )}
+                            </Box>
+                          }
+                          secondary={
+                            <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                {(song.playCount || 0).toLocaleString()} plays
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {(song.likeCount || 0).toLocaleString()} likes
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                </List>
+              )}
+            </CardContent>
+          </TabPanel>
+        </Card>
+
+        {/* Add Tour Date Dialog */}
+        <Dialog
+          open={tourDialogOpen}
+          onClose={() => setTourDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Add Tour Date</DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2 }}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Date"
+                value={newTourDate.date}
+                onChange={(e) => setNewTourDate({ ...newTourDate, date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Venue Name"
+                value={newTourDate.venue}
+                onChange={(e) => setNewTourDate({ ...newTourDate, venue: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="City"
+                    value={newTourDate.city}
+                    onChange={(e) => setNewTourDate({ ...newTourDate, city: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Country"
+                    value={newTourDate.country}
+                    onChange={(e) => setNewTourDate({ ...newTourDate, country: e.target.value })}
+                  />
+                </Grid>
+              </Grid>
+              <TextField
+                fullWidth
+                label="Ticket Link (optional)"
+                value={newTourDate.ticketLink}
+                onChange={(e) => setNewTourDate({ ...newTourDate, ticketLink: e.target.value })}
+                placeholder="https://tickets.com/your-show"
+                sx={{ mt: 2 }}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setTourDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleAddTourDate}
+              sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+            >
+              Add Date
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Song Dialog */}
+        <Dialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Edit Song</DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2 }}>
+              {/* Cover Art Upload */}
+              <Box sx={{ mb: 3, textAlign: 'center' }}>
+                <Avatar
+                  src={coverPreview || editForm.coverUrl}
+                  variant="rounded"
+                  sx={{ width: 200, height: 200, mx: 'auto', mb: 2 }}
+                >
+                  <MusicNote sx={{ fontSize: 80 }} />
+                </Avatar>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<CloudUpload />}
+                >
+                  {newCoverFile ? 'Change Cover Art' : 'Upload New Cover Art'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={(e) => handleCoverChange(e.target.files[0])}
+                  />
+                </Button>
+                <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                  Recommended: 1000x1000px
+                </Typography>
+              </Box>
+
+              <TextField
+                fullWidth
+                label="Song Title"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                sx={{ mb: 2 }}
+                required
+              />
+              <TextField
+                fullWidth
+                label="Genre"
+                value={editForm.genre}
+                onChange={(e) => setEditForm({ ...editForm, genre: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Lyrics"
+                multiline
+                rows={12}
+                value={editForm.lyrics}
+                onChange={(e) => setEditForm({ ...editForm, lyrics: e.target.value })}
+                placeholder="Enter song lyrics here..."
+                helperText="Add lyrics to help fans connect with your music"
+                sx={{ mb: 2 }}
+              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="explicit-checkbox"
+                    checked={editForm.explicit}
+                    onChange={(e) => setEditForm({ ...editForm, explicit: e.target.checked })}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <label htmlFor="explicit-checkbox">Explicit Content</label>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="visible-checkbox"
+                    checked={editForm.isVisible}
+                    onChange={(e) => setEditForm({ ...editForm, isVisible: e.target.checked })}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <label htmlFor="visible-checkbox">
+                    Show on platform (uncheck to hide from public)
+                  </label>
+                </Box>
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveSongEdit}
+              disabled={saving || !editForm.title}
+              sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
+    </Box>
+  );
+}
