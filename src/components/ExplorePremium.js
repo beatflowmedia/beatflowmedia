@@ -6,12 +6,13 @@ import Footer from "./Footer";
 
 const plans = [
   {
-    title: "Individual",
+    title: "Beat Solo",
     price: "$11.99 / month after",
     details: [
       "1 Premium account",
+      "Support independent artists",
+      "Ad-free listening",
       "Cancel anytime",
-      "15-hour/month of listening time from our audiobooks",
     ],
     label: "Try free for 1 month",
     note: "Free for 1 month, then $11.99/month after.",
@@ -19,42 +20,42 @@ const plans = [
     priceId: "price_1RPFZuAEum2hO0KZ6R9hDDBS"
   },
   {
-    title: "Student",
-    price: "$9.99 / month after",
+    title: "Beat Campus",
+    price: "$5.99 / month after",
     details: [
-      "1 verified Premium account",
-      "Discount for eligible students",
-      "Same benefits as Individual",
+      "1 verified student account",
+      "Student discount",
+      "Same benefits as Beat Solo",
     ],
     label: "Try free for 1 month",
-    note: "Free for 1 month, then $9.99/month after.",
-    tag: "Free for 1 month",
+    note: "Free for 1 month, then $5.99/month after.",
+    tag: "Student Deal",
     priceId: "price_1RPG6sAEum2hO0KZGTDZIqOr"
   },
   {
-    title: "Duo",
+    title: "Beat Duo",
     price: "$16.99 / month after",
     details: [
       "2 Premium accounts",
       "For couples under one roof",
-      "Plan manager only",
+      "Support artists together",
     ],
-    label: "Get Premium Duo",
+    label: "Get Beat Duo",
     note: "For couples who reside at the same address.",
     tag: "Free for 1 month",
     priceId: "price_1RPGGGAEum2hO0KZbsLLd4x1"
   },
   {
-    title: "Family",
+    title: "Beat Household",
     price: "$18.00 / month",
     details: [
-      "Up to 6 Premium or Kids accounts",
-      "Control content marked as explicit",
+      "Up to 6 Premium accounts",
+      "Family-friendly content controls",
       "Access to BeatFlow Kids",
-      "Plan manager only",
+      "Plan manager controls",
     ],
-    label: "Get Premium Family",
-    note: "For couples or families who reside at the same address.",
+    label: "Get Beat Household",
+    note: "For families who reside at the same address.",
     tag: "Popular",
     priceId: "price_1RPGOLAEum2hO0KZ7tHXcspp"
   },
