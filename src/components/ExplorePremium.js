@@ -16,7 +16,7 @@ const plans = [
     label: "Try free for 1 month",
     note: "Free for 1 month, then $11.99/month after.",
     tag: "Free for 1 month",
-    priceId: "price_1RPIOuAEum2hO0KZmS58KO4g"
+    priceId: "price_1RPFZuAEum2hO0KZ6R9hDDBS"
   },
   {
     title: "Student",
@@ -29,7 +29,7 @@ const plans = [
     label: "Try free for 1 month",
     note: "Free for 1 month, then $9.99/month after.",
     tag: "Free for 1 month",
-    priceId: "price_1SemrtAEum2hO0KZSJ99RUQF"
+    priceId: "price_1RPG6sAEum2hO0KZGTDZIqOr"
   },
   {
     title: "Duo",
@@ -42,7 +42,7 @@ const plans = [
     label: "Get Premium Duo",
     note: "For couples who reside at the same address.",
     tag: "Free for 1 month",
-    priceId: "price_1SemsLAEum2hO0KZcTKSiMxK"
+    priceId: "price_1RPGGGAEum2hO0KZbsLLd4x1"
   },
   {
     title: "Family",
@@ -56,7 +56,7 @@ const plans = [
     label: "Get Premium Family",
     note: "For couples or families who reside at the same address.",
     tag: "Popular",
-    priceId: "price_1SemskAEum2hO0KZ0eLdIagl"
+    priceId: "price_1RPGOLAEum2hO0KZ7tHXcspp"
   },
 ];
 
