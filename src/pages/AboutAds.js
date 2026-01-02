@@ -182,7 +182,7 @@ export default function AboutAds() {
                   ad-free music for a low monthly price.
                 </p>
                 <Link to="/explore-premium" className="inline-block bg-white text-gray-900 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-                  Explore Premium Plans
+                  Get BeatFlow Premium
                 </Link>
               </div>
             </div>

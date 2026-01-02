@@ -94,11 +94,11 @@ const NavBar = ({
         <button
           type="button"
           onClick={onExplorePremium}
-          aria-label="Explore Premium"
+          aria-label="Get BeatFlow Premium"
           className="bg-bf-blue text-white px-4 py-2 rounded-full flex items-center space-x-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-green transition"
         >
           <FaCrown />
-          <span>Explore Premium</span>
+          <span>Get BeatFlow Premium</span>
         </button>
 
         <button

@@ -108,9 +108,9 @@ const NavBar = ({
         <button
           onClick={() => onExplorePremium?.()}
           className="hidden lg:inline-block bg-white text-black font-semibold px-4 py-2 rounded-full text-sm hover:bg-gray-200 transition"
-          aria-label="Explore Premium"
+          aria-label="Get BeatFlow Premium"
         >
-          Explore Premium
+          Get BeatFlow Premium
         </button>
 
         <button
