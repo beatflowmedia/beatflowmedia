@@ -82,27 +82,22 @@ export default function Footer() {
             <ul className="space-y-1">
               <li>
                 <a href="/individual" className="hover:text-bf-text">
-                  Premium Individual
+                  Beat Solo
                 </a>
               </li>
               <li>
                 <a href="/student" className="hover:text-bf-text">
-                  Premium Student
+                  Beat Campus
                 </a>
               </li>
               <li>
                 <a href="/duo" className="hover:text-bf-text">
-                  Premium Duo
+                  Beat Duo
                 </a>
               </li>
               <li>
                 <a href="/family" className="hover:text-bf-text">
-                  Premium Family
-                </a>
-              </li>
-              <li>
-                <a href="/audiobooks" className="hover:text-bf-text">
-                  Audiobooks Access
+                  Beat Household
                 </a>
               </li>
             </ul>
