@@ -16,6 +16,14 @@ service firebase.storage {
         && request.resource.size < 500 * 1024 * 1024; // 500MB limit for high-quality WAV files
     }
 
+    // Artist profile and banner images
+    match /artists/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024; // 5MB limit for profile/banner images
+    }
+
     // User profile pictures and avatars
     match /user-content/{userId}/{allPaths=**} {
       allow read: if request.auth != null;
@@ -44,6 +52,14 @@ service firebase.storage {
       allow read, write: if request.auth != null
         && request.auth.uid == userId
         && request.resource.size < 200 * 1024 * 1024; // 200MB limit for temp files
+    }
+
+    // Appeal evidence uploads - artists can upload evidence for their appeals
+    match /appeal-evidence/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024; // 10MB limit for appeal evidence
     }
 
     // Deny all other storage access

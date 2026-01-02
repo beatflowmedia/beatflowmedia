@@ -106,6 +106,8 @@ function SongPage() {
           itemId={id}
           itemType="song"
           price={song.price || 0.99}
+          artistId={song.artistId}
+          uploadedBy={song.uploadedBy}
         />
       </div>
 

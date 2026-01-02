@@ -76,14 +76,15 @@ export default function Contact() {
         </div>
 
         {/* Right side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
           <div>
-            <h3 className="text-xl font-semibold mb-2">BeatFlow HQ</h3>
+            <h3 className="text-xl font-semibold mb-2">BeatFlow Media HQ</h3>
             <p className="text-gray-400">
-              Regenergatan 9<br />
-              SE-111 53 Stockholm
+              478 Clubhouse Dr
               <br />
-              Sweden
+              Middletown, NJ 07748
+              <br />
+              USA
               <br />
               <a
                 href="mailto:office@beatflowmedia.com"
@@ -92,45 +93,6 @@ export default function Contact() {
                 office@beatflowmedia.com
               </a>
             </p>
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold mb-2">
-              BeatFlow around the world
-            </h3>
-            <ul className="text-gray-400">
-              <li className="mb-6">
-                <strong>BeatFlow USA</strong>
-                <br />
-                45 Fremont St.
-                <br />
-                San Francisco, CA 94105
-                <br />
-                USA
-                <br />
-                <a
-                  href="mailto:office@beatflowmedia.com"
-                  className="text-white hover:underline"
-                >
-                  office@beatflowmedia.com
-                </a>
-              </li>
-              <li>
-                <strong>BeatFlow Canada</strong>
-                <br />
-                250 Yonge St.
-                <br />
-                Toronto, ON M5B 2L7
-                <br />
-                Canada
-                <br />
-                <a
-                  href="mailto:office@beatflowmedia.com"
-                  className="text-white hover:underline"
-                >
-                  office@beatflowmedia.com
-                </a>
-              </li>
-            </ul>
           </div>
         </div>
       </div>

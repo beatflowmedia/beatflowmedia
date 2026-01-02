@@ -141,7 +141,9 @@ export default function CuratedForYou() {
         where('__name__', 'in', likedIds.slice(0, 10))
       );
       const snapshot = await getDocs(songsQuery);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(song => song.isVisible !== false);
     } catch (error) {
       console.error('Error fetching liked songs:', error);
       return [];
@@ -178,7 +180,7 @@ export default function CuratedForYou() {
       const snapshot = await getDocs(songsQuery);
       return snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(song => !excludeIds.includes(song.id));
+        .filter(song => song.isVisible !== false && !excludeIds.includes(song.id));
     } catch (error) {
       console.error('Error fetching songs by genres:', error);
       return [];
@@ -195,7 +197,7 @@ export default function CuratedForYou() {
       const snapshot = await getDocs(songsQuery);
       return snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(song => !excludeIds.includes(song.id));
+        .filter(song => song.isVisible !== false && !excludeIds.includes(song.id));
     } catch (error) {
       console.error('Error fetching songs by artists:', error);
       return [];
@@ -253,7 +255,7 @@ export default function CuratedForYou() {
       const snapshot = await getDocs(songsQuery);
       return snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(song => !excludeIds.includes(song.id));
+        .filter(song => song.isVisible !== false && !excludeIds.includes(song.id));
     } catch (error) {
       console.error('Error fetching trending by genre:', error);
       return [];

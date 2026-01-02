@@ -30,9 +30,9 @@ export default function PrivacyCenter() {
               <p className="text-gray-400 mb-4">
                 Control who can see your activity, playlists, and listening history.
               </p>
-              <button className="text-green-500 hover:underline font-semibold">
+              <Link to="/privacy-settings" className="text-green-500 hover:underline font-semibold">
                 Manage Settings →
-              </button>
+              </Link>
             </div>
 
             <div className="bg-gray-800 rounded-lg p-6">
@@ -41,9 +41,9 @@ export default function PrivacyCenter() {
               <p className="text-gray-400 mb-4">
                 Request a copy of all the data we have about you.
               </p>
-              <button className="text-green-500 hover:underline font-semibold">
+              <Link to="/download-data" className="text-green-500 hover:underline font-semibold">
                 Request Data →
-              </button>
+              </Link>
             </div>
 
             <div className="bg-gray-800 rounded-lg p-6">

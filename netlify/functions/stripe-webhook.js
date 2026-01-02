@@ -285,6 +285,29 @@ async function handleCheckoutSessionCompleted(session) {
     }
 
     console.log(`Purchase recorded for user ${userId}: ${itemType} ${itemId}`);
+
+    // Trigger revenue split (async - don't block webhook response)
+    if (itemType === 'song' || itemType === 'album') {
+      try {
+        console.log('🔄 Triggering revenue split...');
+        // Call the revenue split function
+        await fetch(`${process.env.URL || 'https://beatflowmedia.com'}/.netlify/functions/process-revenue-split`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            purchaseId: purchaseRef.id,
+            userId,
+            itemId,
+            itemType,
+            amount: session.amount_total / 100 // Convert to dollars
+          })
+        });
+        console.log('✅ Revenue split triggered successfully');
+      } catch (splitError) {
+        console.error('⚠️ Failed to trigger revenue split (will retry):', splitError.message);
+        // Don't throw - purchase was recorded successfully
+      }
+    }
   } catch (error) {
     console.error('❌ Error recording purchase:', error);
     console.error('Error details:', {

@@ -124,6 +124,13 @@ class StripeService {
       }
 
       const songData = songDoc.data();
+
+      // Prevent artists from purchasing their own content
+      const artistUserId = songData.artistId || songData.uploadedBy;
+      if (artistUserId && userId === artistUserId) {
+        throw new Error('You cannot purchase your own music');
+      }
+
       const price = songData.price || DEFAULT_SONG_PRICE;
 
       // Create checkout session via Cloud Function or API
@@ -181,6 +188,13 @@ class StripeService {
       }
 
       const albumData = albumDoc.data();
+
+      // Prevent artists from purchasing their own content
+      const artistUserId = albumData.artistId || albumData.uploadedBy;
+      if (artistUserId && userId === artistUserId) {
+        throw new Error('You cannot purchase your own music');
+      }
+
       const price = albumData.price || DEFAULT_ALBUM_PRICE;
 
       // Create checkout session via Cloud Function or API

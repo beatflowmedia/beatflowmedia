@@ -38,12 +38,14 @@ const Downloads = lazy(() => import("./pages/Downloads"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const GenrePage = lazy(() => import("./pages/GenrePage"));
+const AppealTakedown = lazy(() => import("./pages/AppealTakedown"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const GenreManagement = lazy(() => import("./pages/GenreManagement"));
 const About = lazy(() => import("./pages/About"));
 const ForTheRecord = lazy(() => import("./pages/ForTheRecord"));
 const Support = lazy(() => import("./pages/Support"));
 const ArtistDashboardNew = lazy(() => import("./pages/ArtistDashboardNew"));
+const ArtistProfileManager = lazy(() => import("./pages/ArtistProfileManager"));
 // const PodcasterDashboard = lazy(() => import("./pages/PodcasterDashboard"));
 const SupportCategory = lazy(() => import("./pages/SupportCategory"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -82,14 +84,21 @@ const Audiobooks = lazy(() => import("./pages/Audiobooks"));
 
 // Legal pages
 const Legal = lazy(() => import("./pages/Legal"));
+const Terms = lazy(() => import("./pages/Terms"));
+const UserGuidelines = lazy(() => import("./pages/UserGuidelines"));
 const Nda = lazy(() => import("./pages/Nda"));
 const PrivacyCenter = lazy(() => import("./pages/PrivacyCenter"));
+const PrivacySettings = lazy(() => import("./pages/PrivacySettings"));
+const DownloadData = lazy(() => import("./pages/DownloadData"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Cookies = lazy(() => import("./pages/Cookies"));
+const CookieSettings = lazy(() => import("./pages/CookieSettings"));
 const AboutAds = lazy(() => import("./pages/AboutAds"));
+const AdPreferences = lazy(() => import("./pages/AdPreferences"));
 const Accessibility = lazy(() => import("./pages/Accessibility"));
 const NoticeAtCollection = lazy(() => import("./pages/NoticeAtCollection"));
 const PrivacyChoices = lazy(() => import("./pages/PrivacyChoices"));
+const SyncLicensing = lazy(() => import("./pages/SyncLicensing"));
 
 export default function AppRoutes() {
   const { user, role } = useAuth();
@@ -189,6 +198,8 @@ export default function AppRoutes() {
         <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />
         <Route path="for-artists" element={<ForArtists />} />
+        <Route path="artist-profile" element={<ArtistProfileManager />} />
+        <Route path="appeal-takedown" element={<AppealTakedown />} />
         <Route path="about" element={<About />} />
         <Route path="for-the-record" element={<ForTheRecord />} />
         <Route path="support" element={<Support />} />
@@ -229,14 +240,21 @@ export default function AppRoutes() {
 
         {/* Legal pages */}
         <Route path="legal" element={<Legal />} />
+        <Route path="terms" element={<Terms />} />
+        <Route path="user-guidelines" element={<UserGuidelines />} />
         <Route path="nda" element={<Nda />} />
         <Route path="privacy-center" element={<PrivacyCenter />} />
+        <Route path="privacy-settings" element={<PrivacySettings />} />
+        <Route path="download-data" element={<DownloadData />} />
         <Route path="privacy-policy" element={<PrivacyPolicy />} />
         <Route path="cookies" element={<Cookies />} />
+        <Route path="cookie-settings" element={<CookieSettings />} />
         <Route path="about-ads" element={<AboutAds />} />
+        <Route path="ad-preferences" element={<AdPreferences />} />
         <Route path="accessibility" element={<Accessibility />} />
         <Route path="notice-at-collection" element={<NoticeAtCollection />} />
         <Route path="privacy-choices" element={<PrivacyChoices />} />
+        <Route path="sync-licensing" element={<SyncLicensing />} />
 
         {/* Catch-all for 404 */}
         <Route path="*" element={<div className="p-6 text-center text-white">404 – Page Not Found</div>} />

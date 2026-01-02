@@ -13,7 +13,10 @@
       "mcp__ide__getDiagnostics",
       "Bash(git push:*)",
       "Bash(git checkout:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: add subscription management, profile pages, and performance optimizations\n\n- Add Stripe Customer Portal integration for subscription management\n- Create Favorites and Playlists pages with proper Firebase data loading\n- Fix profile stats to read from correct Firestore collections\n- Add OptimizedImage component with WebP support and lazy loading\n- Update Firestore security rules for likes collection\n- Add image optimization script for performance improvements\n- Create comprehensive performance optimization guide\n- Fix subscription display on profile page\n- Update PurchaseSuccess to show appropriate message for subscriptions\n\nPerformance improvements:\n- Implement lazy loading for images with loading skeletons\n- Add WebP format support with automatic fallback\n- Reduce potential image size by ~13MB\n- Expected performance score improvement from 27 to 70-80\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: add subscription management, profile pages, and performance optimizations\n\n- Add Stripe Customer Portal integration for subscription management\n- Create Favorites and Playlists pages with proper Firebase data loading\n- Fix profile stats to read from correct Firestore collections\n- Add OptimizedImage component with WebP support and lazy loading\n- Update Firestore security rules for likes collection\n- Add image optimization script for performance improvements\n- Create comprehensive performance optimization guide\n- Fix subscription display on profile page\n- Update PurchaseSuccess to show appropriate message for subscriptions\n\nPerformance improvements:\n- Implement lazy loading for images with loading skeletons\n- Add WebP format support with automatic fallback\n- Reduce potential image size by ~13MB\n- Expected performance score improvement from 27 to 70-80\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(test:*)",
+      "Bash(git add:*)",
+      "Bash(firebase ext:install:*)"
     ],
     "deny": [],
     "ask": []

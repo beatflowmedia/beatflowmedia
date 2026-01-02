@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 
 export default function Cookies() {
@@ -152,9 +153,9 @@ export default function Cookies() {
               <p className="text-gray-300 mb-4">
                 You can control and manage cookies through your browser settings or our cookie preference center.
               </p>
-              <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-semibold transition-colors">
+              <Link to="/cookie-settings" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-semibold transition-colors">
                 Cookie Settings
-              </button>
+              </Link>
             </div>
 
             <div className="space-y-4 text-gray-300">
@@ -170,9 +171,9 @@ export default function Cookies() {
                 <h3 className="text-lg font-semibold mb-2">Opt-Out Options</h3>
                 <p className="mb-2">You can opt out of targeted advertising through:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>Your Ad Choices: <a href="#" className="text-green-500 hover:underline">optout.aboutads.info</a></li>
-                  <li>Network Advertising Initiative: <a href="#" className="text-green-500 hover:underline">optout.networkadvertising.org</a></li>
-                  <li>Digital Advertising Alliance: <a href="#" className="text-green-500 hover:underline">youradchoices.com</a></li>
+                  <li>Your Ad Choices: <a href="https://optout.aboutads.info" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">optout.aboutads.info</a></li>
+                  <li>Network Advertising Initiative: <a href="https://optout.networkadvertising.org" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">optout.networkadvertising.org</a></li>
+                  <li>Digital Advertising Alliance: <a href="https://youradchoices.com/control" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">youradchoices.com</a></li>
                 </ul>
               </div>
 

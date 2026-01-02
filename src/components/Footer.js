@@ -35,11 +35,11 @@ export default function Footer() {
                   Artists
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <a href="/developers" className="hover:text-bf-text">
                   Developers
                 </a>
-              </li>
+              </li> */}
               <li>
                 <a href="/advertising" className="hover:text-bf-text">
                   Advertising
@@ -66,7 +66,7 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/browse" className="hover:text-bf-text">
+                <a href="/sync-licensing" className="hover:text-bf-text">
                   Sync Licensing
                 </a>
               </li>

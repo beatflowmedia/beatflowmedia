@@ -7,7 +7,7 @@ import { ShoppingCart, Download } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { stripeService, DEFAULT_SONG_PRICE, DEFAULT_ALBUM_PRICE } from '../services/stripeService';
 
-const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact = false }) => {
+const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact = false, artistId, uploadedBy }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -15,6 +15,12 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
   const [checking, setChecking] = useState(true);
 
   const displayPrice = price || (itemType === 'song' ? DEFAULT_SONG_PRICE : DEFAULT_ALBUM_PRICE);
+
+  // Check if current user is the artist/uploader
+  const isOwnContent = user && (
+    (artistId && user.uid === artistId) ||
+    (uploadedBy && user.uid === uploadedBy)
+  );
 
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('🎯 [PurchaseButton RENDER]');
@@ -105,6 +111,12 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
       return;
     }
 
+    // Prevent artists from purchasing their own content
+    if (isOwnContent) {
+      alert('You cannot purchase your own music');
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -132,6 +144,41 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
       <Button disabled variant="outlined" size={compact ? "small" : "medium"}>
         <CircularProgress size={16} sx={{ mr: compact ? 0.5 : 1 }} />
         {!compact && 'Checking...'}
+      </Button>
+    );
+  }
+
+  // If user is the artist, show "Your Content" message
+  if (isOwnContent) {
+    if (compact) {
+      return (
+        <Chip
+          label="Your Content"
+          size="small"
+          sx={{
+            bgcolor: 'grey.700',
+            color: 'grey.400',
+            cursor: 'default'
+          }}
+        />
+      );
+    }
+
+    return (
+      <Button
+        variant="outlined"
+        disabled
+        sx={{
+          borderColor: 'grey.700',
+          color: 'grey.400',
+          cursor: 'default',
+          '&.Mui-disabled': {
+            borderColor: 'grey.700',
+            color: 'grey.400'
+          }
+        }}
+      >
+        Your Content
       </Button>
     );
   }

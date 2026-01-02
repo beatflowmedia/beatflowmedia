@@ -73,7 +73,7 @@ export const useTrendingSongs = (limitCount = 10, daysBack = 7) => {
             playCount: sp.playCount,
             lastPlayed: sp.lastPlayed
           }))
-          .filter(song => song.title); // Filter out any missing songs
+          .filter(song => song.title && song.isVisible !== false); // Filter out missing and hidden songs
 
         setSongs(trendingSongs);
         setError(null);
@@ -154,7 +154,7 @@ export const useAllTimeMostPlayed = (limitCount = 10) => {
             playCount: sp.playCount,
             lastPlayed: sp.lastPlayed
           }))
-          .filter(song => song.title);
+          .filter(song => song.title && song.isVisible !== false);
 
         setSongs(mostPlayedSongs);
         setError(null);
@@ -250,6 +250,9 @@ export const useRecommendedSongs = (userId, limitCount = 10) => {
 
         songsSnapshot.forEach((doc) => {
           const songData = { id: doc.id, ...doc.data() };
+
+          // Skip hidden songs
+          if (songData.isVisible === false) return;
 
           // Prioritize songs with matching genres/artists
           let relevanceScore = 0;

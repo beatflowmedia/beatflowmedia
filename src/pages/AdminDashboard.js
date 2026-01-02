@@ -4,6 +4,8 @@ import AdminDashboardAnalytics from "../components/analytics/AdminDashboard";
 import SecurityDashboard from "../components/admin/SecurityDashboard";
 import ContentIngestionDashboard from "../components/ContentIngestionDashboard";
 import CuratorApplications from "../components/admin/CuratorApplications";
+import ContentManagement from "../components/admin/ContentManagement";
+import AppealsReview from "../components/admin/AppealsReview";
 import { adminAnalytics } from "../services/adminAnalytics";
 import {
   Dashboard,
@@ -12,7 +14,9 @@ import {
   CloudUpload,
   PlaylistPlay,
   Work,
-  ArrowBack
+  ArrowBack,
+  Block,
+  Gavel
 } from "@mui/icons-material";
 
 export default function AdminDashboard() {
@@ -104,6 +108,30 @@ export default function AdminDashboard() {
           >
             <PlaylistPlay fontSize="small" />
             <span>Curator Applications</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("contentManagement")}
+            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
+              activeTab === "contentManagement"
+                ? "bg-green-600 text-white"
+                : "hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            <Block fontSize="small" />
+            <span>Content Takedown</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("appeals")}
+            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
+              activeTab === "appeals"
+                ? "bg-green-600 text-white"
+                : "hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            <Gavel fontSize="small" />
+            <span>Appeals Review</span>
           </button>
 
           <Link
@@ -248,6 +276,20 @@ export default function AdminDashboard() {
         {activeTab === "curators" && (
           <div>
             <CuratorApplications />
+          </div>
+        )}
+
+        {activeTab === "contentManagement" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Content Takedown & Management</h2>
+            <ContentManagement />
+          </div>
+        )}
+
+        {activeTab === "appeals" && (
+          <div>
+            <h2 className="text-3xl font-bold mb-6">Appeals Review with AI Analysis</h2>
+            <AppealsReview />
           </div>
         )}
       </main>

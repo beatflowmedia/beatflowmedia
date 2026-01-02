@@ -55,10 +55,12 @@ export default function GenrePage() {
         );
 
         const popularSnapshot = await getDocs(popularQuery);
-        const popularData = popularSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const popularData = popularSnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(song => song.isVisible !== false); // Filter out hidden songs
         setPopularSongs(popularData);
 
         // Fetch new releases (by release date)
@@ -74,10 +76,12 @@ export default function GenrePage() {
         );
 
         const newReleasesSnapshot = await getDocs(newReleasesQuery);
-        const newReleasesData = newReleasesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const newReleasesData = newReleasesSnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(song => song.isVisible !== false); // Filter out hidden songs
         setNewReleases(newReleasesData);
 
       } catch (error) {

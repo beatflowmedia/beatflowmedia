@@ -285,17 +285,44 @@ async function handleCheckoutSessionCompleted(session) {
       }
     }
 
+    // Prevent artists from purchasing their own content
+    const artistUserId = itemData.artistId || itemData.uploadedBy;
+    if (artistUserId && userId === artistUserId) {
+      console.error('❌ Artist attempting to purchase their own content');
+      console.error('Artist ID:', artistUserId);
+      console.error('Buyer ID:', userId);
+      throw new Error('Artists cannot purchase their own content');
+    }
+
     // Create purchase record
     console.log('📝 Creating purchase document in Firestore...');
+
+    // Calculate artist payout AFTER Stripe fees (Option A: 70% of NET)
+    const grossAmount = session.amount_total / 100; // Convert from cents to dollars
+
+    // Stripe standard processing fee: 2.9% + $0.30
+    const stripeFee = (grossAmount * 0.029) + 0.30;
+    const netAmount = grossAmount - stripeFee; // Amount after Stripe takes their cut
+
+    // Split the NET amount: 70% artist, 30% platform
+    const artistPayout = netAmount * 0.70;
+    const platformFee = netAmount * 0.30;
+
     const purchaseData = {
       userId,
       itemId,
       itemType,
       itemName: itemData.title || 'Unknown',
-      artistName: itemData.artistName || 'Unknown Artist',
-      price: session.amount_total / 100, // Convert from cents to dollars
+      artistName: itemData.artistName || itemData.artist || 'Unknown Artist',
+      artistId: itemData.uploadedBy || itemData.artistId || null, // Artist's user ID
+      price: grossAmount, // Gross amount customer paid
+      stripeFee: stripeFee, // Stripe processing fee
+      netAmount: netAmount, // Amount after Stripe fees
+      platformFee: platformFee, // 30% of net
+      artistPayout: artistPayout, // 70% of net
       currency: session.currency,
       status: 'completed',
+      payoutStatus: 'pending', // pending, processing, paid, failed
       stripeSessionId: session.id,
       stripePaymentIntent: session.payment_intent,
       customerEmail: session.customer_email,
@@ -307,6 +334,84 @@ async function handleCheckoutSessionCompleted(session) {
 
     const purchaseRef = await db.collection('purchases').add(purchaseData);
     console.log(`✅ Purchase document created with ID: ${purchaseRef.id}`);
+
+    // Update artist balance - handle multi-writer splits
+    if (purchaseData.artistId) {
+      console.log(`💰 Processing earnings for item: ${itemId}`);
+
+      // Check if this item has multiple writers (songwriters/collaborators)
+      let writers = null;
+      if (itemType === 'song') {
+        const songDoc = await db.collection('songs').doc(itemId).get();
+        if (songDoc.exists && songDoc.data().writers && songDoc.data().writers.length > 0) {
+          writers = songDoc.data().writers;
+        }
+      } else if (itemType === 'album') {
+        const albumDoc = await db.collection('albums').doc(itemId).get();
+        if (albumDoc.exists && albumDoc.data().writers && albumDoc.data().writers.length > 0) {
+          writers = albumDoc.data().writers;
+        }
+      }
+
+      // If multiple writers, split the earnings
+      if (writers && writers.length > 0) {
+        console.log(`📊 Splitting earnings among ${writers.length} writers`);
+
+        for (const writer of writers) {
+          const writerShare = artistPayout * writer.split;
+          console.log(`   ${writer.name} (${(writer.split * 100).toFixed(1)}%): $${writerShare.toFixed(2)}`);
+
+          const writerBalanceRef = db.collection('artistBalances').doc(writer.userId);
+          const writerBalanceDoc = await writerBalanceRef.get();
+
+          if (writerBalanceDoc.exists) {
+            await writerBalanceRef.update({
+              availableBalance: admin.firestore.FieldValue.increment(writerShare),
+              totalEarnings: admin.firestore.FieldValue.increment(writerShare),
+              lastSaleAt: admin.firestore.FieldValue.serverTimestamp(),
+              lastSaleAmount: writerShare
+            });
+          } else {
+            await writerBalanceRef.set({
+              availableBalance: writerShare,
+              totalEarnings: writerShare,
+              totalPaidOut: 0,
+              completedPayouts: 0,
+              lastSaleAt: admin.firestore.FieldValue.serverTimestamp(),
+              lastSaleAmount: writerShare,
+              createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }
+        console.log(`✅ Earnings split among ${writers.length} writers`);
+      } else {
+        // Single artist - give full payout to original artist
+        console.log(`💰 Updating balance for single artist: ${purchaseData.artistId}`);
+        const artistBalanceRef = db.collection('artistBalances').doc(purchaseData.artistId);
+        const artistBalanceDoc = await artistBalanceRef.get();
+
+        if (artistBalanceDoc.exists) {
+          await artistBalanceRef.update({
+            availableBalance: admin.firestore.FieldValue.increment(artistPayout),
+            totalEarnings: admin.firestore.FieldValue.increment(artistPayout),
+            lastSaleAt: admin.firestore.FieldValue.serverTimestamp(),
+            lastSaleAmount: artistPayout
+          });
+          console.log(`✅ Artist balance updated: +$${artistPayout.toFixed(2)}`);
+        } else {
+          await artistBalanceRef.set({
+            availableBalance: artistPayout,
+            totalEarnings: artistPayout,
+            totalPaidOut: 0,
+            completedPayouts: 0,
+            lastSaleAt: admin.firestore.FieldValue.serverTimestamp(),
+            lastSaleAmount: artistPayout,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          console.log(`✅ Artist balance created: $${artistPayout.toFixed(2)}`);
+        }
+      }
+    }
 
     // Update user's purchased items
     const userRef = db.collection('users').doc(userId);

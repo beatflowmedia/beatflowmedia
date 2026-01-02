@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 
 export default function AboutAds() {
@@ -117,9 +118,9 @@ export default function AboutAds() {
               <p className="text-gray-300 mb-4">
                 Control how we use your information for advertising purposes.
               </p>
-              <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-semibold transition-colors">
+              <Link to="/ad-preferences" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-semibold transition-colors">
                 Ad Preferences
-              </button>
+              </Link>
             </div>
 
             <div className="space-y-6">
@@ -144,15 +145,15 @@ export default function AboutAds() {
                 <ul className="text-gray-400 space-y-2">
                   <li>
                     • Digital Advertising Alliance:{" "}
-                    <a href="#" className="text-green-500 hover:underline">youradchoices.com</a>
+                    <a href="https://youradchoices.com/control" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">youradchoices.com</a>
                   </li>
                   <li>
                     • Network Advertising Initiative:{" "}
-                    <a href="#" className="text-green-500 hover:underline">optout.networkadvertising.org</a>
+                    <a href="https://optout.networkadvertising.org" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">optout.networkadvertising.org</a>
                   </li>
                   <li>
                     • European Interactive Digital Advertising Alliance:{" "}
-                    <a href="#" className="text-green-500 hover:underline">youronlinechoices.eu</a>
+                    <a href="https://youronlinechoices.eu" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">youronlinechoices.eu</a>
                   </li>
                 </ul>
               </div>
@@ -180,9 +181,9 @@ export default function AboutAds() {
                   The best way to avoid ads is to upgrade to BeatFlow Media Premium. Enjoy unlimited,
                   ad-free music for a low monthly price.
                 </p>
-                <button className="bg-white text-gray-900 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                <Link to="/explore-premium" className="inline-block bg-white text-gray-900 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors">
                   Explore Premium Plans
-                </button>
+                </Link>
               </div>
             </div>
           </div>

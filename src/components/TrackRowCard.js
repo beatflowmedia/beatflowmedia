@@ -114,6 +114,8 @@ export default function TrackRowCard({
               itemType="song"
               price={track.price || 199}
               compact={true}
+              artistId={track.artistId}
+              uploadedBy={track.uploadedBy}
             />
           </div>
         )}

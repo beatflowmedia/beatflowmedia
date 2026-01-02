@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 
-export default function StripeConnectOnboarding() {
+export default function StripeConnectOnboarding({ totalRevenue = 0, purchases = [] }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [payoutLoading, setPayoutLoading] = useState(false);
@@ -12,12 +12,7 @@ export default function StripeConnectOnboarding() {
   const [error, setError] = useState(null);
   const [payoutSuccess, setPayoutSuccess] = useState(null);
 
-  useEffect(() => {
-    loadStripeStatus();
-    loadBalance();
-  }, [user]);
-
-  const loadStripeStatus = async () => {
+  const loadStripeStatus = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -33,27 +28,45 @@ export default function StripeConnectOnboarding() {
     } catch (err) {
       console.error('Error loading Stripe status:', err);
     }
-  };
+  }, [user]);
 
-  const loadBalance = async () => {
+  const loadBalance = useCallback(async () => {
     if (!user) return;
 
     try {
       const balanceDoc = await getDoc(doc(db, 'artistBalances', user.uid));
+
       if (balanceDoc.exists()) {
-        setBalance(balanceDoc.data());
-      } else {
-        // Initialize empty balance
+        // Use the balance from Firestore (updated by webhook)
+        const dbBalance = balanceDoc.data();
         setBalance({
-          availableBalance: 0,
-          totalEarnings: 0,
+          availableBalance: dbBalance.availableBalance || 0,
+          totalEarnings: dbBalance.totalEarnings || 0,
+          totalPaidOut: dbBalance.totalPaidOut || 0
+        });
+      } else {
+        // No balance record yet - use calculated totalRevenue from props as fallback
+        setBalance({
+          availableBalance: totalRevenue,
+          totalEarnings: totalRevenue,
           totalPaidOut: 0
         });
       }
     } catch (err) {
       console.error('Error loading balance:', err);
+      // Fallback to totalRevenue if there's an error
+      setBalance({
+        availableBalance: totalRevenue,
+        totalEarnings: totalRevenue,
+        totalPaidOut: 0
+      });
     }
-  };
+  }, [user, totalRevenue]);
+
+  useEffect(() => {
+    loadStripeStatus();
+    loadBalance();
+  }, [loadStripeStatus, loadBalance]);
 
   const handleConnectStripe = async () => {
     setLoading(true);
@@ -228,7 +241,7 @@ export default function StripeConnectOnboarding() {
 
             <div className="flex gap-3 mt-4">
               <a
-                href="https://dashboard.stripe.com/express/oauth/authorize"
+                href={`https://dashboard.stripe.com/${stripeStatus?.accountId ? `test/connect/accounts/${stripeStatus.accountId}` : 'test/connect/accounts'}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-green-500 hover:underline text-sm"
@@ -278,25 +291,8 @@ export default function StripeConnectOnboarding() {
         )}
       </div>
 
-      {/* Revenue Share Info */}
-      <div className="bg-gray-800 rounded-lg p-6">
-        <h3 className="text-xl font-bold mb-4">Revenue Share</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Your Share</span>
-            <span className="font-bold text-green-500">70%</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-400">Platform Fee</span>
-            <span className="font-bold text-gray-400">30%</span>
-          </div>
-          <div className="border-t border-gray-700 pt-3 mt-3">
-            <p className="text-sm text-gray-500">
-              Example: On a $1.99 song sale, you receive $1.39 and BeatFlow Media receives $0.60
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Revenue Share Info - Hidden for single artists, shown for collaborations */}
+      {/* TODO: Conditionally show when song has multiple writers */}
     </div>
   );
 }

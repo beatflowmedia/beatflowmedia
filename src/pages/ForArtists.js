@@ -1872,6 +1872,34 @@ export default function ForArtists() {
     <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 4 }}>
       <Container maxWidth="lg">
         <Paper sx={{ p: 4, bgcolor: '#1e1e1e' }}>
+          {/* Artist Profile Banner */}
+          <Alert
+            severity="info"
+            sx={{
+              mb: 3,
+              bgcolor: 'rgba(29, 185, 84, 0.1)',
+              border: '1px solid #1DB954',
+              '& .MuiAlert-message': { width: '100%' }
+            }}
+            action={
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => window.location.href = '/artist-profile'}
+                sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+              >
+                Manage Profile
+              </Button>
+            }
+          >
+            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+              Set up your artist profile first!
+            </Typography>
+            <Typography variant="caption">
+              Add your bio, images, tour dates, and social links before uploading music
+            </Typography>
+          </Alert>
+
           {/* Header */}
           <Box sx={{ mb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

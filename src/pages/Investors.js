@@ -11,16 +11,23 @@ export default function Investors() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !consent) return;
+    if (!email.trim() || !consent) {
+      console.log("Form validation failed");
+      return;
+    }
+
+    console.log("Submitting investor request for:", email);
     try {
       await addDoc(collection(db, "investorRequests"), {
         email,
         consent: true,
         consentTs: serverTimestamp()
       });
+      console.log("✅ Investor request submitted successfully");
       setAccessGranted(true);
     } catch (err) {
       console.error("Failed to record consent:", err);
+      alert("Failed to submit request. Please try again.");
     }
   };
 

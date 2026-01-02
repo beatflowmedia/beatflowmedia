@@ -890,6 +890,8 @@ function Playlist() {
                         itemType="song"
                         price={track.price || 199}
                         compact={true}
+                        artistId={track.artistId}
+                        uploadedBy={track.uploadedBy}
                       />
                     </div>
                     {/* Like Button (Thumbs Up) */}

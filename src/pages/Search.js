@@ -5,7 +5,6 @@ import {
   Typography,
   Card,
   CardContent,
-  CardMedia,
 } from '@mui/material';
 import OptimizedImage from '../components/OptimizedImage';
 import {
@@ -99,7 +98,7 @@ const FILTER_OPTIONS = {
 function Search() {
   const { state, dispatch, actions } = usePlayer();
   const { user } = useAuth();
-  const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
+  const { addLike, removeLike } = useLikes();
   const navigate = useNavigate();
 
   // Search state
@@ -188,6 +187,9 @@ function Search() {
           type: "song"
         }))
         .filter((song) => {
+          // Filter out hidden songs first
+          if (song.isVisible === false) return false;
+
           const title = (song.title || "").toLowerCase();
           const artist = (song.artist || song.artistName || "").toLowerCase();
           const album = (song.album || song.albumName || "").toLowerCase();
@@ -227,6 +229,9 @@ function Search() {
           type: "album"
         }))
         .filter((album) => {
+          // Filter out hidden albums first
+          if (album.isVisible === false) return false;
+
           const title = (album.title || album.name || "").toLowerCase();
           const artist = (album.artist || album.artistName || "").toLowerCase();
           return title.includes(searchTerm) || artist.includes(searchTerm);

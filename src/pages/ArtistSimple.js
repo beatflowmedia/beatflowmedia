@@ -618,6 +618,8 @@ export default function ArtistSimple() {
                       itemType="song"
                       price={song.price || 199}
                       compact={true}
+                      artistId={song.artistId}
+                      uploadedBy={song.uploadedBy}
                     />
                   </div>
                   {/* Like/Favorite Button */}

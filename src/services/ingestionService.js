@@ -17,7 +17,8 @@ export async function uploadSongWithMetadata({
   videoSrc,
   videoPoster,
   musicFile,
-  coverFile
+  coverFile,
+  writers = [] // Array of {userId, name, split} objects
 }) {
   // Example: Construct metadata object
   const newSong = {
@@ -52,8 +53,22 @@ export async function uploadSongWithMetadata({
     videoPoster: videoPoster.trim() || null,
     // For the files, we just store their names as placeholders.
     fileName: musicFile ? musicFile.name : "",
-    cover: coverFile ? coverFile.name : ""
+    cover: coverFile ? coverFile.name : "",
+    // Revenue split configuration
+    writers: writers.length > 0 ? writers : null,
+    // Validate splits total 100%
+    splitValidated: writers.length > 0
+      ? writers.reduce((sum, w) => sum + w.split, 0) === 1.0
+      : true
   };
+
+  // Validate writer splits if provided
+  if (writers.length > 0) {
+    const totalSplit = writers.reduce((sum, w) => sum + w.split, 0);
+    if (Math.abs(totalSplit - 1.0) > 0.001) { // Allow small floating point errors
+      throw new Error(`Writer splits must total 100%. Current total: ${(totalSplit * 100).toFixed(2)}%`);
+    }
+  }
 
   // TODO: Implement actual file upload to storage and get URLs
   // TODO: Integrate validation and virus scan before upload

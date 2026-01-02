@@ -52,9 +52,26 @@ exports.handler = async (event, context) => {
 
     const balance = balanceDoc.data();
     const availableBalance = balance.availableBalance || 0;
-    const stripeConnectAccountId = balance.stripeConnectAccountId;
+    let stripeConnectAccountId = balance.stripeConnectAccountId;
 
     console.log(`💰 Available balance: $${availableBalance.toFixed(2)}`);
+
+    // If no Stripe account in balance, check users collection
+    if (!stripeConnectAccountId) {
+      console.log('⚠️  No Stripe account in artistBalances, checking users collection...');
+      const userDoc = await db.collection('users').doc(artistId).get();
+      if (userDoc.exists) {
+        stripeConnectAccountId = userDoc.data().stripeConnectAccountId;
+
+        // Update artistBalances with the Stripe account ID for future use
+        if (stripeConnectAccountId) {
+          await db.collection('artistBalances').doc(artistId).update({
+            stripeConnectAccountId: stripeConnectAccountId
+          });
+          console.log(`✅ Updated artistBalances with Stripe account ID: ${stripeConnectAccountId}`);
+        }
+      }
+    }
 
     // Check if artist has Stripe Connect account
     if (!stripeConnectAccountId) {
@@ -96,21 +113,88 @@ exports.handler = async (event, context) => {
 
     console.log(`✅ Payout request valid. Processing $${payoutAmount.toFixed(2)}`);
 
-    // Create Stripe transfer
+    const isTestMode = process.env.STRIPE_TEST_MODE === 'true' || process.env.NODE_ENV === 'development';
     const amountInCents = Math.round(payoutAmount * 100);
-    const transfer = await stripe.transfers.create({
-      amount: amountInCents,
-      currency: 'usd',
-      destination: stripeConnectAccountId,
-      description: `Payout to artist ${artistId}`,
-      metadata: {
-        artistId,
-        payoutType: 'manual_request',
-        requestedAt: new Date().toISOString()
-      }
-    });
+    let transfer = null;
 
-    console.log(`✅ Transfer created: ${transfer.id}`);
+    // In test mode, simulate the transfer instead of calling Stripe API
+    if (isTestMode) {
+      console.log('⚠️  TEST MODE: Simulating Stripe transfer (not actually calling Stripe API)');
+
+      // Create a fake transfer object that matches Stripe's structure
+      transfer = {
+        id: `test_tr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        object: 'transfer',
+        amount: amountInCents,
+        currency: 'usd',
+        destination: stripeConnectAccountId,
+        created: Math.floor(Date.now() / 1000),
+        description: `TEST PAYOUT to artist ${artistId}`,
+        metadata: {
+          artistId,
+          payoutType: 'manual_request',
+          requestedAt: new Date().toISOString(),
+          testMode: true
+        }
+      };
+
+      console.log(`✅ Simulated transfer created: ${transfer.id}`);
+    } else {
+      // Production mode - actually call Stripe
+      try {
+        const account = await stripe.accounts.retrieve(stripeConnectAccountId);
+
+        console.log('📋 Stripe account status:', {
+          id: account.id,
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+          details_submitted: account.details_submitted,
+          capabilities: account.capabilities
+        });
+
+        const transfersStatus = account.capabilities?.transfers || 'not_requested';
+
+        if (!account.capabilities?.transfers || account.capabilities.transfers !== 'active') {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              error: `Stripe account setup incomplete. Transfers capability status: ${transfersStatus}`,
+              requiresOnboarding: !account.details_submitted,
+              detailsSubmitted: account.details_submitted,
+              transfersStatus: transfersStatus,
+              capabilities: account.capabilities,
+              message: account.details_submitted
+                ? 'Your Stripe account is under review. This usually takes 1-2 business days.'
+                : 'Please complete the Stripe onboarding process to enable payouts.'
+            })
+          };
+        }
+      } catch (err) {
+        console.error('Error checking Stripe account:', err);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: 'Invalid Stripe Connect account',
+            requiresStripeConnect: true
+          })
+        };
+      }
+
+      // Create real Stripe transfer
+      transfer = await stripe.transfers.create({
+        amount: amountInCents,
+        currency: 'usd',
+        destination: stripeConnectAccountId,
+        description: `Payout to artist ${artistId}`,
+        metadata: {
+          artistId,
+          payoutType: 'manual_request',
+          requestedAt: new Date().toISOString()
+        }
+      });
+
+      console.log(`✅ Transfer created: ${transfer.id}`);
+    }
 
     // Record the payout
     const payoutRef = await db.collection('payoutRequests').add({
@@ -121,8 +205,10 @@ exports.handler = async (event, context) => {
       status: 'completed',
       requestedAt: admin.firestore.FieldValue.serverTimestamp(),
       completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      testMode: isTestMode,
       metadata: {
-        stripeTransferObject: transfer
+        stripeTransferObject: transfer,
+        testMode: isTestMode
       }
     });
 
@@ -163,8 +249,11 @@ exports.handler = async (event, context) => {
         transferId: transfer.id,
         amount: payoutAmount,
         newBalance: availableBalance - payoutAmount,
-        expectedArrival: '2 business days',
-        message: 'Payout initiated successfully'
+        expectedArrival: isTestMode ? 'Test Mode - Simulated' : '2 business days',
+        message: isTestMode
+          ? 'TEST PAYOUT: Simulated successfully (no actual transfer made)'
+          : 'Payout initiated successfully',
+        testMode: isTestMode
       })
     };
 

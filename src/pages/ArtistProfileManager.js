@@ -50,7 +50,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../firebaseConfig';
-import { doc, getDoc, setDoc, collection, addDoc, deleteDoc, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, deleteDoc, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import StripeConnectOnboarding from '../components/StripeConnectOnboarding';
@@ -123,6 +123,17 @@ export default function ArtistProfileManager() {
   });
   const [newCoverFile, setNewCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
+
+  // Submission editing
+  const [editSubmissionDialogOpen, setEditSubmissionDialogOpen] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState(null);
+  const [submissionEditForm, setSubmissionEditForm] = useState({
+    albumTitle: '',
+    artistName: '',
+    genre: '',
+    releaseDate: '',
+    recordLabel: ''
+  });
 
   useEffect(() => {
     // Wait a moment for auth to initialize before redirecting
@@ -700,6 +711,52 @@ export default function ArtistProfileManager() {
     }
   };
 
+  // Submission editing handlers
+  const handleEditSubmission = (submission) => {
+    setEditingSubmission(submission);
+    setSubmissionEditForm({
+      albumTitle: submission.albumTitle || '',
+      artistName: submission.artistName || '',
+      genre: submission.genre || '',
+      releaseDate: submission.releaseDate || '',
+      recordLabel: submission.recordLabel || ''
+    });
+    setEditSubmissionDialogOpen(true);
+  };
+
+  const handleSaveSubmissionEdit = async () => {
+    if (!editingSubmission) return;
+
+    try {
+      setSaving(true);
+      await updateDoc(doc(db, 'artistSubmissions', editingSubmission.id), {
+        albumTitle: submissionEditForm.albumTitle,
+        artistName: submissionEditForm.artistName,
+        genre: submissionEditForm.genre,
+        releaseDate: submissionEditForm.releaseDate,
+        recordLabel: submissionEditForm.recordLabel,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Update local state
+      setSubmissions(submissions.map(s =>
+        s.id === editingSubmission.id
+          ? { ...s, ...submissionEditForm }
+          : s
+      ));
+
+      toast.success('Submission updated successfully!');
+      setEditSubmissionDialogOpen(false);
+      setEditingSubmission(null);
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      toast.error('Failed to update submission');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -896,7 +953,20 @@ export default function ArtistProfileManager() {
                   </Alert>
                   <List sx={{ mb: 3, bgcolor: 'rgba(255, 152, 0, 0.05)', borderRadius: 1, p: 1 }}>
                     {submissions.map((submission) => (
-                      <ListItem key={submission.id} sx={{ border: '1px solid rgba(255, 152, 0, 0.3)', borderRadius: 1, mb: 1 }}>
+                      <ListItem
+                        key={submission.id}
+                        sx={{ border: '1px solid rgba(255, 152, 0, 0.3)', borderRadius: 1, mb: 1 }}
+                        secondaryAction={
+                          <IconButton
+                            edge="end"
+                            aria-label="edit"
+                            onClick={() => handleEditSubmission(submission)}
+                            size="small"
+                          >
+                            <Edit />
+                          </IconButton>
+                        }
+                      >
                         <Avatar src={submission.coverUrl} variant="rounded" sx={{ mr: 2, width: 56, height: 56 }}>
                           <MusicNote />
                         </Avatar>
@@ -1366,7 +1436,7 @@ export default function ArtistProfileManager() {
                         Sales Revenue
                       </Typography>
                       <Tooltip
-                        title="Your earnings from song/album sales. Artists receive 70% of each sale, with 30% going to platform fees (payment processing, hosting, bandwidth). Payouts are processed monthly via Stripe."
+                        title="Your earnings from song/album sales. After Stripe processing fees (~2.9% + $0.30), you receive 70% of the net amount and the platform receives 30% for hosting, bandwidth, and support. Payouts processed via Stripe Connect."
                         arrow
                         placement="top"
                       >
@@ -1628,7 +1698,7 @@ export default function ArtistProfileManager() {
 
           {/* Payouts Tab */}
           <TabPanel value={activeTab} index={5}>
-            <StripeConnectOnboarding />
+            <StripeConnectOnboarding totalRevenue={totalRevenue} purchases={purchases} />
           </TabPanel>
         </Card>
 
@@ -1793,6 +1863,67 @@ export default function ArtistProfileManager() {
               variant="contained"
               onClick={handleSaveSongEdit}
               disabled={saving || !editForm.title}
+              sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Submission Dialog */}
+        <Dialog
+          open={editSubmissionDialogOpen}
+          onClose={() => setEditSubmissionDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Edit Submission</DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2 }}>
+              <TextField
+                fullWidth
+                label="Album Title"
+                value={submissionEditForm.albumTitle}
+                onChange={(e) => setSubmissionEditForm({ ...submissionEditForm, albumTitle: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Artist Name"
+                value={submissionEditForm.artistName}
+                onChange={(e) => setSubmissionEditForm({ ...submissionEditForm, artistName: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Genre"
+                value={submissionEditForm.genre}
+                onChange={(e) => setSubmissionEditForm({ ...submissionEditForm, genre: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Release Date"
+                type="date"
+                value={submissionEditForm.releaseDate}
+                onChange={(e) => setSubmissionEditForm({ ...submissionEditForm, releaseDate: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Record Label"
+                value={submissionEditForm.recordLabel}
+                onChange={(e) => setSubmissionEditForm({ ...submissionEditForm, recordLabel: e.target.value })}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditSubmissionDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveSubmissionEdit}
+              disabled={saving || !submissionEditForm.albumTitle}
               sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
             >
               {saving ? 'Saving...' : 'Save Changes'}

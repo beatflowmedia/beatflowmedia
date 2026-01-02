@@ -726,6 +726,8 @@ function Album() {
                 itemId={albumId}
                 itemType="album"
                 price={album?.price || 1499}
+                artistId={album?.artistId}
+                uploadedBy={album?.uploadedBy}
               />
 
               <Button

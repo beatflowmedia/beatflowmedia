@@ -1,14 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
+import { useAuth } from "../context/AuthContext";
+import { db } from "../firebaseConfig";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 export default function PrivacyChoices() {
+  const { user } = useAuth();
   const [preferences, setPreferences] = useState({
     personalizedAds: true,
     dataSharing: true,
     marketingEmails: true,
     analyticsTracking: true,
-    socialMediaSharing: false
+    socialMediaSharing: false,
+    doNotSell: false
   });
+
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load preferences from Firebase on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists() && userDoc.data().privacyChoices) {
+          setPreferences(userDoc.data().privacyChoices);
+        }
+      } catch (err) {
+        console.error('Error loading privacy choices:', err);
+        setError('Failed to load preferences');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user]);
 
   const handleToggle = (key) => {
     setPreferences(prev => ({
@@ -16,6 +53,66 @@ export default function PrivacyChoices() {
       [key]: !prev[key]
     }));
   };
+
+  const handleSave = async () => {
+    if (!user) {
+      alert('Please sign in to save preferences');
+      return;
+    }
+
+    try {
+      setError(null);
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        await updateDoc(userRef, {
+          privacyChoices: preferences,
+          privacyChoicesUpdatedAt: new Date().toISOString()
+        });
+      } else {
+        await setDoc(userRef, {
+          privacyChoices: preferences,
+          privacyChoicesUpdatedAt: new Date().toISOString()
+        });
+      }
+
+      localStorage.setItem('privacyChoices', JSON.stringify(preferences));
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Error saving privacy choices:', err);
+      setError('Failed to save preferences. Please try again.');
+    }
+  };
+
+  const handleOptOutOfSale = async () => {
+    setPreferences(prev => ({
+      ...prev,
+      personalizedAds: false,
+      dataSharing: false,
+      doNotSell: true
+    }));
+    // Auto-save after opt out
+    setTimeout(async () => {
+      await handleSave();
+    }, 100);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+        <main className="flex-1 pt-16 px-6">
+          <div className="max-w-4xl mx-auto text-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading your preferences...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
@@ -25,6 +122,20 @@ export default function PrivacyChoices() {
           <p className="text-xl text-gray-400 mb-12">
             Control how your personal information is used
           </p>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-8">
+              <p className="text-red-500 font-semibold">✕ {error}</p>
+            </div>
+          )}
+
+          {/* Save Success Message */}
+          {saved && (
+            <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-8">
+              <p className="text-green-500 font-semibold">✓ Privacy choices saved successfully</p>
+            </div>
+          )}
 
           {/* California Notice */}
           <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-6 mb-12">
@@ -184,7 +295,10 @@ export default function PrivacyChoices() {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors">
+              <button
+                onClick={handleSave}
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors"
+              >
                 Save Preferences
               </button>
             </div>
@@ -199,9 +313,9 @@ export default function PrivacyChoices() {
                 <p className="text-gray-400 mb-4">
                   Request a copy of all the personal information we have about you.
                 </p>
-                <button className="text-green-500 hover:underline font-semibold">
+                <Link to="/download-data" className="text-green-500 hover:underline font-semibold">
                   Request Data Download →
-                </button>
+                </Link>
               </div>
 
               <div className="bg-gray-800 rounded-lg p-6">
@@ -209,9 +323,9 @@ export default function PrivacyChoices() {
                 <p className="text-gray-400 mb-4">
                   Request deletion of your personal information, subject to legal exceptions.
                 </p>
-                <button className="text-green-500 hover:underline font-semibold">
+                <Link to="/settings" className="text-green-500 hover:underline font-semibold">
                   Request Deletion →
-                </button>
+                </Link>
               </div>
 
               <div className="bg-gray-800 rounded-lg p-6">
@@ -219,9 +333,9 @@ export default function PrivacyChoices() {
                 <p className="text-gray-400 mb-4">
                   Update or correct inaccurate information in your account.
                 </p>
-                <button className="text-green-500 hover:underline font-semibold">
+                <Link to="/settings" className="text-green-500 hover:underline font-semibold">
                   Update Account Info →
-                </button>
+                </Link>
               </div>
 
               <div className="bg-gray-800 rounded-lg p-6">
@@ -229,9 +343,9 @@ export default function PrivacyChoices() {
                 <p className="text-gray-400 mb-4">
                   Export your playlists, listening history, and other data in a portable format.
                 </p>
-                <button className="text-green-500 hover:underline font-semibold">
+                <Link to="/download-data" className="text-green-500 hover:underline font-semibold">
                   Export Data →
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -242,26 +356,56 @@ export default function PrivacyChoices() {
             <div className="bg-gray-800 rounded-lg p-6">
               <p className="text-gray-300 mb-4">
                 Manage how we use cookies and similar tracking technologies. Learn more in our{" "}
-                <a href="/cookies" className="text-green-500 hover:underline">Cookie Policy</a>.
+                <Link to="/cookies" className="text-green-500 hover:underline">Cookie Policy</Link>.
               </p>
-              <button className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-full font-semibold transition-colors">
+              <Link to="/cookie-settings" className="inline-block bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-full font-semibold transition-colors">
                 Manage Cookie Settings
-              </button>
+              </Link>
             </div>
           </div>
 
           {/* Do Not Sell/Share */}
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-6">Do Not Sell or Share My Personal Information</h2>
-            <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-6">
-              <p className="text-gray-300 mb-4">
-                California residents can opt out of the "sale" or "sharing" of personal information as
-                defined by the CCPA. While we don't sell personal information in the traditional sense,
-                we may share data with partners for advertising purposes.
-              </p>
-              <button className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-full font-semibold transition-colors">
-                Opt Out of Sale/Sharing
-              </button>
+            <div className={`border rounded-lg p-6 ${
+              preferences.doNotSell
+                ? 'bg-green-900/30 border-green-700'
+                : 'bg-orange-900/30 border-orange-700'
+            }`}>
+              {preferences.doNotSell ? (
+                <>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-2xl">✓</span>
+                    <h3 className="text-xl font-bold text-green-500">Opt-Out Active</h3>
+                  </div>
+                  <p className="text-gray-300 mb-4">
+                    You have opted out of the sale or sharing of your personal information. We will not
+                    share your data with partners for advertising purposes.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setPreferences(prev => ({ ...prev, doNotSell: false, personalizedAds: true, dataSharing: true }));
+                    }}
+                    className="text-green-500 hover:underline font-semibold"
+                  >
+                    Opt Back In
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-300 mb-4">
+                    California residents can opt out of the "sale" or "sharing" of personal information as
+                    defined by the CCPA. While we don't sell personal information in the traditional sense,
+                    we may share data with partners for advertising purposes.
+                  </p>
+                  <button
+                    onClick={handleOptOutOfSale}
+                    className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-full font-semibold transition-colors"
+                  >
+                    Opt Out of Sale/Sharing
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -275,19 +419,19 @@ export default function PrivacyChoices() {
               <div className="space-y-3">
                 <div>
                   <h3 className="font-semibold mb-1">Digital Advertising Alliance</h3>
-                  <a href="#" className="text-green-500 hover:underline text-sm">
+                  <a href="https://youradchoices.com/control" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline text-sm">
                     youradchoices.com/control
                   </a>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Network Advertising Initiative</h3>
-                  <a href="#" className="text-green-500 hover:underline text-sm">
+                  <a href="https://optout.networkadvertising.org" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline text-sm">
                     optout.networkadvertising.org
                   </a>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Google Ad Settings</h3>
-                  <a href="#" className="text-green-500 hover:underline text-sm">
+                  <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline text-sm">
                     adssettings.google.com
                   </a>
                 </div>
