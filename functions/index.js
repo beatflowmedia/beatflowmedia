@@ -134,11 +134,11 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
           </ul>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="http://localhost:3000/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
+            <a href="https://beatflowmedia.com/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
                style="background: #ff9800; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Appeal This Decision
             </a>
-            <a href="http://localhost:3000/contact"
+            <a href="https://beatflowmedia.com/contact"
                style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
               Contact Support
             </a>
@@ -274,11 +274,11 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
           </ul>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="http://localhost:3000/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
+            <a href="https://beatflowmedia.com/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
                style="background: #ff9800; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Appeal This Decision
             </a>
-            <a href="http://localhost:3000/contact"
+            <a href="https://beatflowmedia.com/contact"
                style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
               Contact Support
             </a>
