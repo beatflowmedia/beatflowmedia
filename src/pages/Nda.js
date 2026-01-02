@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 
 export default function Nda() {
@@ -115,10 +116,19 @@ export default function Nda() {
             </p>
           </section>
           <hr className="border-gray-700 my-6" />
-          <p className="text-gray-400">
-            By clicking <strong>“I Agree”</strong>, you certify that you have
+          <p className="text-gray-400 mb-6">
+            By clicking <strong>"I Agree"</strong>, you certify that you have
             read, understood, and agree to be bound by these terms.
           </p>
+
+          <div className="text-center mb-8">
+            <Link
+              to="/investors"
+              className="inline-block bg-bf-green text-black font-semibold px-8 py-3 rounded-full hover:bg-green-600 transition"
+            >
+              I Agree
+            </Link>
+          </div>
         </div>
       </main>
       <Footer />
