@@ -1,0 +1,105 @@
+{
+  "totalAddressableMarket": {
+    "global": 28500000000,
+    "streaming": 17400000000,
+    "independent": 8500000000,
+    "tam": 8500000000,
+    "description": "Independent artist distribution and streaming market"
+  },
+  "serviceableAddressableMarket": {
+    "usMarket": 8400000000,
+    "targetSegment": 2500000000,
+    "sam": 2500000000,
+    "description": "US independent artists + discovery-focused premium listeners"
+  },
+  "serviceableObtainableMarket": {
+    "targetMarketShare": 0.02,
+    "som": 50000000,
+    "description": "2% of SAM within 5 years - achievable with strong execution"
+  },
+  "competitiveLandscape": {
+    "directCompetitors": [
+      {
+        "name": "Spotify",
+        "marketShare": "31%",
+        "strengths": [
+          "Massive user base",
+          "Strong brand",
+          "Playlist algorithms"
+        ],
+        "weaknesses": [
+          "Poor artist economics",
+          "Algorithmic black box",
+          "Limited curation"
+        ],
+        "differentiation": "BeatFlow offers better artist splits + human curation"
+      },
+      {
+        "name": "Bandcamp",
+        "marketShare": "~5% indie market",
+        "strengths": [
+          "Artist-first model",
+          "Direct sales",
+          "Loyal community"
+        ],
+        "weaknesses": [
+          "Limited streaming",
+          "Poor discovery",
+          "Dated UX"
+        ],
+        "differentiation": "BeatFlow combines streaming + sales + modern UX"
+      },
+      {
+        "name": "SoundCloud",
+        "marketShare": "~15%",
+        "strengths": [
+          "Creator community",
+          "Upload freedom",
+          "Discovery"
+        ],
+        "weaknesses": [
+          "Weak monetization",
+          "Quality issues",
+          "Financial struggles"
+        ],
+        "differentiation": "BeatFlow offers better monetization + quality curation"
+      }
+    ],
+    "competitiveAdvantages": [
+      "Hybrid model: streaming + direct sales + licensing in one platform",
+      "Better artist economics: 70% revenue share vs industry 50-60%",
+      "Human curation + algorithmic discovery combined",
+      "Built-in sync licensing marketplace",
+      "Artist membership model creates loyal creator community",
+      "Direct artist-to-listener relationships",
+      "Premium listening experience with quality content"
+    ]
+  },
+  "marketTrends": [
+    {
+      "trend": "Independent Artist Growth",
+      "impact": "High",
+      "description": "Independent artists now represent 40%+ of new releases and growing 25% YoY"
+    },
+    {
+      "trend": "Discovery Fatigue",
+      "impact": "High",
+      "description": "Listeners frustrated with algorithm-only discovery, seeking curated experiences"
+    },
+    {
+      "trend": "Creator Economy Boom",
+      "impact": "High",
+      "description": "$104B creator economy, musicians seeking better monetization tools"
+    },
+    {
+      "trend": "Streaming Saturation",
+      "impact": "Medium",
+      "description": "Major platforms reaching saturation, opportunity for differentiated offerings"
+    },
+    {
+      "trend": "Sync Licensing Demand",
+      "impact": "Medium",
+      "description": "Growing demand for music licensing in content creation, ads, games"
+    }
+  ]
+}

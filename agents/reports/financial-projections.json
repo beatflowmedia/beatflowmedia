@@ -1,0 +1,162 @@
+[
+  {
+    "year": 1,
+    "revenue": {
+      "subscriptions": 234960,
+      "artistMemberships": 15000,
+      "sales": 8978,
+      "syncLicensing": 6000,
+      "advertising": 30000,
+      "total": 294938
+    },
+    "expenses": {
+      "cloudStorage": 240,
+      "streaming": 255,
+      "paymentProcessing": 8553,
+      "engineering": 120000,
+      "marketing": 100000,
+      "legal": 30000,
+      "operations": 50000,
+      "total": 309048
+    },
+    "metrics": {
+      "netIncome": -14110,
+      "ebitda": -14110,
+      "netMargin": "-4.78%",
+      "revenueGrowth": "N/A"
+    },
+    "users": {
+      "premium": 2000,
+      "free": 5000,
+      "artists": 100
+    }
+  },
+  {
+    "year": 2,
+    "revenue": {
+      "subscriptions": 1059720,
+      "artistMemberships": 75000,
+      "sales": 35914,
+      "syncLicensing": 18000,
+      "advertising": 120000,
+      "total": 1308634
+    },
+    "expenses": {
+      "cloudStorage": 1200,
+      "streaming": 1275,
+      "paymentProcessing": 37950,
+      "engineering": 240000,
+      "marketing": 250000,
+      "legal": 50000,
+      "operations": 100000,
+      "total": 680425
+    },
+    "metrics": {
+      "netIncome": 628208,
+      "ebitda": 628208,
+      "netMargin": "48.00%",
+      "revenueGrowth": "343.70%"
+    },
+    "users": {
+      "premium": 9000,
+      "free": 20000,
+      "artists": 500
+    }
+  },
+  {
+    "year": 3,
+    "revenue": {
+      "subscriptions": 3206820,
+      "artistMemberships": 225000,
+      "sales": 107741,
+      "syncLicensing": 48000,
+      "advertising": 360000,
+      "total": 3947561
+    },
+    "expenses": {
+      "cloudStorage": 3600,
+      "streaming": 4080,
+      "paymentProcessing": 114479,
+      "engineering": 360000,
+      "marketing": 500000,
+      "legal": 75000,
+      "operations": 150000,
+      "total": 1207159
+    },
+    "metrics": {
+      "netIncome": 2740402,
+      "ebitda": 2740402,
+      "netMargin": "69.42%",
+      "revenueGrowth": "201.66%"
+    },
+    "users": {
+      "premium": 26500,
+      "free": 60000,
+      "artists": 1500
+    }
+  },
+  {
+    "year": 4,
+    "revenue": {
+      "subscriptions": 8247840,
+      "artistMemberships": 600000,
+      "sales": 269352,
+      "syncLicensing": 120000,
+      "advertising": 900000,
+      "total": 10137192
+    },
+    "expenses": {
+      "cloudStorage": 9600,
+      "streaming": 10200,
+      "paymentProcessing": 293979,
+      "engineering": 480000,
+      "marketing": 1000000,
+      "legal": 100000,
+      "operations": 200000,
+      "total": 2093779
+    },
+    "metrics": {
+      "netIncome": 8043413,
+      "ebitda": 8043413,
+      "netMargin": "79.35%",
+      "revenueGrowth": "156.80%"
+    },
+    "users": {
+      "premium": 68000,
+      "free": 150000,
+      "artists": 4000
+    }
+  },
+  {
+    "year": 5,
+    "revenue": {
+      "subscriptions": 16555560,
+      "artistMemberships": 1200000,
+      "sales": 538704,
+      "syncLicensing": 240000,
+      "advertising": 1800000,
+      "total": 20334264
+    },
+    "expenses": {
+      "cloudStorage": 19200,
+      "streaming": 20400,
+      "paymentProcessing": 589694,
+      "engineering": 600000,
+      "marketing": 1500000,
+      "legal": 150000,
+      "operations": 250000,
+      "total": 3129294
+    },
+    "metrics": {
+      "netIncome": 17204970,
+      "ebitda": 17204970,
+      "netMargin": "84.61%",
+      "revenueGrowth": "100.59%"
+    },
+    "users": {
+      "premium": 137000,
+      "free": 300000,
+      "artists": 8000
+    }
+  }
+]

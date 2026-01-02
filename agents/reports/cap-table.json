@@ -1,0 +1,59 @@
+{
+  "preMoney": 4000000,
+  "postMoney": 5000000,
+  "totalShares": 10000000,
+  "shareholderStructure": [
+    {
+      "shareholder": "Founders & Team",
+      "shares": 7000000,
+      "percentage": 70,
+      "valueAtPostMoney": 3500000,
+      "notes": "Includes 10% employee option pool",
+      "vesting": "4-year vest, 1-year cliff"
+    },
+    {
+      "shareholder": "Angel/Pre-seed Investors",
+      "shares": 1000000,
+      "percentage": 10,
+      "valueAtPostMoney": 500000,
+      "notes": "Early supporters and advisors",
+      "vesting": "Fully vested"
+    },
+    {
+      "shareholder": "Seed Round Investors",
+      "shares": 2000000,
+      "percentage": 20,
+      "valueAtPostMoney": 1000000,
+      "notes": "Current raise - $1M at $4M pre-money",
+      "vesting": "Fully vested"
+    }
+  ],
+  "shareClasses": [
+    {
+      "class": "Common Stock",
+      "holders": "Founders, employees",
+      "votingRights": "1 vote per share",
+      "liquidationPreference": "None",
+      "conversionRights": "N/A"
+    },
+    {
+      "class": "Preferred Stock (Series Seed)",
+      "holders": "Seed investors",
+      "votingRights": "1 vote per share",
+      "liquidationPreference": "1x non-participating",
+      "conversionRights": "1:1 to common stock",
+      "proRataRights": "Yes",
+      "informationRights": "Yes",
+      "boardSeats": "1 seat for lead investor (>$250K)"
+    }
+  ],
+  "investorProtections": [
+    "Standard anti-dilution provisions",
+    "Tag-along rights",
+    "Drag-along rights (supermajority)",
+    "Right of first refusal on secondary sales",
+    "Board observer rights for $75K+ investors",
+    "Information rights (quarterly financials)",
+    "Pro-rata participation rights in future rounds"
+  ]
+}

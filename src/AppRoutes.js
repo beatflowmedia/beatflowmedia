@@ -50,6 +50,7 @@ const ArtistProfileManager = lazy(() => import("./pages/ArtistProfileManager"));
 const SupportCategory = lazy(() => import("./pages/SupportCategory"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Investors = lazy(() => import("./pages/Investors"));
+const InvestorDeck = lazy(() => import("./pages/InvestorDeck"));
 const Wrapped2024 = lazy(() => import("./pages/Wrapped2024"));
 
 // Community pages
@@ -86,7 +87,7 @@ const Audiobooks = lazy(() => import("./pages/Audiobooks"));
 const Legal = lazy(() => import("./pages/Legal"));
 const Terms = lazy(() => import("./pages/Terms"));
 const UserGuidelines = lazy(() => import("./pages/UserGuidelines"));
-const Nda = lazy(() => import("./pages/Nda"));
+const Nda = lazy(() => import("./pages/NDA"));
 const PrivacyCenter = lazy(() => import("./pages/PrivacyCenter"));
 const PrivacySettings = lazy(() => import("./pages/PrivacySettings"));
 const DownloadData = lazy(() => import("./pages/DownloadData"));
@@ -206,6 +207,7 @@ export default function AppRoutes() {
         <Route path="support/:region/category/:category" element={<SupportCategory />} />
         <Route path="contact" element={<Contact />} />
         <Route path="investors" element={<Investors />} />
+        <Route path="investor-deck" element={<InvestorDeck />} />
         <Route path="wrapped2024" element={<Wrapped2024 />} />
 
         {/* Community pages */}

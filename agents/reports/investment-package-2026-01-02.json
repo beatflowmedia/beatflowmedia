@@ -1,0 +1,953 @@
+{
+  "generatedAt": "2026-01-02T20:53:39.056Z",
+  "companyName": "BeatFlow Media Group",
+  "raise": {
+    "totalRaise": 1000000,
+    "preMoney": 4000000,
+    "postMoney": 5000000,
+    "equityOffered": 0.2,
+    "minimumInvestment": 25000,
+    "targetExit": {
+      "low": 25000000,
+      "medium": 40000000,
+      "high": 75000000
+    },
+    "exitTimeline": "3-5 years"
+  },
+  "executiveSummary": {
+    "opportunity": "Hybrid streaming + artist distribution platform addressing $2.5B SAM",
+    "raise": "$1M seed round at $4M pre-money valuation",
+    "traction": "Platform live with payment processing, artist onboarding, and multi-tier subscriptions",
+    "team": "Experienced founder with music industry + tech background",
+    "useOfFunds": "Product development (35%), marketing (30%), sales/BD (15%)",
+    "projectedYear1Revenue": "$3.8M",
+    "targetExit": "$25-75M in 3-5 years",
+    "targetReturn": "5-15x for seed investors"
+  },
+  "financialProjections": [
+    {
+      "year": 1,
+      "revenue": {
+        "subscriptions": 234960,
+        "artistMemberships": 15000,
+        "sales": 8978,
+        "syncLicensing": 6000,
+        "advertising": 30000,
+        "total": 294938
+      },
+      "expenses": {
+        "cloudStorage": 240,
+        "streaming": 255,
+        "paymentProcessing": 8553,
+        "engineering": 120000,
+        "marketing": 100000,
+        "legal": 30000,
+        "operations": 50000,
+        "total": 309048
+      },
+      "metrics": {
+        "netIncome": -14110,
+        "ebitda": -14110,
+        "netMargin": "-4.78%",
+        "revenueGrowth": "N/A"
+      },
+      "users": {
+        "premium": 2000,
+        "free": 5000,
+        "artists": 100
+      }
+    },
+    {
+      "year": 2,
+      "revenue": {
+        "subscriptions": 1059720,
+        "artistMemberships": 75000,
+        "sales": 35914,
+        "syncLicensing": 18000,
+        "advertising": 120000,
+        "total": 1308634
+      },
+      "expenses": {
+        "cloudStorage": 1200,
+        "streaming": 1275,
+        "paymentProcessing": 37950,
+        "engineering": 240000,
+        "marketing": 250000,
+        "legal": 50000,
+        "operations": 100000,
+        "total": 680425
+      },
+      "metrics": {
+        "netIncome": 628208,
+        "ebitda": 628208,
+        "netMargin": "48.00%",
+        "revenueGrowth": "343.70%"
+      },
+      "users": {
+        "premium": 9000,
+        "free": 20000,
+        "artists": 500
+      }
+    },
+    {
+      "year": 3,
+      "revenue": {
+        "subscriptions": 3206820,
+        "artistMemberships": 225000,
+        "sales": 107741,
+        "syncLicensing": 48000,
+        "advertising": 360000,
+        "total": 3947561
+      },
+      "expenses": {
+        "cloudStorage": 3600,
+        "streaming": 4080,
+        "paymentProcessing": 114479,
+        "engineering": 360000,
+        "marketing": 500000,
+        "legal": 75000,
+        "operations": 150000,
+        "total": 1207159
+      },
+      "metrics": {
+        "netIncome": 2740402,
+        "ebitda": 2740402,
+        "netMargin": "69.42%",
+        "revenueGrowth": "201.66%"
+      },
+      "users": {
+        "premium": 26500,
+        "free": 60000,
+        "artists": 1500
+      }
+    },
+    {
+      "year": 4,
+      "revenue": {
+        "subscriptions": 8247840,
+        "artistMemberships": 600000,
+        "sales": 269352,
+        "syncLicensing": 120000,
+        "advertising": 900000,
+        "total": 10137192
+      },
+      "expenses": {
+        "cloudStorage": 9600,
+        "streaming": 10200,
+        "paymentProcessing": 293979,
+        "engineering": 480000,
+        "marketing": 1000000,
+        "legal": 100000,
+        "operations": 200000,
+        "total": 2093779
+      },
+      "metrics": {
+        "netIncome": 8043413,
+        "ebitda": 8043413,
+        "netMargin": "79.35%",
+        "revenueGrowth": "156.80%"
+      },
+      "users": {
+        "premium": 68000,
+        "free": 150000,
+        "artists": 4000
+      }
+    },
+    {
+      "year": 5,
+      "revenue": {
+        "subscriptions": 16555560,
+        "artistMemberships": 1200000,
+        "sales": 538704,
+        "syncLicensing": 240000,
+        "advertising": 1800000,
+        "total": 20334264
+      },
+      "expenses": {
+        "cloudStorage": 19200,
+        "streaming": 20400,
+        "paymentProcessing": 589694,
+        "engineering": 600000,
+        "marketing": 1500000,
+        "legal": 150000,
+        "operations": 250000,
+        "total": 3129294
+      },
+      "metrics": {
+        "netIncome": 17204970,
+        "ebitda": 17204970,
+        "netMargin": "84.61%",
+        "revenueGrowth": "100.59%"
+      },
+      "users": {
+        "premium": 137000,
+        "free": 300000,
+        "artists": 8000
+      }
+    }
+  ],
+  "investmentTiers": [
+    {
+      "name": "Angel",
+      "minimum": 25000,
+      "maximum": 49999,
+      "equity": "0.50-0.99%",
+      "perks": [
+        "Quarterly financial updates",
+        "Access to investor portal",
+        "Early product access",
+        "Annual investor meeting invitation"
+      ],
+      "roiExample": {
+        "investmentAmount": 25000,
+        "equityPercentage": "0.50%",
+        "scenarios": {
+          "conservative": {
+            "exitValuation": 25000000,
+            "exitValue": 125000.00000000003,
+            "multipleOnInvested": 5.000000000000001,
+            "irr": "25-35%",
+            "timeline": "5 years"
+          },
+          "moderate": {
+            "exitValuation": 40000000,
+            "exitValue": 200000.00000000003,
+            "multipleOnInvested": 8.000000000000002,
+            "irr": "40-50%",
+            "timeline": "4 years"
+          },
+          "optimistic": {
+            "exitValuation": 75000000,
+            "exitValue": 375000.00000000006,
+            "multipleOnInvested": 15.000000000000002,
+            "irr": "60-80%",
+            "timeline": "3 years"
+          }
+        }
+      }
+    },
+    {
+      "name": "Venture",
+      "minimum": 50000,
+      "maximum": 99999,
+      "equity": "1.00-1.99%",
+      "perks": [
+        "Monthly financial updates",
+        "Board observer rights (if >$75K)",
+        "Priority customer support",
+        "Bi-annual strategy sessions",
+        "Early product access",
+        "Co-marketing opportunities"
+      ],
+      "roiExample": {
+        "investmentAmount": 50000,
+        "equityPercentage": "1.00%",
+        "scenarios": {
+          "conservative": {
+            "exitValuation": 25000000,
+            "exitValue": 250000.00000000006,
+            "multipleOnInvested": 5.000000000000001,
+            "irr": "25-35%",
+            "timeline": "5 years"
+          },
+          "moderate": {
+            "exitValuation": 40000000,
+            "exitValue": 400000.00000000006,
+            "multipleOnInvested": 8.000000000000002,
+            "irr": "40-50%",
+            "timeline": "4 years"
+          },
+          "optimistic": {
+            "exitValuation": 75000000,
+            "exitValue": 750000.0000000001,
+            "multipleOnInvested": 15.000000000000002,
+            "irr": "60-80%",
+            "timeline": "3 years"
+          }
+        }
+      }
+    },
+    {
+      "name": "Strategic",
+      "minimum": 100000,
+      "maximum": 249999,
+      "equity": "2.00-4.99%",
+      "perks": [
+        "Board seat (if >$200K)",
+        "Weekly executive updates",
+        "Strategic advisory role",
+        "Pro-rata rights in future rounds",
+        "First refusal on additional investment",
+        "Co-branding opportunities",
+        "Access to platform analytics"
+      ],
+      "roiExample": {
+        "investmentAmount": 100000,
+        "equityPercentage": "2.00%",
+        "scenarios": {
+          "conservative": {
+            "exitValuation": 25000000,
+            "exitValue": 500000.0000000001,
+            "multipleOnInvested": 5.000000000000001,
+            "irr": "25-35%",
+            "timeline": "5 years"
+          },
+          "moderate": {
+            "exitValuation": 40000000,
+            "exitValue": 800000.0000000001,
+            "multipleOnInvested": 8.000000000000002,
+            "irr": "40-50%",
+            "timeline": "4 years"
+          },
+          "optimistic": {
+            "exitValuation": 75000000,
+            "exitValue": 1500000.0000000002,
+            "multipleOnInvested": 15.000000000000002,
+            "irr": "60-80%",
+            "timeline": "3 years"
+          }
+        }
+      }
+    },
+    {
+      "name": "Lead",
+      "minimum": 250000,
+      "maximum": null,
+      "equity": "5.00%+",
+      "perks": [
+        "Board seat guaranteed",
+        "Direct CEO access",
+        "Pro-rata and super pro-rata rights",
+        "Veto rights on major decisions",
+        "Custom strategic partnership terms",
+        "Revenue sharing consideration",
+        "Advisory board seat"
+      ],
+      "roiExample": {
+        "investmentAmount": 250000,
+        "equityPercentage": "5.00%",
+        "scenarios": {
+          "conservative": {
+            "exitValuation": 25000000,
+            "exitValue": 1250000,
+            "multipleOnInvested": 5,
+            "irr": "25-35%",
+            "timeline": "5 years"
+          },
+          "moderate": {
+            "exitValuation": 40000000,
+            "exitValue": 2000000,
+            "multipleOnInvested": 8,
+            "irr": "40-50%",
+            "timeline": "4 years"
+          },
+          "optimistic": {
+            "exitValuation": 75000000,
+            "exitValue": 3750000,
+            "multipleOnInvested": 15,
+            "irr": "60-80%",
+            "timeline": "3 years"
+          }
+        }
+      }
+    }
+  ],
+  "capTable": {
+    "preMoney": 4000000,
+    "postMoney": 5000000,
+    "totalShares": 10000000,
+    "shareholderStructure": [
+      {
+        "shareholder": "Founders & Team",
+        "shares": 7000000,
+        "percentage": 70,
+        "valueAtPostMoney": 3500000,
+        "notes": "Includes 10% employee option pool",
+        "vesting": "4-year vest, 1-year cliff"
+      },
+      {
+        "shareholder": "Angel/Pre-seed Investors",
+        "shares": 1000000,
+        "percentage": 10,
+        "valueAtPostMoney": 500000,
+        "notes": "Early supporters and advisors",
+        "vesting": "Fully vested"
+      },
+      {
+        "shareholder": "Seed Round Investors",
+        "shares": 2000000,
+        "percentage": 20,
+        "valueAtPostMoney": 1000000,
+        "notes": "Current raise - $1M at $4M pre-money",
+        "vesting": "Fully vested"
+      }
+    ],
+    "shareClasses": [
+      {
+        "class": "Common Stock",
+        "holders": "Founders, employees",
+        "votingRights": "1 vote per share",
+        "liquidationPreference": "None",
+        "conversionRights": "N/A"
+      },
+      {
+        "class": "Preferred Stock (Series Seed)",
+        "holders": "Seed investors",
+        "votingRights": "1 vote per share",
+        "liquidationPreference": "1x non-participating",
+        "conversionRights": "1:1 to common stock",
+        "proRataRights": "Yes",
+        "informationRights": "Yes",
+        "boardSeats": "1 seat for lead investor (>$250K)"
+      }
+    ],
+    "investorProtections": [
+      "Standard anti-dilution provisions",
+      "Tag-along rights",
+      "Drag-along rights (supermajority)",
+      "Right of first refusal on secondary sales",
+      "Board observer rights for $75K+ investors",
+      "Information rights (quarterly financials)",
+      "Pro-rata participation rights in future rounds"
+    ]
+  },
+  "useOfFunds": {
+    "totalRaise": 1000000,
+    "allocation": [
+      {
+        "category": "Product Development",
+        "amount": 350000,
+        "percentage": 35,
+        "description": "Engineering team expansion, feature development, platform scaling",
+        "breakdown": [
+          "Hire 2 senior engineers ($240K)",
+          "Cloud infrastructure upgrades ($60K)",
+          "Third-party integrations and APIs ($30K)",
+          "Development tools and software ($20K)"
+        ]
+      },
+      {
+        "category": "Marketing & User Acquisition",
+        "amount": 300000,
+        "percentage": 30,
+        "description": "Customer acquisition, brand building, artist recruitment",
+        "breakdown": [
+          "Digital marketing campaigns ($150K)",
+          "Content marketing and PR ($60K)",
+          "Partnerships and influencer marketing ($50K)",
+          "Event sponsorships and conferences ($40K)"
+        ]
+      },
+      {
+        "category": "Sales & Business Development",
+        "amount": 150000,
+        "percentage": 15,
+        "description": "B2B partnerships, sync licensing team, strategic relationships",
+        "breakdown": [
+          "Hire BD manager and licensing coordinator ($120K)",
+          "CRM and sales tools ($15K)",
+          "Travel and partnership development ($15K)"
+        ]
+      },
+      {
+        "category": "Operations & Legal",
+        "amount": 100000,
+        "percentage": 10,
+        "description": "Legal compliance, music licensing, business operations",
+        "breakdown": [
+          "Music licensing and rights management ($40K)",
+          "Legal fees and compliance ($30K)",
+          "Accounting and finance tools ($20K)",
+          "Insurance and corporate governance ($10K)"
+        ]
+      },
+      {
+        "category": "Working Capital & Reserves",
+        "amount": 100000,
+        "percentage": 10,
+        "description": "Cash runway, emergency reserves, operational flexibility",
+        "breakdown": [
+          "6-month operating reserve ($70K)",
+          "Unexpected opportunities fund ($30K)"
+        ]
+      }
+    ],
+    "milestones": [
+      {
+        "milestone": "Month 6",
+        "achievements": [
+          "50K total users (5K premium)",
+          "500 active artists on platform",
+          "$100K MRR",
+          "Complete platform v2.0 with mobile apps"
+        ]
+      },
+      {
+        "milestone": "Month 12",
+        "achievements": [
+          "150K total users (15K premium)",
+          "1,500 active artists",
+          "$300K MRR",
+          "Break-even on operations",
+          "First major label partnership"
+        ]
+      },
+      {
+        "milestone": "Month 18",
+        "achievements": [
+          "400K total users (40K premium)",
+          "4,000 active artists",
+          "$600K MRR",
+          "Series A raise readiness",
+          "International expansion (UK, Canada)"
+        ]
+      }
+    ]
+  },
+  "marketAnalysis": {
+    "totalAddressableMarket": {
+      "global": 28500000000,
+      "streaming": 17400000000,
+      "independent": 8500000000,
+      "tam": 8500000000,
+      "description": "Independent artist distribution and streaming market"
+    },
+    "serviceableAddressableMarket": {
+      "usMarket": 8400000000,
+      "targetSegment": 2500000000,
+      "sam": 2500000000,
+      "description": "US independent artists + discovery-focused premium listeners"
+    },
+    "serviceableObtainableMarket": {
+      "targetMarketShare": 0.02,
+      "som": 50000000,
+      "description": "2% of SAM within 5 years - achievable with strong execution"
+    },
+    "competitiveLandscape": {
+      "directCompetitors": [
+        {
+          "name": "Spotify",
+          "marketShare": "31%",
+          "strengths": [
+            "Massive user base",
+            "Strong brand",
+            "Playlist algorithms"
+          ],
+          "weaknesses": [
+            "Poor artist economics",
+            "Algorithmic black box",
+            "Limited curation"
+          ],
+          "differentiation": "BeatFlow offers better artist splits + human curation"
+        },
+        {
+          "name": "Bandcamp",
+          "marketShare": "~5% indie market",
+          "strengths": [
+            "Artist-first model",
+            "Direct sales",
+            "Loyal community"
+          ],
+          "weaknesses": [
+            "Limited streaming",
+            "Poor discovery",
+            "Dated UX"
+          ],
+          "differentiation": "BeatFlow combines streaming + sales + modern UX"
+        },
+        {
+          "name": "SoundCloud",
+          "marketShare": "~15%",
+          "strengths": [
+            "Creator community",
+            "Upload freedom",
+            "Discovery"
+          ],
+          "weaknesses": [
+            "Weak monetization",
+            "Quality issues",
+            "Financial struggles"
+          ],
+          "differentiation": "BeatFlow offers better monetization + quality curation"
+        }
+      ],
+      "competitiveAdvantages": [
+        "Hybrid model: streaming + direct sales + licensing in one platform",
+        "Better artist economics: 70% revenue share vs industry 50-60%",
+        "Human curation + algorithmic discovery combined",
+        "Built-in sync licensing marketplace",
+        "Artist membership model creates loyal creator community",
+        "Direct artist-to-listener relationships",
+        "Premium listening experience with quality content"
+      ]
+    },
+    "marketTrends": [
+      {
+        "trend": "Independent Artist Growth",
+        "impact": "High",
+        "description": "Independent artists now represent 40%+ of new releases and growing 25% YoY"
+      },
+      {
+        "trend": "Discovery Fatigue",
+        "impact": "High",
+        "description": "Listeners frustrated with algorithm-only discovery, seeking curated experiences"
+      },
+      {
+        "trend": "Creator Economy Boom",
+        "impact": "High",
+        "description": "$104B creator economy, musicians seeking better monetization tools"
+      },
+      {
+        "trend": "Streaming Saturation",
+        "impact": "Medium",
+        "description": "Major platforms reaching saturation, opportunity for differentiated offerings"
+      },
+      {
+        "trend": "Sync Licensing Demand",
+        "impact": "Medium",
+        "description": "Growing demand for music licensing in content creation, ads, games"
+      }
+    ]
+  },
+  "exitStrategies": {
+    "primaryExitPaths": [
+      {
+        "type": "Strategic Acquisition",
+        "probability": "High (60%)",
+        "timeline": "3-5 years",
+        "potentialAcquirers": [
+          {
+            "name": "Major Streaming Platforms",
+            "rationale": "Spotify, Apple Music, Amazon Music seeking indie artist relationships",
+            "exampleDeals": "Songtradr ($50M), Soundtrap ($30M)",
+            "valuationRange": "$30-75M"
+          },
+          {
+            "name": "Music Labels",
+            "rationale": "Universal, Sony, Warner seeking direct-to-artist distribution",
+            "exampleDeals": "AWAL ($430M), CD Baby ($40M)",
+            "valuationRange": "$25-60M"
+          },
+          {
+            "name": "Creator Platform Companies",
+            "rationale": "YouTube, TikTok, Instagram building music creator tools",
+            "exampleDeals": "BandLab (Sound Cloud), various creator tool acquisitions",
+            "valuationRange": "$40-100M"
+          }
+        ],
+        "expectedMultiple": "5-8x revenue",
+        "targetMetrics": ">$8M ARR, >50K premium users, >5K active artists"
+      },
+      {
+        "type": "Series A/B Growth Equity",
+        "probability": "Medium (30%)",
+        "timeline": "2-3 years",
+        "description": "Raise growth capital to scale, partial liquidity for early investors",
+        "potentialInvestors": [
+          "Andreessen Horowitz (music/creator focus)",
+          "Insight Partners (marketplace/SaaS)",
+          "Accel (consumer/creator economy)"
+        ],
+        "valuationRange": "$15-40M",
+        "expectedMultiple": "3-8x",
+        "targetMetrics": "$2M ARR, strong unit economics, clear path to $20M ARR"
+      },
+      {
+        "type": "IPO/SPAC (Long-term)",
+        "probability": "Low (10%)",
+        "timeline": "5-7 years",
+        "description": "Public markets via traditional IPO or SPAC merger",
+        "requirements": ">$50M revenue, profitable or clear path to profitability",
+        "valuationRange": "$200M+",
+        "comparables": "Spotify ($30B), Deezer, SoundCloud (considering IPO)",
+        "expectedMultiple": "10-20x revenue at scale"
+      }
+    ],
+    "liquidityEvents": [
+      {
+        "type": "Secondary Sale (Partial)",
+        "timing": "Year 2-3",
+        "description": "Allow early investors to sell 20-30% stake to later-stage investors",
+        "benefit": "Early returns while maintaining upside exposure"
+      },
+      {
+        "type": "Dividend/Revenue Share",
+        "timing": "Year 3+",
+        "description": "If highly profitable, distribute portion of profits to shareholders",
+        "benefit": "Annual returns while building toward exit"
+      }
+    ],
+    "exitPreparation": {
+      "year1": [
+        "Achieve product-market fit",
+        "Build scalable infrastructure",
+        "Establish brand and market presence",
+        "Hit $1M+ ARR"
+      ],
+      "year2": [
+        "Expand user base aggressively",
+        "Prove unit economics and retention",
+        "Build strategic partnerships",
+        "Hit $3M+ ARR"
+      ],
+      "year3": [
+        "Achieve market leadership in niche",
+        "Demonstrate platform scalability",
+        "Build acquisition interest through PR and metrics",
+        "Hit $8M+ ARR or prep Series A"
+      ]
+    }
+  },
+  "riskAnalysis": {
+    "marketRisks": [
+      {
+        "risk": "Market Competition",
+        "severity": "High",
+        "description": "Competing with well-funded giants (Spotify, Apple Music)",
+        "mitigation": [
+          "Focus on underserved indie artist/discovery niche",
+          "Build differentiated hybrid model",
+          "Create strong artist community and loyalty",
+          "Leverage agility to out-innovate larger competitors"
+        ]
+      },
+      {
+        "risk": "Market Adoption",
+        "severity": "Medium",
+        "description": "Users may resist switching from established platforms",
+        "mitigation": [
+          "Multi-homing strategy (complement, not replace existing services)",
+          "Free tier to reduce switching friction",
+          "Superior artist discovery as unique value prop",
+          "Artist-led user acquisition (artists bring fans)"
+        ]
+      }
+    ],
+    "operationalRisks": [
+      {
+        "risk": "Music Licensing Complexity",
+        "severity": "High",
+        "description": "Complex licensing requirements, rights management",
+        "mitigation": [
+          "Focus on independent artists with clear rights",
+          "Partner with licensing aggregators (e.g., Audiam)",
+          "Build robust rights management system",
+          "Maintain legal reserve fund"
+        ]
+      },
+      {
+        "risk": "Technology Scalability",
+        "severity": "Medium",
+        "description": "Scaling infrastructure for millions of users",
+        "mitigation": [
+          "Cloud-native architecture (AWS, Firebase)",
+          "CDN for content delivery",
+          "Phased scaling approach",
+          "Experienced engineering team"
+        ]
+      },
+      {
+        "risk": "Content Moderation",
+        "severity": "Medium",
+        "description": "Managing inappropriate content, copyright violations",
+        "mitigation": [
+          "Artist verification and membership gatekeeping",
+          "Automated content screening",
+          "Clear content policies and takedown procedures",
+          "Community reporting system"
+        ]
+      }
+    ],
+    "financialRisks": [
+      {
+        "risk": "Burn Rate",
+        "severity": "High",
+        "description": "Running out of capital before achieving sustainability",
+        "mitigation": [
+          "Conservative budgeting with 18-month runway",
+          "Multiple revenue streams reduce dependence on single source",
+          "Clear milestones tied to fundraising",
+          "Break-even achievable by Year 2 with moderate growth"
+        ]
+      },
+      {
+        "risk": "Unit Economics",
+        "severity": "Medium",
+        "description": "Customer acquisition cost exceeding lifetime value",
+        "mitigation": [
+          "Viral/organic growth through artist networks",
+          "CAC payback period <12 months target",
+          "High-margin revenue streams (memberships, licensing)",
+          "Continuous optimization of conversion funnels"
+        ]
+      }
+    ],
+    "regulatoryRisks": [
+      {
+        "risk": "Copyright Regulation Changes",
+        "severity": "Medium",
+        "description": "Changes to copyright law, royalty rates",
+        "mitigation": [
+          "Legal counsel monitoring regulatory environment",
+          "Diversified revenue model reduces single-source risk",
+          "Industry association participation",
+          "Flexible business model to adapt"
+        ]
+      },
+      {
+        "risk": "Data Privacy Compliance",
+        "severity": "Low",
+        "description": "GDPR, CCPA, and other privacy regulations",
+        "mitigation": [
+          "Privacy-first architecture",
+          "GDPR/CCPA compliance from day one",
+          "Regular security audits",
+          "Transparent data practices"
+        ]
+      }
+    ],
+    "overallRiskAssessment": {
+      "level": "Medium-High",
+      "description": "Typical for seed-stage music tech startup",
+      "comparison": "Lower risk than pure social/consumer apps due to revenue diversification",
+      "mitigationStrategy": "Strong execution, experienced team, differentiated positioning"
+    }
+  },
+  "investmentTerms": {
+    "securityType": "Series Seed Preferred Stock",
+    "alternativeInstruments": [
+      {
+        "name": "SAFE (Simple Agreement for Future Equity)",
+        "valuation": "$4M cap",
+        "discount": "20%",
+        "description": "Converts to equity in next priced round",
+        "benefits": [
+          "Simpler, faster closing",
+          "Lower legal costs",
+          "Investor-friendly standard terms"
+        ],
+        "considerations": [
+          "No immediate equity ownership",
+          "Dilution in future rounds",
+          "Less control/protections vs. priced round"
+        ]
+      },
+      {
+        "name": "Convertible Note",
+        "principal": "Investment amount",
+        "interestRate": "5%",
+        "maturityDate": "24 months",
+        "valuationCap": "$4M",
+        "discount": "20%",
+        "description": "Debt that converts to equity at qualified financing or maturity",
+        "benefits": [
+          "Interest accrual provides downside protection",
+          "Familiar structure",
+          "Flexible conversion terms"
+        ],
+        "considerations": [
+          "Debt on balance sheet",
+          "Potential tax implications",
+          "Maturity date pressure"
+        ]
+      },
+      {
+        "name": "Priced Equity Round (Series Seed)",
+        "valuation": "$4M pre-money",
+        "sharePrice": "$0.40/share",
+        "description": "Direct purchase of preferred stock",
+        "benefits": [
+          "Immediate ownership and control",
+          "Clear valuation and terms",
+          "Standard VC protections",
+          "Board representation"
+        ],
+        "considerations": [
+          "Higher legal costs ($25-50K)",
+          "Longer closing timeline",
+          "More complex negotiations"
+        ]
+      }
+    ],
+    "recommendedStructure": {
+      "primary": "Series Seed Preferred Stock",
+      "rationale": [
+        "Clean cap table for future fundraising",
+        "Attracts institutional investors",
+        "Standard Silicon Valley structure",
+        "Appropriate for $1M raise",
+        "Enables board governance"
+      ],
+      "fallback": "SAFE for smaller investors (<$50K), Preferred for larger"
+    },
+    "standardTerms": {
+      "liquidationPreference": "1x non-participating",
+      "dividends": "None",
+      "voting": "1 vote per share, votes with common",
+      "conversion": "1:1 to common stock",
+      "antiDilution": "Broad-based weighted average",
+      "proRata": "Yes, for all investors",
+      "dragAlong": "Yes, with supermajority (66%+)",
+      "redemption": "None",
+      "investorRepresentation": "1 board seat for lead investor ($250K+)",
+      "informationRights": "Quarterly financials for $50K+ investors",
+      "rightOfFirstRefusal": "Yes, on secondary sales"
+    },
+    "closingTimeline": {
+      "steps": [
+        {
+          "step": "Term sheet negotiation",
+          "duration": "1-2 weeks"
+        },
+        {
+          "step": "Due diligence",
+          "duration": "2-4 weeks"
+        },
+        {
+          "step": "Legal documentation",
+          "duration": "2-3 weeks"
+        },
+        {
+          "step": "Final closing",
+          "duration": "1 week"
+        }
+      ],
+      "totalDuration": "6-10 weeks",
+      "expedited": "4 weeks with SAFE or experienced counsel"
+    }
+  },
+  "companyMetrics": {
+    "current": {
+      "platform": "Live and operational",
+      "technology": "React, Firebase, Stripe, Netlify",
+      "features": [
+        "Premium subscription tiers (Student, Individual, Duo, Family)",
+        "Artist membership program ($150/year)",
+        "Direct song and album sales",
+        "Stripe Connect artist payouts (70% revenue share)",
+        "Multi-writer royalty splits",
+        "Content moderation and takedown system",
+        "Analytics and reporting"
+      ],
+      "nextMilestones": [
+        "Mobile apps (iOS/Android) - Q2 2025",
+        "Sync licensing marketplace - Q3 2025",
+        "Social features and artist profiles - Q3 2025",
+        "API for third-party integrations - Q4 2025",
+        "International expansion - Q1 2026"
+      ]
+    }
+  },
+  "disclaimers": [
+    "This document is for informational purposes only and does not constitute an offer to sell or solicitation to buy securities.",
+    "Investment in early-stage companies involves significant risk, including possible loss of principal.",
+    "Forward-looking statements are based on current assumptions and are subject to risks and uncertainties.",
+    "Past performance of comparable companies is not indicative of future results.",
+    "All projections are estimates and actual results may vary materially.",
+    "Investors should conduct their own due diligence and consult with financial, legal, and tax advisors.",
+    "This offering is available only to accredited investors as defined by SEC regulations.",
+    "No public market currently exists for the securities, and none may develop.",
+    "The company reserves the right to modify terms or reject any investment at its discretion.",
+    "Securities offered have not been registered under the Securities Act of 1933 and are being offered pursuant to Regulation D."
+  ]
+}

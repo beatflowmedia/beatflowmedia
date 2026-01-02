@@ -85,12 +85,12 @@ export default function Investors() {
               </form>
             </section>
           ) : (
-            // Access granted - show confirmation
+            // Request submitted - show confirmation
             <section className="text-center py-16">
               <div className="max-w-2xl mx-auto">
                 <div className="bg-green-900/30 border border-green-600 rounded-lg p-8 mb-6">
                   <h2 className="text-3xl font-bold text-green-400 mb-4">
-                    ✓ Access Granted
+                    ✓ Request Submitted
                   </h2>
                   <p className="text-gray-300 text-lg mb-4">
                     Thank you for your interest in BeatFlow Media!

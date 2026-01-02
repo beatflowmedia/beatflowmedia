@@ -457,13 +457,34 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
 exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', async (event) => {
   const request = event.data.data();
   const investorEmail = request.email;
+  const requestId = event.params.requestId;
 
   if (!investorEmail) {
-    console.error('No email found for investor request:', event.params.requestId);
+    console.error('No email found for investor request:', requestId);
     return null;
   }
 
   try {
+    // Generate unique access token and expiration (7 days)
+    const crypto = require('crypto');
+    const accessToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    );
+
+    // Store token in Firestore
+    await admin.firestore().collection('investorTokens').doc(accessToken).set({
+      email: investorEmail,
+      requestId: requestId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: expiresAt,
+      accessed: false,
+      accessCount: 0
+    });
+
+    // Generate secure deck access URL
+    const deckUrl = `https://beatflowmediagroup.com/investor-deck?token=${accessToken}`;
+
     const investorEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #1DB954; padding: 30px; text-align: center;">
@@ -510,21 +531,27 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
             <li>Revenue sharing with independent artists</li>
           </ul>
 
-          <h3 style="color: #333;">Investment Details & Next Steps</h3>
+          <h3 style="color: #333;">Access Your Private Investment Deck</h3>
           <p style="color: #666; line-height: 1.6;">
-            For detailed financial projections, cap table, and full pitch deck, please contact us directly:
+            We've prepared a comprehensive investment package with financial projections, ROI models, cap table, and use of funds.
           </p>
 
+          <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+            <p style="color: #856404; margin: 0; font-size: 14px;">
+              <strong>🔒 Secure Access:</strong> This link is unique to you and expires in 7 days.
+            </p>
+          </div>
+
           <div style="text-align: center; margin: 30px 0;">
-            <a href="mailto:office@beatflowmediagroup.com?subject=Investor Deck Request"
-               style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
-              Request Full Deck
-            </a>
-            <a href="https://beatflowmediagroup.com/investor-portal"
-               style="background: #333; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
-              Investor Portal
+            <a href="${deckUrl}"
+               style="background: #1DB954; color: white; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; font-size: 16px;">
+              View Full Investment Deck →
             </a>
           </div>
+
+          <p style="color: #999; font-size: 13px; text-align: center;">
+            Link expires: ${expiresAt.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
 
           <p style="color: #666; line-height: 1.6;">
             We're happy to schedule a call to discuss the opportunity in detail and answer any questions you may have.
