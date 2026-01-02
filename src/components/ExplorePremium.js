@@ -21,14 +21,14 @@ const plans = [
   },
   {
     title: "Beat Campus",
-    price: "$5.99 / month after",
+    price: "$9.99 / month after",
     details: [
       "1 verified student account",
       "Student discount",
       "Same benefits as Beat Solo",
     ],
     label: "Try free for 1 month",
-    note: "Free for 1 month, then $5.99/month after.",
+    note: "Free for 1 month, then $9.99/month after.",
     tag: "Student Deal",
     priceId: "price_1RPG6sAEum2hO0KZGTDZIqOr"
   },
