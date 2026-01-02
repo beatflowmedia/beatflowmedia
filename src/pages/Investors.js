@@ -85,25 +85,56 @@ export default function Investors() {
               </form>
             </section>
           ) : (
-            // Gated investor content
-            <>
-              {/* Executive Summary & Deck download link */}
-              <section className="py-8">
-                <h2 className="text-2xl font-bold mb-2">Executive Summary</h2>
-                <p className="text-gray-400 mb-4">
-                  Download our full investor deck and NDA to access detailed
-                  metrics.
-                </p>
-                <Link
-                  to="/investors/deck.pdf"
-                  className="text-bf-green hover:underline"
-                >
-                  Download Deck (PDF)
-                </Link>
-              </section>
-              {/* Detailed sections: Mission, Market Opportunity, Traction, Financials... */}
-              {/* ...existing detailed IR content goes here... */}
-            </>
+            // Access granted - show confirmation
+            <section className="text-center py-16">
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-green-900/30 border border-green-600 rounded-lg p-8 mb-6">
+                  <h2 className="text-3xl font-bold text-green-400 mb-4">
+                    ✓ Access Granted
+                  </h2>
+                  <p className="text-gray-300 text-lg mb-4">
+                    Thank you for your interest in BeatFlow Media!
+                  </p>
+                  <p className="text-gray-400">
+                    We've sent detailed information about our investment opportunity to <strong className="text-white">{email}</strong>
+                  </p>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-6 text-left">
+                  <h3 className="text-xl font-bold mb-4">What's Next?</h3>
+                  <ul className="space-y-3 text-gray-400">
+                    <li className="flex items-start">
+                      <span className="text-bf-green mr-2">•</span>
+                      <span>Check your email for the investor deck summary and key metrics</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-bf-green mr-2">•</span>
+                      <span>Reply to request the full pitch deck, financial projections, and cap table</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-bf-green mr-2">•</span>
+                      <span>Schedule a call to discuss the opportunity in detail</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-bf-green mr-2">•</span>
+                      <span>Review the <Link to="/nda" className="text-bf-green hover:underline">NDA terms</Link> you've agreed to</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mt-8">
+                  <p className="text-gray-400 mb-4">
+                    Have questions? Contact us directly:
+                  </p>
+                  <a
+                    href="mailto:office@beatflowmedia.com"
+                    className="inline-block bg-bf-green text-black font-semibold px-6 py-3 rounded-full hover:bg-green-600 transition"
+                  >
+                    Email Us
+                  </a>
+                </div>
+              </div>
+            </section>
           )}
         </div>
       </main>

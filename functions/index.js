@@ -1,4 +1,4 @@
-const {onDocumentUpdated} = require('firebase-functions/v2/firestore');
+const {onDocumentUpdated, onDocumentCreated} = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 
@@ -447,6 +447,134 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
     return null;
   } catch (error) {
     console.error('Error sending appeal decision email:', error);
+    return null;
+  }
+});
+
+// ========================================
+// INVESTOR DECK REQUEST EMAIL
+// ========================================
+exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', async (event) => {
+  const request = event.data.data();
+  const investorEmail = request.email;
+
+  if (!investorEmail) {
+    console.error('No email found for investor request:', event.params.requestId);
+    return null;
+  }
+
+  try {
+    const investorEmailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1DB954; padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">🎵 BeatFlow Media Investor Deck</h1>
+          <p style="color: white; margin: 10px 0 0 0;">Thank you for your interest in BeatFlow Media</p>
+        </div>
+
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Investment Opportunity</h2>
+
+          <p style="color: #666; line-height: 1.6;">
+            Thank you for your interest in BeatFlow Media Group. We're excited to share our vision with you.
+          </p>
+
+          <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1DB954;">
+            <h3 style="color: #333; margin-top: 0;">Executive Summary</h3>
+            <p style="color: #666; margin: 5px 0;">
+              <strong>Seeking:</strong> $1M seed funding
+            </p>
+            <p style="color: #666; margin: 5px 0;">
+              <strong>Projected Year 1 Revenue:</strong> $3.8M
+            </p>
+            <p style="color: #666; margin: 5px 0;">
+              <strong>Target Exit:</strong> $25-50M (5× return)
+            </p>
+            <p style="color: #666; margin: 5px 0;">
+              <strong>Market:</strong> Hybrid artist-curator music streaming platform
+            </p>
+          </div>
+
+          <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50; margin: 20px 0;">
+            <p style="color: #2e7d32; margin: 0; font-size: 14px;">
+              <strong>What Makes Us Different:</strong> We combine direct artist distribution with curator-driven discovery,
+              creating a sustainable ecosystem that benefits both creators and listeners.
+            </p>
+          </div>
+
+          <h3 style="color: #333;">Key Metrics & Traction</h3>
+          <ul style="color: #666; line-height: 1.8;">
+            <li>Platform built and operational</li>
+            <li>Direct artist onboarding system</li>
+            <li>Stripe integration for payments and payouts</li>
+            <li>Multi-tier premium subscription model</li>
+            <li>Revenue sharing with independent artists</li>
+          </ul>
+
+          <h3 style="color: #333;">Investment Details & Next Steps</h3>
+          <p style="color: #666; line-height: 1.6;">
+            For detailed financial projections, cap table, and full pitch deck, please contact us directly:
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="mailto:office@beatflowmedia.com?subject=Investor Deck Request"
+               style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
+              Request Full Deck
+            </a>
+            <a href="https://beatflowmedia.com/investors"
+               style="background: #333; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
+              Investor Portal
+            </a>
+          </div>
+
+          <p style="color: #666; line-height: 1.6;">
+            We're happy to schedule a call to discuss the opportunity in detail and answer any questions you may have.
+          </p>
+
+          <p style="color: #666; line-height: 1.6;">
+            Best regards,<br>
+            <strong>Percy Rice</strong><br>
+            Founder & CEO<br>
+            BeatFlow Media Group<br>
+            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954;">office@beatflowmedia.com</a>
+          </p>
+        </div>
+
+        <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
+          <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+          <p>
+            <a href="https://beatflowmedia.com/investors" style="color: #1DB954; text-decoration: none;">Investor Portal</a> |
+            <a href="https://beatflowmedia.com/nda" style="color: #1DB954; text-decoration: none;">NDA Terms</a> |
+            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954; text-decoration: none;">Contact</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendEmail(
+      investorEmail,
+      '🎵 BeatFlow Media - Investor Deck & Opportunity Details',
+      investorEmailHtml
+    );
+
+    // Also notify admin
+    await sendEmail(
+      'office@beatflowmedia.com',
+      `New Investor Request: ${investorEmail}`,
+      `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>New Investor Request Received</h2>
+          <p><strong>Email:</strong> ${investorEmail}</p>
+          <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+          <p><strong>Action:</strong> Investor deck email has been automatically sent.</p>
+          <p>Follow up with this investor to provide the full deck and schedule a call.</p>
+        </div>
+      `
+    );
+
+    console.log('Investor deck email sent to:', investorEmail);
+    return null;
+  } catch (error) {
+    console.error('Error sending investor deck email:', error);
     return null;
   }
 });
