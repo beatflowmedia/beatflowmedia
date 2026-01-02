@@ -520,7 +520,7 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
                style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Request Full Deck
             </a>
-            <a href="https://beatflowmedia.com/investors"
+            <a href="https://beatflowmedia.com/investor-portal"
                style="background: #333; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
               Investor Portal
             </a>
