@@ -247,10 +247,10 @@ export default function AboutAds() {
               If you have questions about advertising on BeatFlow Media, please contact us.
             </p>
             <a
-              href="mailto:advertising@beatflowmedia.com"
+              href="mailto:advertising@beatflowmediagroup.com"
               className="text-green-500 hover:underline font-semibold"
             >
-              advertising@beatflowmedia.com
+              advertising@beatflowmediagroup.com
             </a>
           </div>
         </div>

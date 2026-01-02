@@ -1293,7 +1293,7 @@ jobs:
         branch: 'feature/new-component',
         environment: 'preview',
         envVars: {
-          REACT_APP_API_URL: 'https://api-preview.beatflowmedia.com'
+          REACT_APP_API_URL: 'https://api-preview.beatflowmediagroup.com'
         }
       });
 

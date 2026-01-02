@@ -54,7 +54,7 @@ async function sendTestEmail() {
         </ul>
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://beatflowmedia.com/contact"
+          <a href="https://beatflowmediagroup.com/contact"
              style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
             Contact Support
           </a>
@@ -62,7 +62,7 @@ async function sendTestEmail() {
 
         <p style="color: #666; line-height: 1.6;">
           If you have questions about this test, please contact us at
-          <a href="mailto:office@beatflowmedia.com" style="color: #1DB954;">office@beatflowmedia.com</a>
+          <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
         </p>
 
         <p style="color: #666; line-height: 1.6;">
@@ -74,16 +74,16 @@ async function sendTestEmail() {
       <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
         <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
         <p>
-          <a href="https://beatflowmedia.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
-          <a href="https://beatflowmedia.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-          <a href="mailto:office@beatflowmedia.com" style="color: #1DB954; text-decoration: none;">Support</a>
+          <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
+          <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
+          <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
         </p>
       </div>
     </div>
   `;
 
   const mailOptions = {
-    from: 'BeatFlow Media <noreply@beatflowmedia.com>',
+    from: 'BeatFlow Media <noreply@beatflowmediagroup.com>',
     to: 'percyricemusic@gmail.com',
     subject: '⚠️ TEST: Content Takedown Notice - BeatFlow Media',
     html: takedownEmailHtml

@@ -182,7 +182,7 @@ const SecurityMonitoring = () => {
   const startRealTimeMonitoring = () => {
     // Start WebSocket connection for real-time updates
     try {
-      wsRef.current = new WebSocket(`wss://api.beatflowmedia.com/ws/security`);
+      wsRef.current = new WebSocket(`wss://api.beatflowmediagroup.com/ws/security`);
 
       wsRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);

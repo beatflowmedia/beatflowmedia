@@ -126,8 +126,8 @@ export default function UserGuidelines() {
 
               <p className="mt-4">
                 If you believe content on BeatFlow Media infringes your copyright, please submit a DMCA notice to{" "}
-                <a href="mailto:legal@beatflowmedia.com" className="text-green-500 hover:underline">
-                  legal@beatflowmedia.com
+                <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                  legal@beatflowmediagroup.com
                 </a>
               </p>
             </div>
@@ -273,8 +273,8 @@ export default function UserGuidelines() {
                 <h3 className="text-xl font-semibold text-white mb-3">How to Report:</h3>
                 <ul className="list-disc list-inside space-y-2 ml-4">
                   <li>Use the "Report" button on content or user profiles</li>
-                  <li>Email <a href="mailto:support@beatflowmedia.com" className="text-green-500 hover:underline">support@beatflowmedia.com</a> with details</li>
-                  <li>For copyright issues, email <a href="mailto:legal@beatflowmedia.com" className="text-green-500 hover:underline">legal@beatflowmedia.com</a></li>
+                  <li>Email <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">support@beatflowmediagroup.com</a> with details</li>
+                  <li>For copyright issues, email <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">legal@beatflowmediagroup.com</a></li>
                   <li>For urgent safety concerns, contact us immediately</li>
                 </ul>
                 <p className="mt-4">
@@ -321,8 +321,8 @@ export default function UserGuidelines() {
               <p className="mt-4">
                 Enforcement decisions are made at BeatFlow Media's sole discretion. If you believe your account
                 was unfairly penalized, you may appeal by contacting{" "}
-                <a href="mailto:support@beatflowmedia.com" className="text-green-500 hover:underline">
-                  support@beatflowmedia.com
+                <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                  support@beatflowmediagroup.com
                 </a>
               </p>
             </div>
@@ -359,8 +359,8 @@ export default function UserGuidelines() {
                 <p>United States</p>
                 <p className="pt-4">
                   Email:{" "}
-                  <a href="mailto:support@beatflowmedia.com" className="text-green-500 hover:underline">
-                    support@beatflowmedia.com
+                  <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                    support@beatflowmediagroup.com
                   </a>
                 </p>
               </div>

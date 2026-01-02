@@ -60,7 +60,7 @@ const SECURITY_HEADERS = {
 exports.handler = async (event, context) => {
   // Set security headers
   const headers = {
-    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || 'https://beatflowmedia.com',
+    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || 'https://beatflowmediagroup.com',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
     'Access-Control-Allow-Credentials': 'true',

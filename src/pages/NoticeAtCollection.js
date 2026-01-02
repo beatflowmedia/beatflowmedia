@@ -244,7 +244,7 @@ export default function NoticeAtCollection() {
               </p>
               <ul className="text-gray-300 space-y-3 mb-6">
                 <li>• Visit our <a href="/privacy-choices" className="text-green-500 hover:underline">Privacy Choices</a> page</li>
-                <li>• Email us at <a href="mailto:privacy@beatflowmedia.com" className="text-green-500 hover:underline">privacy@beatflowmedia.com</a></li>
+                <li>• Email us at <a href="mailto:privacy@beatflowmediagroup.com" className="text-green-500 hover:underline">privacy@beatflowmediagroup.com</a></li>
                 <li>• Call us at 1-800-BEATFLOW</li>
               </ul>
               <p className="text-gray-400 text-sm">
@@ -267,8 +267,8 @@ export default function NoticeAtCollection() {
               <p>Middletown, NJ 07748</p>
               <p>United States</p>
               <p className="mt-4">
-                Email: <a href="mailto:privacy@beatflowmedia.com" className="text-green-500 hover:underline">
-                  privacy@beatflowmedia.com
+                Email: <a href="mailto:privacy@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                  privacy@beatflowmediagroup.com
                 </a>
               </p>
               <p>Phone: 1-800-BEATFLOW</p>

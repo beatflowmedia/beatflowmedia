@@ -127,7 +127,7 @@ export default function Investors() {
                     Have questions? Contact us directly:
                   </p>
                   <a
-                    href="mailto:office@beatflowmedia.com"
+                    href="mailto:office@beatflowmediagroup.com"
                     className="inline-block bg-bf-green text-black font-semibold px-6 py-3 rounded-full hover:bg-green-600 transition"
                   >
                     Email Us

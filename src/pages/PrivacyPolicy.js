@@ -189,8 +189,8 @@ export default function PrivacyPolicy() {
                 <p>Middletown, NJ 07748</p>
                 <p>United States</p>
                 <p className="mt-4">
-                  Email: <a href="mailto:privacy@beatflowmedia.com" className="text-green-500 hover:underline">
-                    privacy@beatflowmedia.com
+                  Email: <a href="mailto:privacy@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                    privacy@beatflowmediagroup.com
                   </a>
                 </p>
               </div>

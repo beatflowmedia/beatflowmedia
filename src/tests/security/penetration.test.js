@@ -362,7 +362,7 @@ describe("Security Penetration Tests", () => {
       });
 
       try {
-        await mockAxios.get("http://beatflowmedia.com/api/auth");
+        await mockAxios.get("http://beatflowmediagroup.com/api/auth");
       } catch (error) {
         expect(error.response.status).toBe(301);
         expect(error.response.headers.location).toMatch(/^https:/);
@@ -478,7 +478,7 @@ describe("Security Penetration Tests", () => {
       mockAxios.get.mockResolvedValue({
         data: {},
         headers: {
-          "access-control-allow-origin": "https://beatflowmedia.com",
+          "access-control-allow-origin": "https://beatflowmediagroup.com",
           "access-control-allow-methods": "GET, POST, PUT, DELETE",
           "access-control-allow-credentials": "true"
         }
@@ -487,7 +487,7 @@ describe("Security Penetration Tests", () => {
       const response = await mockAxios.get(`${baseURL}/api/content`);
 
       expect(response.headers["access-control-allow-origin"]).toBe(
-        "https://beatflowmedia.com",
+        "https://beatflowmediagroup.com",
       );
       expect(response.headers["access-control-allow-credentials"]).toBe("true");
     });

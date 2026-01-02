@@ -570,13 +570,13 @@ describe("Authentication Security", () => {
 
     test("should validate OAuth redirect URIs", () => {
       const validUris = [
-        "https://beatflowmedia.com/auth/callback",
-        "https://www.beatflowmedia.com/auth/callback",
+        "https://beatflowmediagroup.com/auth/callback",
+        "https://www.beatflowmediagroup.com/auth/callback",
       ];
 
       const maliciousUris = [
         "https://evil.com/auth/callback",
-        "http://beatflowmedia.com/auth/callback", // HTTP not HTTPS
+        "http://beatflowmediagroup.com/auth/callback", // HTTP not HTTPS
         "javascript:alert(1)",
       ];
 

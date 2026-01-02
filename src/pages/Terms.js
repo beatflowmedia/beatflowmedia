@@ -165,8 +165,8 @@ export default function Terms() {
               <p>
                 We respond to DMCA takedown notices and other intellectual property claims. If you believe
                 content infringes your rights, please contact us at{" "}
-                <a href="mailto:legal@beatflowmedia.com" className="text-green-500 hover:underline">
-                  legal@beatflowmedia.com
+                <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                  legal@beatflowmediagroup.com
                 </a>
               </p>
             </div>
@@ -298,8 +298,8 @@ export default function Terms() {
                 <p>United States</p>
                 <p className="pt-4">
                   Email:{" "}
-                  <a href="mailto:legal@beatflowmedia.com" className="text-green-500 hover:underline">
-                    legal@beatflowmedia.com
+                  <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                    legal@beatflowmediagroup.com
                   </a>
                 </p>
               </div>

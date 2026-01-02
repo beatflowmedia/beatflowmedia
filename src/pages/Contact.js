@@ -87,10 +87,10 @@ export default function Contact() {
               USA
               <br />
               <a
-                href="mailto:office@beatflowmedia.com"
+                href="mailto:office@beatflowmediagroup.com"
                 className="text-white hover:underline"
               >
-                office@beatflowmedia.com
+                office@beatflowmediagroup.com
               </a>
             </p>
           </div>

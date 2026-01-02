@@ -116,8 +116,8 @@ export default function Legal() {
                 <h3 className="text-lg font-semibold text-white mb-2">DMCA</h3>
                 <p>
                   If you believe content on BeatFlow Media infringes your copyright, please submit a DMCA notice to{" "}
-                  <a href="mailto:legal@beatflowmedia.com" className="text-green-500 hover:underline">
-                    legal@beatflowmedia.com
+                  <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                    legal@beatflowmediagroup.com
                   </a>
                 </p>
               </div>
@@ -137,8 +137,8 @@ export default function Legal() {
               <p>United States</p>
               <p className="pt-4">
                 Email:{" "}
-                <a href="mailto:legal@beatflowmedia.com" className="text-green-500 hover:underline">
-                  legal@beatflowmedia.com
+                <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                  legal@beatflowmediagroup.com
                 </a>
               </p>
             </div>

@@ -182,7 +182,7 @@ if (!userProfile || userProfile.status !== 'active') {
 #### CORS Configuration
 ```javascript
 {
-  origin: ['https://beatflowmedia.com', 'https://app.beatflowmedia.com'],
+  origin: ['https://beatflowmediagroup.com', 'https://app.beatflowmediagroup.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID'],
   credentials: true,
@@ -347,7 +347,7 @@ RATE_LIMIT_WINDOW=900000
 RATE_LIMIT_MAX=100
 
 # Security
-ALLOWED_ORIGINS=https://beatflowmedia.com,https://app.beatflowmedia.com
+ALLOWED_ORIGINS=https://beatflowmediagroup.com,https://app.beatflowmediagroup.com
 HTTPS_ONLY=true
 SECURE_COOKIES=true
 ```
@@ -383,7 +383,7 @@ SECURE_COOKIES=true
 ## 📞 Support and Contact
 
 For security-related issues or questions:
-- **Security Team**: security@beatflowmedia.com
+- **Security Team**: security@beatflowmediagroup.com
 - **Emergency**: +1-555-SECURITY (24/7)
 - **Bug Bounty**: hackerone.com/beatflowmedia
 

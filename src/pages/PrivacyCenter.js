@@ -201,7 +201,7 @@ export default function PrivacyCenter() {
               Contact our privacy team if you have questions or concerns about how we handle your data.
             </p>
             <a
-              href="mailto:privacy@beatflowmedia.com"
+              href="mailto:privacy@beatflowmediagroup.com"
               className="inline-block bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors"
             >
               Contact Privacy Team

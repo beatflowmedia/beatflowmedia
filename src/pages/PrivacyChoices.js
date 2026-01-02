@@ -475,8 +475,8 @@ export default function PrivacyChoices() {
             <div className="space-y-2 text-gray-400">
               <p>
                 Email:{" "}
-                <a href="mailto:privacy@beatflowmedia.com" className="text-green-500 hover:underline">
-                  privacy@beatflowmedia.com
+                <a href="mailto:privacy@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                  privacy@beatflowmediagroup.com
                 </a>
               </p>
               <p>Phone: 1-800-BEATFLOW</p>

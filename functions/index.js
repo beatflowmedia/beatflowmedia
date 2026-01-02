@@ -24,7 +24,7 @@ async function sendEmail(to, subject, html) {
   });
 
   const mailOptions = {
-    from: 'BeatFlow Media <noreply@beatflowmedia.com>',
+    from: 'BeatFlow Media <noreply@beatflowmediagroup.com>',
     to: to,
     subject: subject,
     html: html
@@ -134,11 +134,11 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
           </ul>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://beatflowmedia.com/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
+            <a href="https://beatflowmediagroup.com/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
                style="background: #ff9800; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Appeal This Decision
             </a>
-            <a href="https://beatflowmedia.com/contact"
+            <a href="https://beatflowmediagroup.com/contact"
                style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
               Contact Support
             </a>
@@ -146,7 +146,7 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
 
           <p style="color: #666; line-height: 1.6;">
             If you have questions about this takedown, please reply to this email or contact us at
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954;">office@beatflowmedia.com</a>
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
           </p>
 
           <p style="color: #666; line-height: 1.6;">
@@ -158,9 +158,9 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
           <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
           <p>
-            <a href="https://beatflowmedia.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
-            <a href="https://beatflowmedia.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954; text-decoration: none;">Support</a>
+            <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
+            <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
           </p>
         </div>
       </div>
@@ -274,11 +274,11 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
           </ul>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://beatflowmedia.com/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
+            <a href="https://beatflowmediagroup.com/appeal-takedown?songId=${event.params.songId}&reason=${encodeURIComponent(after.takedownReason)}"
                style="background: #ff9800; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Appeal This Decision
             </a>
-            <a href="https://beatflowmedia.com/contact"
+            <a href="https://beatflowmediagroup.com/contact"
                style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
               Contact Support
             </a>
@@ -286,7 +286,7 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
 
           <p style="color: #666; line-height: 1.6;">
             If you have questions about this takedown, please reply to this email or contact us at
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954;">office@beatflowmedia.com</a>
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
           </p>
 
           <p style="color: #666; line-height: 1.6;">
@@ -298,9 +298,9 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
           <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
           <p>
-            <a href="https://beatflowmedia.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
-            <a href="https://beatflowmedia.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954; text-decoration: none;">Support</a>
+            <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
+            <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
           </p>
         </div>
       </div>
@@ -403,12 +403,12 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
 
           <div style="text-align: center; margin: 30px 0;">
             ${isApproved ? `
-              <a href="https://beatflowmedia.com/artist-profile"
+              <a href="https://beatflowmediagroup.com/artist-profile"
                  style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
                 View Your Content
               </a>
             ` : `
-              <a href="https://beatflowmedia.com/contact"
+              <a href="https://beatflowmediagroup.com/contact"
                  style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
                 Contact Support
               </a>
@@ -417,7 +417,7 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
 
           <p style="color: #666; line-height: 1.6;">
             If you have questions about this decision, please contact us at
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954;">office@beatflowmedia.com</a>
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
           </p>
 
           <p style="color: #666; line-height: 1.6;">
@@ -429,9 +429,9 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
           <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
           <p>
-            <a href="https://beatflowmedia.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
-            <a href="https://beatflowmedia.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954; text-decoration: none;">Support</a>
+            <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
+            <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
           </p>
         </div>
       </div>
@@ -516,11 +516,11 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="mailto:office@beatflowmedia.com?subject=Investor Deck Request"
+            <a href="mailto:office@beatflowmediagroup.com?subject=Investor Deck Request"
                style="background: #1DB954; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Request Full Deck
             </a>
-            <a href="https://beatflowmedia.com/investor-portal"
+            <a href="https://beatflowmediagroup.com/investor-portal"
                style="background: #333; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
               Investor Portal
             </a>
@@ -535,16 +535,16 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
             <strong>Percy Rice</strong><br>
             Founder & CEO<br>
             BeatFlow Media Group<br>
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954;">office@beatflowmedia.com</a>
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
           </p>
         </div>
 
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
           <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
           <p>
-            <a href="https://beatflowmedia.com/investors" style="color: #1DB954; text-decoration: none;">Investor Portal</a> |
-            <a href="https://beatflowmedia.com/nda" style="color: #1DB954; text-decoration: none;">NDA Terms</a> |
-            <a href="mailto:office@beatflowmedia.com" style="color: #1DB954; text-decoration: none;">Contact</a>
+            <a href="https://beatflowmediagroup.com/investors" style="color: #1DB954; text-decoration: none;">Investor Portal</a> |
+            <a href="https://beatflowmediagroup.com/nda" style="color: #1DB954; text-decoration: none;">NDA Terms</a> |
+            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Contact</a>
           </p>
         </div>
       </div>
@@ -558,7 +558,7 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
 
     // Also notify admin
     await sendEmail(
-      'office@beatflowmedia.com',
+      'office@beatflowmediagroup.com',
       `New Investor Request: ${investorEmail}`,
       `
         <div style="font-family: Arial, sans-serif; padding: 20px;">

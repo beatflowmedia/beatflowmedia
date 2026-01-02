@@ -252,14 +252,14 @@ export const SECURITY_CONFIG = {
       ],
       "connect-src": [
         "'self'",
-        "https://api.beatflowmedia.com",
-        "wss://api.beatflowmedia.com",
+        "https://api.beatflowmediagroup.com",
+        "wss://api.beatflowmediagroup.com",
         "https://identitytoolkit.googleapis.com",
         "https://firestore.googleapis.com",
       ],
       "font-src": ["'self'", "https://fonts.gstatic.com"],
       "object-src": ["'none'"],
-      "media-src": ["'self'", "https://cdn.beatflowmedia.com"],
+      "media-src": ["'self'", "https://cdn.beatflowmediagroup.com"],
       "frame-src": ["'none'"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"]
@@ -271,10 +271,10 @@ export const SECURITY_CONFIG = {
   // CORS Configuration
   cors: {
     allowedOrigins: [
-      "https://beatflowmedia.com",
-      "https://www.beatflowmedia.com",
-      "https://admin.beatflowmedia.com",
-      "https://artist.beatflowmedia.com",
+      "https://beatflowmediagroup.com",
+      "https://www.beatflowmediagroup.com",
+      "https://admin.beatflowmediagroup.com",
+      "https://artist.beatflowmediagroup.com",
       ...(isDevelopment
         ? ["http://localhost:3000", "http://localhost:3001"]
         : []),

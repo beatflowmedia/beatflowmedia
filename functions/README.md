@@ -46,8 +46,8 @@ firebase functions:config:get
 ### 3. Update Email Addresses
 
 In `index.js`, update the admin notification emails:
-- Line 133: `licensing@beatflowmedia.com` (for sync licensing inquiries)
-- Line 237: `office@beatflowmedia.com` (for investor requests)
+- Line 133: `licensing@beatflowmediagroup.com` (for sync licensing inquiries)
+- Line 237: `office@beatflowmediagroup.com` (for investor requests)
 
 You can also update the "from" address on line 19 if you have a custom domain.
 

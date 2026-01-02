@@ -39,17 +39,17 @@ class DeployAgent {
       preview: {
         NODE_ENV: 'development',
         REACT_APP_ENV: 'preview',
-        REACT_APP_API_URL: 'https://api-preview.beatflowmedia.com'
+        REACT_APP_API_URL: 'https://api-preview.beatflowmediagroup.com'
       },
       staging: {
         NODE_ENV: 'production',
         REACT_APP_ENV: 'staging',
-        REACT_APP_API_URL: 'https://api-staging.beatflowmedia.com'
+        REACT_APP_API_URL: 'https://api-staging.beatflowmediagroup.com'
       },
       production: {
         NODE_ENV: 'production',
         REACT_APP_ENV: 'production',
-        REACT_APP_API_URL: 'https://api.beatflowmedia.com'
+        REACT_APP_API_URL: 'https://api.beatflowmediagroup.com'
       }
     };
   }

@@ -69,10 +69,10 @@ export default function About() {
                   USA
                   <br />
                   <a
-                    href="mailto:office@beatflowmedia.com"
+                    href="mailto:office@beatflowmediagroup.com"
                     className="text-white hover:underline"
                   >
-                    office@beatflowmedia.com
+                    office@beatflowmediagroup.com
                   </a>
                 </li>
               </ul>

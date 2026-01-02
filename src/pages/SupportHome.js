@@ -93,7 +93,7 @@ export default function SupportHome() {
           Have questions? Find answers from our peer-to-peer support community.
         </p>
         <a
-          href="https://community.beatflowmedia.com"
+          href="https://community.beatflowmediagroup.com"
           className="bg-bf-green text-black px-6 py-3 rounded-full font-semibold inline-block"
         >
           Go to Community

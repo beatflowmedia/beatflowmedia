@@ -268,8 +268,8 @@ export default function Accessibility() {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-400 mb-1">Email:</p>
-                  <a href="mailto:accessibility@beatflowmedia.com" className="text-green-500 hover:underline">
-                    accessibility@beatflowmedia.com
+                  <a href="mailto:accessibility@beatflowmediagroup.com" className="text-green-500 hover:underline">
+                    accessibility@beatflowmediagroup.com
                   </a>
                 </div>
                 <div>

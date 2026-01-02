@@ -24,9 +24,9 @@ const SECURITY_CONFIG = {
   },
   cors: {
     allowedOrigins: [
-      'https://beatflowmedia.com',
-      'https://www.beatflowmedia.com',
-      'https://admin.beatflowmedia.com'
+      'https://beatflowmediagroup.com',
+      'https://www.beatflowmediagroup.com',
+      'https://admin.beatflowmediagroup.com'
     ],
     allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key'],
@@ -39,7 +39,7 @@ const SECURITY_CONFIG = {
       'script-src': ["'self'", "'unsafe-inline'"],
       'style-src': ["'self'", "'unsafe-inline'"],
       'img-src': ["'self'", 'data:', 'https:'],
-      'connect-src': ["'self'", 'https://api.beatflowmedia.com'],
+      'connect-src': ["'self'", 'https://api.beatflowmediagroup.com'],
       'font-src': ["'self'"],
       'object-src': ["'none'"],
       'media-src': ["'self'"],

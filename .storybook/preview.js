@@ -16,7 +16,7 @@ const preview = {
       theme: {
         base: 'dark',
         brandTitle: 'BeatFlowMedia Design System',
-        brandUrl: 'https://beatflowmedia.com',
+        brandUrl: 'https://beatflowmediagroup.com',
         fontBase: designTokens.typography.fontFamily.sans.join(', '),
         fontCode: designTokens.typography.fontFamily.mono.join(', '),
       },

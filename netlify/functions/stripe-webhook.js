@@ -291,7 +291,7 @@ async function handleCheckoutSessionCompleted(session) {
       try {
         console.log('🔄 Triggering revenue split...');
         // Call the revenue split function
-        await fetch(`${process.env.URL || 'https://beatflowmedia.com'}/.netlify/functions/process-revenue-split`, {
+        await fetch(`${process.env.URL || 'https://beatflowmediagroup.com'}/.netlify/functions/process-revenue-split`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

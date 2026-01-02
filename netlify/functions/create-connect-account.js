@@ -86,8 +86,8 @@ exports.handler = async (event, context) => {
     // Create account link for onboarding
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${process.env.URL || 'https://beatflowmedia.com'}/artist-profile?stripe_refresh=true`,
-      return_url: `${process.env.URL || 'https://beatflowmedia.com'}/artist-profile?stripe_connected=true`,
+      refresh_url: `${process.env.URL || 'https://beatflowmediagroup.com'}/artist-profile?stripe_refresh=true`,
+      return_url: `${process.env.URL || 'https://beatflowmediagroup.com'}/artist-profile?stripe_connected=true`,
       type: 'account_onboarding'
     });
 

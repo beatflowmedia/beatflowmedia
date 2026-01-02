@@ -258,10 +258,10 @@ export default function SyncLicensing() {
             <p className="text-gray-500 text-xs text-center mt-4">
               Or email us directly at{" "}
               <a
-                href="mailto:licensing@beatflowmedia.com"
+                href="mailto:licensing@beatflowmediagroup.com"
                 className="text-green-500 hover:underline"
               >
-                licensing@beatflowmedia.com
+                licensing@beatflowmediagroup.com
               </a>
             </p>
           </div>

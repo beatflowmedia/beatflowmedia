@@ -62,13 +62,13 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 FIREBASE_PROJECT_ID=beatflowmedia
 FIREBASE_CLIENT_EMAIL=...
 FIREBASE_PRIVATE_KEY=...
-URL=https://beatflowmedia.com
+URL=https://beatflowmediagroup.com
 ```
 
 ### 3. Configure Stripe Webhook
 
 1. Go to https://dashboard.stripe.com/webhooks
-2. Add endpoint: `https://beatflowmedia.com/.netlify/functions/stripe-webhook`
+2. Add endpoint: `https://beatflowmediagroup.com/.netlify/functions/stripe-webhook`
 3. Select events:
    - `checkout.session.completed`
    - `customer.subscription.created`

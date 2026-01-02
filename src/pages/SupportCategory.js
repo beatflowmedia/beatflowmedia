@@ -129,7 +129,7 @@ export default function SupportCategory() {
       },
       {
         question: "What should I do if my account was hacked?",
-        answer: "Immediately change your password, sign out of all devices in Account Settings, and contact our security team at security@beatflowmedia.com."
+        answer: "Immediately change your password, sign out of all devices in Account Settings, and contact our security team at security@beatflowmediagroup.com."
       },
     ],
   };

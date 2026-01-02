@@ -80,10 +80,10 @@ const RATE_LIMIT_CONFIGS = {
 const CORS_CONFIG = {
   origin: (origin, callback) => {
     const allowedOrigins = [
-      "https://beatflowmedia.com",
-      "https://www.beatflowmedia.com",
-      "https://app.beatflowmedia.com",
-      "https://admin.beatflowmedia.com",
+      "https://beatflowmediagroup.com",
+      "https://www.beatflowmediagroup.com",
+      "https://app.beatflowmediagroup.com",
+      "https://admin.beatflowmediagroup.com",
     ];
 
     // Allow requests with no origin (mobile apps, etc.)
