@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import Footer from '../components/Footer';
-import investmentData from '../../agents/reports/investment-package-2026-01-02.json';
+import investmentData from '../data/investment-package.json';
 
 export default function InvestorDeck() {
   const [searchParams] = useSearchParams();
