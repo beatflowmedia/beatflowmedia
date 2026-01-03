@@ -1,10 +1,16 @@
 // src/components/StripeButton.jsx
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import { useAuth } from "../context/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 export default function StripeButton({ priceId, children, className = "" }) {
-  const { user } = useAuth();
+  const { user, currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [loading, setLoading] = useState(true);
   const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
   const stripePromise = useMemo(() => {
@@ -15,7 +21,69 @@ export default function StripeButton({ priceId, children, className = "" }) {
     return loadStripe(publishableKey);
   }, [publishableKey]);
 
+  // Check if user has active subscription
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!currentUser) {
+        setHasSubscription(false);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const userData = userDoc.data();
+
+        // Check if user has an active subscription
+        if (userData?.subscriptionStatus === "active" || userData?.isPremium) {
+          setHasSubscription(true);
+        } else {
+          setHasSubscription(false);
+        }
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+        setHasSubscription(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSubscription();
+  }, [currentUser]);
+
   const handleClick = async () => {
+    // If not logged in, redirect to login
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+
+    // If user has active subscription, redirect to Customer Portal
+    if (hasSubscription) {
+      try {
+        const response = await fetch("/.netlify/functions/create-portal-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: currentUser.uid
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create portal session");
+        }
+
+        const { url } = await response.json();
+        window.location.href = url;
+        return;
+      } catch (error) {
+        console.error("Error creating portal session:", error);
+        alert("Failed to open subscription management. Please try again.");
+        return;
+      }
+    }
+
+    // User is logged in but no subscription - proceed to checkout
     if (!stripePromise) {
       alert('Stripe is not configured. Please contact support.');
       return;
@@ -26,9 +94,9 @@ export default function StripeButton({ priceId, children, className = "" }) {
 
       // Prepare request body
       const body = { priceId };
-      if (user) {
-        body.userId = user.uid;
-        body.userEmail = user.email;
+      if (user || currentUser) {
+        body.userId = (user || currentUser).uid;
+        body.userEmail = (user || currentUser).email;
       }
 
       const res = await fetch("/.netlify/functions/create-checkout-session", {
@@ -62,10 +130,10 @@ export default function StripeButton({ priceId, children, className = "" }) {
     <button
       type="button"
       onClick={handleClick}
-      disabled={!stripePromise}
-      className={`flex-1 ${className} ${!stripePromise ? 'opacity-50 cursor-not-allowed' : ''}`}
+      disabled={loading || !stripePromise}
+      className={`flex-1 ${className} ${loading || !stripePromise ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
-      {children}
+      {loading ? "Loading..." : hasSubscription ? "Manage Subscription" : children}
     </button>
   );
 }
