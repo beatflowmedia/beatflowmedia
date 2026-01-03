@@ -18,6 +18,7 @@ import {
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
+import Footer from '../components/Footer';
 import PlayingIndicator from '../components/PlayingIndicator';
 import { usePlaySong } from '../hooks/usePlaySong';
 
@@ -315,6 +316,7 @@ export default function GenrePage() {
           </Box>
         )}
       </Box>
+      <Footer />
     </Box>
   );
 }
