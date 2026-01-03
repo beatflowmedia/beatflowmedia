@@ -7,16 +7,51 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Beat Flow Media Group"
+      content="Beat Flow Media Group - License and stream music from independent artists"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
 
-    <!-- Preconnect to external domains for faster loading -->
+    <!-- Critical inline CSS for above-the-fold content -->
+    <style>
+      /* Critical styles - load immediately */
+      :root {
+        --bf-bg-app: #0a0e14;
+        --bf-bg-page: #111827;
+        --bf-text-primary: #f9fafb;
+        --bf-green: #1db954;
+      }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: var(--bf-bg-app);
+        color: var(--bf-text-primary);
+      }
+      #root {
+        min-height: 100vh;
+      }
+      /* Loading skeleton */
+      .loading-skeleton {
+        background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+      }
+      @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    </style>
+
+    <!-- Preconnect to critical external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
-    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
+
+    <!-- DNS prefetch for less critical domains -->
+    <link rel="dns-prefetch" href="https://www.gstatic.com" />
     <link rel="dns-prefetch" href="https://js.stripe.com" />
+    <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com" />
 
     <!--
       manifest.json provides metadata used when your web app is installed on a

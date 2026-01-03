@@ -23,47 +23,25 @@ module.exports = {
         },
       ];
 
-      // Optimize chunk splitting for better caching and loading
+      // Simple chunk splitting - only separate React from other vendors
       if (webpackConfig.mode === 'production') {
         webpackConfig.optimization = {
           ...webpackConfig.optimization,
           splitChunks: {
             chunks: 'all',
             cacheGroups: {
-              // Split vendor code into separate chunks
-              firebase: {
-                test: /[\\/]node_modules[\\/](firebase|@firebase)[\\/]/,
-                name: 'firebase',
-                priority: 30,
-                reuseExistingChunk: true,
-              },
-              stripe: {
-                test: /[\\/]node_modules[\\/](@stripe)[\\/]/,
-                name: 'stripe',
-                priority: 25,
-                reuseExistingChunk: true,
-              },
-              mui: {
-                test: /[\\/]node_modules[\\/](@mui|@emotion)[\\/]/,
-                name: 'mui',
-                priority: 20,
-                reuseExistingChunk: true,
-              },
               react: {
-                test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom)[\\/]/,
+                test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/,
                 name: 'react-vendors',
-                priority: 15,
-                reuseExistingChunk: true,
+                priority: 20,
               },
-              commons: {
+              vendors: {
                 test: /[\\/]node_modules[\\/]/,
                 name: 'vendors',
                 priority: 10,
-                reuseExistingChunk: true,
               },
             },
           },
-          runtimeChunk: 'single',
         };
       }
 

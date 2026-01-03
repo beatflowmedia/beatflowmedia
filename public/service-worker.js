@@ -1,16 +1,23 @@
 /**
  * Service Worker for BeatFlow Media PWA
  * Provides offline capability and faster load times through caching
- * Last updated: 2026-01-03 12:40 PM
+ * Last updated: 2026-01-03
  */
 
-const CACHE_NAME = 'beatflow-media-v6';
+const CACHE_NAME = 'beatflow-media-v7';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.ico'
 ];
+
+// Cache timeouts (in milliseconds)
+const CACHE_MAX_AGE = {
+  images: 7 * 24 * 60 * 60 * 1000, // 7 days
+  static: 24 * 60 * 60 * 1000,      // 1 day
+  js: 1 * 60 * 60 * 1000,            // 1 hour
+};
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -45,60 +52,109 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Determine cache strategy based on request type
+function getCacheStrategy(url) {
+  const pathname = url.pathname;
+
+  // Images: cache-first with 7 day expiration
+  if (pathname.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)) {
+    return 'cache-first';
+  }
+
+  // JavaScript and CSS: network-first (ensure fresh code)
+  if (pathname.match(/\.(js|css)$/i)) {
+    return 'network-first';
+  }
+
+  // HTML pages: network-first
+  if (pathname === '/' || pathname.endsWith('.html')) {
+    return 'network-first';
+  }
+
+  // Default: stale-while-revalidate
+  return 'stale-while-revalidate';
+}
+
+// Fetch event - use strategy based on resource type
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests
+  // Skip cross-origin requests (except WebP images)
   if (url.origin !== location.origin) {
     return;
   }
 
-  // Skip Firebase and API requests (we want fresh data)
-  if (url.pathname.includes('/firestore') || url.pathname.includes('/api/')) {
+  // Skip Firebase, Firestore, and API requests
+  if (url.pathname.includes('/firestore') ||
+      url.pathname.includes('/api/') ||
+      url.pathname.includes('/.netlify/')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cached version and update cache in background
-        console.log('[Service Worker] Serving from cache:', request.url);
+  const strategy = getCacheStrategy(url);
 
-        // Update cache in background (stale-while-revalidate strategy)
-        fetch(request).then((networkResponse) => {
+  if (strategy === 'cache-first') {
+    // Cache-first: good for images
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, networkResponse);
+              cache.put(request, responseClone);
             });
           }
-        }).catch(() => {
-          // Network fetch failed, but we have cached version
+          return networkResponse;
+        });
+      })
+    );
+  } else if (strategy === 'network-first') {
+    // Network-first: good for JS/CSS/HTML to ensure fresh code
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Network failed, try cache
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Return offline page for documents
+            if (request.destination === 'document') {
+              return caches.match('/index.html');
+            }
+          });
+        })
+    );
+  } else {
+    // Stale-while-revalidate: default strategy
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        const fetchPromise = fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, networkResponse.clone());
+            });
+          }
+          return networkResponse;
         });
 
-        return cachedResponse;
-      }
-
-      // Not in cache, fetch from network
-      return fetch(request).then((networkResponse) => {
-        // Cache successful responses
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Network request failed and not in cache
-        // Return offline page if available
-        if (request.destination === 'document') {
-          return caches.match('/index.html');
-        }
-      });
-    })
-  );
+        return cachedResponse || fetchPromise;
+      })
+    );
+  }
 });
 
 // Listen for messages from the client
