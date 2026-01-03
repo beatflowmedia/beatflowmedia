@@ -7,7 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 export default function StripeButton({ priceId, children, className = "" }) {
-  const { user, currentUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [hasSubscription, setHasSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,19 +24,17 @@ export default function StripeButton({ priceId, children, className = "" }) {
   // Check if user has active subscription
   useEffect(() => {
     const checkSubscription = async () => {
-      const activeUser = currentUser || user;
-
-      if (!activeUser) {
+      if (!user) {
         setHasSubscription(false);
         setLoading(false);
         return;
       }
 
       try {
-        const userDoc = await getDoc(doc(db, "users", activeUser.uid));
+        const userDoc = await getDoc(doc(db, "users", user.uid));
         const userData = userDoc.data();
 
-        console.log('Subscription check:', { uid: activeUser.uid, userData });
+        console.log('Subscription check:', { uid: user.uid, userData });
 
         // Check if user has an active subscription
         if (userData?.subscriptionStatus === "active" || userData?.isPremium) {
@@ -53,13 +51,13 @@ export default function StripeButton({ priceId, children, className = "" }) {
     };
 
     checkSubscription();
-  }, [currentUser, user]);
+  }, [user]);
 
   const handleClick = async () => {
-    console.log('StripeButton clicked', { user, currentUser, loading, hasSubscription });
+    console.log('StripeButton clicked', { user, loading, hasSubscription });
 
     // If not logged in, redirect to login
-    if (!currentUser && !user) {
+    if (!user) {
       console.log('No user found, redirecting to login');
       navigate("/login");
       return;
@@ -72,7 +70,7 @@ export default function StripeButton({ priceId, children, className = "" }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: currentUser.uid
+            userId: user.uid
           })
         });
 
@@ -101,9 +99,9 @@ export default function StripeButton({ priceId, children, className = "" }) {
 
       // Prepare request body
       const body = { priceId };
-      if (user || currentUser) {
-        body.userId = (user || currentUser).uid;
-        body.userEmail = (user || currentUser).email;
+      if (user) {
+        body.userId = user.uid;
+        body.userEmail = user.email;
       }
 
       const res = await fetch("/.netlify/functions/create-checkout-session", {
