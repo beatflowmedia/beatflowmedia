@@ -24,15 +24,19 @@ export default function StripeButton({ priceId, children, className = "" }) {
   // Check if user has active subscription
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!currentUser) {
+      const activeUser = currentUser || user;
+
+      if (!activeUser) {
         setHasSubscription(false);
         setLoading(false);
         return;
       }
 
       try {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const userDoc = await getDoc(doc(db, "users", activeUser.uid));
         const userData = userDoc.data();
+
+        console.log('Subscription check:', { uid: activeUser.uid, userData });
 
         // Check if user has an active subscription
         if (userData?.subscriptionStatus === "active" || userData?.isPremium) {
@@ -49,11 +53,14 @@ export default function StripeButton({ priceId, children, className = "" }) {
     };
 
     checkSubscription();
-  }, [currentUser]);
+  }, [currentUser, user]);
 
   const handleClick = async () => {
+    console.log('StripeButton clicked', { user, currentUser, loading, hasSubscription });
+
     // If not logged in, redirect to login
-    if (!currentUser) {
+    if (!currentUser && !user) {
+      console.log('No user found, redirecting to login');
       navigate("/login");
       return;
     }
