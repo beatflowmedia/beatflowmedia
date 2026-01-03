@@ -34,10 +34,10 @@ export default function StripeButton({ priceId, children, className = "" }) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         const userData = userDoc.data();
 
-        console.log('Subscription check:', { uid: user.uid, userData });
+        console.log('Subscription check:', { uid: user.uid, userData, subscriptionStatus: userData?.subscriptionStatus, isPremium: userData?.isPremium });
 
-        // Check if user has an active subscription
-        if (userData?.subscriptionStatus === "active" || userData?.isPremium) {
+        // Check if user has an active subscription AND a Stripe customer ID
+        if ((userData?.subscriptionStatus === "active" || userData?.isPremium) && userData?.stripeCustomerId) {
           setHasSubscription(true);
         } else {
           setHasSubscription(false);
