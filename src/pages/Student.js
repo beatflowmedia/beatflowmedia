@@ -1,12 +1,49 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 export default function Student() {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  const handleCheckout = async () => {
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const stripe = await stripePromise;
+      const response = await fetch("/.netlify/functions/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId: "price_1RPG6sAEum2hO0KZGTDZIqOr",
+          userId: currentUser.uid,
+          userEmail: currentUser.email,
+        }),
+      });
+
+      const { sessionId } = await response.json();
+      const { error} = await stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        console.error("Stripe checkout error:", error);
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <main className="flex-1 pt-16 px-6">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-5xl font-bold mb-4">Premium Student</h1>
+          <h1 className="text-5xl font-bold mb-4">Beat Campus</h1>
           <p className="text-xl text-gray-400 mb-12">
             Special discount for verified students at accredited institutions
           </p>
@@ -14,18 +51,21 @@ export default function Student() {
           {/* Pricing Card */}
           <div className="max-w-md mx-auto bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg p-8 mb-12">
             <div className="bg-yellow-500 text-gray-900 px-3 py-1 rounded-full inline-block mb-4 font-semibold text-sm">
-              50% OFF
+              Student Discount
             </div>
             <h2 className="text-3xl font-bold mb-4">1 Student Account</h2>
             <div className="mb-6">
-              <span className="text-5xl font-bold">$5.99</span>
+              <span className="text-5xl font-bold">$9.99</span>
               <span className="text-xl text-gray-200"> / month</span>
             </div>
-            <button className="w-full bg-white text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors mb-4">
-              Get Premium Student
+            <button
+              onClick={handleCheckout}
+              className="w-full bg-white text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors mb-4"
+            >
+              Get Beat Campus
             </button>
             <p className="text-sm text-center text-gray-200">
-              Free for 1 month. Offer available only to students at accredited institutions.
+              Free for 1 month, then $9.99 per month after. Offer available only to students at accredited institutions.
             </p>
           </div>
 
@@ -33,7 +73,7 @@ export default function Student() {
           <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-6 mb-12">
             <h3 className="text-xl font-bold mb-3">🎓 Student Verification Required</h3>
             <p className="text-gray-300 mb-4">
-              To get Premium Student, you must be enrolled at an accredited higher education institution.
+              To get Beat Campus, you must be enrolled at an accredited higher education institution.
               We verify your student status through SheerID, a third-party verification service.
             </p>
             <p className="text-gray-400 text-sm">
@@ -42,7 +82,7 @@ export default function Student() {
           </div>
 
           {/* Features */}
-          <h2 className="text-3xl font-bold mb-6 text-center">Everything in Premium Individual</h2>
+          <h2 className="text-3xl font-bold mb-6 text-center">Everything in Beat Solo</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             <div className="bg-gray-800 rounded-lg p-6 flex items-start gap-4">
               <div className="text-3xl">🎵</div>
@@ -69,7 +109,7 @@ export default function Student() {
               <div>
                 <h3 className="text-xl font-bold mb-2">Unlimited skips</h3>
                 <p className="text-gray-400">
-                  Skip songs as many times as you want without limits.
+                  Skip as many songs as you want, anytime you want.
                 </p>
               </div>
             </div>
@@ -85,43 +125,24 @@ export default function Student() {
             </div>
 
             <div className="bg-gray-800 rounded-lg p-6 flex items-start gap-4">
-              <div className="text-3xl">📱</div>
+              <div className="text-3xl">🎓</div>
               <div>
-                <h3 className="text-xl font-bold mb-2">Play on any device</h3>
+                <h3 className="text-xl font-bold mb-2">Student-friendly pricing</h3>
                 <p className="text-gray-400">
-                  Listen on phone, computer, tablet, speakers, TV, and more.
+                  Save money while enjoying all Premium features.
                 </p>
               </div>
             </div>
 
             <div className="bg-gray-800 rounded-lg p-6 flex items-start gap-4">
-              <div className="text-3xl">💰</div>
+              <div className="text-3xl">📱</div>
               <div>
-                <h3 className="text-xl font-bold mb-2">Special student pricing</h3>
+                <h3 className="text-xl font-bold mb-2">Play on any device</h3>
                 <p className="text-gray-400">
-                  Save 50% with verified student discount - just $5.99/month.
+                  Listen on mobile, desktop, tablet, and more.
                 </p>
               </div>
             </div>
-          </div>
-
-          {/* How It Works */}
-          <h2 className="text-3xl font-bold mb-6 text-center">How to sign up</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            {[
-              { step: "1", title: "Click Get Started", description: "Begin the signup process" },
-              { step: "2", title: "Verify Status", description: "Prove you're a student with SheerID" },
-              { step: "3", title: "Create Account", description: "Sign up for BeatFlow Media" },
-              { step: "4", title: "Start Listening", description: "Enjoy Premium Student benefits" }
-            ].map((item, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  {item.step}
-                </div>
-                <h3 className="text-lg font-bold mb-2">{item.title}</h3>
-                <p className="text-gray-400 text-sm">{item.description}</p>
-              </div>
-            ))}
           </div>
 
           {/* FAQ */}
@@ -129,24 +150,24 @@ export default function Student() {
           <div className="space-y-4 mb-12">
             {[
               {
-                question: "Who is eligible for Premium Student?",
-                answer: "Students enrolled at accredited higher education institutions (colleges, universities) are eligible. You must be able to verify your enrollment through SheerID."
+                question: "Who qualifies for Beat Campus?",
+                answer: "Students currently enrolled at an accredited higher education institution qualify. This includes colleges, universities, and trade schools."
+              },
+              {
+                question: "How do I verify my student status?",
+                answer: "During sign-up, you'll be redirected to SheerID for verification. You'll need to provide your school name, full name, and date of birth."
               },
               {
                 question: "How long does the student discount last?",
-                answer: "The discount lasts for up to 4 years total, but you must re-verify your student status every 12 months to continue receiving the discount."
+                answer: "You can enjoy Beat Campus for up to 4 years. We'll verify your student status every 12 months to confirm continued eligibility."
               },
               {
                 question: "What happens after I graduate?",
-                answer: "After graduation or after 4 years, you'll need to switch to a regular Premium Individual plan at $10.99/month to keep your Premium benefits."
+                answer: "After graduation or if you're no longer verified as a student, you'll be moved to Beat Solo at the regular price of $11.99/month. You'll be notified before any price change."
               },
               {
-                question: "Can I switch to Premium Student if I already have Premium?",
-                answer: "Yes! If you're currently a Premium Individual subscriber and become a verified student, you can switch to Premium Student to save 50%."
-              },
-              {
-                question: "What information is needed for verification?",
-                answer: "You'll need to provide your name, date of birth, and information about your educational institution. SheerID handles the verification process securely."
+                question: "Can I cancel anytime?",
+                answer: "Yes! You can cancel your subscription at any time from your account settings with no cancellation fees."
               }
             ].map((faq, index) => (
               <div key={index} className="bg-gray-800 rounded-lg p-6">
@@ -158,12 +179,15 @@ export default function Student() {
 
           {/* CTA */}
           <div className="text-center bg-gray-800 rounded-lg p-12">
-            <h2 className="text-3xl font-bold mb-4">Ready to save 50%?</h2>
+            <h2 className="text-3xl font-bold mb-4">Study, chill, and party with Premium</h2>
             <p className="text-gray-400 mb-6">
-              Verify your student status and get 1 month of Premium Student for free.
+              Get 1 month free, then just $9.99/month for students. Verify your status to get started.
             </p>
-            <button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-full font-semibold transition-colors">
-              Verify Student Status
+            <button
+              onClick={handleCheckout}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-full font-semibold transition-colors"
+            >
+              Get Beat Campus
             </button>
           </div>
         </div>
