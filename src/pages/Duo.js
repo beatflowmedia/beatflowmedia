@@ -18,7 +18,7 @@ export default function Duo() {
 
     try {
       const stripe = await stripePromise;
-      const response = await fetch("/.netlify/functions/create-checkout", {
+      const response = await fetch("/.netlify/functions/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
