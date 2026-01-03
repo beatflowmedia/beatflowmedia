@@ -7,11 +7,8 @@ const CACHE_NAME = 'beatflow-media-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
   '/manifest.json',
-  '/favicon.ico',
-  '/images/Logo.svg'
+  '/favicon.ico'
 ];
 
 // Install event - cache static assets
