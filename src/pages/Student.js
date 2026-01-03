@@ -1,43 +1,8 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
-import { loadStripe } from "@stripe/stripe-js";
-
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+import StripeButton from "../components/StripeButton";
 
 export default function Student() {
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
-
-  const handleCheckout = async () => {
-    if (!currentUser) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const stripe = await stripePromise;
-      const response = await fetch("/.netlify/functions/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: "price_1RPG6sAEum2hO0KZGTDZIqOr",
-          userId: currentUser.uid,
-          userEmail: currentUser.email,
-        }),
-      });
-
-      const { sessionId } = await response.json();
-      const { error} = await stripe.redirectToCheckout({ sessionId });
-
-      if (error) {
-        console.error("Stripe checkout error:", error);
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
@@ -58,12 +23,12 @@ export default function Student() {
               <span className="text-5xl font-bold">$9.99</span>
               <span className="text-xl text-gray-200"> / month</span>
             </div>
-            <button
-              onClick={handleCheckout}
+            <StripeButton
+              priceId="price_1RPG6sAEum2hO0KZGTDZIqOr"
               className="w-full bg-white text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors mb-4"
             >
               Get Beat Campus
-            </button>
+            </StripeButton>
             <p className="text-sm text-center text-gray-200">
               Free for 1 month, then $9.99 per month after. Offer available only to students at accredited institutions.
             </p>
@@ -183,12 +148,12 @@ export default function Student() {
             <p className="text-gray-400 mb-6">
               Get 1 month free, then just $9.99/month for students. Verify your status to get started.
             </p>
-            <button
-              onClick={handleCheckout}
+            <StripeButton
+              priceId="price_1RPG6sAEum2hO0KZGTDZIqOr"
               className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-full font-semibold transition-colors"
             >
               Get Beat Campus
-            </button>
+            </StripeButton>
           </div>
         </div>
       </main>

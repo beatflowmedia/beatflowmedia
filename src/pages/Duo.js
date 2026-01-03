@@ -1,43 +1,8 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import Footer from "../components/Footer";
-import { loadStripe } from "@stripe/stripe-js";
-
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+import StripeButton from "../components/StripeButton";
 
 export default function Duo() {
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
-
-  const handleCheckout = async () => {
-    if (!currentUser) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const stripe = await stripePromise;
-      const response = await fetch("/.netlify/functions/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: "price_1RPGGGAEum2hO0KZbsLLd4x1",
-          userId: currentUser.uid,
-          userEmail: currentUser.email,
-        }),
-      });
-
-      const { sessionId } = await response.json();
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-
-      if (error) {
-        console.error("Stripe checkout error:", error);
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
@@ -55,12 +20,12 @@ export default function Duo() {
               <span className="text-5xl font-bold">$16.99</span>
               <span className="text-xl text-gray-200"> / month</span>
             </div>
-            <button
-              onClick={handleCheckout}
+            <StripeButton
+              priceId="price_1RPGGGAEum2hO0KZbsLLd4x1"
               className="w-full bg-white text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors mb-4"
             >
               Get Beat Duo
-            </button>
+            </StripeButton>
             <p className="text-sm text-center text-gray-200">
               Free for 1 month, then $16.99 per month after. For couples who reside at the same address. Cancel anytime.
             </p>
@@ -191,12 +156,12 @@ export default function Duo() {
             <p className="text-gray-400 mb-6">
               Get 1 month free, then just $16.99/month for 2 Premium accounts. Cancel anytime.
             </p>
-            <button
-              onClick={handleCheckout}
+            <StripeButton
+              priceId="price_1RPGGGAEum2hO0KZbsLLd4x1"
               className="bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-full font-semibold transition-colors"
             >
               Get Beat Duo
-            </button>
+            </StripeButton>
           </div>
         </div>
       </main>
