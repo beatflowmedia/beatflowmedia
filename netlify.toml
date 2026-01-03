@@ -3,6 +3,10 @@
   publish   = "build"
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "20"
+  CI = "false"
+
 # Proxy all /player/queue requests to the player-queue Netlify Function
 [[redirects]]
   from = "/player/queue"
