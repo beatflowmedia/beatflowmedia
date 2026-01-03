@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -18,10 +18,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Pause from '@mui/icons-material/Pause';
@@ -44,6 +40,12 @@ import PurchaseButton from '../components/PurchaseButton';
 import TrackRowCard from '../components/TrackRowCard';
 import { stripeService } from '../services/stripeService';
 import { getSongMetrics } from '../services/engagementMetrics';
+
+// Lazy load dialogs to reduce initial bundle size
+const Dialog = lazy(() => import('@mui/material/Dialog'));
+const DialogTitle = lazy(() => import('@mui/material/DialogTitle'));
+const DialogContent = lazy(() => import('@mui/material/DialogContent'));
+const DialogActions = lazy(() => import('@mui/material/DialogActions'));
 
 function Album() {
   const { id: albumId } = useParams();
@@ -73,6 +75,22 @@ function Album() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
 
+  // Preload album cover for faster LCP
+  useEffect(() => {
+    if (album?.coverUrl) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = album.coverUrl;
+      link.fetchpriority = 'high';
+      document.head.appendChild(link);
+
+      return () => {
+        document.head.removeChild(link);
+      };
+    }
+  }, [album?.coverUrl]);
+
   // Load album data
   useEffect(() => {
     if (!albumId) {
@@ -87,6 +105,8 @@ function Album() {
     async function loadAlbum() {
       setLoading(true);
       setError(null);
+      let reviewsTimeout = null;
+
       try {
         console.log('Loading album with ID:', albumId);
 
@@ -144,30 +164,32 @@ function Album() {
           console.error('Error loading tracks:', error);
         });
 
-        // Load reviews (optional - may not exist)
-        const reviewsQuery = query(
-          collection(db, 'albumReviews'),
-          where('albumId', '==', albumId)
-        );
+        // Defer reviews loading to reduce initial blocking - not critical for LCP
+        const reviewsTimeout = setTimeout(() => {
+          const reviewsQuery = query(
+            collection(db, 'albumReviews'),
+            where('albumId', '==', albumId)
+          );
 
-        unsubscribeReviews = onSnapshot(reviewsQuery, (snapshot) => {
-          const reviewsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
+          unsubscribeReviews = onSnapshot(reviewsQuery, (snapshot) => {
+            const reviewsData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
 
-          // Sort by createdAt on client side
-          reviewsData.sort((a, b) => {
-            const aTime = a.createdAt?.seconds || 0;
-            const bTime = b.createdAt?.seconds || 0;
-            return bTime - aTime; // Descending order (newest first)
+            // Sort by createdAt on client side
+            reviewsData.sort((a, b) => {
+              const aTime = a.createdAt?.seconds || 0;
+              const bTime = b.createdAt?.seconds || 0;
+              return bTime - aTime; // Descending order (newest first)
+            });
+
+            setReviews(reviewsData);
+          }, (error) => {
+            // Reviews collection might not exist yet - that's okay
+            console.log('Album reviews not available:', error.message);
           });
-
-          setReviews(reviewsData);
-        }, (error) => {
-          // Reviews collection might not exist yet - that's okay
-          console.log('Album reviews not available:', error.message);
-        });
+        }, 500); // Defer by 500ms to prioritize album and tracks
 
       } catch (err) {
         console.error('Error loading album:', err);
@@ -186,23 +208,38 @@ function Album() {
     };
   }, [albumId]);
 
-  // Load engagement metrics for all tracks
+  // Load engagement metrics for all tracks - defer to reduce blocking
   useEffect(() => {
-    async function loadTrackMetrics() {
-      if (tracks.length === 0) return;
+    if (tracks.length === 0) return;
 
-      const metricsPromises = tracks.map(track => getSongMetrics(track.id));
-      const metricsResults = await Promise.all(metricsPromises);
-
+    // Use requestIdleCallback to load metrics during idle time
+    const loadMetrics = () => {
       const metricsMap = {};
+      let loadedCount = 0;
+
+      // Load metrics progressively to avoid blocking
       tracks.forEach((track, index) => {
-        metricsMap[track.id] = metricsResults[index];
+        const idleCallback = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+
+        idleCallback(() => {
+          getSongMetrics(track.id).then(metrics => {
+            metricsMap[track.id] = metrics;
+            loadedCount++;
+
+            // Update state in batches to reduce re-renders
+            if (loadedCount === tracks.length || loadedCount % 5 === 0) {
+              setTrackMetrics(prev => ({ ...prev, ...metricsMap }));
+            }
+          }).catch(err => {
+            console.error(`Failed to load metrics for track ${track.id}:`, err);
+          });
+        });
       });
+    };
 
-      setTrackMetrics(metricsMap);
-    }
-
-    loadTrackMetrics();
+    // Defer metrics loading by 100ms to prioritize critical rendering
+    const timeoutId = setTimeout(loadMetrics, 100);
+    return () => clearTimeout(timeoutId);
   }, [tracks]);
 
   // Calculate album stats
@@ -437,16 +474,34 @@ function Album() {
     return (
       <Box sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', gap: 3, mb: 4 }}>
-          <Skeleton variant="rectangular" width={300} height={300} />
-          <Box sx={{ flex: 1 }}>
-            <Skeleton variant="text" width={400} height={60} />
-            <Skeleton variant="text" width={200} height={30} />
-            <Skeleton variant="text" width={300} height={20} />
-            <Skeleton variant="text" width={250} height={20} />
+          {/* Fixed dimensions prevent CLS */}
+          <Skeleton
+            variant="rectangular"
+            width={300}
+            height={300}
+            sx={{ flexShrink: 0, borderRadius: 1 }}
+          />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Skeleton variant="text" sx={{ width: '60%', maxWidth: 400, height: 60 }} />
+            <Skeleton variant="text" sx={{ width: '40%', maxWidth: 200, height: 30, mt: 1 }} />
+            <Skeleton variant="text" sx={{ width: '50%', maxWidth: 300, height: 20, mt: 1 }} />
+            <Skeleton variant="text" sx={{ width: '45%', maxWidth: 250, height: 20, mt: 1 }} />
+            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+              <Skeleton variant="rounded" width={120} height={40} />
+              <Skeleton variant="circular" width={40} height={40} />
+              <Skeleton variant="circular" width={40} height={40} />
+            </Box>
           </Box>
         </Box>
+        {/* Match actual track row height */}
         {[...Array(8)].map((_, index) => (
-          <Skeleton key={index} variant="rectangular" width="100%" height={60} sx={{ mb: 1 }} />
+          <Skeleton
+            key={index}
+            variant="rectangular"
+            width="100%"
+            height={72}
+            sx={{ mb: 1, borderRadius: 1 }}
+          />
         ))}
       </Box>
     );
@@ -511,9 +566,10 @@ function Album() {
             <OptimizedImage
               src={album?.coverUrl}
               alt={album?.title}
-              width="100%"
+              width={300}
               height={300}
               fallback="/default-album-cover.jpg"
+              priority={true}
               sx={{ objectFit: 'cover' }}
             />
           </Card>
@@ -990,17 +1046,18 @@ function Album() {
       </Menu>
 
       {/* Review Dialog */}
-      <Dialog
-        open={reviewDialogOpen}
-        onClose={() => setReviewDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: { bgcolor: 'grey.800', color: 'white' }
-        }}
-      >
-        <DialogTitle>Write a Review</DialogTitle>
-        <DialogContent>
+      <Suspense fallback={null}>
+        <Dialog
+          open={reviewDialogOpen}
+          onClose={() => setReviewDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: { bgcolor: 'grey.800', color: 'white' }
+          }}
+        >
+          <DialogTitle>Write a Review</DialogTitle>
+          <DialogContent>
           <Box sx={{ mb: 3, textAlign: 'center' }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Rate this album
@@ -1047,29 +1104,34 @@ function Album() {
             Submit Review
           </Button>
         </DialogActions>
-      </Dialog>
+        </Dialog>
+      </Suspense>
 
       {/* Purchase Dialog */}
-      <Dialog
-        open={purchaseDialogOpen}
-        onClose={() => setPurchaseDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: { bgcolor: 'grey.800', color: 'white' }
-        }}
-      >
-        <DialogTitle>Purchase Album</DialogTitle>
-        <DialogContent>
+      <Suspense fallback={null}>
+        <Dialog
+          open={purchaseDialogOpen}
+          onClose={() => setPurchaseDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: { bgcolor: 'grey.800', color: 'white' }
+          }}
+        >
+          <DialogTitle>Purchase Album</DialogTitle>
+          <DialogContent>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <OptimizedImage
-              src={album?.coverUrl}
-              alt={album?.title}
-              width={200}
-              height={200}
-              fallback="/default-album-cover.jpg"
-              sx={{ mx: 'auto', mb: 2, borderRadius: 2 }}
-            />
+            {/* Fixed dimensions prevent CLS in dialog */}
+            <Box sx={{ width: 200, height: 200, mx: 'auto', mb: 2 }}>
+              <OptimizedImage
+                src={album?.coverUrl}
+                alt={album?.title}
+                width={200}
+                height={200}
+                fallback="/default-album-cover.jpg"
+                sx={{ borderRadius: 2 }}
+              />
+            </Box>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               {album?.title}
             </Typography>
@@ -1103,7 +1165,8 @@ function Album() {
             Purchase Now
           </Button>
         </DialogActions>
-      </Dialog>
+        </Dialog>
+      </Suspense>
     </Box>
   );
 }

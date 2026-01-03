@@ -13,6 +13,7 @@ export default function OptimizedImage({
   borderRadius = 1,
   objectFit = 'cover',
   showPlaceholder = true,
+  priority = false,
   sx = {}
 }) {
   const [loading, setLoading] = useState(true);
@@ -123,7 +124,8 @@ export default function OptimizedImage({
         <img
           src={imageSrc || src || fallback}
           alt={alt}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchpriority={priority ? 'high' : 'auto'}
           width={typeof width === 'number' ? width : undefined}
           height={typeof height === 'number' ? height : undefined}
           onLoad={() => setLoading(false)}
