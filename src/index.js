@@ -30,7 +30,8 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
             if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
               console.log('New service worker activated!');
               // Optionally reload the page to use the new service worker
-              if (confirm('A new version is available. Reload to update?')) {
+              // eslint-disable-next-line no-restricted-globals
+              if (window.confirm('A new version is available. Reload to update?')) {
                 window.location.reload();
               }
             }
