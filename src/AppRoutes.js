@@ -3,8 +3,6 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import AppShell from "./layouts/AppShell";
 import { useAuth } from "./context/AuthContext";
-import ArtistPortal from "./pages/ArtistPortal";
-import CuratorPortal from "./pages/CuratorPortal";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Lazy-loaded pages
@@ -13,6 +11,8 @@ const Search = lazy(() => import("./pages/Search"));
 const Playlist = lazy(() => import("./pages/Playlist"));
 const Album = lazy(() => import("./pages/Album"));
 const Artist = lazy(() => import("./pages/ArtistSimple"));
+const ArtistPortal = lazy(() => import("./pages/ArtistPortal"));
+const CuratorPortal = lazy(() => import("./pages/CuratorPortal"));
 const CuratorInbox = lazy(() => import("./pages/CuratorInbox"));
 const CampaignWizard = lazy(() => import("./pages/CampaignWizard"));
 const InvestorPortal = lazy(() => import("./pages/InvestorPortal"));
@@ -101,10 +101,22 @@ const NoticeAtCollection = lazy(() => import("./pages/NoticeAtCollection"));
 const PrivacyChoices = lazy(() => import("./pages/PrivacyChoices"));
 const SyncLicensing = lazy(() => import("./pages/SyncLicensing"));
 
+// Loading component with skeleton UI
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#0a0e14] flex items-center justify-center">
+      <div className="text-center">
+        <div className="loading-skeleton w-16 h-16 rounded-full mx-auto mb-4" />
+        <div className="text-white text-lg font-medium">Loading BeatFlow...</div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppRoutes() {
   const { user, role } = useAuth();
   return (
-    <Suspense fallback={<div className="py-20 text-center text-white">Loading…</div>}>
+    <Suspense fallback={<LoadingFallback />}>
       <Routes>
         {/* Wrap shared layout */}
         <Route element={<AppShell />}>

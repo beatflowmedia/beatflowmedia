@@ -58,6 +58,10 @@
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- Performance optimization: preload critical resources -->
+    <link rel="modulepreload" href="%PUBLIC_URL%/static/js/react-vendors.js" as="script" crossorigin />
+    <link rel="modulepreload" href="%PUBLIC_URL%/static/js/vendors.js" as="script" crossorigin />
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
