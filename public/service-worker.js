@@ -3,7 +3,7 @@
  * Provides offline capability and faster load times through caching
  */
 
-const CACHE_NAME = 'beatflow-media-v2';
+const CACHE_NAME = 'beatflow-media-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
