@@ -17,6 +17,25 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
     navigator.serviceWorker.register('/service-worker.js')
       .then((registration) => {
         console.log('Service Worker registered successfully:', registration.scope);
+
+        // Check for updates every time the page loads
+        registration.update();
+
+        // Listen for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('New service worker found, installing...');
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+              console.log('New service worker activated!');
+              // Optionally reload the page to use the new service worker
+              if (confirm('A new version is available. Reload to update?')) {
+                window.location.reload();
+              }
+            }
+          });
+        });
       })
       .catch((error) => {
         console.error('Service Worker registration failed:', error);

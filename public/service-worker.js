@@ -1,9 +1,10 @@
 /**
  * Service Worker for BeatFlow Media PWA
  * Provides offline capability and faster load times through caching
+ * Last updated: 2026-01-03 12:40 PM
  */
 
-const CACHE_NAME = 'beatflow-media-v5';
+const CACHE_NAME = 'beatflow-media-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
