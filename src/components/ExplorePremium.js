@@ -78,7 +78,7 @@ export default function ExplorePremium() {
           <div className="flex gap-4 max-w-lg mx-auto">
             <StripeButton
               priceId={plans[0].priceId}
-              className="bg-bf-green text-white font-semibold py-3 rounded-full hover:opacity-90 transition text-center"
+              className="flex-1 bg-bf-green text-white font-semibold py-3 rounded-full hover:opacity-90 transition text-center"
             >
               Get started
             </StripeButton>

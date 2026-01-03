@@ -131,7 +131,7 @@ export default function StripeButton({ priceId, children, className = "" }) {
       type="button"
       onClick={handleClick}
       disabled={loading || !stripePromise}
-      className={`flex-1 ${className} ${loading || !stripePromise ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`${className} ${loading || !stripePromise ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {loading ? "Loading..." : hasSubscription ? "Manage Subscription" : children}
     </button>
