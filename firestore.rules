@@ -509,6 +509,69 @@ service cloud.firestore {
       allow delete: if isPlatformAdmin();
     }
 
+    // ========================================
+    // CURATOR SYSTEM
+    // ========================================
+
+    // Curator Applications - users can create and read their own, admins can manage
+    match /curatorApplications/{applicationId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null &&
+                     (resource.data.userId == request.auth.uid || isPlatformAdmin());
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // Curators - curator profiles, created when application is approved
+    match /curators/{curatorId} {
+      allow read: if true; // Public read for curator discovery
+      allow create: if isPlatformAdmin(); // Only admins can create (during approval)
+      allow update: if isPlatformAdmin() ||
+                       (request.auth != null &&
+                        request.auth.uid == curatorId &&
+                        // Curators can only update their own non-critical fields
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'revokedAt', 'revokedBy', 'revocationReason', 'suspendedAt', 'suspendedBy', 'suspensionReason', 'reactivatedAt', 'reactivatedBy', 'reactivationNotes']));
+      allow delete: if isPlatformAdmin();
+    }
+
+    // Playlist Submissions - artist-to-curator track placements with escrow
+    match /playlist_submissions/{submissionId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null &&
+                     (resource.data.artistId == request.auth.uid ||
+                      resource.data.curatorId == request.auth.uid ||
+                      isPlatformAdmin());
+      allow update: if request.auth != null &&
+                       (resource.data.curatorId == request.auth.uid || isPlatformAdmin());
+      allow delete: if isPlatformAdmin();
+    }
+
+    // Escrow Transactions - track payment escrow for playlist submissions
+    match /escrow_transactions/{transactionId} {
+      allow create: if false; // Only created by webhook
+      allow read: if request.auth != null &&
+                     (resource.data.artistId == request.auth.uid ||
+                      resource.data.curatorId == request.auth.uid ||
+                      isPlatformAdmin());
+      allow update: if false; // Only updated by Cloud Functions
+    }
+
+    // Curator Playlists - curators can manage their own
+    match /curator_playlists/{playlistId} {
+      allow read: if true; // Public read for discovery
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+                       (resource.data.curatorId == request.auth.uid || isPlatformAdmin());
+      allow delete: if request.auth != null &&
+                      (resource.data.curatorId == request.auth.uid || isPlatformAdmin());
+    }
+
+    // Curator Earnings - curators can read their own, admins can read all
+    match /curator_earnings/{curatorId} {
+      allow read: if request.auth != null &&
+                     (request.auth.uid == curatorId || isPlatformAdmin());
+      allow write: if false; // Only written by Cloud Functions
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

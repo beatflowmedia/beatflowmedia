@@ -1,12 +1,15 @@
 // Test script to send takedown notification email
 const nodemailer = require('../functions/node_modules/nodemailer');
+const emailConfig = require('../functions/emailConfig');
 
 async function sendTestEmail() {
+  const {smtp, addresses} = emailConfig;
+
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: smtp.service,
     auth: {
-      user: 'beatflowmediagroup@gmail.com',
-      pass: 'eezqfupeocueocow' // New app password without spaces
+      user: smtp.user,
+      pass: smtp.pass
     }
   });
 
@@ -62,7 +65,7 @@ async function sendTestEmail() {
 
         <p style="color: #666; line-height: 1.6;">
           If you have questions about this test, please contact us at
-          <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
+          <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954;">office.beatflowmediagroup@gmail.com</a>
         </p>
 
         <p style="color: #666; line-height: 1.6;">
@@ -76,14 +79,15 @@ async function sendTestEmail() {
         <p>
           <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
           <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-          <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
+          <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954; text-decoration: none;">Support</a>
         </p>
       </div>
     </div>
   `;
 
   const mailOptions = {
-    from: 'BeatFlow Media <noreply@beatflowmediagroup.com>',
+    from: addresses.from,
+    replyTo: addresses.replyTo,
     to: 'percyricemusic@gmail.com',
     subject: '⚠️ TEST: Content Takedown Notice - BeatFlow Media',
     html: takedownEmailHtml

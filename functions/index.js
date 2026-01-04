@@ -603,6 +603,127 @@ exports.onCuratorApplicationDecision = onDocumentUpdated('curatorApplications/{a
 });
 
 // ========================================
+// CURATOR STATUS CHANGE EMAIL
+// ========================================
+exports.onCuratorStatusChange = onDocumentUpdated('curators/{curatorId}', async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+
+  // Only send email when status changes to suspended, revoked, or reactivated
+  const statusChanged = before.status !== after.status;
+  const isStatusChange = after.status === 'suspended' || after.status === 'revoked' ||
+                        (after.status === 'active' && before.status !== 'active');
+
+  if (!statusChanged || !isStatusChange) {
+    return null;
+  }
+
+  try {
+    const curatorEmail = after.email;
+    const curatorName = after.name;
+
+    if (!curatorEmail) {
+      console.error('No email found for curator:', event.params.curatorId);
+      return null;
+    }
+
+    const status = after.status;
+    const reason = after.suspensionReason || after.revocationReason || after.reactivationNotes || 'No reason provided';
+
+    let subject, heading, message, callToAction;
+
+    if (status === 'suspended') {
+      subject = '⚠️ Curator Account Suspended - BeatFlow Media';
+      heading = 'Account Suspended';
+      message = `Your curator account has been temporarily suspended. During this time, you will not be able to access curator features or receive new submissions.`;
+    } else if (status === 'revoked') {
+      subject = '🚫 Curator Access Revoked - BeatFlow Media';
+      heading = 'Access Revoked';
+      message = `Your curator access has been revoked and your curator role has been removed. You will no longer have access to curator features.`;
+    } else if (status === 'active' && before.status !== 'active') {
+      subject = '✅ Curator Account Reactivated - BeatFlow Media';
+      heading = 'Account Reactivated';
+      message = `Great news! Your curator account has been reactivated. You now have full access to all curator features.`;
+    }
+
+    const statusEmailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: ${status === 'active' ? '#1DB954' : status === 'suspended' ? '#ff9800' : '#ff5722'}; padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">${heading}</h1>
+          <p style="color: white; margin: 10px 0 0 0;">BeatFlow Media Curator Program</p>
+        </div>
+
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Curator Account Status Update</h2>
+
+          <p style="color: #666; line-height: 1.6;">
+            Hi ${curatorName},
+          </p>
+
+          <p style="color: #666; line-height: 1.6;">
+            ${message}
+          </p>
+
+          <div style="background: ${status === 'active' ? '#e8f5e9' : '#ffebee'}; padding: 15px; border-radius: 8px; border-left: 4px solid ${status === 'active' ? '#1DB954' : status === 'suspended' ? '#ff9800' : '#ff5722'}; margin: 20px 0;">
+            <p style="color: #333; margin: 0; font-size: 14px;">
+              <strong>Reason:</strong> ${reason}
+            </p>
+          </div>
+
+          ${status === 'active' ? `
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://beatflowmediagroup.com/curator-portal"
+                 style="background: #1DB954; color: white; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
+                Access Curator Portal →
+              </a>
+            </div>
+          ` : status === 'suspended' ? `
+            <h3 style="color: #333;">What This Means:</h3>
+            <ul style="color: #666; line-height: 1.8;">
+              <li>Your curator dashboard is temporarily inaccessible</li>
+              <li>You will not receive new track submissions</li>
+              <li>Existing submissions will be on hold</li>
+              <li>Your account can be reactivated once issues are resolved</li>
+            </ul>
+          ` : `
+            <h3 style="color: #333;">What This Means:</h3>
+            <ul style="color: #666; line-height: 1.8;">
+              <li>Your curator role has been permanently removed</li>
+              <li>You no longer have access to curator features</li>
+              <li>All pending submissions have been cancelled</li>
+              <li>You may reapply for curator status in the future</li>
+            </ul>
+          `}
+
+          <p style="color: #666; line-height: 1.6;">
+            If you have questions about this decision or would like to appeal, please contact us at
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954;">office.beatflowmediagroup@gmail.com</a>
+          </p>
+
+          <p style="color: #666; line-height: 1.6;">
+            Thank you,<br>
+            <strong>BeatFlow Media Team</strong>
+          </p>
+
+          <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+            BeatFlow Media |
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954; text-decoration: none;">Support</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendEmail(curatorEmail, subject, statusEmailHtml);
+
+    console.log(`Curator status change email sent to: ${curatorEmail}, New Status: ${status}`);
+    return null;
+  } catch (error) {
+    console.error('Error sending curator status change email:', error);
+    return null;
+  }
+});
+
+// ========================================
 // INVESTOR DECK REQUEST EMAIL
 // ========================================
 exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', async (event) => {

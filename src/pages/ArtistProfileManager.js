@@ -55,6 +55,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import StripeConnectOnboarding from '../components/StripeConnectOnboarding';
 import { checkMembershipStatus } from '../services/membershipService';
+import ArtistCampaignManager from '../components/ArtistCampaignManager';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -870,6 +871,7 @@ export default function ArtistProfileManager() {
             <Tab label="Music" />
             <Tab label="Social Links" />
             <Tab label="Tour Dates" />
+            <Tab label="Campaigns" />
             <Tab label="Statistics" />
             <Tab label="Payouts" />
           </Tabs>
@@ -1369,8 +1371,13 @@ export default function ArtistProfileManager() {
             </CardContent>
           </TabPanel>
 
-          {/* Statistics Tab */}
+          {/* Campaigns Tab */}
           <TabPanel value={activeTab} index={4}>
+            <ArtistCampaignManager />
+          </TabPanel>
+
+          {/* Statistics Tab */}
+          <TabPanel value={activeTab} index={5}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 3 }}>Your Statistics</Typography>
 
@@ -1740,7 +1747,7 @@ export default function ArtistProfileManager() {
           </TabPanel>
 
           {/* Payouts Tab */}
-          <TabPanel value={activeTab} index={5}>
+          <TabPanel value={activeTab} index={6}>
             <StripeConnectOnboarding totalRevenue={totalRevenue} purchases={purchases} />
           </TabPanel>
         </Card>

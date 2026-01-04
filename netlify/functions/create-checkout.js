@@ -81,6 +81,49 @@ exports.handler = async (event, context) => {
           membershipType: 'annual'
         }
       };
+    } else if (itemType === 'playlist_submission') {
+      // Curator playlist placement payment (escrow)
+      checkoutConfig = {
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: itemName,
+                description: artistName, // Track title
+                metadata: {
+                  itemType,
+                  itemId,
+                  userId,
+                  paymentType: 'escrow'
+                }
+              },
+              unit_amount: price, // Price in cents
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        payment_intent_data: {
+          capture_method: 'manual', // Hold funds in escrow
+          metadata: {
+            ...metadata,
+            paymentType: 'escrow',
+            itemType
+          }
+        },
+        success_url: `${process.env.URL || 'http://localhost:8888'}/artist-profile?submission=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.URL || 'http://localhost:8888'}/artist-profile?submission=cancelled`,
+        customer_email: userEmail,
+        metadata: {
+          userId,
+          itemId,
+          itemType,
+          ...metadata
+        },
+        automatic_tax: { enabled: false }
+      };
     } else {
       // Regular song/album purchase
       checkoutConfig = {

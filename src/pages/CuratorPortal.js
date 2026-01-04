@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Alert } from '@mui/material';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import PayoutDashboard from './PayoutDashboard';
 import OnboardStripe from '../components/OnboardStripe';
 
@@ -9,6 +11,8 @@ const CuratorPortal = () => {
   const { user, role } = useAuth();
   const navigate = useNavigate();
   const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(false);
+  const [curatorStatus, setCuratorStatus] = useState(null);
+  const [statusMessage, setStatusMessage] = useState('');
 
   // Check for non-curators and show modal
   useEffect(() => {
@@ -16,6 +20,31 @@ const CuratorPortal = () => {
       setShowAccessDeniedModal(true);
     }
   }, [role]);
+
+  // Check curator status
+  useEffect(() => {
+    const checkCuratorStatus = async () => {
+      if (user && role === 'curator') {
+        try {
+          const curatorDoc = await getDoc(doc(db, 'curators', user.uid));
+          if (curatorDoc.exists()) {
+            const status = curatorDoc.data().status;
+            setCuratorStatus(status);
+
+            if (status === 'suspended') {
+              setStatusMessage(curatorDoc.data().suspensionReason || 'Your account has been suspended.');
+            } else if (status === 'revoked') {
+              setStatusMessage(curatorDoc.data().revocationReason || 'Your curator access has been revoked.');
+            }
+          }
+        } catch (error) {
+          console.error('Error checking curator status:', error);
+        }
+      }
+    };
+
+    checkCuratorStatus();
+  }, [user, role]);
 
   if (!user) {
     return (
@@ -81,12 +110,62 @@ const CuratorPortal = () => {
 
       <div className="min-h-screen bg-black text-white p-8">
         <h2 className="text-3xl font-bold mb-6">Curator Portal</h2>
-        <PayoutDashboard userId={user.uid} stripeAccountId={user.stripeAccountId} />
-        {/* Stripe onboarding for payouts */}
-        <div className="mt-8">
-          <OnboardStripe />
-        </div>
-        {/* Add curator analytics, playlist tools, etc. */}
+
+        {/* Show status warning if suspended or revoked */}
+        {curatorStatus === 'suspended' && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" fontWeight="bold">Account Suspended</Typography>
+            <Typography variant="body2">{statusMessage}</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Your curator features are temporarily disabled. Please contact support at{' '}
+              <a href="mailto:office.beatflowmediagroup@gmail.com" style={{ color: '#1DB954' }}>
+                office.beatflowmediagroup@gmail.com
+              </a>
+            </Typography>
+          </Alert>
+        )}
+
+        {curatorStatus === 'revoked' && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" fontWeight="bold">Access Revoked</Typography>
+            <Typography variant="body2">{statusMessage}</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Your curator access has been permanently revoked. You may reapply for curator status in the future. For questions, contact{' '}
+              <a href="mailto:office.beatflowmediagroup@gmail.com" style={{ color: '#1DB954' }}>
+                office.beatflowmediagroup@gmail.com
+              </a>
+            </Typography>
+          </Alert>
+        )}
+
+        {/* Only show dashboard if active */}
+        {(!curatorStatus || curatorStatus === 'active') && (
+          <>
+            <PayoutDashboard userId={user.uid} stripeAccountId={user.stripeAccountId} />
+            {/* Stripe onboarding for payouts */}
+            <div className="mt-8">
+              <OnboardStripe />
+            </div>
+            {/* Add curator analytics, playlist tools, etc. */}
+          </>
+        )}
+
+        {/* Show contact info if suspended/revoked */}
+        {(curatorStatus === 'suspended' || curatorStatus === 'revoked') && (
+          <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
+            <Typography variant="h6" gutterBottom>Need Help?</Typography>
+            <Typography variant="body2" color="text.secondary">
+              If you believe this action was taken in error or would like to appeal, please reach out to our support team.
+            </Typography>
+            <Button
+              variant="contained"
+              href="mailto:office.beatflowmediagroup@gmail.com"
+              sx={{ mt: 2, bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+            >
+              Contact Support
+            </Button>
+          </Box>
+        )}
       </div>
     </>
   );

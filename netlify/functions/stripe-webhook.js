@@ -193,6 +193,55 @@ async function handleCheckoutSessionCompleted(session) {
       return; // Exit early for artist membership
     }
 
+    // Handle playlist submission escrow payments
+    if (itemType === 'playlist_submission') {
+      console.log(`🎵 Processing playlist submission escrow payment for submission ${itemId}`);
+
+      try {
+        const submissionRef = db.collection('playlist_submissions').doc(itemId);
+        const submissionDoc = await submissionRef.get();
+
+        if (!submissionDoc.exists) {
+          console.error('❌ Submission not found:', itemId);
+          throw new Error(`Submission ${itemId} not found`);
+        }
+
+        // Update submission with escrow payment details
+        await submissionRef.update({
+          paymentStatus: 'escrow_pending',
+          status: 'pending_review',
+          stripePaymentIntentId: session.payment_intent,
+          stripeSessionId: session.id,
+          escrowAmount: session.amount_total / 100, // Convert to dollars
+          escrowCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          reviewDeadline: admin.firestore.Timestamp.fromDate(
+            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days for curator to review
+          )
+        });
+
+        console.log(`✅ Playlist submission ${itemId} payment held in escrow`);
+
+        // Record the escrow transaction
+        await db.collection('escrow_transactions').add({
+          submissionId: itemId,
+          artistId: session.metadata.artistId,
+          curatorId: session.metadata.curatorId,
+          trackId: session.metadata.trackId,
+          playlistId: session.metadata.playlistId,
+          amount: session.amount_total / 100,
+          status: 'held',
+          paymentIntentId: session.payment_intent,
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`✅ Escrow transaction recorded for submission ${itemId}`);
+        return; // Exit early for playlist submissions
+      } catch (error) {
+        console.error('❌ Error processing playlist submission payment:', error);
+        throw error;
+      }
+    }
+
     // Check for duplicate purchase (song/album only)
     console.log('🔍 Checking for existing purchase...');
     const existingPurchase = await db.collection('purchases')
