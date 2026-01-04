@@ -66,6 +66,11 @@ export default function Footer() {
                 </a>
               </li>
               <li>
+                <a href="/blog" className="hover:text-bf-text">
+                  Blog
+                </a>
+              </li>
+              <li>
                 <a href="/sync-licensing" className="hover:text-bf-text">
                   Sync Licensing
                 </a>
@@ -107,20 +112,26 @@ export default function Footer() {
         {/* Social icons */}
         <div className="flex items-start md:items-center space-x-4">
           <a
-            href="https://instagram.com"
+            href="https://www.instagram.com/beatflowmediagroup/"
             className="text-bf-text hover:text-white"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <FaInstagram size={20} />
           </a>
           <a
             href="https://twitter.com"
             className="text-bf-text hover:text-white"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <FaTwitter size={20} />
           </a>
           <a
             href="https://facebook.com"
             className="text-bf-text hover:text-white"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <FaFacebook size={20} />
           </a>

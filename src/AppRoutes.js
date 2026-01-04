@@ -101,6 +101,10 @@ const NoticeAtCollection = lazy(() => import("./pages/NoticeAtCollection"));
 const PrivacyChoices = lazy(() => import("./pages/PrivacyChoices"));
 const SyncLicensing = lazy(() => import("./pages/SyncLicensing"));
 
+// Blog pages
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+
 // Loading component with skeleton UI
 function LoadingFallback() {
   return (
@@ -269,6 +273,10 @@ export default function AppRoutes() {
         <Route path="notice-at-collection" element={<NoticeAtCollection />} />
         <Route path="privacy-choices" element={<PrivacyChoices />} />
         <Route path="sync-licensing" element={<SyncLicensing />} />
+
+        {/* Blog pages */}
+        <Route path="blog" element={<Blog />} />
+        <Route path="blog/:slug" element={<BlogPost />} />
 
         {/* Catch-all for 404 */}
         <Route path="*" element={<div className="p-6 text-center text-white">404 – Page Not Found</div>} />

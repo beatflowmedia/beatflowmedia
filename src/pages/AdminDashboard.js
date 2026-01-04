@@ -9,7 +9,8 @@ import {
   Work,
   ArrowBack,
   Block,
-  Gavel
+  Gavel,
+  Campaign
 } from "@mui/icons-material";
 import { adminAnalytics } from "../services/adminAnalytics";
 
@@ -20,6 +21,7 @@ const ContentIngestionDashboard = lazy(() => import("../components/ContentIngest
 const CuratorApplications = lazy(() => import("../components/admin/CuratorApplications"));
 const ContentManagement = lazy(() => import("../components/admin/ContentManagement"));
 const AppealsReview = lazy(() => import("../components/admin/AppealsReview"));
+const MarketingDashboard = lazy(() => import("../components/admin/MarketingDashboard"));
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -136,6 +138,18 @@ export default function AdminDashboard() {
             <span>Appeals Review</span>
           </button>
 
+          <button
+            onClick={() => setActiveTab("marketing")}
+            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
+              activeTab === "marketing"
+                ? "bg-green-600 text-white"
+                : "hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            <Campaign fontSize="small" />
+            <span>Marketing Engine</span>
+          </button>
+
           <Link
             to="/admin/applications"
             className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700 text-gray-300 transition flex items-center gap-3"
@@ -249,6 +263,14 @@ export default function AdminDashboard() {
                   <div className="font-semibold mb-1">Curator Inbox</div>
                   <div className="text-sm text-gray-400">Review submissions</div>
                 </Link>
+
+                <button
+                  onClick={() => setActiveTab("marketing")}
+                  className="p-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition"
+                >
+                  <div className="font-semibold mb-1">Marketing Engine</div>
+                  <div className="text-sm text-gray-400">Generate content at scale</div>
+                </button>
               </div>
             </div>
           </div>
@@ -300,6 +322,12 @@ export default function AdminDashboard() {
             <div>
               <h2 className="text-3xl font-bold mb-6">Appeals Review with AI Analysis</h2>
               <AppealsReview />
+            </div>
+          )}
+
+          {activeTab === "marketing" && (
+            <div>
+              <MarketingDashboard />
             </div>
           )}
         </Suspense>
