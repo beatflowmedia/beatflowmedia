@@ -1,14 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { adminAnalytics } from "../services/adminAnalytics";
-
-// Lazy load heavy admin components
-const AdminDashboardAnalytics = lazy(() => import("../components/analytics/AdminDashboard"));
-const SecurityDashboard = lazy(() => import("../components/admin/SecurityDashboard"));
-const ContentIngestionDashboard = lazy(() => import("../components/ContentIngestionDashboard"));
-const CuratorApplications = lazy(() => import("../components/admin/CuratorApplications"));
-const ContentManagement = lazy(() => import("../components/admin/ContentManagement"));
-const AppealsReview = lazy(() => import("../components/admin/AppealsReview"));
 import {
   Dashboard,
   BarChart,
@@ -20,6 +11,15 @@ import {
   Block,
   Gavel
 } from "@mui/icons-material";
+import { adminAnalytics } from "../services/adminAnalytics";
+
+// Lazy load heavy admin components
+const AdminDashboardAnalytics = lazy(() => import("../components/analytics/AdminDashboard"));
+const SecurityDashboard = lazy(() => import("../components/admin/SecurityDashboard"));
+const ContentIngestionDashboard = lazy(() => import("../components/ContentIngestionDashboard"));
+const CuratorApplications = lazy(() => import("../components/admin/CuratorApplications"));
+const ContentManagement = lazy(() => import("../components/admin/ContentManagement"));
+const AppealsReview = lazy(() => import("../components/admin/AppealsReview"));
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");

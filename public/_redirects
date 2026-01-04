@@ -1,0 +1,9 @@
+# API and Function redirects
+/player/queue  /.netlify/functions/player-queue  200
+/player/queue/reorder  /.netlify/functions/player-queue  200
+/player/queue/:id  /.netlify/functions/player-queue/:id  200
+/api/stripe-webhook  /.netlify/functions/stripe-webhook  200
+/api/create-checkout  /.netlify/functions/create-checkout  200
+
+# SPA fallback - must be last
+/*  /index.html  200
