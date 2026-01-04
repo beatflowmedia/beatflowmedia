@@ -117,6 +117,7 @@ function SongPage() {
           src={song.cover || getPlaceholderImage(300, 300)}
           alt={song.title}
           className="rounded-lg max-w-full"
+          onError={(e) => { e.target.src = getPlaceholderImage(300, 300); }}
         />
       </div>
 
