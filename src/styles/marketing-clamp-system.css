@@ -1,0 +1,440 @@
+/* Marketing Clamp System - Fluid Typography & Spacing
+ * Uses clamp() and calc() for perfect responsive scaling
+ * No media queries needed - scales smoothly across all viewports
+ */
+
+:root {
+  /* ========================================
+   * FLUID TYPOGRAPHY
+   * ======================================== */
+
+  /* Hero Headlines (Landing Page Heroes) */
+  --font-hero-xl: clamp(2.5rem, calc(5vw + 1rem), 6rem);        /* 40px - 96px */
+  --font-hero-lg: clamp(2rem, calc(4vw + 0.75rem), 4.5rem);     /* 32px - 72px */
+  --font-hero-md: clamp(1.5rem, calc(3vw + 0.5rem), 3rem);      /* 24px - 48px */
+
+  /* Primary Headlines */
+  --font-h1: clamp(2rem, calc(3vw + 1rem), 4rem);               /* 32px - 64px */
+  --font-h2: clamp(1.75rem, calc(2.5vw + 0.75rem), 3rem);       /* 28px - 48px */
+  --font-h3: clamp(1.5rem, calc(2vw + 0.5rem), 2.5rem);         /* 24px - 40px */
+  --font-h4: clamp(1.25rem, calc(1.5vw + 0.5rem), 2rem);        /* 20px - 32px */
+
+  /* Body Text */
+  --font-body-lg: clamp(1.125rem, calc(1.5vw + 0.5rem), 1.5rem);  /* 18px - 24px */
+  --font-body-md: clamp(1rem, calc(1vw + 0.5rem), 1.25rem);       /* 16px - 20px */
+  --font-body-sm: clamp(0.875rem, calc(0.5vw + 0.5rem), 1rem);    /* 14px - 16px */
+
+  /* Stats & Numbers */
+  --font-stat-hero: clamp(3rem, calc(6vw + 1rem), 8rem);          /* 48px - 128px */
+  --font-stat-lg: clamp(2rem, calc(4vw + 1rem), 5rem);            /* 32px - 80px */
+  --font-stat-md: clamp(1.5rem, calc(2vw + 0.5rem), 3rem);        /* 24px - 48px */
+
+  /* ========================================
+   * FLUID SPACING
+   * ======================================== */
+
+  /* Section Spacing */
+  --space-section-xl: clamp(4rem, calc(10vw + 2rem), 16rem);    /* 64px - 256px */
+  --space-section-lg: clamp(3rem, calc(8vw + 2rem), 12rem);     /* 48px - 192px */
+  --space-section-md: clamp(2rem, calc(6vw + 1rem), 8rem);      /* 32px - 128px */
+  --space-section-sm: clamp(1rem, calc(4vw + 0.5rem), 4rem);    /* 16px - 64px */
+
+  /* Container Padding */
+  --space-container-x: clamp(1rem, calc(5vw), 8rem);            /* 16px - 128px */
+  --space-container-y: clamp(2rem, calc(5vw), 6rem);            /* 32px - 96px */
+
+  /* Element Spacing */
+  --space-xl: clamp(2rem, calc(4vw), 4rem);                     /* 32px - 64px */
+  --space-lg: clamp(1.5rem, calc(3vw), 3rem);                   /* 24px - 48px */
+  --space-md: clamp(1rem, calc(2vw), 2rem);                     /* 16px - 32px */
+  --space-sm: clamp(0.5rem, calc(1vw), 1rem);                   /* 8px - 16px */
+  --space-xs: clamp(0.25rem, calc(0.5vw), 0.5rem);              /* 4px - 8px */
+
+  /* ========================================
+   * FLUID DIMENSIONS
+   * ======================================== */
+
+  /* Hero Heights */
+  --height-hero-full: clamp(600px, calc(100vh - 80px), 1000px);
+  --height-hero-half: clamp(400px, calc(50vh - 40px), 600px);
+
+  /* Card Dimensions */
+  --width-card-sm: clamp(280px, calc(90vw), 360px);
+  --width-card-md: clamp(320px, calc(80vw), 480px);
+  --width-card-lg: clamp(400px, calc(70vw), 600px);
+
+  /* Button Sizing */
+  --btn-padding-x: clamp(1.5rem, calc(3vw), 2.5rem);
+  --btn-padding-y: clamp(0.75rem, calc(1.5vw), 1.25rem);
+  --btn-font-size: clamp(1rem, calc(1.5vw), 1.25rem);
+
+  /* ========================================
+   * BRAND COLORS
+   * ======================================== */
+  --brand-primary: #1DB954;
+  --brand-primary-hover: #1ed760;
+  --brand-dark: #191414;
+  --brand-gray: #121212;
+}
+
+/* ========================================
+ * HERO SECTION STYLES
+ * ======================================== */
+
+.marketing-hero {
+  min-height: var(--height-hero-full);
+  padding: var(--space-container-y) var(--space-container-x);
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.marketing-hero-bg {
+  background-size: clamp(100%, calc(100% + 5vw), 110%);
+  background-position: center calc(50% - clamp(0px, 3vw, 40px));
+  background-repeat: no-repeat;
+}
+
+.marketing-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7));
+  z-index: 1;
+}
+
+.marketing-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.marketing-hero h1 {
+  font-size: var(--font-hero-xl);
+  line-height: 1.1;
+  font-weight: 700;
+  margin-bottom: var(--space-md);
+  color: white;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+.marketing-hero h2 {
+  font-size: var(--font-body-lg);
+  line-height: 1.6;
+  margin-bottom: var(--space-lg);
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 800px;
+}
+
+/* ========================================
+ * TYPOGRAPHY CLASSES
+ * ======================================== */
+
+.text-hero-xl { font-size: var(--font-hero-xl); line-height: 1.1; }
+.text-hero-lg { font-size: var(--font-hero-lg); line-height: 1.1; }
+.text-hero-md { font-size: var(--font-hero-md); line-height: 1.2; }
+
+.text-h1 { font-size: var(--font-h1); line-height: 1.2; }
+.text-h2 { font-size: var(--font-h2); line-height: 1.3; }
+.text-h3 { font-size: var(--font-h3); line-height: 1.3; }
+.text-h4 { font-size: var(--font-h4); line-height: 1.4; }
+
+.text-body-lg { font-size: var(--font-body-lg); line-height: 1.6; }
+.text-body-md { font-size: var(--font-body-md); line-height: 1.6; }
+.text-body-sm { font-size: var(--font-body-sm); line-height: 1.5; }
+
+.text-stat-hero { font-size: var(--font-stat-hero); line-height: 1; font-weight: 700; }
+.text-stat-lg { font-size: var(--font-stat-lg); line-height: 1.1; font-weight: 700; }
+.text-stat-md { font-size: var(--font-stat-md); line-height: 1.2; font-weight: 700; }
+
+/* ========================================
+ * SPACING UTILITIES
+ * ======================================== */
+
+.section-xl { padding: var(--space-section-xl) 0; }
+.section-lg { padding: var(--space-section-lg) 0; }
+.section-md { padding: var(--space-section-md) 0; }
+.section-sm { padding: var(--space-section-sm) 0; }
+
+.container-padding { padding: var(--space-container-y) var(--space-container-x); }
+
+.gap-xl { gap: var(--space-xl); }
+.gap-lg { gap: var(--space-lg); }
+.gap-md { gap: var(--space-md); }
+.gap-sm { gap: var(--space-sm); }
+.gap-xs { gap: var(--space-xs); }
+
+.mb-xl { margin-bottom: var(--space-xl); }
+.mb-lg { margin-bottom: var(--space-lg); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-sm { margin-bottom: var(--space-sm); }
+
+/* ========================================
+ * BUTTON STYLES
+ * ======================================== */
+
+.btn-marketing {
+  padding: var(--btn-padding-y) var(--btn-padding-x);
+  font-size: var(--btn-font-size);
+  border-radius: clamp(0.5rem, 1vw, 1rem);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.btn-primary {
+  background: var(--brand-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--brand-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(29, 185, 84, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.btn-outline:hover {
+  background: rgba(29, 185, 84, 0.1);
+  border-color: var(--brand-primary);
+}
+
+/* ========================================
+ * CARD STYLES
+ * ======================================== */
+
+.marketing-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: clamp(1rem, 2vw, 1.5rem);
+  padding: var(--space-lg);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marketing-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+/* ========================================
+ * STATS GRID
+ * ======================================== */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 30vw, 300px), 1fr));
+  gap: var(--space-lg);
+  margin: var(--space-xl) 0;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: var(--font-stat-lg);
+  color: var(--brand-primary);
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+
+.stat-label {
+  font-size: var(--font-body-md);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ========================================
+ * SOCIAL PROOF SECTION
+ * ======================================== */
+
+.social-proof {
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.1), rgba(30, 215, 96, 0.05));
+  border-radius: clamp(1rem, 2vw, 2rem);
+  padding: var(--space-section-md) var(--space-container-x);
+  margin: var(--space-section-lg) 0;
+}
+
+.testimonial {
+  font-size: var(--font-body-lg);
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.8;
+  padding: var(--space-md);
+  border-left: 4px solid var(--brand-primary);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 clamp(0.5rem, 1vw, 1rem) clamp(0.5rem, 1vw, 1rem) 0;
+}
+
+/* ========================================
+ * FOMO ELEMENTS
+ * ======================================== */
+
+.fomo-badge {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-md);
+  background: linear-gradient(135deg, #ff6b6b, #ff8787);
+  color: white;
+  border-radius: clamp(1rem, 2vw, 2rem);
+  font-size: var(--font-body-sm);
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+  }
+}
+
+.live-counter {
+  font-size: var(--font-stat-md);
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+
+/* ========================================
+ * RESPONSIVE IMAGES
+ * ======================================== */
+
+.responsive-img {
+  width: 100%;
+  height: auto;
+  border-radius: clamp(0.5rem, 1vw, 1rem);
+  object-fit: cover;
+}
+
+.responsive-bg {
+  background-size: clamp(100%, calc(100% + 10vw), 120%);
+  background-position: center calc(50% - clamp(0px, 5vw, 50px));
+  background-repeat: no-repeat;
+}
+
+/* ========================================
+ * SUCCESS STORY CARD
+ * ======================================== */
+
+.success-story-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(300px, 40vw, 500px), 1fr));
+  gap: var(--space-lg);
+  background: rgba(29, 185, 84, 0.05);
+  border-radius: clamp(1rem, 2vw, 2rem);
+  padding: var(--space-lg);
+  border: 1px solid rgba(29, 185, 84, 0.2);
+}
+
+.success-story-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: clamp(0.5rem, 1vw, 1rem);
+  object-fit: cover;
+}
+
+.success-story-quote {
+  font-size: var(--font-body-lg);
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+  margin: var(--space-md) 0;
+}
+
+.success-story-author {
+  font-size: var(--font-body-md);
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+
+/* ========================================
+ * FEATURES GRID
+ * ======================================== */
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 40vw, 350px), 1fr));
+  gap: var(--space-lg);
+  margin: var(--space-xl) 0;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: clamp(1rem, 1.5vw, 1.5rem);
+  padding: var(--space-lg);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--brand-primary);
+  transform: translateY(-4px);
+}
+
+.feature-icon {
+  font-size: var(--font-stat-md);
+  color: var(--brand-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.feature-title {
+  font-size: var(--font-h4);
+  margin-bottom: var(--space-xs);
+}
+
+.feature-description {
+  font-size: var(--font-body-md);
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+}
+
+/* ========================================
+ * CTA SECTION
+ * ======================================== */
+
+.cta-section {
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.2), rgba(30, 215, 96, 0.1));
+  border-radius: clamp(1rem, 2vw, 2rem);
+  padding: var(--space-section-md) var(--space-container-x);
+  text-align: center;
+  margin: var(--space-section-lg) 0;
+}
+
+.cta-headline {
+  font-size: var(--font-hero-md);
+  margin-bottom: var(--space-md);
+}
+
+.cta-subhead {
+  font-size: var(--font-body-lg);
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: var(--space-lg);
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
