@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { LikesProvider } from "./context/LikesContext";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import { PlayerProvider } from "./context/PlayerContext";
+import { ModalProvider } from "./context/ModalContext";
 import AppRoutes from "./AppRoutes";
 import beatflowTheme from "./theme/muiTheme";
 import "./index.css"; // Tailwind or global styles
@@ -15,17 +16,19 @@ export default function App() {
   return (
     <ThemeProvider theme={beatflowTheme}>
       <CssBaseline />
-      <AuthProvider>
-        <LikesProvider>
-          <FavoritesProvider>
-            <PlayerProvider>
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </PlayerProvider>
-          </FavoritesProvider>
-        </LikesProvider>
-      </AuthProvider>
+      <ModalProvider>
+        <AuthProvider>
+          <LikesProvider>
+            <FavoritesProvider>
+              <PlayerProvider>
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </PlayerProvider>
+            </FavoritesProvider>
+          </LikesProvider>
+        </AuthProvider>
+      </ModalProvider>
     </ThemeProvider>
   );
 }

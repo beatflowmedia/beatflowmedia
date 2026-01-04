@@ -1,31 +1,33 @@
 // src/components/WriterForm.js
 // Form component for adding co-writers with revenue splits
 import { useState } from "react";
+import { useModal } from "../hooks/useModal";
 
 export default function WriterForm({ onAdd, onCancel, existingWriters = [] }) {
+  const { showAlert } = useModal();
   const [writerName, setWriterName] = useState("");
   const [writerUserId, setWriterUserId] = useState("");
   const [splitPercent, setSplitPercent] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const split = parseFloat(splitPercent) / 100;
 
     if (!writerName || !writerUserId || !splitPercent) {
-      alert("Please fill in all fields");
+      await showAlert("Validation Error", "Please fill in all fields", "warning");
       return;
     }
 
     if (split <= 0 || split > 1) {
-      alert("Split must be between 1% and 100%");
+      await showAlert("Invalid Split", "Split must be between 1% and 100%", "warning");
       return;
     }
 
     // Calculate remaining available split
     const totalExisting = existingWriters.reduce((sum, w) => sum + w.split, 0);
     if (totalExisting + split > 1.0) {
-      alert(`Only ${((1.0 - totalExisting) * 100).toFixed(1)}% remaining to allocate`);
+      await showAlert("Insufficient Split", `Only ${((1.0 - totalExisting) * 100).toFixed(1)}% remaining to allocate`, "warning");
       return;
     }
 

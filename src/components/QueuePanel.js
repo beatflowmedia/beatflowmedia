@@ -1,6 +1,7 @@
 // src/components/QueuePanel.js
 import { useState, memo , useCallback } from "react";
 import { usePlayer } from "../context/PlayerContext";
+import { useModal } from "../hooks/useModal";
 import PlayButton from "./PlayButton";
 import {
   FaChevronRight,
@@ -34,6 +35,7 @@ import classNames from "classnames";
  */
 const QueuePanel = memo(({ visible, onClose, className = "" }) => {
   const { state, dispatch, actions } = usePlayer();
+  const { showConfirm } = useModal();
   const { queue, currentIndex, isPlaying } = state;
   const [isDragDisabled, setIsDragDisabled] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -105,10 +107,16 @@ const QueuePanel = memo(({ visible, onClose, className = "" }) => {
   }, []);
 
   // Clear queue with enhanced confirmation
-  const clearQueue = useCallback(() => {
+  const clearQueue = useCallback(async () => {
     if (queue.length === 0) return;
 
-    if (!window.confirm(`Clear all ${queue.length} tracks from queue?`)) return;
+    const confirmed = await showConfirm(
+      'Clear Queue',
+      `Clear all ${queue.length} tracks from queue?`,
+      'warning'
+    );
+
+    if (!confirmed) return;
 
     // Snapshot for undo
     const prevQueue = [...queue];
@@ -128,7 +136,7 @@ const QueuePanel = memo(({ visible, onClose, className = "" }) => {
         }
       }
     });
-  }, [queue, currentIndex, dispatch, actions]);
+  }, [queue, currentIndex, dispatch, actions, showConfirm]);
 
   // Shuffle queue
   const shuffleQueue = useCallback(() => {

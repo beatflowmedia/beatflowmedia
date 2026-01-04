@@ -6,6 +6,7 @@ import { FaSearch, FaDownload, FaBell, FaCrown, FaUser, FaCog, FaSignOutAlt } fr
 import { MdLibraryMusic } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
 import { useSubscription } from "../hooks/useSubscription";
+import { useModal } from "../hooks/useModal";
 import PropTypes from 'prop-types';
 
 const NavBar = ({
@@ -18,6 +19,7 @@ const NavBar = ({
   const { user, signInWithGoogle, signOutUser } = useAuth();
   const navigate = useNavigate();
   const { hasSubscription, loading: subscriptionLoading } = useSubscription(user);
+  const { showAlert } = useModal();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -56,7 +58,7 @@ const NavBar = ({
       window.location.href = url;
     } catch (error) {
       console.error('Error creating portal session:', error);
-      alert('Failed to open subscription management. Please try again.');
+      await showAlert('Subscription Management Error', 'Failed to open subscription management. Please try again.', 'error');
     }
   };
 

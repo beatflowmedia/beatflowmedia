@@ -1,23 +1,25 @@
 // components/NewPlaylistModal.js
 import { useState } from "react";
 import { FaImage } from "react-icons/fa";
+import { useModal } from "../hooks/useModal";
 
 const NewPlaylistModal = ({ onCreate, onCancel }) => {
+  const { showAlert } = useModal();
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        await showAlert('Invalid File Type', 'Please select an image file', 'warning');
         return;
       }
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size must be less than 5MB');
+        await showAlert('File Too Large', 'Image size must be less than 5MB', 'warning');
         return;
       }
       setImage(file);

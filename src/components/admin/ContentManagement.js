@@ -39,6 +39,7 @@ import {
 import { db } from '../../firebaseConfig';
 import { collection, query, getDocs, doc, updateDoc, where, deleteDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { useModal } from '../../hooks/useModal';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -49,6 +50,7 @@ function TabPanel({ children, value, index }) {
 }
 
 export default function ContentManagement() {
+  const { showConfirm } = useModal();
   const [activeTab, setActiveTab] = useState(0);
   const [songs, setSongs] = useState([]);
   const [albums, setAlbums] = useState([]);
@@ -215,7 +217,13 @@ export default function ContentManagement() {
   };
 
   const handleRepublish = async (item, itemType) => {
-    if (!window.confirm(`Are you sure you want to republish this ${itemType}? It will be visible to users again.`)) {
+    const confirmed = await showConfirm(
+      'Republish Content',
+      `Are you sure you want to republish this ${itemType}? It will be visible to users again.`,
+      'info'
+    );
+
+    if (!confirmed) {
       return;
     }
 
@@ -266,11 +274,23 @@ export default function ContentManagement() {
   };
 
   const handlePermanentDelete = async (item, itemType) => {
-    if (!window.confirm(`⚠️ PERMANENT DELETE - Are you sure you want to permanently delete this ${itemType}? This action CANNOT be undone!`)) {
+    const firstConfirm = await showConfirm(
+      'PERMANENT DELETE',
+      `⚠️ Are you sure you want to permanently delete this ${itemType}? This action CANNOT be undone!\n\nItem: "${item.title}"`,
+      'error'
+    );
+
+    if (!firstConfirm) {
       return;
     }
 
-    if (!window.confirm(`This will permanently delete "${item.title}". Type the ${itemType} title to confirm.`)) {
+    const secondConfirm = await showConfirm(
+      'Confirm Deletion',
+      `This will permanently delete "${item.title}". Are you absolutely sure?`,
+      'error'
+    );
+
+    if (!secondConfirm) {
       return;
     }
 
@@ -287,7 +307,13 @@ export default function ContentManagement() {
         const albumSongsSnapshot = await getDocs(albumSongsQuery);
 
         if (albumSongsSnapshot.size > 0) {
-          if (window.confirm(`Also permanently delete ${albumSongsSnapshot.size} song(s) from this album?`)) {
+          const deleteSongs = await showConfirm(
+            'Delete Album Songs',
+            `Also permanently delete ${albumSongsSnapshot.size} song(s) from this album?`,
+            'warning'
+          );
+
+          if (deleteSongs) {
             const deletePromises = albumSongsSnapshot.docs.map(songDoc =>
               deleteDoc(doc(db, 'songs', songDoc.id))
             );

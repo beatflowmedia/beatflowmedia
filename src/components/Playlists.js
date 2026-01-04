@@ -1,5 +1,6 @@
 import React from "react";
 import { FaMusic, FaPlus, FaTrash } from "react-icons/fa";
+import { useModal } from "../hooks/useModal";
 
 const Playlists = ({
   playlists = [],
@@ -9,15 +10,21 @@ const Playlists = ({
   selectedSong,
   onSelectPlaylist
 }) => {
+  const { showPrompt } = useModal();
+
+  const handleCreatePlaylist = async () => {
+    const name = await showPrompt("Create Playlist", "Enter playlist name:", "");
+    if (name) {
+      onCreateNewPlaylist(name);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-white">Your Playlists</h2>
         <button
-          onClick={() => {
-            const name = prompt("Enter playlist name:");
-            if (name) onCreateNewPlaylist(name);
-          }}
+          onClick={handleCreatePlaylist}
           className="text-gray-400 hover:text-white"
         >
           <FaPlus />

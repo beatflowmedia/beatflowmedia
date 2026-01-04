@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useModal } from "../hooks/useModal";
 import { isPlatformAdmin } from "../utils/adminCheck";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
@@ -12,6 +13,7 @@ import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
  */
 export default function ProtectedRoute({ children, requiredRole, adminOnly = true }) {
   const { user, role } = useAuth();
+  const { showAlert } = useModal();
   const [signingIn, setSigningIn] = useState(false);
 
   // Debug logging
@@ -30,7 +32,7 @@ export default function ProtectedRoute({ children, requiredRole, adminOnly = tru
       // Auth context will automatically update user state
     } catch (error) {
       console.error('Sign in error:', error);
-      alert('Sign in failed: ' + error.message);
+      await showAlert('Sign In Failed', `Sign in failed: ${error.message}`, 'error');
     } finally {
       setSigningIn(false);
     }

@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { Button, CircularProgress, Chip } from '@mui/material';
 import { ShoppingCart, Download } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../hooks/useModal';
 import { stripeService, DEFAULT_SONG_PRICE, DEFAULT_ALBUM_PRICE } from '../services/stripeService';
 
 const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact = false, artistId, uploadedBy }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showAlert } = useModal();
   const [loading, setLoading] = useState(false);
   const [purchased, setPurchased] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -107,13 +109,13 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
 
   const handlePurchase = async () => {
     if (!user) {
-      alert('Please sign in to purchase music');
+      await showAlert('Sign In Required', 'Please sign in to purchase music', 'info');
       return;
     }
 
     // Prevent artists from purchasing their own content
     if (isOwnContent) {
-      alert('You cannot purchase your own music');
+      await showAlert('Cannot Purchase', 'You cannot purchase your own music', 'warning');
       return;
     }
 
@@ -129,7 +131,7 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
       // User will be redirected to Stripe checkout
     } catch (error) {
       console.error('Purchase error:', error);
-      alert(`Failed to initiate purchase: ${error.message}`);
+      await showAlert('Purchase Failed', `Failed to initiate purchase: ${error.message}`, 'error');
       setLoading(false);
     }
   };

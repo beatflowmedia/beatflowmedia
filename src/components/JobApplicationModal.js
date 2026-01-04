@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { extractResumeText, calculateMatchScore, getMatchLevel, extractContactInfo } from "../utils/resumeParser";
+import { useModal } from "../hooks/useModal";
 
 const MINIMUM_MATCH_THRESHOLD = 25; // Reject resumes below this score
 
@@ -15,6 +16,7 @@ const JobApplicationModal = ({
   error,
   progress = 0
 }) => {
+  const { showAlert } = useModal();
   const [form, setForm] = useState(initialState);
   const [isDragging, setIsDragging] = useState(false);
   const [matchScore, setMatchScore] = useState(null);
@@ -86,7 +88,7 @@ const JobApplicationModal = ({
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -109,7 +111,7 @@ const JobApplicationModal = ({
         // Analyze the dropped resume
         analyzeResume(file);
       } else {
-        alert('Please upload a PDF or DOC file');
+        await showAlert('Invalid File Type', 'Please upload a PDF or DOC file', 'warning');
       }
     }
   };
@@ -118,12 +120,16 @@ const JobApplicationModal = ({
     fileRef.current?.click();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate match score threshold
     if (matchScore !== null && matchScore < MINIMUM_MATCH_THRESHOLD) {
-      alert(`Your resume does not meet the minimum requirements for this position (${matchScore}% match). Please ensure your qualifications align with the job description.`);
+      await showAlert(
+        'Requirements Not Met',
+        `Your resume does not meet the minimum requirements for this position (${matchScore}% match). Please ensure your qualifications align with the job description.`,
+        'warning'
+      );
       return;
     }
 
