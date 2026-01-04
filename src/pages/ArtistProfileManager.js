@@ -54,6 +54,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, addDoc, deleteDoc, getDocs,
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import StripeConnectOnboarding from '../components/StripeConnectOnboarding';
+import { checkMembershipStatus } from '../services/membershipService';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -134,6 +135,39 @@ export default function ArtistProfileManager() {
     releaseDate: '',
     recordLabel: ''
   });
+
+  // Membership status
+  const [membershipStatus, setMembershipStatus] = useState({ active: false, expiresAt: null, daysRemaining: null });
+  const [loadingMembership, setLoadingMembership] = useState(true);
+
+  // Check membership status on mount
+  useEffect(() => {
+    const checkMembership = async () => {
+      if (!user) {
+        setLoadingMembership(false);
+        return;
+      }
+
+      try {
+        setLoadingMembership(true);
+        const status = await checkMembershipStatus(user.uid);
+        setMembershipStatus(status);
+      } catch (error) {
+        console.error('Error checking membership:', error);
+      } finally {
+        setLoadingMembership(false);
+      }
+    };
+
+    checkMembership();
+  }, [user]);
+
+  // Redirect to pricing if no active membership
+  useEffect(() => {
+    if (!loadingMembership && !membershipStatus.active) {
+      navigate('/artist-pricing');
+    }
+  }, [loadingMembership, membershipStatus.active, navigate]);
 
   useEffect(() => {
     // Wait a moment for auth to initialize before redirecting
@@ -757,7 +791,7 @@ export default function ArtistProfileManager() {
   };
 
 
-  if (loading) {
+  if (loading || loadingMembership) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
         <CircularProgress />

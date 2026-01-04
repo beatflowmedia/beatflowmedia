@@ -71,7 +71,6 @@ export default function ArtistDashboardNew() {
   const [albums, setAlbums] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(false);
   const [membershipStatus, setMembershipStatus] = useState(null);
   const [checkingMembership, setCheckingMembership] = useState(true);
 
@@ -86,21 +85,22 @@ export default function ArtistDashboardNew() {
       try {
         const status = await checkMembershipStatus(user.uid);
         setMembershipStatus(status);
-
-        // Show modal if not an artist OR if artist but no active membership
-        if (role && (role !== 'artist' || !status.active)) {
-          setShowAccessDeniedModal(true);
-        }
       } catch (error) {
         console.error('Error checking membership:', error);
-        setShowAccessDeniedModal(true);
       } finally {
         setCheckingMembership(false);
       }
     };
 
     checkAccess();
-  }, [user, role]);
+  }, [user]);
+
+  // Redirect to pricing if no active membership
+  useEffect(() => {
+    if (!checkingMembership && (!membershipStatus || !membershipStatus.active)) {
+      navigate('/artist-pricing');
+    }
+  }, [checkingMembership, membershipStatus, navigate]);
 
   // Load artist data
   useEffect(() => {
@@ -212,74 +212,6 @@ export default function ArtistDashboardNew() {
 
   return (
     <>
-      {/* Access Denied Modal */}
-      <Dialog
-        open={showAccessDeniedModal}
-        onClose={() => {}}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ bgcolor: '#1DB954', color: 'white' }}>
-          {role === 'artist' && membershipStatus && !membershipStatus.active
-            ? 'Active Membership Required'
-            : 'Artist Account Required'}
-        </DialogTitle>
-        <DialogContent sx={{ mt: 3 }}>
-          {role === 'artist' && membershipStatus && !membershipStatus.active ? (
-            <>
-              <Typography variant="body1" gutterBottom>
-                Your artist membership is not active or has expired.
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                To access the Artist Dashboard, you need an active $25/year membership.
-              </Typography>
-            </>
-          ) : (
-            <>
-              <Typography variant="body1" gutterBottom>
-                This page is only accessible to users with an active artist membership.
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                To access the Artist Dashboard, you need to:
-              </Typography>
-              <Box component="ul" sx={{ mt: 1, pl: 2 }}>
-                <li>
-                  <Typography variant="body2" color="text.secondary">
-                    Purchase an artist membership ($25/year)
-                  </Typography>
-                </li>
-                <li>
-                  <Typography variant="body2" color="text.secondary">
-                    Sign in with your existing artist credentials
-                  </Typography>
-                </li>
-              </Box>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={() => {
-              setShowAccessDeniedModal(false);
-              navigate('/');
-            }}
-            color="inherit"
-          >
-            Go to Home
-          </Button>
-          <Button
-            onClick={() => {
-              setShowAccessDeniedModal(false);
-              navigate('/artist-pricing');
-            }}
-            variant="contained"
-            sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
-          >
-            {role === 'artist' ? 'Renew Membership' : 'Get Membership'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: 4 }}>
         <Container maxWidth="xl">
         {/* Header */}
