@@ -38,9 +38,13 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log('📦 Event body:', event.body);
+
     const { userId } = JSON.parse(event.body);
+    console.log('👤 User ID:', userId);
 
     if (!userId) {
+      console.log('❌ Missing userId');
       return {
         statusCode: 400,
         headers,
@@ -49,9 +53,11 @@ exports.handler = async (event) => {
     }
 
     // Get user document to find Stripe customer ID
+    console.log('🔍 Fetching user document...');
     const userDoc = await db.collection('users').doc(userId).get();
 
     if (!userDoc.exists) {
+      console.log('❌ User not found in database');
       return {
         statusCode: 404,
         headers,
@@ -60,15 +66,19 @@ exports.handler = async (event) => {
     }
 
     const userData = userDoc.data();
+    console.log('✅ User data retrieved, checking for customerId...');
     const customerId = userData.stripeCustomerId;
 
     if (!customerId) {
+      console.log('❌ No Stripe customer ID found for user');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'No Stripe customer ID found' })
+        body: JSON.stringify({ error: 'No Stripe customer ID found. Please contact support.' })
       };
     }
+
+    console.log('💳 Stripe customer ID:', customerId);
 
     const baseUrl = process.env.URL || 'https://beatflowmediagroup.com';
 
