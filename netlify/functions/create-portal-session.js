@@ -67,14 +67,14 @@ exports.handler = async (event) => {
 
     const userData = userDoc.data();
     console.log('✅ User data retrieved, checking for customerId...');
-    const customerId = userData.stripeCustomerId;
+    let customerId = userData.stripeCustomerId;
 
     if (!customerId) {
       console.log('❌ No Stripe customer ID found for user');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'No Stripe customer ID found. Please contact support.' })
+        body: JSON.stringify({ error: 'No Stripe customer ID found. Please subscribe to a plan first.' })
       };
     }
 
@@ -82,11 +82,29 @@ exports.handler = async (event) => {
 
     const baseUrl = process.env.URL || 'https://beatflowmediagroup.com';
 
-    // Create customer portal session
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${baseUrl}/profile`
-    });
+    // Check if customer exists in live mode, handle test mode customer IDs
+    let session;
+    try {
+      // Create customer portal session
+      session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${baseUrl}/profile`
+      });
+    } catch (error) {
+      // If customer doesn't exist (likely test mode ID in production)
+      if (error.code === 'resource_missing' && error.message.includes('test mode')) {
+        console.log('⚠️ Test mode customer ID detected in production. User needs to re-subscribe.');
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            error: 'Your subscription was created in test mode. Please subscribe again with a real payment method.',
+            isTestMode: true
+          })
+        };
+      }
+      throw error; // Re-throw other errors
+    }
 
     console.log('✅ Created portal session:', session.id);
 

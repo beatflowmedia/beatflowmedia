@@ -75,7 +75,15 @@ export default function StripeButton({ priceId, children, className = "" }) {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to create portal session");
+          const errorData = await response.json().catch(() => ({}));
+
+          // Handle test mode subscription error
+          if (errorData.isTestMode) {
+            alert(errorData.error || "Your subscription was created in test mode. Please subscribe again with a real payment method.");
+            return;
+          }
+
+          throw new Error(errorData.error || "Failed to create portal session");
         }
 
         const { url } = await response.json();
@@ -83,7 +91,7 @@ export default function StripeButton({ priceId, children, className = "" }) {
         return;
       } catch (error) {
         console.error("Error creating portal session:", error);
-        alert("Failed to open subscription management. Please try again.");
+        alert(error.message || "Failed to open subscription management. Please try again.");
         return;
       }
     }
