@@ -3,6 +3,11 @@
 // while keeping source maps for our own code
 
 module.exports = {
+  devServer: {
+    headers: {
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' https://firebasestorage.googleapis.com https://*.firebasestorage.app blob: data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google-analytics.com wss://firestore.googleapis.com; frame-src 'self' https://www.youtube.com https://player.vimeo.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
+    }
+  },
   webpack: {
     configure: (webpackConfig) => {
       // Suppress source map warnings from node_modules (third-party packages)
