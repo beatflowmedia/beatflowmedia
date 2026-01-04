@@ -27,6 +27,7 @@ const Jobs = lazy(() => import("./pages/Jobs"));
 const ForArtists = lazy(() => import("./pages/ForArtists"));
 const ArtistSubmissionPricing = lazy(() => import("./pages/ArtistSubmissionPricing"));
 const CuratorPricing = lazy(() => import("./pages/CuratorPricing"));
+const CuratorEarnings = lazy(() => import("./pages/CuratorEarnings"));
 const CuratorApplication = lazy(() => import("./pages/CuratorApplication"));
 const AgentsDashboard = lazy(() => import("./pages/AgentsDashboard"));
 const Advertisements = lazy(() => import("./pages/Advertisements"));
@@ -208,6 +209,7 @@ export default function AppRoutes() {
         <Route path="jobs" element={<Jobs />} />
         <Route path="artist-pricing" element={<ArtistSubmissionPricing />} />
         <Route path="become-curator" element={<CuratorPricing />} />
+        <Route path="curator-earnings" element={<CuratorEarnings />} />
         <Route path="curator-application" element={<CuratorApplication />} />
         <Route path="purchase/success" element={<PurchaseSuccess />} />
         <Route path="purchase/cancelled" element={<PurchaseCancelled />} />

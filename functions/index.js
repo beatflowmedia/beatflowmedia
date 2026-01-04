@@ -1,30 +1,31 @@
 const {onDocumentUpdated, onDocumentCreated} = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
+const emailConfig = require('./emailConfig');
 
 admin.initializeApp();
 
 // Helper function to send email
 async function sendEmail(to, subject, html) {
-  // Get email credentials
-  const emailUser = 'beatflowmediagroup@gmail.com';
-  const emailPass = 'eezqfupeocueocow'; // App password
+  // Get email credentials from centralized config
+  const {smtp, addresses} = emailConfig;
 
-  if (!emailUser || !emailPass) {
+  if (!smtp.user || !smtp.pass) {
     console.log('Skipping email send (no credentials configured):', to, subject);
     return;
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: smtp.service,
     auth: {
-      user: emailUser,
-      pass: emailPass
+      user: smtp.user,
+      pass: smtp.pass
     }
   });
 
   const mailOptions = {
-    from: 'BeatFlow Media <noreply@beatflowmediagroup.com>',
+    from: addresses.from,
+    replyTo: addresses.replyTo, // User replies go to office.beatflowmediagroup@gmail.com
     to: to,
     subject: subject,
     html: html
@@ -146,7 +147,7 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
 
           <p style="color: #666; line-height: 1.6;">
             If you have questions about this takedown, please reply to this email or contact us at
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954;">office.beatflowmediagroup@gmail.com</a>
           </p>
 
           <p style="color: #666; line-height: 1.6;">
@@ -160,7 +161,7 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
           <p>
             <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
             <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954; text-decoration: none;">Support</a>
           </p>
         </div>
       </div>
@@ -286,7 +287,7 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
 
           <p style="color: #666; line-height: 1.6;">
             If you have questions about this takedown, please reply to this email or contact us at
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954;">office.beatflowmediagroup@gmail.com</a>
           </p>
 
           <p style="color: #666; line-height: 1.6;">
@@ -300,7 +301,7 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
           <p>
             <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
             <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954; text-decoration: none;">Support</a>
           </p>
         </div>
       </div>
@@ -417,7 +418,7 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
 
           <p style="color: #666; line-height: 1.6;">
             If you have questions about this decision, please contact us at
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954;">office.beatflowmediagroup@gmail.com</a>
           </p>
 
           <p style="color: #666; line-height: 1.6;">
@@ -431,7 +432,7 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
           <p>
             <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
             <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Support</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954; text-decoration: none;">Support</a>
           </p>
         </div>
       </div>
@@ -447,6 +448,156 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
     return null;
   } catch (error) {
     console.error('Error sending appeal decision email:', error);
+    return null;
+  }
+});
+
+// ========================================
+// CURATOR APPLICATION DECISION EMAIL
+// ========================================
+exports.onCuratorApplicationDecision = onDocumentUpdated('curatorApplications/{applicationId}', async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+
+  // Only send email when application status changes to approved or rejected
+  const statusChanged = before.status !== after.status;
+  const isDecided = after.status === 'approved' || after.status === 'rejected';
+
+  if (!statusChanged || !isDecided) {
+    return null;
+  }
+
+  try {
+    const applicantEmail = after.email;
+    const applicantName = after.name;
+
+    if (!applicantEmail) {
+      console.error('No email found for curator application:', event.params.applicationId);
+      return null;
+    }
+
+    const isApproved = after.status === 'approved';
+
+    const decisionEmailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: ${isApproved ? '#1DB954' : '#ff5722'}; padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">${isApproved ? '🎉' : '📋'} Curator Application ${isApproved ? 'Approved' : 'Decision'}</h1>
+          <p style="color: white; margin: 10px 0 0 0;">${isApproved ? 'Welcome to BeatFlow Media!' : 'Thank you for your application'}</p>
+        </div>
+
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Application ${isApproved ? 'Approved' : 'Decision'}</h2>
+
+          <p style="color: #666; line-height: 1.6;">
+            Hi ${applicantName},
+          </p>
+
+          <p style="color: #666; line-height: 1.6;">
+            ${isApproved
+              ? 'Congratulations! We are excited to inform you that your curator application has been approved. You are now an official BeatFlow Media curator!'
+              : 'Thank you for your interest in becoming a BeatFlow Media curator. After careful review, we have decided not to move forward with your application at this time.'}
+          </p>
+
+          ${isApproved ? `
+            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #1DB954; margin: 20px 0;">
+              <p style="color: #2e7d32; margin: 0; font-size: 14px;">
+                <strong>What's Next:</strong> You can now start earning money by accepting artist playlist submissions and curating great music!
+              </p>
+            </div>
+
+            <h3 style="color: #333;">Getting Started:</h3>
+            <ul style="color: #666; line-height: 1.8;">
+              <li><strong>Access Your Curator Portal:</strong> Go to the curator portal to view your dashboard</li>
+              <li><strong>Set Up Stripe Payouts:</strong> Complete Stripe Connect onboarding to receive payments</li>
+              <li><strong>Review Submissions:</strong> Start reviewing artist track submissions in your inbox</li>
+              <li><strong>Set Your Rates:</strong> Configure pricing for your playlists based on reach and engagement</li>
+              <li><strong>Get Paid:</strong> Earn 90% of placement fees when you accept and add tracks to your playlists</li>
+            </ul>
+
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1DB954;">
+              <h3 style="color: #333; margin-top: 0;">How Curator Earnings Work:</h3>
+              <p style="color: #666; margin: 5px 0;">• Artists pay $25-$1,000 to submit tracks to your playlists</p>
+              <p style="color: #666; margin: 5px 0;">• You review and accept quality submissions that fit your curation style</p>
+              <p style="color: #666; margin: 5px 0;">• Once you add the track to your playlist, funds are released from escrow</p>
+              <p style="color: #666; margin: 5px 0;">• <strong>You keep 90%</strong> of the placement fee, platform keeps 10%</p>
+              <p style="color: #666; margin: 5px 0;">• Payments processed via Stripe Connect within 24-48 hours</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://beatflowmediagroup.com/curator-portal"
+                 style="background: #1DB954; color: white; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-bottom: 10px;">
+                Go to Curator Portal →
+              </a>
+              <br>
+              <a href="https://beatflowmediagroup.com/curator-earnings"
+                 style="background: #ff9800; color: white; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
+                See Your Earning Potential
+              </a>
+            </div>
+          ` : `
+            <div style="background: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #ff5722; margin: 20px 0;">
+              <p style="color: #c62828; margin: 0; font-size: 14px;">
+                <strong>Application Not Approved:</strong> At this time, we are unable to accept your curator application.
+              </p>
+            </div>
+
+            ${after.notes ? `
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+                <h3 style="color: #333; margin-top: 0;">Feedback:</h3>
+                <p style="color: #666; margin: 5px 0;">${after.notes}</p>
+              </div>
+            ` : ''}
+
+            <h3 style="color: #333;">What You Can Do:</h3>
+            <ul style="color: #666; line-height: 1.8;">
+              <li>Continue growing your playlist following and engagement</li>
+              <li>You may reapply in the future once you meet our curator criteria</li>
+              <li>Explore other opportunities on BeatFlow Media (artist submissions, licensing, etc.)</li>
+              <li>Contact us if you have questions about this decision</li>
+            </ul>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://beatflowmediagroup.com/contact"
+                 style="background: #1DB954; color: white; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block;">
+                Contact Support
+              </a>
+            </div>
+          `}
+
+          <p style="color: #666; line-height: 1.6;">
+            ${isApproved
+              ? 'If you have any questions about getting started, please reach out to us at'
+              : 'If you have questions about this decision, please contact us at'}
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954;">office.beatflowmediagroup@gmail.com</a>
+          </p>
+
+          <p style="color: #666; line-height: 1.6;">
+            ${isApproved ? 'Welcome to the BeatFlow curator community!' : 'Thank you for your interest in BeatFlow Media.'}<br>
+            <strong>The BeatFlow Media Team</strong>
+          </p>
+        </div>
+
+        <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
+          <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+          <p>
+            <a href="https://beatflowmediagroup.com/curator-pricing" style="color: #1DB954; text-decoration: none;">Curator Program</a> |
+            <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954; text-decoration: none;">Support</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendEmail(
+      applicantEmail,
+      `${isApproved ? '🎉 Curator Application Approved' : 'Curator Application Decision'} - BeatFlow Media`,
+      decisionEmailHtml
+    );
+
+    console.log(`Curator application decision email sent to: ${applicantEmail}, Status: ${after.status}`);
+    return null;
+  } catch (error) {
+    console.error('Error sending curator application decision email:', error);
     return null;
   }
 });
@@ -562,7 +713,7 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
             <strong>Percy Rice</strong><br>
             Founder & CEO<br>
             BeatFlow Media Group<br>
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954;">office@beatflowmediagroup.com</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954;">office.beatflowmediagroup@gmail.com</a>
           </p>
         </div>
 
@@ -571,7 +722,7 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
           <p>
             <a href="https://beatflowmediagroup.com/investors" style="color: #1DB954; text-decoration: none;">Investor Portal</a> |
             <a href="https://beatflowmediagroup.com/nda" style="color: #1DB954; text-decoration: none;">NDA Terms</a> |
-            <a href="mailto:office@beatflowmediagroup.com" style="color: #1DB954; text-decoration: none;">Contact</a>
+            <a href="mailto:office.beatflowmediagroup@gmail.com" style="color: #1DB954; text-decoration: none;">Contact</a>
           </p>
         </div>
       </div>
@@ -585,7 +736,7 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
 
     // Also notify admin
     await sendEmail(
-      'office@beatflowmediagroup.com',
+      'office.beatflowmediagroup@gmail.com',
       `New Investor Request: ${investorEmail}`,
       `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
