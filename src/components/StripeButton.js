@@ -5,12 +5,14 @@ import { loadStripe } from "@stripe/stripe-js";
 import { useAuth } from "../context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import Modal from "./Modal";
 
 export default function StripeButton({ priceId, children, className = "" }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [hasSubscription, setHasSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
   const stripePromise = useMemo(() => {
@@ -85,7 +87,12 @@ export default function StripeButton({ priceId, children, className = "" }) {
 
           // If portal fails, user likely doesn't have valid subscription - reset state
           setHasSubscription(false);
-          alert("Unable to access subscription portal. Please subscribe to a plan.");
+          setModal({
+            isOpen: true,
+            title: 'Subscription Portal Unavailable',
+            message: 'Unable to access subscription portal. Please subscribe to a plan.',
+            type: 'error'
+          });
           return;
         }
 
@@ -96,14 +103,24 @@ export default function StripeButton({ priceId, children, className = "" }) {
         console.error("Error creating portal session:", error);
         // Reset subscription state on error
         setHasSubscription(false);
-        alert("Unable to access subscription portal. Please try subscribing again.");
+        setModal({
+          isOpen: true,
+          title: 'Connection Error',
+          message: 'Unable to access subscription portal. Please try subscribing again.',
+          type: 'error'
+        });
         return;
       }
     }
 
     // User is logged in but no subscription - proceed to checkout
     if (!stripePromise) {
-      alert('Stripe is not configured. Please contact support.');
+      setModal({
+        isOpen: true,
+        title: 'Configuration Error',
+        message: 'Stripe is not configured. Please contact support.',
+        type: 'error'
+      });
       return;
     }
 
@@ -135,23 +152,43 @@ export default function StripeButton({ priceId, children, className = "" }) {
         const { error } = await stripe.redirectToCheckout({ sessionId });
         if (error) {
           console.error("Stripe redirect error:", error);
-          alert(`Payment error: ${error.message}`);
+          setModal({
+            isOpen: true,
+            title: 'Payment Error',
+            message: error.message,
+            type: 'error'
+          });
         }
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert(`Failed to start checkout: ${error.message}`);
+      setModal({
+        isOpen: true,
+        title: 'Checkout Failed',
+        message: error.message || 'Failed to start checkout. Please try again.',
+        type: 'error'
+      });
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={loading || !stripePromise}
-      className={`${className} ${loading || !stripePromise ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      {loading ? "Loading..." : hasSubscription ? "Manage Subscription" : children}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading || !stripePromise}
+        className={`${className} ${loading || !stripePromise ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        {loading ? "Loading..." : hasSubscription ? "Manage Subscription" : children}
+      </button>
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
+    </>
   );
 }
