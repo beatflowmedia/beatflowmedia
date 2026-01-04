@@ -20,13 +20,16 @@ const CuratorPortal = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Please sign in to access the Curator Portal</h2>
+        <div className="text-center max-w-md mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-4">Welcome to the Curator Portal</h2>
+          <p className="text-gray-300 mb-6">
+            Please sign in with your approved curator account to access your dashboard, manage submissions, and track your earnings.
+          </p>
           <button
-            onClick={() => navigate('/')}
-            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded"
+            onClick={() => navigate('/?signin=true')}
+            className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-lg font-semibold"
           >
-            Sign In
+            Sign In to Continue
           </button>
         </div>
       </div>
