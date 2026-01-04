@@ -15,23 +15,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Chip,
   IconButton,
   Menu,
   MenuItem,
   LinearProgress,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
+  Alert
 } from '@mui/material';
 import {
   CloudUpload,
   MusicNote,
   Album as AlbumIcon,
-  TrendingUp,
   AttachMoney,
   Edit,
   Delete,
@@ -43,7 +37,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { checkMembershipStatus } from '../services/membershipService';
 
