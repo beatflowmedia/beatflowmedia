@@ -5,6 +5,7 @@ import classNames from "classnames";
 import { FaSearch, FaDownload, FaBell, FaCrown, FaUser, FaCog, FaSignOutAlt } from "react-icons/fa";
 import { MdLibraryMusic } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
+import { useSubscription } from "../hooks/useSubscription";
 import PropTypes from 'prop-types';
 
 const NavBar = ({
@@ -16,6 +17,7 @@ const NavBar = ({
 }) => {
   const { user, signInWithGoogle, signOutUser } = useAuth();
   const navigate = useNavigate();
+  const { hasSubscription, loading: subscriptionLoading } = useSubscription(user);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -35,6 +37,28 @@ const NavBar = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showUserMenu]);
+
+  const handleManageSubscription = async () => {
+    if (!user) return;
+
+    try {
+      const response = await fetch('/.netlify/functions/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create portal session');
+      }
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating portal session:', error);
+      alert('Failed to open subscription management. Please try again.');
+    }
+  };
 
   return (
     <nav
@@ -93,12 +117,13 @@ const NavBar = ({
       <div className="flex items-center space-x-4">
         <button
           type="button"
-          onClick={onExplorePremium}
-          aria-label="Get BeatFlow Premium"
-          className="bg-bf-blue text-white px-4 py-2 rounded-full flex items-center space-x-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-green transition"
+          onClick={hasSubscription ? handleManageSubscription : onExplorePremium}
+          aria-label={hasSubscription ? "Manage Subscription" : "Get BeatFlow Premium"}
+          disabled={subscriptionLoading}
+          className="bg-bf-blue text-white px-4 py-2 rounded-full flex items-center space-x-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-bf-green transition disabled:opacity-50"
         >
           <FaCrown />
-          <span>Get BeatFlow Premium</span>
+          <span>{subscriptionLoading ? "Loading..." : hasSubscription ? "Manage Subscription" : "Get BeatFlow Premium"}</span>
         </button>
 
         <button
@@ -178,6 +203,18 @@ const NavBar = ({
                     <FaCog />
                     <span>Settings</span>
                   </button>
+                  {hasSubscription && (
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        handleManageSubscription();
+                      }}
+                      className="w-full px-4 py-2 text-left text-white hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <FaCrown />
+                      <span>Manage Subscription</span>
+                    </button>
+                  )}
                   <div className="border-t border-gray-700 my-2"></div>
                   <button
                     onClick={() => {

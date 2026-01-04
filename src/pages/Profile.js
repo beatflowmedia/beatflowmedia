@@ -21,6 +21,7 @@ import {
   Paper,
   CircularProgress
 } from '@mui/material';
+import Modal from '../components/Modal';
 import {
   Download,
   Settings,
@@ -52,6 +53,7 @@ export default function Profile() {
   const [recentPurchases, setRecentPurchases] = useState([]);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
   useEffect(() => {
     if (!user) {
@@ -84,7 +86,12 @@ export default function Profile() {
       window.location.href = url;
     } catch (error) {
       console.error('Error creating portal session:', error);
-      alert('Failed to open subscription management. Please try again.');
+      setModal({
+        isOpen: true,
+        title: 'Subscription Management Error',
+        message: 'Failed to open subscription management. Please try again.',
+        type: 'error'
+      });
     }
   };
 
@@ -437,6 +444,14 @@ export default function Profile() {
           </Grid>
         </Grid>
       </Container>
+
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
     </Box>
   );
 }
