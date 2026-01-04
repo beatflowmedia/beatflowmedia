@@ -60,7 +60,7 @@ export default function PlaylistView({ playlistId, onSongSelect }) {
                 }}
               >
                 <img
-                  src={song.cover || "https://via.placeholder.com/50"}
+                  src={song.cover || "data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50"%3E%3Crect width="50" height="50" fill="%23333"/%3E%3C/svg%3E"}
                   alt="Album Cover"
                   className="w-14 h-14 rounded-md"
                 />
