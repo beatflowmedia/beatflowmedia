@@ -1,71 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import CuratorMarketingLanding from '../components/CuratorMarketingLanding';
-import CuratorSubmissionInbox from '../components/CuratorSubmissionInbox';
-import CuratorRevenueDashboard from '../components/CuratorRevenueDashboard';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
+import PayoutDashboard from './PayoutDashboard';
 import OnboardStripe from '../components/OnboardStripe';
-import { Box, Container, Tabs, Tab } from '@mui/material';
 
 const CuratorPortal = () => {
   const { user, role } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState(0);
+  const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(false);
 
-  // Redirect to signin if not authenticated, then back to curator portal
+  // Check for non-curators and show modal
   useEffect(() => {
-    if (!user) {
-      // User not signed in - redirect to signin with return path
-      navigate('/?signin=true&redirect=/curator-portal', { replace: true });
+    if (role && role !== 'curator') {
+      setShowAccessDeniedModal(true);
     }
-  }, [user, navigate]);
+  }, [role]);
 
-  // Show marketing landing page for non-curators (but signed in users)
   if (!user) {
-    return null; // Will redirect via useEffect
-  }
-
-  if (role !== 'curator') {
-    return <CuratorMarketingLanding />;
-  }
-
-  // Show curator dashboard for verified curators
-  return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#000', color: '#fff', py: 4 }}>
-      <Container maxWidth="xl">
-        <h2 className="text-3xl font-bold mb-6">Curator Portal</h2>
-
-        {/* Navigation Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: '#404040', mb: 4 }}>
-          <Tabs
-            value={activeTab}
-            onChange={(e, newValue) => setActiveTab(newValue)}
-            sx={{
-              '& .MuiTab-root': {
-                color: '#b3b3b3',
-                fontWeight: 'bold',
-                '&.Mui-selected': { color: '#1db954' }
-              },
-              '& .MuiTabs-indicator': { bgcolor: '#1db954' }
-            }}
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Please sign in to access the Curator Portal</h2>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded"
           >
-            <Tab label="Submissions" />
-            <Tab label="Revenue" />
-            <Tab label="Payouts" />
-          </Tabs>
-        </Box>
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-        {/* Tab Content */}
-        {activeTab === 0 && <CuratorSubmissionInbox />}
-        {activeTab === 1 && <CuratorRevenueDashboard />}
-        {activeTab === 2 && (
-          <Box>
-            <OnboardStripe />
-          </Box>
-        )}
-      </Container>
-    </Box>
+  return (
+    <>
+      {/* Access Denied Modal */}
+      <Dialog
+        open={showAccessDeniedModal}
+        onClose={() => {}}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#1DB954', color: 'white' }}>
+          Curator Account Required
+        </DialogTitle>
+        <DialogContent sx={{ mt: 3 }}>
+          <Typography variant="body1" gutterBottom>
+            This page is only accessible to users with a curator account.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Curators manage playlists and help artists get discovered on BeatFlow.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => {
+              setShowAccessDeniedModal(false);
+              navigate('/');
+            }}
+            color="inherit"
+          >
+            Go to Home
+          </Button>
+          <Button
+            onClick={() => {
+              setShowAccessDeniedModal(false);
+              navigate('/become-curator');
+            }}
+            variant="contained"
+            sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+          >
+            Learn More
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <div className="min-h-screen bg-black text-white p-8">
+        <h2 className="text-3xl font-bold mb-6">Curator Portal</h2>
+        <PayoutDashboard userId={user.uid} stripeAccountId={user.stripeAccountId} />
+        {/* Stripe onboarding for payouts */}
+        <div className="mt-8">
+          <OnboardStripe />
+        </div>
+        {/* Add curator analytics, playlist tools, etc. */}
+      </div>
+    </>
   );
 };
 
