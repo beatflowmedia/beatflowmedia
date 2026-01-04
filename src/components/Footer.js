@@ -31,7 +31,7 @@ export default function Footer() {
             <h4 className="text-bf-text font-semibold mb-2">Communities</h4>
             <ul className="space-y-1">
               <li>
-                <a href="/artist-profile" className="hover:text-bf-text">
+                <a href="/artist-pricing" className="hover:text-bf-text">
                   Artists
                 </a>
               </li>

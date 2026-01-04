@@ -1885,18 +1885,18 @@ export default function ForArtists() {
               <Button
                 size="small"
                 variant="contained"
-                onClick={() => window.location.href = '/artist-profile'}
+                onClick={() => window.location.href = '/artist-pricing'}
                 sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
               >
-                Manage Profile
+                View Pricing
               </Button>
             }
           >
             <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-              Set up your artist profile first!
+              Need to upgrade your artist membership?
             </Typography>
             <Typography variant="caption">
-              Add your bio, images, tour dates, and social links before uploading music
+              Check out our artist pricing plans to continue uploading music
             </Typography>
           </Alert>
 
