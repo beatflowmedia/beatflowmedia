@@ -1,4 +1,5 @@
 // src/components/PlaylistHeader.js
+import { getPlaceholderImage } from "../utils/placeholders";
 import { useState, memo, useEffect, useRef , useCallback } from "react";
 import {
   FaPlay,
@@ -262,7 +263,7 @@ const PlaylistHeader = memo(
               <div className="relative group">
                 <img
                   src={
-                    playlist.cover || "https://via.placeholder.com/256?text=♪"
+                    playlist.cover || getPlaceholderImage(256, 256, "♪")
                   }
                   alt={`${playlist.title} cover`}
                   className={classNames(
@@ -272,7 +273,7 @@ const PlaylistHeader = memo(
                   )}
                   onLoad={() => setImageLoaded(true)}
                   onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/256?text=♪";
+                    e.target.src = getPlaceholderImage(256, 256, "♪");
                     setImageLoaded(true);
                   }}
                 />
@@ -325,7 +326,7 @@ const PlaylistHeader = memo(
                     <img
                       src={
                         playlist.creator.avatar ||
-                        "https://via.placeholder.com/24?text=U"
+                        getPlaceholderImage(24, 24, "U")
                       }
                       alt={playlist.creator.name}
                       className="w-6 h-6 rounded-full"

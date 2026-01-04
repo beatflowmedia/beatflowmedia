@@ -1,5 +1,6 @@
 // src/components/NowPlayingBar.js
 import { useState, memo, useRef, useEffect , useCallback } from "react";
+import { getPlaceholderImage } from "../utils/placeholders";
 import {
   FaPlay,
   FaPause,
@@ -248,12 +249,12 @@ const NowPlayingBar = memo(
             src={
               currentTrack.cover ||
               currentTrack.coverUrl ||
-              "https://via.placeholder.com/56?text=♪"
+              getPlaceholderImage(56, 56, '♪')
             }
             alt={`${currentTrack.title} cover`}
             className="w-14 h-14 rounded object-cover shadow-lg"
             onError={(e) => {
-              e.target.src = "https://via.placeholder.com/56?text=♪";
+              e.target.src = getPlaceholderImage(56, 56, '♪');
             }}
           />
 

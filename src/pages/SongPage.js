@@ -1,4 +1,5 @@
 // src/pages/SongPage.js
+import { getPlaceholderImage } from "../utils/placeholders";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import PlayButton from "../components/PlayButton";
@@ -113,7 +114,7 @@ function SongPage() {
 
       <div className="mt-6">
         <img
-          src={song.cover || "https://via.placeholder.com/300"}
+          src={song.cover || getPlaceholderImage(300, 300)}
           alt={song.title}
           className="rounded-lg max-w-full"
         />

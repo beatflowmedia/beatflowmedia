@@ -1,4 +1,5 @@
 // src/components/QueuePanel.js
+import { getPlaceholderImage } from "../utils/placeholders";
 import { useState, memo , useCallback } from "react";
 import { usePlayer } from "../context/PlayerContext";
 import { useModal } from "../hooks/useModal";
@@ -309,12 +310,12 @@ const QueuePanel = memo(({ visible, onClose, className = "" }) => {
                       src={
                         currentTrack.cover ||
                         currentTrack.coverUrl ||
-                        "https://via.placeholder.com/64?text=♪"
+                        getPlaceholderImage(64, 64, "♪")
                       }
                       alt={`${currentTrack.title} cover`}
                       className="w-16 h-16 mr-4 rounded-lg object-cover shadow-md"
                       onError={(e) => {
-                        e.target.src = "https://via.placeholder.com/64?text=♪";
+                        e.target.src = getPlaceholderImage(64, 64, "♪");
                       }}
                     />
                     <div className="flex-1 min-w-0">
@@ -418,13 +419,13 @@ const QueuePanel = memo(({ visible, onClose, className = "" }) => {
                                     src={
                                       item.cover ||
                                       item.coverUrl ||
-                                      "https://via.placeholder.com/40?text=♪"
+                                      getPlaceholderImage(40, 40, "♪")
                                     }
                                     alt={`${item.title} cover`}
                                     className="w-10 h-10 mr-3 rounded object-cover shadow-sm"
                                     onError={(e) => {
                                       e.target.src =
-                                        "https://via.placeholder.com/40?text=♪";
+                                        getPlaceholderImage(40, 40, "♪");
                                     }}
                                   />
 

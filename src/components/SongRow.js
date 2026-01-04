@@ -1,4 +1,5 @@
 // SongRow.js
+import { getPlaceholderImage } from "../utils/placeholders";
 import React from "react";
 import PlayButton from "../components/PlayButton";
 import SongOptionsMenu from "../components/SongOptionsMenu";

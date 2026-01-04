@@ -1,4 +1,5 @@
 // src/components/TrackRow.js
+import { getPlaceholderImage } from "../utils/placeholders";
 import { useState, memo , useCallback, useEffect } from "react";
 import {
   FaPlay,
@@ -293,7 +294,7 @@ const TrackRow = memo(
             src={
               track.cover ||
               track.coverUrl ||
-              "https://via.placeholder.com/48?text=♪"
+              getPlaceholderImage(48, 48, "♪")
             }
             alt={`${track.title} cover`}
             className={classNames(
@@ -303,7 +304,7 @@ const TrackRow = memo(
             )}
             loading="lazy"
             onError={(e) => {
-              e.target.src = "https://via.placeholder.com/48?text=♪";
+              e.target.src = getPlaceholderImage(48, 48, "♪");
             }}
           />
         </div>

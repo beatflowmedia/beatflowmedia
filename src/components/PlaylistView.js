@@ -1,3 +1,4 @@
+import { getPlaceholderImage } from "../utils/placeholders";
 import { useEffect, useState } from "react";
 import { FaTrash } from "react-icons/fa";
 import {
