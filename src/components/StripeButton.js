@@ -63,10 +63,15 @@ export default function StripeButton({ priceId, children, className = "" }) {
   const handleClick = async () => {
     console.log('StripeButton clicked', { user, loading, hasSubscription });
 
-    // If not logged in, redirect to login
+    // If not logged in, show modal prompting to log in
     if (!user) {
-      console.log('No user found, redirecting to login');
-      navigate("/login");
+      console.log('No user found, prompting to log in');
+      setModal({
+        isOpen: true,
+        title: 'Login Required',
+        message: 'Please log in using the navbar to subscribe to a plan.',
+        type: 'info'
+      });
       return;
     }
 
