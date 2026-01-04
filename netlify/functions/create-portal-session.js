@@ -93,13 +93,25 @@ exports.handler = async (event) => {
     } catch (error) {
       // If customer doesn't exist (likely test mode ID in production)
       if (error.code === 'resource_missing' && error.message.includes('test mode')) {
-        console.log('⚠️ Test mode customer ID detected in production. User needs to re-subscribe.');
+        console.log('⚠️ Test mode customer ID detected. Clearing invalid data from user document...');
+
+        // Clear the test mode customer ID from Firestore
+        await db.collection('users').doc(userId).update({
+          stripeCustomerId: null,
+          subscriptionStatus: null,
+          subscriptionId: null,
+          subscriptionPlan: null
+        });
+
+        console.log('✅ Cleared test mode subscription data');
+
         return {
           statusCode: 400,
           headers,
           body: JSON.stringify({
-            error: 'Your subscription was created in test mode. Please subscribe again with a real payment method.',
-            isTestMode: true
+            error: 'Your test subscription has been cleared. Please subscribe with a real payment method.',
+            isTestMode: true,
+            dataCleared: true
           })
         };
       }
