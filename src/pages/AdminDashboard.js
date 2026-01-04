@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import AdminDashboardAnalytics from "../components/analytics/AdminDashboard";
-import SecurityDashboard from "../components/admin/SecurityDashboard";
-import ContentIngestionDashboard from "../components/ContentIngestionDashboard";
-import CuratorApplications from "../components/admin/CuratorApplications";
-import ContentManagement from "../components/admin/ContentManagement";
-import AppealsReview from "../components/admin/AppealsReview";
 import { adminAnalytics } from "../services/adminAnalytics";
+
+// Lazy load heavy admin components
+const AdminDashboardAnalytics = lazy(() => import("../components/analytics/AdminDashboard"));
+const SecurityDashboard = lazy(() => import("../components/admin/SecurityDashboard"));
+const ContentIngestionDashboard = lazy(() => import("../components/ContentIngestionDashboard"));
+const CuratorApplications = lazy(() => import("../components/admin/CuratorApplications"));
+const ContentManagement = lazy(() => import("../components/admin/ContentManagement"));
+const AppealsReview = lazy(() => import("../components/admin/AppealsReview"));
 import {
   Dashboard,
   BarChart,
@@ -252,46 +254,55 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {activeTab === "analytics" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Analytics Dashboard</h2>
-            <AdminDashboardAnalytics />
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="loading-skeleton w-16 h-16 rounded-full mx-auto mb-4" />
+              <div className="text-white text-lg font-medium">Loading...</div>
+            </div>
           </div>
-        )}
+        }>
+          {activeTab === "analytics" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Analytics Dashboard</h2>
+              <AdminDashboardAnalytics />
+            </div>
+          )}
 
-        {activeTab === "security" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Security Dashboard</h2>
-            <SecurityDashboard />
-          </div>
-        )}
+          {activeTab === "security" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Security Dashboard</h2>
+              <SecurityDashboard />
+            </div>
+          )}
 
-        {activeTab === "content" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Content Ingestion</h2>
-            <ContentIngestionDashboard />
-          </div>
-        )}
+          {activeTab === "content" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Content Ingestion</h2>
+              <ContentIngestionDashboard />
+            </div>
+          )}
 
-        {activeTab === "curators" && (
-          <div>
-            <CuratorApplications />
-          </div>
-        )}
+          {activeTab === "curators" && (
+            <div>
+              <CuratorApplications />
+            </div>
+          )}
 
-        {activeTab === "contentManagement" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Content Takedown & Management</h2>
-            <ContentManagement />
-          </div>
-        )}
+          {activeTab === "contentManagement" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Content Takedown & Management</h2>
+              <ContentManagement />
+            </div>
+          )}
 
-        {activeTab === "appeals" && (
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Appeals Review with AI Analysis</h2>
-            <AppealsReview />
-          </div>
-        )}
+          {activeTab === "appeals" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Appeals Review with AI Analysis</h2>
+              <AppealsReview />
+            </div>
+          )}
+        </Suspense>
       </main>
     </div>
   );
