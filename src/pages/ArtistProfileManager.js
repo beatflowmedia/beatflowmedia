@@ -179,16 +179,25 @@ export default function ArtistProfileManager() {
 
     if (user) {
       clearTimeout(timer);
-      loadArtistProfile();
     }
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line
   }, [user, navigate]);
 
-  // Real-time listener for albums
+  // Load profile data only after membership is verified
   useEffect(() => {
-    if (!user) return;
+    if (!user || loadingMembership) return;
+    if (!membershipStatus.active) return; // Don't load data if no membership
+
+    loadArtistProfile();
+    // eslint-disable-next-line
+  }, [user, loadingMembership, membershipStatus.active]);
+
+  // Real-time listener for albums - only after membership verified
+  useEffect(() => {
+    if (!user || loadingMembership) return;
+    if (!membershipStatus.active) return; // Don't load data if no membership
 
     const albumsQuery = query(
       collection(db, 'albums'),
@@ -204,7 +213,7 @@ export default function ArtistProfileManager() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, loadingMembership, membershipStatus.active]);
 
   const loadArtistProfile = async () => {
     try {

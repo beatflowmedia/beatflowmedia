@@ -96,9 +96,10 @@ export default function ArtistDashboardNew() {
     }
   }, [checkingMembership, membershipStatus, navigate]);
 
-  // Load artist data
+  // Load artist data - only after membership is verified
   useEffect(() => {
-    if (!user) return;
+    if (!user || checkingMembership) return;
+    if (!membershipStatus || !membershipStatus.active) return; // Don't load data if no membership
     if (role && role !== 'artist') return; // Don't load data for non-artists
 
     const loadArtistData = async () => {
@@ -147,7 +148,7 @@ export default function ArtistDashboardNew() {
     };
 
     loadArtistData();
-  }, [user, role]);
+  }, [user, role, checkingMembership, membershipStatus]);
 
   const handleMenuOpen = (event, item) => {
     setAnchorEl(event.currentTarget);
