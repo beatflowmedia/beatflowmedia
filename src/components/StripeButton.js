@@ -34,7 +34,12 @@ export default function StripeButton({ priceId, children, className = "" }) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         const userData = userDoc.data();
 
-        console.log('Subscription check:', { uid: user.uid, userData, subscriptionStatus: userData?.subscriptionStatus, isPremium: userData?.isPremium });
+        console.log('Subscription check:', {
+          uid: user.uid,
+          subscriptionStatus: userData?.subscriptionStatus,
+          isPremium: userData?.isPremium,
+          stripeCustomerId: userData?.stripeCustomerId
+        });
 
         // Check if user has an active subscription AND a Stripe customer ID
         if ((userData?.subscriptionStatus === "active" || userData?.isPremium) && userData?.stripeCustomerId) {
@@ -76,14 +81,12 @@ export default function StripeButton({ priceId, children, className = "" }) {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          console.error("Portal session error:", errorData);
 
-          // Handle test mode subscription error
-          if (errorData.isTestMode) {
-            alert(errorData.error || "Your subscription was created in test mode. Please subscribe again with a real payment method.");
-            return;
-          }
-
-          throw new Error(errorData.error || "Failed to create portal session");
+          // If portal fails, user likely doesn't have valid subscription - reset state
+          setHasSubscription(false);
+          alert("Unable to access subscription portal. Please subscribe to a plan.");
+          return;
         }
 
         const { url } = await response.json();
@@ -91,7 +94,9 @@ export default function StripeButton({ priceId, children, className = "" }) {
         return;
       } catch (error) {
         console.error("Error creating portal session:", error);
-        alert(error.message || "Failed to open subscription management. Please try again.");
+        // Reset subscription state on error
+        setHasSubscription(false);
+        alert("Unable to access subscription portal. Please try subscribing again.");
         return;
       }
     }

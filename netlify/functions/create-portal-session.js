@@ -82,41 +82,11 @@ exports.handler = async (event) => {
 
     const baseUrl = process.env.URL || 'https://beatflowmediagroup.com';
 
-    // Check if customer exists in live mode, handle test mode customer IDs
-    let session;
-    try {
-      // Create customer portal session
-      session = await stripe.billingPortal.sessions.create({
-        customer: customerId,
-        return_url: `${baseUrl}/profile`
-      });
-    } catch (error) {
-      // If customer doesn't exist (likely test mode ID in production)
-      if (error.code === 'resource_missing' && error.message.includes('test mode')) {
-        console.log('⚠️ Test mode customer ID detected. Clearing invalid data from user document...');
-
-        // Clear the test mode customer ID from Firestore
-        await db.collection('users').doc(userId).update({
-          stripeCustomerId: null,
-          subscriptionStatus: null,
-          subscriptionId: null,
-          subscriptionPlan: null
-        });
-
-        console.log('✅ Cleared test mode subscription data');
-
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({
-            error: 'Your test subscription has been cleared. Please subscribe with a real payment method.',
-            isTestMode: true,
-            dataCleared: true
-          })
-        };
-      }
-      throw error; // Re-throw other errors
-    }
+    // Create customer portal session
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${baseUrl}/profile`
+    });
 
     console.log('✅ Created portal session:', session.id);
 
