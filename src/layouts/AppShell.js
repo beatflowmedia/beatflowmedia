@@ -161,14 +161,14 @@ export default function AppShell() {
     currentSong,
     isPlaying,
     playlists,
-    musicData,
+    musicData: allSongs, // Include both JSON and Firebase songs
     playSong,
     onAddSongToPlaylist: addSong,
     onRemoveSongFromPlaylist: removeSong,
     onCreatePlaylist: createNewPlaylist,
     onOpenRightPanel: openRightPanel,
     searchQuery,
-  }), [currentSong, isPlaying, playlists, playSong, addSong, removeSong, createNewPlaylist, openRightPanel, searchQuery]);
+  }), [currentSong, isPlaying, playlists, allSongs, playSong, addSong, removeSong, createNewPlaylist, openRightPanel, searchQuery]);
 
   // Compute container classes
   const containerClasses = [
