@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaMusic, FaUser, FaPlay, FaPlus, FaFolder, FaLock, FaUserPlus, FaEyeSlash, FaThumbtack, FaShare } from "react-icons/fa";
+import { FaMusic, FaUser, FaPlay, FaPlus, FaFolder, FaLock, FaUserPlus, FaEyeSlash, FaThumbtack, FaShare, FaSearch } from "react-icons/fa";
 import { MusicNote } from "@mui/icons-material";
 import { BiListPlus } from "react-icons/bi";
 import { MdEdit, MdDelete } from "react-icons/md";
@@ -75,10 +75,24 @@ const SidebarListItem = ({
     { label: 'Make private', icon: <FaLock />, onClick: () => console.log('Make private', item) },
     { label: 'Invite collaborators', icon: <FaUserPlus />, onClick: () => console.log('Invite collaborators', item) },
     { label: 'Exclude from your taste profile', icon: <FaEyeSlash />, onClick: () => console.log('Exclude from taste profile', item) },
-    { label: 'Move to folder', icon: <FaFolder />, onClick: () => console.log('Move to folder', item) },
+    {
+      label: 'Move to folder',
+      icon: <FaFolder />,
+      submenu: [
+        { label: 'Find a folder', icon: <FaSearch />, onClick: () => console.log('Find folder', item) },
+        { label: 'Create folder', icon: <FaPlus />, onClick: () => console.log('Create folder from submenu') }
+      ]
+    },
     { label: 'Pin playlist', icon: <FaThumbtack />, onClick: () => console.log('Pin playlist', item) },
     { type: 'divider' },
-    { label: 'Share', icon: <FaShare />, onClick: () => console.log('Share', item) }
+    {
+      label: 'Share',
+      icon: <FaShare />,
+      submenu: [
+        { label: 'Copy link to playlist', icon: <FaShare />, onClick: () => console.log('Copy link', item) },
+        { label: 'Embed playlist', icon: <FaShare />, onClick: () => console.log('Embed', item) }
+      ]
+    }
   ];
 
   // If we have the right panel handler (applies to both artist AND playlist)
