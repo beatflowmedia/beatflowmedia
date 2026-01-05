@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { FaMusic, FaUser, FaPlay } from "react-icons/fa";
+import { FaMusic, FaUser, FaPlay, FaPlus, FaFolder, FaLock, FaUserPlus, FaEyeSlash, FaThumbtack, FaShare } from "react-icons/fa";
 import { MusicNote } from "@mui/icons-material";
+import { BiListPlus } from "react-icons/bi";
+import { MdEdit, MdDelete } from "react-icons/md";
 import PropTypes from 'prop-types';
 import ContextMenu from './ContextMenu';
 
@@ -60,13 +62,22 @@ const SidebarListItem = ({
   };
 
   const contextMenuItems = [
-    { label: 'Add to queue', onClick: () => console.log('Add to queue', item) },
+    { label: 'Add to queue', icon: <BiListPlus />, onClick: () => console.log('Add to queue', item) },
+    { label: 'Remove from profile', icon: <FaEyeSlash />, onClick: () => console.log('Remove from profile', item) },
     { type: 'divider' },
-    { label: 'Edit details', onClick: () => console.log('Edit details', item) },
-    { label: 'Delete', onClick: () => console.log('Delete', item) },
+    { label: 'Edit details', icon: <MdEdit />, onClick: () => console.log('Edit details', item) },
+    { label: 'Delete', icon: <MdDelete />, onClick: () => console.log('Delete', item) },
     { type: 'divider' },
-    { label: 'Make private', onClick: () => console.log('Make private', item) },
-    { label: 'Share', onClick: () => console.log('Share', item) }
+    { label: 'Create playlist', icon: <FaPlus />, onClick: () => console.log('Create playlist') },
+    { label: 'Create folder', icon: <FaFolder />, onClick: () => console.log('Create folder') },
+    { type: 'divider' },
+    { label: 'Make private', icon: <FaLock />, onClick: () => console.log('Make private', item) },
+    { label: 'Invite collaborators', icon: <FaUserPlus />, onClick: () => console.log('Invite collaborators', item) },
+    { label: 'Exclude from your taste profile', icon: <FaEyeSlash />, onClick: () => console.log('Exclude from taste profile', item) },
+    { label: 'Move to folder', icon: <FaFolder />, onClick: () => console.log('Move to folder', item) },
+    { label: 'Pin playlist', icon: <FaThumbtack />, onClick: () => console.log('Pin playlist', item) },
+    { type: 'divider' },
+    { label: 'Share', icon: <FaShare />, onClick: () => console.log('Share', item) }
   ];
 
   // If we have the right panel handler (applies to both artist AND playlist)
