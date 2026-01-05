@@ -66,16 +66,18 @@ export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
               <CardContent sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 'clamp(0.75rem, calc(0.5rem + 0.5vw), 2rem)',
-                p: 'clamp(0.75rem, calc(0.5rem + 1vw), 2rem)'
+                gap: { xs: 'clamp(0.375rem, calc(0.25rem + 0.2vw), 0.5rem)', sm: 'clamp(0.5rem, calc(0.375rem + 0.3vw), 1rem)' },
+                p: { xs: 'clamp(0.375rem, calc(0.25rem + 0.3vw), 0.625rem)', sm: 'clamp(0.5rem, calc(0.375rem + 0.5vw), 1rem)' },
+                '&:last-child': { pb: { xs: 'clamp(0.375rem, calc(0.25rem + 0.3vw), 0.625rem)', sm: 'clamp(0.5rem, calc(0.375rem + 0.5vw), 1rem)' } }
               }}>
                 {/* Rank */}
                 <Typography
                   sx={{
-                    minWidth: 'clamp(24px, calc(1.25rem + 0.5vw), 40px)',
-                    fontSize: 'clamp(1rem, calc(0.875rem + 0.5vw), 1.5rem)',
+                    minWidth: { xs: '18px', sm: 'clamp(20px, calc(1rem + 0.3vw), 28px)' },
+                    fontSize: { xs: '0.75rem', sm: 'clamp(0.875rem, calc(0.75rem + 0.3vw), 1.125rem)' },
                     fontWeight: 'bold',
-                    color: index < 3 ? 'primary.main' : 'text.secondary'
+                    color: index < 3 ? 'primary.main' : 'text.secondary',
+                    flexShrink: 0
                   }}
                 >
                   {index + 1}
@@ -85,8 +87,8 @@ export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
                 <Box
                   sx={{
                     position: 'relative',
-                    width: 'clamp(48px, calc(2.5rem + 2vw), 72px)',
-                    height: 'clamp(48px, calc(2.5rem + 2vw), 72px)',
+                    width: { xs: '40px', sm: 'clamp(44px, calc(2.25rem + 1vw), 56px)' },
+                    height: { xs: '40px', sm: 'clamp(44px, calc(2.25rem + 1vw), 56px)' },
                     borderRadius: 1,
                     overflow: 'hidden',
                     flexShrink: 0
@@ -142,8 +144,10 @@ export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
                 {/* Actions */}
                 <Box sx={{
                   display: 'flex',
-                  gap: 'clamp(0.25rem, calc(0.125rem + 0.3vw), 0.5rem)'
+                  gap: { xs: '0.25rem', sm: 'clamp(0.25rem, calc(0.125rem + 0.2vw), 0.375rem)' },
+                  flexShrink: 0
                 }}>
+                  {/* Like button - hidden on very small screens */}
                   <IconButton
                     onClick={async () => {
                       if (!user) return;
@@ -158,26 +162,29 @@ export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
                       }
                     }}
                     sx={{
-                      minWidth: 'clamp(36px, calc(2rem + 0.5vw), 48px)',
-                      minHeight: 'clamp(36px, calc(2rem + 0.5vw), 48px)',
+                      display: { xs: 'none', sm: 'flex' },
+                      width: 'clamp(32px, calc(1.75rem + 0.5vw), 40px)',
+                      height: 'clamp(32px, calc(1.75rem + 0.5vw), 40px)',
+                      p: 'clamp(0.25rem, calc(0.125rem + 0.2vw), 0.5rem)',
                       color: isLiked ? '#e91e63' : 'grey.400',
                       '&:hover': { color: isLiked ? '#ad1457' : '#e91e63' }
                     }}
                   >
-                    {isLiked ? <Favorite sx={{ fontSize: 'clamp(18px, calc(1rem + 0.3vw), 24px)' }} /> : <FavoriteBorder sx={{ fontSize: 'clamp(18px, calc(1rem + 0.3vw), 24px)' }} />}
+                    {isLiked ? <Favorite sx={{ fontSize: 'clamp(16px, calc(0.875rem + 0.3vw), 20px)' }} /> : <FavoriteBorder sx={{ fontSize: 'clamp(16px, calc(0.875rem + 0.3vw), 20px)' }} />}
                   </IconButton>
 
                   <IconButton
                     onClick={() => playSong(song)}
                     sx={{
-                      minWidth: 'clamp(40px, calc(2.25rem + 0.5vw), 48px)',
-                      minHeight: 'clamp(40px, calc(2.25rem + 0.5vw), 48px)',
+                      width: { xs: '32px', sm: 'clamp(36px, calc(2rem + 0.5vw), 44px)' },
+                      height: { xs: '32px', sm: 'clamp(36px, calc(2rem + 0.5vw), 44px)' },
+                      p: { xs: '0.25rem', sm: 'clamp(0.25rem, calc(0.125rem + 0.2vw), 0.5rem)' },
                       bgcolor: 'primary.main',
                       color: 'white',
                       '&:hover': { bgcolor: 'primary.dark' }
                     }}
                   >
-                    <PlayArrow sx={{ fontSize: 'clamp(20px, calc(1.125rem + 0.3vw), 28px)' }} />
+                    <PlayArrow sx={{ fontSize: { xs: '16px', sm: 'clamp(18px, calc(1rem + 0.3vw), 24px)' } }} />
                   </IconButton>
                 </Box>
               </CardContent>

@@ -539,7 +539,8 @@ function Home() {
 
   return (
     <Box sx={{
-      p: 'clamp(1rem, calc(0.5rem + 2vw), 3rem)',
+      px: { xs: 'clamp(0.75rem, calc(0.5rem + 1vw), 1rem)', sm: 'clamp(1rem, calc(0.5rem + 2vw), 3rem)' },
+      py: 'clamp(1rem, calc(0.5rem + 2vw), 3rem)',
       height: '100%',
       overflow: 'auto',
       bgcolor: 'background.default'
@@ -571,7 +572,19 @@ function Home() {
       </Box>
 
       {/* Category Filter Pills */}
-      <Box sx={{ mb: 'clamp(1.5rem, calc(1rem + 1vw), 3rem)' }}>
+      <Box sx={{ mb: 'clamp(1.5rem, calc(1rem + 1vw), 3rem)', position: 'relative' }}>
+        {/* Fade gradient on right edge for mobile */}
+        <Box sx={{
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: 'clamp(40px, 10vw, 80px)',
+          background: 'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+          pointerEvents: 'none',
+          zIndex: 1,
+          display: { xs: 'block', md: 'none' }
+        }} />
         <Box sx={{
           display: 'flex',
           gap: 'clamp(0.5rem, calc(0.25rem + 0.5vw), 1rem)',
@@ -579,9 +592,11 @@ function Home() {
           flexWrap: 'nowrap',
           pb: 'clamp(0.5rem, calc(0.25rem + 0.5vw), 1rem)',
           mb: 'clamp(0.75rem, calc(0.5rem + 0.5vw), 1.5rem)',
+          pr: { xs: 'clamp(60px, 15vw, 100px)', md: 0 }, // Extra padding on right for mobile
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
-          scrollBehavior: 'smooth'
+          scrollBehavior: 'smooth',
+          WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
         }}>
           <Chip
             label="All"
