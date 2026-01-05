@@ -138,17 +138,30 @@ function Artist() {
       try {
         setLoading(true);
         console.log('Loading artist:', artistId);
+        console.log('Total musicData length:', musicData.length);
 
         // Decode the artist name from URL
         const decodedArtistName = decodeURIComponent(artistId);
         console.log('Decoded artist name:', decodedArtistName);
 
+        // Debug: Log all unique artists in musicData
+        const uniqueArtists = [...new Set(musicData.map(s => s.artist))];
+        console.log('All unique artists in musicData:', uniqueArtists);
+        console.log('Sample song structure:', musicData[0]);
+
         // Filter songs by artist from musicData.json
         const artistSongs = musicData.filter(song => song.artist === decodedArtistName);
         console.log('Found artist songs:', artistSongs.length);
+        console.log('Artist songs:', artistSongs);
 
         if (artistSongs.length === 0) {
-          console.log('No songs found for artist');
+          console.log('No songs found for artist:', decodedArtistName);
+          console.log('Trying case-insensitive match...');
+          const caseInsensitiveMatch = musicData.filter(song =>
+            song.artist?.toLowerCase() === decodedArtistName.toLowerCase()
+          );
+          console.log('Case-insensitive results:', caseInsensitiveMatch.length);
+
           setError('Artist not found');
           setLoading(false);
           return;

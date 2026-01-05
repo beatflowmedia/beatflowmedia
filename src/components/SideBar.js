@@ -55,6 +55,7 @@ const SideBar = ({
   onCreatePlaylist,
   onShowRightPanel,
   onPlayArtist,
+  onPlayPlaylist,
   isCollapsed = false,
   onToggleCollapse
 }) => {
@@ -166,6 +167,7 @@ const SideBar = ({
                 item={item}
                 onPlaylistSelect={onPlaylistSelect}
                 onShowRightPanel={onShowRightPanel}
+                onPlayPlaylist={onPlayPlaylist}
                 isCollapsed={isCollapsed}
               />
             ))}
@@ -216,6 +218,7 @@ SideBar.propTypes = {
   onCreatePlaylist: PropTypes.func.isRequired,
   onShowRightPanel: PropTypes.func,
   onPlayArtist: PropTypes.func,
+  onPlayPlaylist: PropTypes.func,
   isCollapsed: PropTypes.bool,
   onToggleCollapse: PropTypes.func
 };

@@ -15,6 +15,7 @@ const SidebarListItem = ({
   onViewArtist,
   onShowRightPanel,
   onPlayArtist,
+  onPlayPlaylist,
   isCollapsed = false
 }) => {
   const isArtist = item.type === "artist";
@@ -25,20 +26,13 @@ const SidebarListItem = ({
     ? () => (onViewArtist || onArtistSelect)?.(item.name)
     : () => onPlaylistSelect(item);
 
-  // Image click handlers - open right panel when available
+  // Image click handlers - play artist/playlist (DRY)
   const handleImageClick = (e) => {
     e.stopPropagation();
-    if (isCollapsed) {
-      // When collapsed, image always navigates
-      handleNameClick();
-    } else if (onShowRightPanel) {
-      // When expanded, image opens right panel
-      if (isArtist) {
-        onShowRightPanel(item.name);
-      } else {
-        // For playlists, pass playlist object
-        onShowRightPanel({ type: 'playlist', data: item });
-      }
+    if (isArtist && onPlayArtist) {
+      onPlayArtist(item.name);
+    } else if (!isArtist && onPlayPlaylist) {
+      onPlayPlaylist(item);
     } else {
       // Fallback to navigation
       handleNameClick();
@@ -64,13 +58,13 @@ const SidebarListItem = ({
             className={`w-10 h-10 ${imageClass} object-cover ${isCollapsed ? '' : 'mr-3'} flex-shrink-0 border border-gray-800 cursor-pointer hover:ring-2 hover:ring-green-400`}
             onClick={handleImageClick}
             onError={() => setImgError(true)}
-            title={`${isCollapsed ? 'Go to' : 'Open details for'} ${item.name}`}
+            title={`Play ${item.name}`}
           />
         ) : (
           <div
             className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} flex items-center justify-center flex-shrink-0 rounded border border-gray-800 bg-gray-900 cursor-pointer hover:ring-2 hover:ring-green-400`}
             onClick={handleImageClick}
-            title={`${isCollapsed ? 'Go to' : 'Open details for'} ${item.name}`}
+            title={`Play ${item.name}`}
           >
             <MusicNote sx={{ fontSize: 20, color: '#9ca3af' }} />
           </div>
@@ -170,6 +164,7 @@ SidebarListItem.propTypes = {
   onViewArtist: PropTypes.func,
   onShowRightPanel: PropTypes.func,
   onPlayArtist: PropTypes.func,
+  onPlayPlaylist: PropTypes.func,
   isCollapsed: PropTypes.bool
 };
 

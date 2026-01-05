@@ -156,6 +156,19 @@ export default function AppShell() {
     }
   };
 
+  const handlePlayPlaylist = (playlist) => {
+    if (!playlist.songs || playlist.songs.length === 0) return;
+
+    // Get full song data from allSongs
+    const playlistSongs = playlist.songs
+      .map(songId => allSongs.find(s => s.id === songId))
+      .filter(Boolean);
+
+    if (playlistSongs.length > 0) {
+      playSong(playlistSongs[0], playlistSongs);
+    }
+  };
+
   // Memoize outlet context to prevent unnecessary re-renders
   const outletContext = useMemo(() => ({
     currentSong,
@@ -214,6 +227,7 @@ export default function AppShell() {
           }}
           onCreatePlaylist={createNewPlaylist}
           onPlayArtist={playArtist}
+          onPlayPlaylist={handlePlayPlaylist}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
