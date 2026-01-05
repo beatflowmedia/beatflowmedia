@@ -26,13 +26,16 @@ const SidebarListItem = ({
     ? () => (onViewArtist || onArtistSelect)?.(item.name)
     : () => onPlaylistSelect(item);
 
-  // Image click handlers - play artist/playlist (DRY)
+  // Image click handlers - open right panel (DRY)
   const handleImageClick = (e) => {
     e.stopPropagation();
-    if (isArtist && onPlayArtist) {
-      onPlayArtist(item.name);
-    } else if (!isArtist && onPlayPlaylist) {
-      onPlayPlaylist(item);
+    if (onShowRightPanel) {
+      if (isArtist) {
+        onShowRightPanel(item.name);
+      } else {
+        // For playlists, pass playlist object
+        onShowRightPanel({ type: 'playlist', data: item });
+      }
     } else {
       // Fallback to navigation
       handleNameClick();
@@ -52,30 +55,30 @@ const SidebarListItem = ({
       <div className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group ${isCollapsed ? 'justify-center' : ''}`}>
         {/* Image with play overlay (DRY for both artist and playlist) */}
         {displayImage ? (
-          <div className="relative" style={{ width: '40px', height: '40px', marginRight: isCollapsed ? 0 : '12px', flexShrink: 0 }}>
+          <div className={`relative w-10 h-10 ${isCollapsed ? '' : 'mr-3'} shrink-0`}>
             <img
               src={displayImage}
               alt={item.name}
               className={`w-10 h-10 ${imageClass} object-cover border border-gray-800 cursor-pointer transition-opacity group-hover:opacity-60`}
               onClick={handleImageClick}
               onError={() => setImgError(true)}
-              title={`Play ${item.name}`}
+              title={`Open details for ${item.name}`}
             />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <FaPlay className="text-white" style={{ fontSize: '14px' }} />
+              <FaPlay className="text-white text-sm" />
             </div>
           </div>
         ) : (
-          <div className="relative" style={{ width: '40px', height: '40px', marginRight: isCollapsed ? 0 : '12px', flexShrink: 0 }}>
+          <div className={`relative w-10 h-10 ${isCollapsed ? '' : 'mr-3'} shrink-0`}>
             <div
               className={`w-10 h-10 flex items-center justify-center rounded border border-gray-800 bg-gray-900 cursor-pointer transition-opacity group-hover:opacity-60`}
               onClick={handleImageClick}
-              title={`Play ${item.name}`}
+              title={`Open details for ${item.name}`}
             >
               <MusicNote sx={{ fontSize: 20, color: '#9ca3af' }} />
             </div>
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <FaPlay className="text-white" style={{ fontSize: '14px' }} />
+              <FaPlay className="text-white text-sm" />
             </div>
           </div>
         )}
