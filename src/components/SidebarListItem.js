@@ -102,11 +102,11 @@ const SidebarListItem = ({
     );
   }
 
-  // Default button layout for playlists or simple artist items
+  // Default button layout for playlists or simple artist items (no right panel handler)
   return (
     <button
       className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group text-left ${isCollapsed ? 'justify-center' : ''}`}
-      onClick={handleClick}
+      onClick={handleNameClick}
       tabIndex={0}
       aria-label={item.name}
       title={isArtist ? `Go to artist page: ${item.name}` : item.name}
