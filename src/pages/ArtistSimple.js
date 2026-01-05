@@ -112,6 +112,9 @@ export default function ArtistSimple() {
       try {
         setLoading(true);
         setError(null);
+        setArtist(null); // Reset artist when loading new one
+        setArtistSongs([]); // Reset songs
+        setArtistAlbums([]); // Reset albums
 
         // Decode the artist name from URL
         const artistName = decodeURIComponent(artistId);
@@ -264,12 +267,33 @@ export default function ArtistSimple() {
         // Use cover from first song if available
         imageUrl: artistSongs[0]?.coverUrl || artistSongs[0]?.cover || '/default-artist.jpg'
       });
-    } else if (!artist && artistSongs.length === 0 && !loading && artistId) {
-      const artistName = decodeURIComponent(artistId);
-      console.log('Artist not found and no songs found:', artistName);
-      setError(`Artist "${artistName}" not found`);
+      // Clear any error that might have been set too early
+      setError(null);
     }
-  }, [artist, artistSongs, loading, artistId]);
+  }, [artist, artistSongs, artistId]);
+
+  // Show error only after giving enough time for real-time listeners to fire
+  useEffect(() => {
+    if (!artist && artistSongs.length === 0 && !loading && artistId) {
+      // Wait for real-time listener to potentially fire
+      const timeoutId = setTimeout(() => {
+        // Check current state (not closure-captured state)
+        setArtistSongs(currentSongs => {
+          setArtist(currentArtist => {
+            if (!currentArtist && currentSongs.length === 0) {
+              const artistName = decodeURIComponent(artistId);
+              console.log('Artist not found and no songs found after delay:', artistName);
+              setError(`Artist "${artistName}" not found`);
+            }
+            return currentArtist;
+          });
+          return currentSongs;
+        });
+      }, 1500); // Wait 1.5 seconds for real-time listener
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [loading, artistId]); // Only depend on loading and artistId, not artist/artistSongs
 
   // Like/favorite toggle handler (DRY - same as Home.js)
   const handleMenuOpen = (event, song) => {
