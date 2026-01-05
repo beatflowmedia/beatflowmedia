@@ -165,6 +165,7 @@ const SideBar = ({
                 key={item.id}
                 item={item}
                 onPlaylistSelect={onPlaylistSelect}
+                onShowRightPanel={onShowRightPanel}
                 isCollapsed={isCollapsed}
               />
             ))}
