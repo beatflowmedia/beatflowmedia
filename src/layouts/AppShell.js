@@ -202,9 +202,16 @@ export default function AppShell() {
           playlists={playlists}
           onPlaylistSelect={handlePlaylistSelect}
           onArtistSelect={handleArtistSelect}
-          onShowRightPanel={(artistName) =>
-            openRightPanel({ type: "artist", artistName })
-          }
+          onShowRightPanel={(data) => {
+            // Handle both string (artist name) and object (playlist data)
+            if (typeof data === 'string') {
+              openRightPanel({ type: "artist", artistName: data });
+            } else if (data?.type === 'playlist') {
+              openRightPanel({ type: "playlist", ...data.data });
+            } else {
+              openRightPanel(data);
+            }
+          }}
           onCreatePlaylist={createNewPlaylist}
           onPlayArtist={playArtist}
           isCollapsed={sidebarCollapsed}

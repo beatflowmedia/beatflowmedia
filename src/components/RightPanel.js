@@ -2,15 +2,36 @@ import { useState, useRef, useEffect } from "react";
 import ContextMenu from "./ContextMenu";
 import PropTypes from 'prop-types';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { usePlayer } from '../context/PlayerContext';
+import useFollowArtist from '../hooks/useFollowArtist';
+import { PlayArrow } from '@mui/icons-material';
 
 const RightPanel = ({ visible, content, onClose }) => {
-  // content: { type: "artist"|"playlist", info: {...}, artistId?: string, artistName?: string }
+  // content: { type: "artist"|"playlist"|"queue", info: {...}, artistId?: string, artistName?: string }
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuButtonRef = useRef(null);
   const [artistData, setArtistData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [artistSongs, setArtistSongs] = useState([]);
+  const [viewMode, setViewMode] = useState('default'); // 'default' or 'queue'
+  const [queueMenuSong, setQueueMenuSong] = useState(null);
+  const [queueMenuAnchor, setQueueMenuAnchor] = useState(null);
+
+  // Player and follow hooks
+  const { dispatch, actions, state } = usePlayer();
+  const artistName = content?.artistName || content?.info?.name;
+  const { isFollowing, toggleFollow } = useFollowArtist(artistName);
+
+  // Reset view mode when content type changes
+  useEffect(() => {
+    if (content?.type === 'queue') {
+      setViewMode('queue');
+    } else {
+      setViewMode('default');
+    }
+  }, [content?.type]);
 
   // Fetch artist data from Firestore when artist panel is shown
   useEffect(() => {
@@ -69,7 +90,313 @@ const RightPanel = ({ visible, content, onClose }) => {
     fetchArtistData();
   }, [visible, content]);
 
+  // Fetch artist songs for queue preview
+  useEffect(() => {
+    const fetchArtistSongs = async () => {
+      if (!visible || !content || content.type !== 'artist') return;
+
+      try {
+        const name = artistName;
+        if (!name) return;
+
+        // Query songs by artistName field
+        const songsQuery = query(
+          collection(db, 'songs'),
+          where('artistName', '==', name),
+          where('isVisible', '!=', false),
+          orderBy('isVisible'),
+          orderBy('playCount', 'desc'),
+          limit(10)
+        );
+
+        const songsSnapshot = await getDocs(songsQuery);
+        const songs = songsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setArtistSongs(songs);
+      } catch (error) {
+        console.error('Error fetching artist songs:', error);
+        // Fallback: try without orderBy if compound index doesn't exist
+        try {
+          const name = artistName;
+          const fallbackQuery = query(
+            collection(db, 'songs'),
+            where('artistName', '==', name),
+            limit(10)
+          );
+          const fallbackSnapshot = await getDocs(fallbackQuery);
+          const songs = fallbackSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(song => song.isVisible !== false);
+          setArtistSongs(songs);
+        } catch (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError);
+        }
+      }
+    };
+
+    fetchArtistSongs();
+  }, [visible, content, artistName]);
+
+  // Handle play artist with smart queue (artist songs + similar genre)
+  const handlePlayArtist = async () => {
+    if (artistSongs.length === 0) return;
+
+    try {
+      // Start with artist's songs
+      let fullQueue = [...artistSongs];
+
+      // Get genre from artist data or first song
+      const artistGenre = artistData?.genre || artistSongs[0]?.genre || artistSongs[0]?.category;
+      if (artistGenre) {
+        // Get other artists in the same genre
+        const similarQuery = query(
+          collection(db, 'songs'),
+          where('genre', '==', artistGenre),
+          where('artistName', '!=', artistName),
+          limit(20) // Get 20 songs from similar artists
+        );
+
+        try {
+          const similarSnapshot = await getDocs(similarQuery);
+          const similarSongs = similarSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(song => song.isVisible !== false);
+
+          // Shuffle similar songs for variety
+          const shuffledSimilar = similarSongs.sort(() => Math.random() - 0.5);
+          fullQueue = [...fullQueue, ...shuffledSimilar];
+        } catch (err) {
+          console.log('Could not fetch similar artists, continuing with artist songs only', err);
+        }
+      }
+
+      // Set the full queue and start playing
+      dispatch({
+        type: actions.SET_QUEUE,
+        payload: {
+          queue: fullQueue,
+          currentIndex: 0
+        }
+      });
+
+      dispatch({ type: actions.TOGGLE_PLAY });
+    } catch (error) {
+      console.error('Error building queue:', error);
+      // Fallback: just play artist songs
+      dispatch({
+        type: actions.SET_QUEUE,
+        payload: {
+          queue: artistSongs,
+          currentIndex: 0
+        }
+      });
+      dispatch({ type: actions.TOGGLE_PLAY });
+    }
+  };
+
+  // Get next songs in queue for preview
+  const getNextInQueue = () => {
+    const { queue, currentIndex } = state;
+    if (!queue || queue.length === 0) return artistSongs.slice(0, 3);
+
+    // Show next 3 songs after current
+    const nextSongs = queue.slice(currentIndex + 1, currentIndex + 4);
+    return nextSongs.length > 0 ? nextSongs : artistSongs.slice(0, 3);
+  };
+
+  // Render full queue view
+  const renderQueueView = () => {
+    const { queue, currentIndex } = state;
+    const currentSong = queue[currentIndex];
+    const upNext = queue.slice(currentIndex + 1);
+
+    return (
+      <div className="bg-gray-900 text-white p-6 overflow-y-auto" style={{ height: "100%", width: "100%" }}>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Queue</h2>
+          <button
+            className="text-gray-400 hover:text-white text-xl"
+            onClick={() => setViewMode('default')}
+            title="Close queue"
+          >
+            ✖
+          </button>
+        </div>
+
+        {/* Now Playing */}
+        {currentSong && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-400 mb-3">Now playing</h3>
+            <div className="flex items-center gap-3 p-3 rounded bg-gray-800">
+              <div className="relative w-14 h-14 flex-shrink-0">
+                <img
+                  src={currentSong.coverUrl || currentSong.cover || '/images/default-cover.jpg'}
+                  alt={currentSong.title}
+                  className="w-full h-full object-cover rounded"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <PlayArrow className="text-green-500" sx={{ fontSize: 24 }} />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-green-500 text-sm font-bold truncate">
+                  {currentSong.title}
+                </div>
+                <div className="text-gray-400 text-xs truncate">
+                  {currentSong.artistName || currentSong.artist}
+                </div>
+              </div>
+              <button
+                onClick={(e) => {
+                  setQueueMenuAnchor(e.currentTarget);
+                  setQueueMenuSong(currentSong);
+                }}
+                className="text-gray-400 hover:text-white"
+              >
+                <span className="text-xl">⋯</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Next from This Artist / Up Next */}
+        {upNext.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-400 mb-3">Next in queue</h3>
+            <div className="space-y-1">
+              {upNext.map((song, index) => {
+                const isFromCurrentArtist = (song.artistName || song.artist) === (currentSong?.artistName || currentSong?.artist);
+                return (
+                  <div
+                    key={song.id || index}
+                    className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 cursor-pointer group"
+                    onClick={() => {
+                      dispatch({
+                        type: actions.PLAY_AT,
+                        payload: currentIndex + 1 + index
+                      });
+                    }}
+                  >
+                    <div className="w-10 h-10 flex-shrink-0">
+                      <img
+                        src={song.coverUrl || song.cover || '/images/default-cover.jpg'}
+                        alt={song.title}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white text-sm truncate">
+                        {song.title}
+                      </div>
+                      <div className="text-gray-400 text-xs truncate">
+                        {song.artistName || song.artist}
+                        {!isFromCurrentArtist && (
+                          <span className="ml-1 text-green-400 text-[10px]">• Similar</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setQueueMenuAnchor(e.currentTarget);
+                        setQueueMenuSong({ song, queueIndex: currentIndex + 1 + index });
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition"
+                    >
+                      <span className="text-xl">⋯</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {(!queue || queue.length === 0) && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-lg mb-2">Queue is empty</div>
+            <div className="text-gray-500 text-sm">Play a song to start your queue</div>
+          </div>
+        )}
+
+        {/* Context Menu for Queue Items */}
+        {queueMenuSong && (
+          <ContextMenu
+            visible={!!queueMenuAnchor}
+            x={queueMenuAnchor?.getBoundingClientRect().right || 0}
+            y={queueMenuAnchor?.getBoundingClientRect().bottom || 0}
+            items={[
+              {
+                icon: "➕",
+                label: "Add to playlist",
+                onClick: () => {
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              {
+                icon: "❌",
+                label: "Remove from queue",
+                onClick: () => {
+                  if (queueMenuSong.queueIndex !== undefined) {
+                    dispatch({
+                      type: actions.REMOVE_AT,
+                      payload: queueMenuSong.queueIndex
+                    });
+                  }
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              { type: "divider" },
+              {
+                icon: "👤",
+                label: "Go to artist",
+                onClick: () => {
+                  const artist = queueMenuSong.song?.artistName || queueMenuSong.artistName || queueMenuSong.artist;
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                  // Could navigate to artist page here
+                }
+              },
+              {
+                icon: "💿",
+                label: "Go to album",
+                onClick: () => {
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              { type: "divider" },
+              {
+                icon: "📤",
+                label: "Share",
+                onClick: () => {
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              }
+            ]}
+            onClose={() => {
+              setQueueMenuAnchor(null);
+              setQueueMenuSong(null);
+            }}
+          />
+        )}
+      </div>
+    );
+  };
+
   if (!visible || !content) return null;
+
+  // Show queue view if in queue mode
+  if (viewMode === 'queue') {
+    return renderQueueView();
+  }
 
   // Handle artist and playlist display
   const { type, info = {} } = content;
@@ -335,13 +662,86 @@ const RightPanel = ({ visible, content, onClose }) => {
               </div>
             )}
 
+            {/* Next in Queue Section */}
+            {(() => {
+              const nextSongs = getNextInQueue();
+              return nextSongs.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-lg">Next in queue</h3>
+                    <button
+                      onClick={() => setViewMode('queue')}
+                      className="text-gray-400 hover:text-white text-sm underline"
+                    >
+                      Open queue
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {nextSongs.map((song, index) => {
+                      const isFromSameArtist = (song.artistName || song.artist) === displayName;
+                      return (
+                        <div
+                          key={song.id || index}
+                          className="flex items-center gap-3 p-2 rounded hover:bg-gray-800 cursor-pointer group"
+                          onClick={() => {
+                            dispatch({
+                              type: actions.PLAY_SONG,
+                              payload: song
+                            });
+                          }}
+                        >
+                          <div className="relative w-12 h-12 flex-shrink-0">
+                            <img
+                              src={song.coverUrl || song.cover || '/images/default-cover.jpg'}
+                              alt={song.title}
+                              className="w-full h-full object-cover rounded"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition">
+                              <PlayArrow className="text-white opacity-0 group-hover:opacity-100 transition" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate">
+                              {song.title}
+                            </div>
+                            <div className="text-gray-400 text-xs truncate">
+                              {song.artistName || song.artist || displayName}
+                              {!isFromSameArtist && (
+                                <span className="ml-1 text-green-400 text-[10px]">• Similar</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {state.queue && state.queue.length > state.currentIndex + 4 && (
+                    <div className="text-gray-400 text-xs mt-2 text-center">
+                      +{state.queue.length - state.currentIndex - 4} more in queue
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Actions */}
             <div className="flex gap-3 mt-6">
-              <button className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition">
+              <button
+                onClick={handlePlayArtist}
+                disabled={artistSongs.length === 0}
+                className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition disabled:bg-gray-600 disabled:cursor-not-allowed"
+              >
                 Play
               </button>
-              <button className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700 transition">
-                Follow
+              <button
+                onClick={toggleFollow}
+                className={`px-4 py-2 rounded transition ${
+                  isFollowing
+                    ? 'bg-gray-800 text-white border border-gray-600 hover:bg-gray-700'
+                    : 'bg-transparent text-white border border-white hover:bg-white hover:text-black'
+                }`}
+              >
+                {isFollowing ? 'Following' : 'Follow'}
               </button>
             </div>
           </>

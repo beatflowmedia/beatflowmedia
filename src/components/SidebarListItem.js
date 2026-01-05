@@ -20,28 +20,63 @@ const SidebarListItem = ({
   const isArtist = item.type === "artist";
   const [imgError, setImgError] = useState(false);
 
-  // For artists, use the new props if available, otherwise fall back to onArtistSelect
-  const handleClick = isArtist
+  // Main navigation handlers (DRY - same for artist/playlist)
+  const handleNameClick = isArtist
     ? () => (onViewArtist || onArtistSelect)?.(item.name)
     : () => onPlaylistSelect(item);
 
-  // If this is an artist and we have the right panel handler
-  if (isArtist && onShowRightPanel) {
+  // Image click handlers - open right panel when available
+  const handleImageClick = (e) => {
+    e.stopPropagation();
+    if (isCollapsed) {
+      // When collapsed, image always navigates
+      handleNameClick();
+    } else if (onShowRightPanel) {
+      // When expanded, image opens right panel
+      if (isArtist) {
+        onShowRightPanel(item.name);
+      } else {
+        // For playlists, pass playlist object
+        onShowRightPanel({ type: 'playlist', data: item });
+      }
+    } else {
+      // Fallback to navigation
+      handleNameClick();
+    }
+  };
+
+  // If we have the right panel handler (applies to both artist AND playlist)
+  if (onShowRightPanel) {
+    const imageClass = isArtist ? 'rounded-full' : 'rounded';
+    const displayImage = !imgError && item.cover
+      ? item.cover
+      : isArtist
+      ? "/images/Logo.png"
+      : null;
+
     return (
       <div className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group ${isCollapsed ? 'justify-center' : ''}`}>
-        {/* Artist Image - opens right panel */}
-        <img
-          src={!imgError && item.cover ? item.cover : "/images/Logo.png"}
-          alt={item.name}
-          className={`w-10 h-10 rounded-full object-cover ${isCollapsed ? '' : 'mr-3'} flex-shrink-0 border border-gray-800 cursor-pointer hover:ring-2 hover:ring-green-400`}
-          onClick={(e) => {
-            e.stopPropagation();
-            isCollapsed ? (onViewArtist || onArtistSelect)?.(item.name) : onShowRightPanel(item.name);
-          }}
-          onError={() => setImgError(true)}
-          title={`${isCollapsed ? 'Go to' : 'Open details for'} ${item.name}`}
-        />
-        {/* Name - loads artist in main area - hidden when collapsed */}
+        {/* Image - opens right panel (DRY for both artist and playlist) */}
+        {displayImage ? (
+          <img
+            src={displayImage}
+            alt={item.name}
+            className={`w-10 h-10 ${imageClass} object-cover ${isCollapsed ? '' : 'mr-3'} flex-shrink-0 border border-gray-800 cursor-pointer hover:ring-2 hover:ring-green-400`}
+            onClick={handleImageClick}
+            onError={() => setImgError(true)}
+            title={`${isCollapsed ? 'Go to' : 'Open details for'} ${item.name}`}
+          />
+        ) : (
+          <div
+            className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} flex items-center justify-center flex-shrink-0 rounded border border-gray-800 bg-gray-900 cursor-pointer hover:ring-2 hover:ring-green-400`}
+            onClick={handleImageClick}
+            title={`${isCollapsed ? 'Go to' : 'Open details for'} ${item.name}`}
+          >
+            <MusicNote sx={{ fontSize: 20, color: '#9ca3af' }} />
+          </div>
+        )}
+
+        {/* Name - navigates to page - hidden when collapsed */}
         {!isCollapsed && (
           <div className="flex-1 min-w-0">
             <button
@@ -52,14 +87,14 @@ const SidebarListItem = ({
                 padding: 0,
                 margin: 0
               }}
-              onClick={() => (onViewArtist || onArtistSelect)?.(item.name)}
-              title={`Show artist: ${item.name}`}
+              onClick={handleNameClick}
+              title={`${isArtist ? 'Show artist' : 'Open playlist'}: ${item.name}`}
               tabIndex={0}
             >
               {item.name}
             </button>
             <div className="text-xs text-gray-400 flex items-center mt-0.5">
-              {typeIcon.artist} Artist
+              {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
             </div>
           </div>
         )}
