@@ -49,17 +49,27 @@ const ContextMenu = ({ visible, x, y, items = [], onClose }) => {
 
               {/* Recursive submenu */}
               {item.submenu && openSubmenuIndex === idx && (
-                <div
-                  className="absolute left-full top-0 ml-1"
-                  style={{ minWidth: '160px' }}
-                >
-                  <ContextMenu
-                    visible={true}
-                    x={0}
-                    y={0}
-                    items={item.submenu}
-                    onClose={onClose}
-                  />
+                <div className="absolute left-full top-0 ml-1">
+                  <div className="bg-gray-800 text-white rounded shadow-lg py-2 min-w-[160px]">
+                    {item.submenu.map((subitem, subidx) =>
+                      subitem.type === "divider" ? (
+                        <div key={subidx} className="border-t border-gray-700 my-1" />
+                      ) : (
+                        <button
+                          key={subidx}
+                          className="flex items-center px-4 py-2 w-full hover:bg-gray-700 text-left"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            subitem.onClick && subitem.onClick();
+                            onClose();
+                          }}
+                        >
+                          <span className="mr-2">{subitem.icon}</span>
+                          {subitem.label}
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
               )}
             </div>
