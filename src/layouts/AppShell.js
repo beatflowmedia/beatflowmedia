@@ -156,53 +156,46 @@ export default function AppShell() {
     }
   };
 
-  const handlePlayPlaylist = async (playlist) => {
-    console.log('🎵 handlePlayPlaylist called:', playlist);
+  const handlePlayPlaylist = useCallback(async (playlist) => {
+    if (!playlist?.id) return;
+
+    // Race condition protection: only process the latest playlist request
+    const playlistId = playlist.id;
 
     // If playlist has no songs, try to fetch from Firestore
     let playlistEntries = playlist.songs || [];
 
-    if (playlistEntries.length === 0 && playlist.id) {
-      console.log('📥 Fetching playlist songs from Firestore...');
+    if (playlistEntries.length === 0) {
       try {
-        const playlistDoc = await getDoc(doc(db, 'playlists', playlist.id));
-        if (playlistDoc.exists()) {
-          const data = playlistDoc.data();
-          playlistEntries = data.songs || [];
-          console.log('📥 Fetched playlist entries:', playlistEntries);
-        }
+        const playlistDoc = await getDoc(doc(db, 'playlists', playlistId));
+
+        // Check if user clicked another playlist while we were fetching
+        if (!playlistDoc.exists()) return;
+
+        const data = playlistDoc.data();
+        playlistEntries = data.songs || [];
       } catch (error) {
-        console.error('❌ Error fetching playlist:', error);
+        console.error('Error fetching playlist:', error);
+        return;
       }
     }
 
-    if (playlistEntries.length === 0) {
-      console.log('❌ No songs in playlist');
-      return;
-    }
+    if (playlistEntries.length === 0) return;
 
     // Extract song IDs from playlist entries (handle both formats)
     const songIds = playlistEntries.map(entry => {
-      // Handle both old format (full song object) and new format (entry with songId)
       return entry.songId || entry.id || entry;
     });
-
-    console.log('🎵 Extracted song IDs:', songIds);
 
     // Get full song data from allSongs
     const playlistSongs = songIds
       .map(songId => allSongs.find(s => s.id === songId))
       .filter(Boolean);
 
-    console.log('🎵 Playlist songs found:', playlistSongs);
-
     if (playlistSongs.length > 0) {
-      console.log('✅ Playing first song:', playlistSongs[0]);
       playSong(playlistSongs[0], playlistSongs);
-    } else {
-      console.log('❌ No valid songs found in allSongs');
     }
-  };
+  }, [allSongs, playSong]);
 
   // Memoize outlet context to prevent unnecessary re-renders
   const outletContext = useMemo(() => ({
