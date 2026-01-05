@@ -3,6 +3,38 @@ import { collection, query, orderBy, limit, getDocs, where } from 'firebase/fire
 import { db } from '../firebaseConfig';
 
 /**
+ * Enrich songs with album cover URLs
+ */
+const enrichSongsWithAlbumCovers = async (songs) => {
+  try {
+    // Get unique album IDs
+    const albumIds = [...new Set(songs.map(song => song.albumId).filter(Boolean))];
+
+    if (albumIds.length === 0) return songs;
+
+    // Fetch albums
+    const albums = {};
+    const albumsQuery = query(
+      collection(db, 'albums'),
+      where('__name__', 'in', albumIds)
+    );
+    const albumsSnapshot = await getDocs(albumsQuery);
+    albumsSnapshot.forEach(doc => {
+      albums[doc.id] = doc.data();
+    });
+
+    // Add coverUrl to each song from its album
+    return songs.map(song => ({
+      ...song,
+      cover: song.cover || albums[song.albumId]?.coverUrl || albums[song.albumId]?.cover || '/images/default-cover.jpg'
+    }));
+  } catch (error) {
+    console.error('Error enriching songs with album covers:', error);
+    return songs;
+  }
+};
+
+/**
  * Hook to get trending songs based on play counts
  * @param {number} limitCount - Number of songs to return (default 10)
  * @param {number} daysBack - Number of days to look back for trending (default 7)
@@ -75,7 +107,10 @@ export const useTrendingSongs = (limitCount = 10, daysBack = 7) => {
           }))
           .filter(song => song.title && song.isVisible !== false); // Filter out missing and hidden songs
 
-        setSongs(trendingSongs);
+        // Enrich with album covers
+        const enrichedSongs = await enrichSongsWithAlbumCovers(trendingSongs);
+
+        setSongs(enrichedSongs);
         setError(null);
       } catch (err) {
         console.error('Error fetching trending songs:', err);
@@ -156,7 +191,10 @@ export const useAllTimeMostPlayed = (limitCount = 10) => {
           }))
           .filter(song => song.title && song.isVisible !== false);
 
-        setSongs(mostPlayedSongs);
+        // Enrich with album covers
+        const enrichedSongs = await enrichSongsWithAlbumCovers(mostPlayedSongs);
+
+        setSongs(enrichedSongs);
         setError(null);
       } catch (err) {
         console.error('Error fetching most played songs:', err);
