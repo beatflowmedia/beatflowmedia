@@ -1,5 +1,5 @@
 // src/layouts/AppShell.js
-import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, Suspense, useMemo, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -44,7 +44,8 @@ export default function AppShell() {
   const { playSong, playArtist, currentSong, isPlaying } = usePlayerActions(musicData);
 
   // UI State
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Desktop: collapse to icons-only
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Mobile: slide sidebar in/out
   const [rightPanelVisible, setRightPanelVisible] = useState(false);
   const [rightPanelContent, setRightPanelContent] = useState(null);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
@@ -83,6 +84,37 @@ export default function AppShell() {
     setRightPanelContent(null);
   }, []);
 
+  // Mobile Sidebar - Close on click outside (mobile only)
+  const sidebarRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only handle on mobile (check window width)
+      if (window.innerWidth >= 768) return;
+
+      // If sidebar is open and click is outside sidebar and toggle button
+      if (
+        mobileMenuOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target) &&
+        !event.target.closest('[aria-label="Toggle Library"]')
+      ) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      // Small delay to prevent immediate close from the same click that opened it
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [mobileMenuOpen]);
+
   // NavBar Handlers
   const handleHomeClick = () => {
     setSearchQuery("");
@@ -110,10 +142,18 @@ export default function AppShell() {
   // Sidebar Handlers
   const handlePlaylistSelect = (playlist) => {
     navigate(`/playlist/${playlist.id}`);
+    // Close mobile sidebar after selection (mobile only)
+    if (window.innerWidth < 768) {
+      setMobileMenuOpen(false);
+    }
   };
 
   const handleArtistSelect = (artistName) => {
     navigate(`/artist/${encodeURIComponent(artistName)}`);
+    // Close mobile sidebar after selection (mobile only)
+    if (window.innerWidth < 768) {
+      setMobileMenuOpen(false);
+    }
   };
 
   // Memoize outlet context to prevent unnecessary re-renders
@@ -150,11 +190,13 @@ export default function AppShell() {
           onDownloadClick={handleDownloadClick}
           onWhatsNewClick={handleWhatsNewClick}
           isBellActive={showWhatsNew}
+          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+          isMobileMenuOpen={mobileMenuOpen}
         />
       </header>
 
       {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${sidebarCollapsed ? styles.collapsed : ""}`}>
+      <aside ref={sidebarRef} className={`${styles.sidebar} ${sidebarCollapsed ? styles.collapsed : ""} ${mobileMenuOpen ? styles.open : ""}`}>
         <SideBar
           musicData={allSongs}
           playlists={playlists}

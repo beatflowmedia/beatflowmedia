@@ -90,7 +90,9 @@ const NavBar = ({
   onSearchChange,
   onExplorePremium,
   onWhatsNewClick,
-  isBellActive
+  isBellActive,
+  onMobileMenuToggle,
+  isMobileMenuOpen
 }) => {
   const { user, signInWithGoogle, signOutUser } = useAuth();
   const navigate = useNavigate();
@@ -150,20 +152,20 @@ const NavBar = ({
       className="flex items-center text-bf-text bg-black border-b border-gray-800"
       style={styles.navPadding}
     >
-      {/* LEFT: Hamburger Menu (Mobile) + Logo */}
+      {/* LEFT: Sidebar Toggle (Mobile) + Logo */}
       <div className="flex items-center" style={styles.gapMedium}>
-        {/* Hamburger Menu Button */}
+        {/* Sidebar Toggle Button - Mobile only - toggles library sidebar */}
         <button
           type="button"
-          onClick={() => setShowMobileMenu(!showMobileMenu)}
-          aria-label="Menu"
+          onClick={onMobileMenuToggle}
+          aria-label="Toggle Library"
           className="md:hidden rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition"
           style={styles.iconButton}
         >
-          {showMobileMenu ? (
+          {isMobileMenuOpen ? (
             <FaTimes className="text-bf-text" style={styles.iconMedium} />
           ) : (
-            <FaBars className="text-bf-text" style={styles.iconMedium} />
+            <MdLibraryMusic className="text-bf-text" style={styles.iconMedium} />
           )}
         </button>
 
@@ -568,7 +570,9 @@ NavBar.propTypes = {
   onSearchChange: PropTypes.func,
   onExplorePremium: PropTypes.func,
   onWhatsNewClick: PropTypes.func,
-  isBellActive: PropTypes.bool
+  isBellActive: PropTypes.bool,
+  onMobileMenuToggle: PropTypes.func,
+  isMobileMenuOpen: PropTypes.bool
 };
 
 NavBar.defaultProps = {
@@ -576,7 +580,9 @@ NavBar.defaultProps = {
   onSearchChange: () => {},
   onExplorePremium: () => {},
   onWhatsNewClick: () => {},
-  isBellActive: false
+  isBellActive: false,
+  onMobileMenuToggle: () => {},
+  isMobileMenuOpen: false
 };
 
 export default memo(NavBar);
