@@ -93,9 +93,19 @@ const SidebarListItem = ({
             >
               {item.name}
             </button>
-            <div className="text-xs text-gray-400 flex items-center mt-0.5">
+            <button
+              className="text-xs text-gray-400 flex items-center mt-0.5 hover:text-green-300 text-left"
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                margin: 0
+              }}
+              onClick={handleNameClick}
+              title={`${isArtist ? 'Go to artist page' : 'Go to playlist page'}`}
+            >
               {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
-            </div>
+            </button>
           </div>
         )}
       </div>
