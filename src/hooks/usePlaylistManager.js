@@ -109,5 +109,44 @@ export function usePlaylistManager() {
     return updateDoc(ref, { songs: updated });
   };
 
-  return { playlists, createNewPlaylist, addSong, removeSong };
+  const deletePlaylist = async (playlistId) => {
+    if (!user?.uid) throw new Error("User not authenticated");
+
+    const playlistRef = doc(db, "users", user.uid, "playlists", playlistId);
+
+    // Use Firestore's deleteDoc for safe deletion
+    const { deleteDoc } = await import('firebase/firestore');
+    return deleteDoc(playlistRef);
+  };
+
+  const updatePlaylistDetails = async (playlistId, updates) => {
+    if (!user?.uid) throw new Error("User not authenticated");
+
+    const playlistRef = doc(db, "users", user.uid, "playlists", playlistId);
+
+    // Only allow specific fields to be updated (security)
+    const allowedUpdates = {};
+    if (updates.name) allowedUpdates.name = updates.name;
+    if (updates.description !== undefined) allowedUpdates.description = updates.description;
+    if (updates.imageUrl !== undefined) allowedUpdates.imageUrl = updates.imageUrl;
+
+    return updateDoc(playlistRef, { ...allowedUpdates, updatedAt: new Date() });
+  };
+
+  const togglePrivacy = async (playlistId, isPrivate) => {
+    if (!user?.uid) throw new Error("User not authenticated");
+
+    const playlistRef = doc(db, "users", user.uid, "playlists", playlistId);
+    return updateDoc(playlistRef, { isPrivate, updatedAt: new Date() });
+  };
+
+  return {
+    playlists,
+    createNewPlaylist,
+    addSong,
+    removeSong,
+    deletePlaylist,
+    updatePlaylistDetails,
+    togglePrivacy
+  };
 }
