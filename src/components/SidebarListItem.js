@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { FaMusic, FaUser, FaPlay, FaEllipsisH } from "react-icons/fa";
+import { useState } from "react";
+import { FaMusic, FaUser, FaPlay } from "react-icons/fa";
 import { MusicNote } from "@mui/icons-material";
 import PropTypes from 'prop-types';
 import ContextMenu from './ContextMenu';
@@ -23,7 +23,6 @@ const SidebarListItem = ({
   const [imgError, setImgError] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
-  const menuButtonRef = useRef(null);
 
   // Main navigation handlers (DRY - same for artist/playlist)
   const handleNameClick = isArtist
@@ -51,23 +50,24 @@ const SidebarListItem = ({
     }
   };
 
-  // Context menu handler (for playlists only)
-  const handleMenuClick = (e) => {
+  // Context menu handler (right-click for playlists)
+  const handleContextMenu = (e) => {
+    if (isArtist) return; // Only for playlists
+    e.preventDefault();
     e.stopPropagation();
-    const rect = menuButtonRef.current?.getBoundingClientRect();
-    if (rect) {
-      setMenuPos({ x: rect.right, y: rect.top });
-      setShowMenu(true);
-    }
+    setMenuPos({ x: e.clientX, y: e.clientY });
+    setShowMenu(true);
   };
 
-  const contextMenuOptions = !isArtist ? [
-    { label: 'Add to queue', action: () => console.log('Add to queue') },
-    { label: 'Edit details', action: () => console.log('Edit details') },
-    { label: 'Delete', action: () => console.log('Delete') },
-    { label: 'Make private', action: () => console.log('Make private') },
-    { label: 'Share', action: () => console.log('Share'), hasSubmenu: true }
-  ] : [];
+  const contextMenuItems = [
+    { label: 'Add to queue', onClick: () => console.log('Add to queue', item) },
+    { type: 'divider' },
+    { label: 'Edit details', onClick: () => console.log('Edit details', item) },
+    { label: 'Delete', onClick: () => console.log('Delete', item) },
+    { type: 'divider' },
+    { label: 'Make private', onClick: () => console.log('Make private', item) },
+    { label: 'Share', onClick: () => console.log('Share', item) }
+  ];
 
   // If we have the right panel handler (applies to both artist AND playlist)
   if (onShowRightPanel) {
@@ -79,7 +79,10 @@ const SidebarListItem = ({
       : null;
 
     return (
-      <div className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group ${isCollapsed ? 'justify-center' : ''}`}>
+      <div
+        className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group ${isCollapsed ? 'justify-center' : ''}`}
+        onContextMenu={handleContextMenu}
+      >
         {/* Image with play overlay (DRY for both artist and playlist) */}
         {displayImage ? (
           <div className={`relative w-10 h-10 ${isCollapsed ? '' : 'mr-3'} shrink-0`}>
@@ -143,23 +146,13 @@ const SidebarListItem = ({
           </div>
         )}
 
-        {/* Context menu button (playlists only) */}
-        {!isCollapsed && !isArtist && (
-          <button
-            ref={menuButtonRef}
-            onClick={handleMenuClick}
-            className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-white transition-opacity"
-            title="More options"
-          >
-            <FaEllipsisH />
-          </button>
-        )}
-
         {/* Context menu */}
         {showMenu && (
           <ContextMenu
-            options={contextMenuOptions}
-            position={menuPos}
+            visible={showMenu}
+            x={menuPos.x}
+            y={menuPos.y}
+            items={contextMenuItems}
             onClose={() => setShowMenu(false)}
           />
         )}
