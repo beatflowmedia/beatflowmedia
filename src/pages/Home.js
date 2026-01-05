@@ -633,8 +633,8 @@ function Home() {
       </Box>
 
 
-      {/* Personalized Sections (only for logged in users) */}
-      {user && (
+      {/* Personalized Sections (only for logged in users and 'all'/'music' categories) */}
+      {user && (activeCategory === 'all' || activeCategory === 'music') && (
         <>
           <Box sx={{ mb: 4 }}>
             <Suspense fallback={
