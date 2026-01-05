@@ -2,7 +2,7 @@
 import { useState , useMemo } from "react";
 import SidebarListItem from "./SidebarListItem";
 import NewPlaylistModal from "./NewPlaylistModal";
-import { FaPlus, FaSearch, FaList } from "react-icons/fa";
+import { FaPlus, FaSearch, FaList, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PropTypes from 'prop-types';
 
 const FILTERS = [
@@ -54,7 +54,9 @@ const SideBar = ({
   onArtistSelect,
   onCreatePlaylist,
   onShowRightPanel,
-  onPlayArtist
+  onPlayArtist,
+  isCollapsed = false,
+  onToggleCollapse
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState("");
@@ -72,8 +74,27 @@ const SideBar = ({
 
       {/* Sidebar header: logo, filters, search */}
       <div className="flex flex-col pt-0 pb-2 flex-shrink-0 z-10" style={{ flexShrink: 0, backgroundColor: "#000000" }}>
-        {/* Filter chips */}
-        <div className="flex space-x-2 px-4 mb-2">
+        {/* Toggle button and header */}
+        <div className="flex items-center justify-between px-4 py-2">
+          {!isCollapsed && <h2 className="text-sm font-semibold text-gray-400">Your Library</h2>}
+          {onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <FaChevronRight className="text-gray-400" />
+              ) : (
+                <FaChevronLeft className="text-gray-400" />
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Filter chips - hidden when collapsed */}
+        {!isCollapsed && (
+          <div className="flex space-x-2 px-4 mb-2">
           {FILTERS.map((f) => (
             <button
               key={f.value}
@@ -102,8 +123,11 @@ const SideBar = ({
             All
           </button>
         </div>
-        {/* Search */}
-        <div className="flex items-center px-4 mb-2">
+        )}
+
+        {/* Search - hidden when collapsed */}
+        {!isCollapsed && (
+          <div className="flex items-center px-4 mb-2">
           <FaSearch className="text-gray-600 mr-2" />
           <input
             className="w-full p-1 rounded text-sm text-white border-none"
@@ -124,29 +148,35 @@ const SideBar = ({
             <FaPlus className="text-gray-400 hover:text-white" />
           </button>
         </div>
+        )}
       </div>
 
       {/* Scrollable library: playlists & artists */}
       <div className="overflow-y-auto flex-1 px-2 pb-2" style={{ flexGrow: 1, flexShrink: 1, minHeight: 0, scrollbarColor: 'inherit', scrollbarWidth: 'inherit' }}>
         {playlistItems.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
-              Playlists
-            </div>
+            {!isCollapsed && (
+              <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
+                Playlists
+              </div>
+            )}
             {playlistItems.map((item) => (
               <SidebarListItem
                 key={item.id}
                 item={item}
                 onPlaylistSelect={onPlaylistSelect}
+                isCollapsed={isCollapsed}
               />
             ))}
           </div>
         )}
         {artistItems.length > 0 && (
           <div>
-            <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
-              Artists
-            </div>
+            {!isCollapsed && (
+              <div className="text-xs font-semibold text-gray-400 uppercase mb-2 px-2">
+                Artists
+              </div>
+            )}
             {artistItems.map((item) => (
               <SidebarListItem
                 key={item.id}
@@ -154,11 +184,12 @@ const SideBar = ({
                 onViewArtist={onArtistSelect}
                 onShowRightPanel={onShowRightPanel}
                 onPlayArtist={onPlayArtist}
+                isCollapsed={isCollapsed}
               />
             ))}
           </div>
         )}
-        {playlistItems.length === 0 && artistItems.length === 0 && (
+        {!isCollapsed && playlistItems.length === 0 && artistItems.length === 0 && (
           <div className="text-gray-400 text-center pt-4">No items found.</div>
         )}
       </div>
@@ -183,7 +214,9 @@ SideBar.propTypes = {
   onArtistSelect: PropTypes.func.isRequired,
   onCreatePlaylist: PropTypes.func.isRequired,
   onShowRightPanel: PropTypes.func,
-  onPlayArtist: PropTypes.func
+  onPlayArtist: PropTypes.func,
+  isCollapsed: PropTypes.bool,
+  onToggleCollapse: PropTypes.func
 };
 
 export default SideBar;

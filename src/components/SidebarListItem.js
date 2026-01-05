@@ -14,7 +14,8 @@ const SidebarListItem = ({
   onPlaylistSelect,
   onViewArtist,
   onShowRightPanel,
-  onPlayArtist
+  onPlayArtist,
+  isCollapsed = false
 }) => {
   const isArtist = item.type === "artist";
   const [imgError, setImgError] = useState(false);
@@ -27,39 +28,41 @@ const SidebarListItem = ({
   // If this is an artist and we have the right panel handler
   if (isArtist && onShowRightPanel) {
     return (
-      <div className="flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group">
+      <div className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group ${isCollapsed ? 'justify-center' : ''}`}>
         {/* Artist Image - opens right panel */}
         <img
           src={!imgError && item.cover ? item.cover : "/images/Logo.png"}
           alt={item.name}
-          className="w-10 h-10 rounded-full object-cover mr-3 flex-shrink-0 border border-gray-800 cursor-pointer hover:ring-2 hover:ring-green-400"
+          className={`w-10 h-10 rounded-full object-cover ${isCollapsed ? '' : 'mr-3'} flex-shrink-0 border border-gray-800 cursor-pointer hover:ring-2 hover:ring-green-400`}
           onClick={(e) => {
             e.stopPropagation();
-            onShowRightPanel(item.name);
+            isCollapsed ? (onViewArtist || onArtistSelect)?.(item.name) : onShowRightPanel(item.name);
           }}
           onError={() => setImgError(true)}
-          title={`Open details for ${item.name}`}
+          title={`${isCollapsed ? 'Go to' : 'Open details for'} ${item.name}`}
         />
-        {/* Name - loads artist in main area */}
-        <div className="flex-1 min-w-0">
-          <button
-            className="truncate text-white text-sm font-semibold group-hover:text-green-300 text-left"
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              margin: 0
-            }}
-            onClick={() => (onViewArtist || onArtistSelect)?.(item.name)}
-            title={`Show artist: ${item.name}`}
-            tabIndex={0}
-          >
-            {item.name}
-          </button>
-          <div className="text-xs text-gray-400 flex items-center mt-0.5">
-            {typeIcon.artist} Artist
+        {/* Name - loads artist in main area - hidden when collapsed */}
+        {!isCollapsed && (
+          <div className="flex-1 min-w-0">
+            <button
+              className="truncate text-white text-sm font-semibold group-hover:text-green-300 text-left"
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                margin: 0
+              }}
+              onClick={() => (onViewArtist || onArtistSelect)?.(item.name)}
+              title={`Show artist: ${item.name}`}
+              tabIndex={0}
+            >
+              {item.name}
+            </button>
+            <div className="text-xs text-gray-400 flex items-center mt-0.5">
+              {typeIcon.artist} Artist
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -67,7 +70,7 @@ const SidebarListItem = ({
   // Default button layout for playlists or simple artist items
   return (
     <button
-      className="flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group text-left"
+      className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group text-left ${isCollapsed ? 'justify-center' : ''}`}
       onClick={handleClick}
       tabIndex={0}
       aria-label={item.name}
@@ -77,7 +80,7 @@ const SidebarListItem = ({
         <img
           src={item.cover}
           alt={item.name}
-          className={`w-10 h-10 mr-3 object-cover flex-shrink-0 ${
+          className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} object-cover flex-shrink-0 ${
             isArtist ? 'rounded-full' : 'rounded border border-gray-800'
           }`}
           onError={() => {
@@ -90,21 +93,23 @@ const SidebarListItem = ({
         <img
           src="/images/Logo.png"
           alt={item.name}
-          className="w-10 h-10 mr-3 object-cover flex-shrink-0 rounded-full"
+          className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} object-cover flex-shrink-0 rounded-full`}
         />
       ) : (
-        <div className="w-10 h-10 mr-3 flex items-center justify-center flex-shrink-0 rounded border border-gray-800 bg-gray-900">
+        <div className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} flex items-center justify-center flex-shrink-0 rounded border border-gray-800 bg-gray-900`}>
           <MusicNote sx={{ fontSize: 20, color: '#9ca3af' }} />
         </div>
       )}
-      <div className="flex-1 min-w-0">
-        <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">
-          {item.name}
+      {!isCollapsed && (
+        <div className="flex-1 min-w-0">
+          <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">
+            {item.name}
+          </div>
+          <div className="text-xs text-gray-400 flex items-center mt-0.5">
+            {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
+          </div>
         </div>
-        <div className="text-xs text-gray-400 flex items-center mt-0.5">
-          {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
-        </div>
-      </div>
+      )}
     </button>
   );
 };
@@ -119,7 +124,8 @@ SidebarListItem.propTypes = {
   onPlaylistSelect: PropTypes.func,
   onViewArtist: PropTypes.func,
   onShowRightPanel: PropTypes.func,
-  onPlayArtist: PropTypes.func
+  onPlayArtist: PropTypes.func,
+  isCollapsed: PropTypes.bool
 };
 
 export default SidebarListItem;
