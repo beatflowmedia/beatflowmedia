@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { FaMusic, FaUser, FaPlay } from "react-icons/fa";
+import { useState, useRef } from "react";
+import { FaMusic, FaUser, FaPlay, FaEllipsisH } from "react-icons/fa";
 import { MusicNote } from "@mui/icons-material";
 import PropTypes from 'prop-types';
+import ContextMenu from './ContextMenu';
 
 const typeIcon = {
   playlist: <FaMusic className="text-green-400 mr-2" />,
@@ -20,6 +21,9 @@ const SidebarListItem = ({
 }) => {
   const isArtist = item.type === "artist";
   const [imgError, setImgError] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const menuButtonRef = useRef(null);
 
   // Main navigation handlers (DRY - same for artist/playlist)
   const handleNameClick = isArtist
@@ -46,6 +50,24 @@ const SidebarListItem = ({
       }
     }
   };
+
+  // Context menu handler (for playlists only)
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    const rect = menuButtonRef.current?.getBoundingClientRect();
+    if (rect) {
+      setMenuPos({ x: rect.right, y: rect.top });
+      setShowMenu(true);
+    }
+  };
+
+  const contextMenuOptions = !isArtist ? [
+    { label: 'Add to queue', action: () => console.log('Add to queue') },
+    { label: 'Edit details', action: () => console.log('Edit details') },
+    { label: 'Delete', action: () => console.log('Delete') },
+    { label: 'Make private', action: () => console.log('Make private') },
+    { label: 'Share', action: () => console.log('Share'), hasSubmenu: true }
+  ] : [];
 
   // If we have the right panel handler (applies to both artist AND playlist)
   if (onShowRightPanel) {
@@ -119,6 +141,27 @@ const SidebarListItem = ({
               {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
             </button>
           </div>
+        )}
+
+        {/* Context menu button (playlists only) */}
+        {!isCollapsed && !isArtist && (
+          <button
+            ref={menuButtonRef}
+            onClick={handleMenuClick}
+            className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-white transition-opacity"
+            title="More options"
+          >
+            <FaEllipsisH />
+          </button>
+        )}
+
+        {/* Context menu */}
+        {showMenu && (
+          <ContextMenu
+            options={contextMenuOptions}
+            position={menuPos}
+            onClose={() => setShowMenu(false)}
+          />
         )}
       </div>
     );
