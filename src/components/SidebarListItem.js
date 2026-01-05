@@ -26,19 +26,24 @@ const SidebarListItem = ({
     ? () => (onViewArtist || onArtistSelect)?.(item.name)
     : () => onPlaylistSelect(item);
 
-  // Image click handlers - open right panel (DRY)
+  // Image click handlers - open right panel and auto-play (DRY)
   const handleImageClick = (e) => {
     e.stopPropagation();
+
+    // Play immediately using the existing play handlers
+    if (isArtist && onPlayArtist) {
+      onPlayArtist(item.name);
+    } else if (!isArtist && onPlayPlaylist) {
+      onPlayPlaylist(item);
+    }
+
+    // Also open right panel if available
     if (onShowRightPanel) {
       if (isArtist) {
         onShowRightPanel(item.name);
       } else {
-        // For playlists, pass playlist object
         onShowRightPanel({ type: 'playlist', data: item });
       }
-    } else {
-      // Fallback to navigation
-      handleNameClick();
     }
   };
 
@@ -62,7 +67,7 @@ const SidebarListItem = ({
               className={`w-10 h-10 ${imageClass} object-cover border border-gray-800 cursor-pointer transition-opacity group-hover:opacity-60`}
               onClick={handleImageClick}
               onError={() => setImgError(true)}
-              title={`Open details for ${item.name}`}
+              title={`Play ${item.name}`}
             />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <FaPlay className="text-white text-sm" />
@@ -73,7 +78,7 @@ const SidebarListItem = ({
             <div
               className={`w-10 h-10 flex items-center justify-center rounded border border-gray-800 bg-gray-900 cursor-pointer transition-opacity group-hover:opacity-60`}
               onClick={handleImageClick}
-              title={`Open details for ${item.name}`}
+              title={`Play ${item.name}`}
             >
               <MusicNote sx={{ fontSize: 20, color: '#9ca3af' }} />
             </div>
