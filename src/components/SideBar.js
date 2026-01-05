@@ -1,5 +1,5 @@
 // components/SideBar.js
-import { useState , useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import SidebarListItem from "./SidebarListItem";
 import NewPlaylistModal from "./NewPlaylistModal";
 import { FaPlus, FaSearch, FaList, FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -63,11 +63,25 @@ const SideBar = ({
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
 
+  // Centralized menu state - only ONE menu can be open at a time
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+
   const sidebar = useMemo(
     () => buildSidebarItems(musicData, playlists, filter, search),
     [musicData, playlists, filter, search],
   );
-  const { playlists: playlistItems, artists: artistItems } = sidebar;
+  const { playlists: playlistItems, artists: artistItems} = sidebar;
+
+  // Menu handlers (separation of concerns)
+  const handleOpenMenu = useCallback((itemId, position) => {
+    setOpenMenuId(prev => prev === itemId ? null : itemId);
+    setMenuPosition(position);
+  }, []);
+
+  const handleCloseMenu = useCallback(() => {
+    setOpenMenuId(null);
+  }, []);
 
   return (
     <div className="bg-black text-white flex flex-col border-r border-gray-800" style={{ height: "100%", overflow: "hidden", backgroundColor: "#000000" }}>
@@ -169,6 +183,10 @@ const SideBar = ({
                 onShowRightPanel={onShowRightPanel}
                 onPlayPlaylist={onPlayPlaylist}
                 isCollapsed={isCollapsed}
+                isMenuOpen={openMenuId === item.id}
+                menuPosition={menuPosition}
+                onOpenMenu={handleOpenMenu}
+                onCloseMenu={handleCloseMenu}
               />
             ))}
           </div>

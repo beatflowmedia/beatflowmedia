@@ -19,12 +19,14 @@ const SidebarListItem = ({
   onShowRightPanel,
   onPlayArtist,
   onPlayPlaylist,
-  isCollapsed = false
+  isCollapsed = false,
+  isMenuOpen = false,
+  menuPosition = { x: 0, y: 0 },
+  onOpenMenu,
+  onCloseMenu
 }) => {
   const isArtist = item.type === "artist";
   const [imgError, setImgError] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
   // Main navigation handlers (DRY - same for artist/playlist)
   const handleNameClick = isArtist
@@ -54,11 +56,10 @@ const SidebarListItem = ({
 
   // Context menu handler (right-click for playlists)
   const handleContextMenu = (e) => {
-    if (isArtist) return; // Only for playlists
+    if (isArtist || !onOpenMenu) return; // Only for playlists
     e.preventDefault();
     e.stopPropagation();
-    setMenuPos({ x: e.clientX, y: e.clientY });
-    setShowMenu(true);
+    onOpenMenu(item.id, { x: e.clientX, y: e.clientY });
   };
 
   const contextMenuItems = [
@@ -158,13 +159,13 @@ const SidebarListItem = ({
         )}
 
         {/* Context menu */}
-        {showMenu && (
+        {isMenuOpen && (
           <ContextMenu
-            visible={showMenu}
-            x={menuPos.x}
-            y={menuPos.y}
+            visible={isMenuOpen}
+            x={menuPosition.x}
+            y={menuPosition.y}
             items={contextMenuItems}
-            onClose={() => setShowMenu(false)}
+            onClose={onCloseMenu}
           />
         )}
       </div>
@@ -230,7 +231,14 @@ SidebarListItem.propTypes = {
   onShowRightPanel: PropTypes.func,
   onPlayArtist: PropTypes.func,
   onPlayPlaylist: PropTypes.func,
-  isCollapsed: PropTypes.bool
+  isCollapsed: PropTypes.bool,
+  isMenuOpen: PropTypes.bool,
+  menuPosition: PropTypes.shape({
+    x: PropTypes.number,
+    y: PropTypes.number
+  }),
+  onOpenMenu: PropTypes.func,
+  onCloseMenu: PropTypes.func
 };
 
 export default SidebarListItem;
