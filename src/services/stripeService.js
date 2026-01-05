@@ -4,10 +4,20 @@ import { loadStripe } from '@stripe/stripe-js';
 import { db } from '../firebaseConfig';
 import { collection, addDoc, doc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
-// Initialize Stripe with your publishable key
-const stripePromise = loadStripe(
-  process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-);
+// Initialize Stripe with your publishable key - lazy load to prevent blocking
+let stripePromise = null;
+const getStripePromise = () => {
+  if (!stripePromise) {
+    const key = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (key) {
+      stripePromise = loadStripe(key).catch(err => {
+        console.warn('Stripe failed to load:', err);
+        return null;
+      });
+    }
+  }
+  return stripePromise;
+};
 
 // Default prices (in cents - Stripe format)
 const DEFAULT_SONG_PRICE = 199;  // $1.99
@@ -164,7 +174,8 @@ class StripeService {
       const { sessionId } = await response.json();
 
       // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
+      const stripe = await getStripePromise();
+      if (!stripe) throw new Error('Stripe failed to initialize');
       const { error } = await stripe.redirectToCheckout({ sessionId });
 
       if (error) {
@@ -228,7 +239,8 @@ class StripeService {
       const { sessionId } = await response.json();
 
       // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
+      const stripe = await getStripePromise();
+      if (!stripe) throw new Error('Stripe failed to initialize');
       const { error } = await stripe.redirectToCheckout({ sessionId });
 
       if (error) {

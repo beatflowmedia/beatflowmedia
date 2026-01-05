@@ -209,7 +209,8 @@ const fetchRecommendedForToday = async (user) => {
     }
 
     // Shuffle and return subset
-    return shuffleArray(recommendations).slice(0, 12);
+    const songs = shuffleArray(recommendations).slice(0, 12);
+    return await enrichSongsWithAlbumCovers(songs);
   } catch (error) {
     console.error('Error fetching recommended for today:', error);
     return [];
@@ -229,7 +230,10 @@ const fetchYourFavoriteArtists = async (followedArtists) => {
     );
 
     const snapshot = await getDocs(songsQuery);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const songs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Fetch album cover for each song
+    return await enrichSongsWithAlbumCovers(songs);
   } catch (error) {
     console.error('Error fetching favorite artists songs:', error);
     return [];
@@ -253,11 +257,13 @@ const fetchYouMightLike = async (user) => {
     );
 
     const snapshot = await getDocs(songsQuery);
-    return snapshot.docs
+    const songs = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(song => !(user.likes || []).includes(song.id))
       .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
       .slice(0, 12);
+
+    return await enrichSongsWithAlbumCovers(songs);
   } catch (error) {
     console.error('Error fetching you might like:', error);
     return [];
@@ -281,10 +287,12 @@ const fetchMoreOfWhatYouLike = async (user) => {
     );
 
     const snapshot = await getDocs(songsQuery);
-    return snapshot.docs
+    const songs = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(song => !(user.likes || []).includes(song.id))
       .slice(0, 12);
+
+    return await enrichSongsWithAlbumCovers(songs);
   } catch (error) {
     console.error('Error fetching more of what you like:', error);
     return [];
@@ -304,9 +312,11 @@ const fetchBestOfArtist = async (artistName, excludeIds = []) => {
     );
 
     const snapshot = await getDocs(songsQuery);
-    return snapshot.docs
+    const songs = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(song => !excludeIds.includes(song.id));
+
+    return await enrichSongsWithAlbumCovers(songs);
   } catch (error) {
     console.error('Error fetching best of artist:', error);
     return [];
@@ -337,9 +347,11 @@ const fetchMadeForYou = async (user) => {
     }
 
     // Filter out already liked songs and shuffle
-    return shuffleArray(
+    const songs = shuffleArray(
       recommendations.filter(song => !(user.likes || []).includes(song.id))
     ).slice(0, 12);
+
+    return await enrichSongsWithAlbumCovers(songs);
   } catch (error) {
     console.error('Error fetching made for you:', error);
     return [];
@@ -347,6 +359,40 @@ const fetchMadeForYou = async (user) => {
 };
 
 // Utility functions
+
+/**
+ * Enrich songs with album cover URLs
+ */
+const enrichSongsWithAlbumCovers = async (songs) => {
+  if (!songs || songs.length === 0) return [];
+
+  try {
+    // Get unique album IDs
+    const albumIds = [...new Set(songs.map(song => song.albumId).filter(Boolean))];
+
+    if (albumIds.length === 0) return songs;
+
+    // Fetch albums
+    const albums = {};
+    const albumsQuery = query(
+      collection(db, 'albums'),
+      where('__name__', 'in', albumIds)
+    );
+    const albumsSnapshot = await getDocs(albumsQuery);
+    albumsSnapshot.forEach(doc => {
+      albums[doc.id] = doc.data();
+    });
+
+    // Add coverUrl to each song from its album
+    return songs.map(song => ({
+      ...song,
+      cover: song.cover || albums[song.albumId]?.coverUrl || albums[song.albumId]?.cover
+    }));
+  } catch (error) {
+    console.error('Error enriching songs with album covers:', error);
+    return songs;
+  }
+};
 
 const fetchLikedSongs = async (likedIds) => {
   if (!likedIds || likedIds.length === 0) return [];
