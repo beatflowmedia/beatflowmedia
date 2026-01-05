@@ -160,26 +160,34 @@ export default function AppShell() {
     console.log('🎵 handlePlayPlaylist called:', playlist);
 
     // If playlist has no songs, try to fetch from Firestore
-    let songIds = playlist.songs || [];
+    let playlistEntries = playlist.songs || [];
 
-    if (songIds.length === 0 && playlist.id) {
+    if (playlistEntries.length === 0 && playlist.id) {
       console.log('📥 Fetching playlist songs from Firestore...');
       try {
         const playlistDoc = await getDoc(doc(db, 'playlists', playlist.id));
         if (playlistDoc.exists()) {
           const data = playlistDoc.data();
-          songIds = data.songs || [];
-          console.log('📥 Fetched song IDs:', songIds);
+          playlistEntries = data.songs || [];
+          console.log('📥 Fetched playlist entries:', playlistEntries);
         }
       } catch (error) {
         console.error('❌ Error fetching playlist:', error);
       }
     }
 
-    if (songIds.length === 0) {
+    if (playlistEntries.length === 0) {
       console.log('❌ No songs in playlist');
       return;
     }
+
+    // Extract song IDs from playlist entries (handle both formats)
+    const songIds = playlistEntries.map(entry => {
+      // Handle both old format (full song object) and new format (entry with songId)
+      return entry.songId || entry.id || entry;
+    });
+
+    console.log('🎵 Extracted song IDs:', songIds);
 
     // Get full song data from allSongs
     const playlistSongs = songIds
