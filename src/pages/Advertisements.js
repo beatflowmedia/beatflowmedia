@@ -25,8 +25,10 @@ import {
 import { Add, Edit, Delete, Visibility, VisibilityOff } from "@mui/icons-material";
 import { subscribeToAds, createAd, updateAd, deleteAd, toggleAdStatus } from "../utils/AdsHelper";
 import { toast } from "react-toastify";
+import { useModal } from '../hooks/useModal';
 
 export default function Advertisements() {
+  const { showConfirm, showAlert } = useModal();
   const [ads, setAds] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingAd, setEditingAd] = useState(null);
@@ -113,7 +115,8 @@ export default function Advertisements() {
   };
 
   const handleDelete = async (adId) => {
-    if (window.confirm("Are you sure you want to delete this advertisement?")) {
+    const confirmed = await showConfirm("Delete Advertisement", "Are you sure you want to delete this advertisement?", "warning");
+    if (confirmed) {
       try {
         await deleteAd(adId);
         toast.success("Advertisement deleted");

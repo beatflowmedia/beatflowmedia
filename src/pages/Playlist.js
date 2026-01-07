@@ -21,10 +21,7 @@ import {
   TextField,
   Switch,
   FormControlLabel,
-  Skeleton,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon
+  Skeleton
 } from '@mui/material';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import Pause from '@mui/icons-material/Pause';
@@ -980,36 +977,6 @@ function Playlist() {
         )}
       </Box>
 
-      {/* Floating Action Button for Owners */}
-      {isOwner && (
-        <SpeedDial
-          ariaLabel="Playlist actions"
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-          icon={<SpeedDialIcon />}
-          FabProps={{
-            sx: {
-              bgcolor: '#1DB954',
-              '&:hover': { bgcolor: '#1ed760' }
-            }
-          }}
-        >
-          <SpeedDialAction
-            icon={<Add />}
-            tooltipTitle="Add songs"
-            onClick={() => navigate(`/search?addTo=${playlistId}`)}
-          />
-          <SpeedDialAction
-            icon={<People />}
-            tooltipTitle="Manage collaborators"
-            onClick={() => setCollaboratorDialogOpen(true)}
-          />
-          <SpeedDialAction
-            icon={<Edit />}
-            tooltipTitle="Edit playlist"
-            onClick={() => setEditDialogOpen(true)}
-          />
-        </SpeedDial>
-      )}
 
       {/* Context Menu */}
       <Menu

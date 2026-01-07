@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 import { db } from "../firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useModal } from "../hooks/useModal";
 
 export default function SyncLicensing() {
+  const { showAlert } = useModal();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,7 +27,7 @@ export default function SyncLicensing() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
-      alert("Please fill in all required fields");
+      await showAlert('Info', 'Please fill in all required fields', 'info');
       return;
     }
 
@@ -46,7 +48,7 @@ export default function SyncLicensing() {
       });
     } catch (error) {
       console.error("Error submitting inquiry:", error);
-      alert("Failed to submit inquiry. Please try again.");
+      await showAlert('Error', 'Failed to submit inquiry. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }

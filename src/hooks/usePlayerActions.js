@@ -136,12 +136,32 @@ export function usePlayerActions(musicData = []) {
   }, [dispatch, actions]);
 
   /**
+   * Play song at specific index in queue
+   */
+  const playSongAt = useCallback((index) => {
+    dispatch({
+      type: actions.PLAY_AT,
+      payload: index
+    });
+  }, [dispatch, actions]);
+
+  /**
    * Remove song from queue at index
    */
   const removeFromQueue = useCallback((index) => {
     dispatch({
       type: actions.REMOVE_AT,
       payload: index
+    });
+  }, [dispatch, actions]);
+
+  /**
+   * Reorder queue - move song from one index to another
+   */
+  const reorderQueue = useCallback((fromIndex, toIndex) => {
+    dispatch({
+      type: actions.REORDER,
+      payload: { from: fromIndex, to: toIndex }
     });
   }, [dispatch, actions]);
 
@@ -200,7 +220,9 @@ export function usePlayerActions(musicData = []) {
 
     // Queue management
     enqueueSong,
+    playSongAt,
     removeFromQueue,
+    reorderQueue,
     clearQueue,
 
     // Playback modes

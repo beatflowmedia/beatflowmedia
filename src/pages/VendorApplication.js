@@ -4,8 +4,10 @@ import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import Footer from "../components/Footer";
+import { useModal } from "../hooks/useModal";
 
 export default function VendorApplication() {
+  const { showAlert } = useModal();
   const [formData, setFormData] = useState({
     partnershipType: "",
     companyName: "",
@@ -50,7 +52,7 @@ export default function VendorApplication() {
       });
 
       console.log("Vendor application submitted with ID:", docRef.id);
-      alert("Thank you for your application! Our partnerships team will review your submission and contact you within 5-7 business days.");
+      await showAlert('Success', 'Thank you for your application! Our partnerships team will review your submission and contact you within 5-7 business days.', 'success');
 
       // Reset form
       setFormData({
@@ -71,7 +73,7 @@ export default function VendorApplication() {
       });
     } catch (error) {
       console.error("Error submitting vendor application:", error);
-      alert("There was an error submitting your application. Please try again.");
+      await showAlert('Error', 'There was an error submitting your application. Please try again.', 'error');
     }
   };
 

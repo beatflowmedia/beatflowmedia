@@ -1,6 +1,7 @@
 // src/components/admin/SocialMediaManager.js
 // Social media campaign manager with multi-aspect ratio image generation
 import { useState } from 'react';
+import { useModal } from '../../hooks/useModal';
 import {
   Box,
   Typography,
@@ -34,6 +35,7 @@ import {
 import imageOptimizationService from '../../services/imageOptimizationService';
 
 export default function SocialMediaManager() {
+  const { showAlert } = useModal();
   const [campaignName, setCampaignName] = useState('');
   const [targetSegment, setTargetSegment] = useState('');
   const [sourceImage, setSourceImage] = useState(null);
@@ -60,12 +62,12 @@ export default function SocialMediaManager() {
 
     // Validate image
     if (!file.type.startsWith('image/')) {
-      alert('Please upload a valid image file');
+      showAlert('Error', 'Please upload a valid image file', 'error');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be less than 10MB');
+      showAlert('Error', 'Image must be less than 10MB', 'error');
       return;
     }
 
@@ -87,7 +89,7 @@ export default function SocialMediaManager() {
 
   const handleGenerateVariants = async () => {
     if (!sourceImage || !campaignName || !targetSegment) {
-      alert('Please fill in all fields and upload an image');
+      await showAlert('Info', 'Please fill in all fields and upload an image', 'info');
       return;
     }
 
@@ -110,7 +112,7 @@ export default function SocialMediaManager() {
       setGeneratedVariants(variants);
     } catch (error) {
       console.error('Generation error:', error);
-      alert('Failed to generate image variants');
+      await showAlert('Error', 'Failed to generate image variants', 'error');
     } finally {
       setProcessing(false);
     }
@@ -123,7 +125,7 @@ export default function SocialMediaManager() {
 
   const handleSaveCampaign = async () => {
     // In production, this would save to Firestore and upload images to Storage
-    alert(`Campaign saved! Generated ${generatedVariants.length} image variants`);
+    await showAlert('Success', `Campaign saved! Generated ${generatedVariants.length} image variants`, 'success');
 
     // Reset form
     setCampaignName('');

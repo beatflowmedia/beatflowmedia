@@ -11,18 +11,18 @@ import {
   FaVolumeUp,
   FaVolumeMute,
   FaClone,
+  FaListUl,
 } from "react-icons/fa";
-import AddToPlaylistButton from "../utils/AddToPlaylistButton";
-import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePlayerActions } from "../hooks/usePlayerActions";
 import { usePlayer } from "../context/PlayerContext";
 import { useAuth } from "../context/AuthContext";
 import { usePlaybackResume } from "../utils/usePlaybackResume";
 import MiniPlayerPortal from "./MiniPlayerPortal";
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
+import PropTypes from 'prop-types';
 const playerAnalytics = new PlayerAnalyticsClass();
 
-const MusicPlayer = () => {
+const MusicPlayer = ({ onShowRightPanel }) => {
   // Get player state and audioRef from context - SINGLE SOURCE OF TRUTH
   const { audioRef } = usePlayer();
   const {
@@ -42,7 +42,6 @@ const MusicPlayer = () => {
     queue
   } = usePlayerActions();
 
-  const { playlists, addSong } = usePlaylistManager();
   const { user } = useAuth();
 
   // Local state for UI only (mute toggle and mini player)
@@ -220,9 +219,15 @@ const MusicPlayer = () => {
           </div>
         </div>
 
-        {/* RIGHT: AddToPlaylist, Volume, Mini Player Toggle */}
+        {/* RIGHT: Queue, Volume, Mini Player Toggle */}
         <div className="flex items-center justify-end w-1/5 gap-3">
-          {song && <AddToPlaylistButton song={song} playlists={playlists} addSong={addSong} />}
+          <button
+            onClick={() => onShowRightPanel?.({ type: 'queue' })}
+            className="text-gray-400 hover:text-white transition-colors"
+            title="Show queue"
+          >
+            <FaListUl size={14} />
+          </button>
           <div className="flex items-center gap-2">
             <button onClick={toggleMute} className="text-gray-400 hover:text-white">
               {isMuted ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
@@ -266,11 +271,13 @@ const MusicPlayer = () => {
         onVolumeChange={handleMiniPlayerVolumeChange}
         onSeek={handleMiniPlayerSeek}
         queue={queue || []}
-        playlists={playlists}
-        addSong={addSong}
       />
     </>
   );
+};
+
+MusicPlayer.propTypes = {
+  onShowRightPanel: PropTypes.func
 };
 
 export default MusicPlayer;

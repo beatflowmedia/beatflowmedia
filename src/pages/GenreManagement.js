@@ -29,6 +29,7 @@ import { db } from '../firebaseConfig';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import { useModal } from '../hooks/useModal';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -40,6 +41,7 @@ function TabPanel({ children, value, index }) {
 
 export default function GenreManagement() {
   const { user } = useAuth();
+  const { showConfirm, showAlert } = useModal();
   const [activeTab, setActiveTab] = useState(0);
 
   // Genres state
@@ -183,7 +185,8 @@ export default function GenreManagement() {
   };
 
   const handleDeleteGenre = async (genreId) => {
-    if (!window.confirm('Are you sure you want to delete this genre?')) return;
+    const confirmed = await showConfirm('Delete Genre', 'Are you sure you want to delete this genre?', 'warning');
+    if (!confirmed) return;
 
     try {
       await deleteDoc(doc(db, 'customGenres', genreId));
@@ -234,7 +237,8 @@ export default function GenreManagement() {
   };
 
   const handleDeleteCategory = async (categoryId) => {
-    if (!window.confirm('Are you sure you want to delete this category?')) return;
+    const confirmed = await showConfirm('Delete Category', 'Are you sure you want to delete this category?', 'warning');
+    if (!confirmed) return;
 
     try {
       await deleteDoc(doc(db, 'customCategories', categoryId));
@@ -285,7 +289,8 @@ export default function GenreManagement() {
   };
 
   const handleDeleteMood = async (moodId) => {
-    if (!window.confirm('Are you sure you want to delete this mood?')) return;
+    const confirmed = await showConfirm('Delete Mood', 'Are you sure you want to delete this mood?', 'warning');
+    if (!confirmed) return;
 
     try {
       await deleteDoc(doc(db, 'customMoods', moodId));

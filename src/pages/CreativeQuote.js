@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle } from "react-icons/fi";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { useModal } from "../hooks/useModal";
 
 export default function CreativeQuote() {
+  const { showAlert } = useModal();
   const [formData, setFormData] = useState({
     serviceType: "",
     companyName: "",
@@ -47,7 +49,7 @@ export default function CreativeQuote() {
       });
 
       console.log("Quote request submitted with ID:", docRef.id);
-      alert("Thank you! We'll review your request and get back to you within 1 business day.");
+      await showAlert('Success', "Thank you! We'll review your request and get back to you within 1 business day.", 'success');
 
       // Reset form
       setFormData({
@@ -66,7 +68,7 @@ export default function CreativeQuote() {
       });
     } catch (error) {
       console.error("Error submitting quote request:", error);
-      alert("There was an error submitting your request. Please try again.");
+      await showAlert('Error', 'There was an error submitting your request. Please try again.', 'error');
     }
   };
 

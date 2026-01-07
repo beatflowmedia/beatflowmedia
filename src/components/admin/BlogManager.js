@@ -38,8 +38,10 @@ import {
   Visibility as ViewsIcon,
   Share
 } from '@mui/icons-material';
+import { useModal } from '../../hooks/useModal';
 
 export default function BlogManager() {
+  const { showConfirm, showAlert } = useModal();
   const [posts, setPosts] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -151,8 +153,9 @@ export default function BlogManager() {
     setPosts(updatedPosts);
   };
 
-  const handleDelete = (postId) => {
-    if (window.confirm('Are you sure you want to delete this blog post?')) {
+  const handleDelete = async (postId) => {
+    const confirmed = await showConfirm('Delete Blog Post', 'Are you sure you want to delete this blog post?', 'warning');
+    if (confirmed) {
       setPosts(posts.filter(p => p.id !== postId));
     }
   };

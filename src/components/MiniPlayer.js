@@ -50,7 +50,6 @@ export default function MiniPlayer({
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
-  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [localVolume, setLocalVolume] = useState(volume);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(volume);
@@ -489,7 +488,7 @@ export default function MiniPlayer({
               </button>
             </div>
 
-            {/* Volume Control & Add to Playlist */}
+            {/* Volume Control */}
             <div className="flex items-center gap-3 flex-shrink-0">
               <button
                 onClick={toggleMute}
@@ -505,38 +504,8 @@ export default function MiniPlayer({
                 step="0.01"
                 value={localVolume}
                 onChange={handleVolumeChange}
-                className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
+                className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
               />
-              <div className="ml-auto relative">
-                {/* Custom inline playlist button for mini player */}
-                <button
-                  className="text-gray-400 hover:text-green-500 transition"
-                  onClick={() => setShowPlaylistMenu(!showPlaylistMenu)}
-                  title="Add to Playlist"
-                >
-                  ➕
-                </button>
-                {showPlaylistMenu && (
-                  <div className="absolute bottom-full right-0 mb-2 bg-gray-800 text-white p-2 rounded shadow-lg w-40 z-50 max-h-48 overflow-y-auto">
-                    {playlists.length === 0 ? (
-                      <p className="text-xs text-gray-400">No playlists</p>
-                    ) : (
-                      playlists.map((playlist) => (
-                        <button
-                          key={playlist.id}
-                          className="block w-full text-left text-xs p-2 hover:bg-gray-700 rounded"
-                          onClick={() => {
-                            addSong(playlist.id, song);
-                            setShowPlaylistMenu(false);
-                          }}
-                        >
-                          {playlist.name}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           </>
         )}

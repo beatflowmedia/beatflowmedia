@@ -45,6 +45,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { parseBlob } from 'music-metadata-browser';
 import { checkMembershipStatus } from '../services/membershipService';
+import { useModal } from '../hooks/useModal';
 
 const steps = ['Release Type', 'Upload Files', 'Track Details', 'Review'];
 
@@ -172,6 +173,7 @@ const initialForm = {
 
 export default function ForArtists() {
   const { user: authUser } = useAuth();
+  const { showAlert } = useModal();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeStep, setActiveStep] = useState(0);
   const [form, setForm] = useState(initialForm);
@@ -1591,9 +1593,9 @@ export default function ForArtists() {
                   fontWeight: 'bold',
                   '&:hover': { bgcolor: '#1ed760' }
                 }}
-                onClick={() => {
+                onClick={async () => {
                   // TODO: Add upgrade modal/page
-                  alert('Premium upgrade coming soon! Contact support@beatflow.com for early access.');
+                  await showAlert('Info', 'Premium upgrade coming soon! Contact support@beatflow.com for early access.', 'info');
                 }}
               >
                 Upgrade for $9.99/month

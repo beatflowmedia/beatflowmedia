@@ -69,6 +69,13 @@ export default function AppShell() {
 
   // Right Panel Handlers
   const openRightPanel = useCallback((content) => {
+    // Toggle queue if it's already open
+    if (content?.type === 'queue' && rightPanelVisible && rightPanelContent?.type === 'queue') {
+      setRightPanelVisible(false);
+      setRightPanelContent(null);
+      return;
+    }
+
     let info = null;
     if (content?.type === "artist") {
       info = buildArtistInfo(content.artistName, allSongs);
@@ -77,7 +84,7 @@ export default function AppShell() {
     }
     setRightPanelContent(info ? { ...content, info } : content);
     setRightPanelVisible(true);
-  }, [allSongs]);
+  }, [allSongs, rightPanelVisible, rightPanelContent]);
 
   const closeRightPanel = useCallback(() => {
     setRightPanelVisible(false);
@@ -289,7 +296,7 @@ export default function AppShell() {
 
       {/* Music Player */}
       <footer className={styles.player}>
-        <MusicPlayer />
+        <MusicPlayer onShowRightPanel={openRightPanel} />
       </footer>
 
       {/* Toast Notifications */}

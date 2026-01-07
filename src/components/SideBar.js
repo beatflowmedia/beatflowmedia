@@ -182,6 +182,7 @@ const SideBar = ({
                 onPlaylistSelect={onPlaylistSelect}
                 onShowRightPanel={onShowRightPanel}
                 onPlayPlaylist={onPlayPlaylist}
+                onCreatePlaylist={() => setShowModal(true)}
                 isCollapsed={isCollapsed}
                 isMenuOpen={openMenuId === item.id}
                 menuPosition={menuPosition}

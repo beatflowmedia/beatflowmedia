@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { db } from "../firebaseConfig";
 import { collection, serverTimestamp, addDoc } from "firebase/firestore";
 import Footer from "../components/Footer";
+import { useModal } from "../hooks/useModal";
 
 export default function Investors() {
+  const { showAlert } = useModal();
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [accessGranted, setAccessGranted] = useState(false);
@@ -27,7 +29,7 @@ export default function Investors() {
       setAccessGranted(true);
     } catch (err) {
       console.error("Failed to record consent:", err);
-      alert("Failed to submit request. Please try again.");
+      await showAlert('Error', 'Failed to submit request. Please try again.', 'error');
     }
   };
 

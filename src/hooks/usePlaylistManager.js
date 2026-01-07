@@ -126,9 +126,13 @@ export function usePlaylistManager() {
 
     // Only allow specific fields to be updated (security)
     const allowedUpdates = {};
-    if (updates.name) allowedUpdates.name = updates.name;
+    if (updates.name !== undefined) allowedUpdates.name = updates.name;
     if (updates.description !== undefined) allowedUpdates.description = updates.description;
     if (updates.imageUrl !== undefined) allowedUpdates.imageUrl = updates.imageUrl;
+    if (updates.isPinned !== undefined) allowedUpdates.isPinned = updates.isPinned;
+    if (updates.excludedFromTaste !== undefined) allowedUpdates.excludedFromTaste = updates.excludedFromTaste;
+    if (updates.hiddenFromProfile !== undefined) allowedUpdates.hiddenFromProfile = updates.hiddenFromProfile;
+    if (updates.collaborators !== undefined) allowedUpdates.collaborators = updates.collaborators;
 
     return updateDoc(playlistRef, { ...allowedUpdates, updatedAt: new Date() });
   };

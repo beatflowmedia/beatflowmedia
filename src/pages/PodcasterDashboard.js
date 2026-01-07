@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../hooks/useModal';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -51,6 +52,7 @@ function TabPanel({ children, value, index }) {
 export default function PodcasterDashboard() {
   const { user, role } = useAuth();
   const navigate = useNavigate();
+  const { showConfirm, showAlert } = useModal();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -127,7 +129,8 @@ export default function PodcasterDashboard() {
   const handleDelete = async () => {
     if (!selectedItem) return;
 
-    if (window.confirm(`Are you sure you want to delete "${selectedItem.title}"?`)) {
+    const confirmed = await showConfirm('Confirm Delete', `Are you sure you want to delete "${selectedItem.title}"?`, 'warning');
+    if (confirmed) {
       try {
         await deleteDoc(doc(db, 'podcasts', selectedItem.id));
         setPodcasts(podcasts.filter(p => p.id !== selectedItem.id));

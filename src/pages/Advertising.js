@@ -3,6 +3,7 @@ import { FiChevronDown } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { useModal } from "../hooks/useModal";
 
 // Resources dropdown items
 const resourcesLinks = [
@@ -18,6 +19,7 @@ const resourcesLinks = [
 ];
 
 export default function Advertising() {
+  const { showAlert } = useModal();
   const [formData, setFormData] = useState({
     businessType: "I am a brand/business",
     objective: "Looking to drive revenue",
@@ -51,7 +53,7 @@ export default function Advertising() {
       });
 
       console.log("Advertising inquiry submitted with ID:", docRef.id);
-      alert("Thank you for your interest! Our advertising team will contact you within 24 hours.");
+      await showAlert('Success', 'Thank you for your interest! Our advertising team will contact you within 24 hours.', 'success');
 
       // Reset form
       setFormData({
@@ -68,7 +70,7 @@ export default function Advertising() {
       });
     } catch (error) {
       console.error("Error submitting advertising inquiry:", error);
-      alert("There was an error submitting your inquiry. Please try again.");
+      await showAlert('Error', 'There was an error submitting your inquiry. Please try again.', 'error');
     }
   };
   return (

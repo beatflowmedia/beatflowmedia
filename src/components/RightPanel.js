@@ -2,10 +2,16 @@ import { useState, useRef, useEffect } from "react";
 import ContextMenu from "./ContextMenu";
 import PropTypes from 'prop-types';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { usePlayer } from '../context/PlayerContext';
+import { usePlayerActions } from '../hooks/usePlayerActions';
 import useFollowArtist from '../hooks/useFollowArtist';
+import { useAuth } from '../context/AuthContext';
+import { useModal } from '../hooks/useModal';
 import { PlayArrow } from '@mui/icons-material';
+import { FaPlus, FaHeart, FaListUl, FaUserAlt, FaCompactDisc, FaShare, FaDesktop, FaBan, FaBroadcastTower, FaFile, FaSearch } from 'react-icons/fa';
+import { MdRemove } from 'react-icons/md';
+import { showSuccessToast, showErrorToast } from '../utils/Toast';
 
 const RightPanel = ({ visible, content, onClose }) => {
   // content: { type: "artist"|"playlist"|"queue", info: {...}, artistId?: string, artistName?: string }
@@ -18,9 +24,13 @@ const RightPanel = ({ visible, content, onClose }) => {
   const [viewMode, setViewMode] = useState('default'); // 'default' or 'queue'
   const [queueMenuSong, setQueueMenuSong] = useState(null);
   const [queueMenuAnchor, setQueueMenuAnchor] = useState(null);
+  const [userPlaylists, setUserPlaylists] = useState([]);
 
   // Player and follow hooks
   const { dispatch, actions, state } = usePlayer();
+  const { clearQueue } = usePlayerActions();
+  const { user } = useAuth();
+  const { showConfirm } = useModal();
   const artistName = content?.artistName || content?.info?.name;
   const { isFollowing, toggleFollow } = useFollowArtist(artistName);
 
@@ -32,6 +42,22 @@ const RightPanel = ({ visible, content, onClose }) => {
       setViewMode('default');
     }
   }, [content?.type]);
+
+  // Fetch user playlists
+  useEffect(() => {
+    if (!user) return;
+
+    const playlistsRef = collection(db, 'users', user.uid, 'playlists');
+    const unsubscribe = onSnapshot(playlistsRef, (snapshot) => {
+      const playlists = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUserPlaylists(playlists);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Fetch artist data from Firestore when artist panel is shown
   useEffect(() => {
@@ -207,6 +233,27 @@ const RightPanel = ({ visible, content, onClose }) => {
     return nextSongs.length > 0 ? nextSongs : artistSongs.slice(0, 3);
   };
 
+  // Add song to playlist
+  const handleAddToPlaylist = async (playlistId, song) => {
+    if (!user) return;
+
+    try {
+      const playlistRef = doc(db, 'users', user.uid, 'playlists', playlistId);
+      await updateDoc(playlistRef, {
+        songs: arrayUnion({
+          songId: song.id,
+          addedAt: new Date().toISOString()
+        })
+      });
+      showSuccessToast('Added to playlist');
+      setQueueMenuAnchor(null);
+      setQueueMenuSong(null);
+    } catch (error) {
+      console.error('Error adding to playlist:', error);
+      showErrorToast('Failed to add to playlist');
+    }
+  };
+
   // Render full queue view
   const renderQueueView = () => {
     const { queue, currentIndex } = state;
@@ -217,13 +264,22 @@ const RightPanel = ({ visible, content, onClose }) => {
       <div className="bg-gray-900 text-white p-6 overflow-y-auto" style={{ height: "100%", width: "100%" }}>
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Queue</h2>
+          <h2 className="text-2xl font-bold">Next in queue</h2>
           <button
-            className="text-gray-400 hover:text-white text-xl"
-            onClick={() => setViewMode('default')}
-            title="Close queue"
+            className="text-sm text-gray-400 hover:text-white"
+            onClick={async () => {
+              const confirmed = await showConfirm(
+                'Clear queue',
+                'Clear all songs from queue? This cannot be undone.',
+                'warning'
+              );
+              if (confirmed) {
+                clearQueue();
+              }
+            }}
+            title="Clear queue"
           >
-            ✖
+            Clear queue
           </button>
         </div>
 
@@ -327,20 +383,39 @@ const RightPanel = ({ visible, content, onClose }) => {
         {queueMenuSong && (
           <ContextMenu
             visible={!!queueMenuAnchor}
-            x={queueMenuAnchor?.getBoundingClientRect().right || 0}
-            y={queueMenuAnchor?.getBoundingClientRect().bottom || 0}
+            x={queueMenuAnchor?.getBoundingClientRect().left - 200 || 0}
+            y={queueMenuAnchor?.getBoundingClientRect().top || 0}
             items={[
               {
-                icon: "➕",
+                icon: <FaPlus />,
                 label: "Add to playlist",
-                onClick: () => {
-                  setQueueMenuAnchor(null);
-                  setQueueMenuSong(null);
-                }
+                submenu: [
+                  {
+                    type: "search",
+                    icon: <FaSearch />,
+                    placeholder: "Find a playlist"
+                  },
+                  {
+                    icon: <FaPlus />,
+                    label: "New playlist",
+                    onClick: () => {
+                      // TODO: Open create playlist modal
+                      setQueueMenuAnchor(null);
+                      setQueueMenuSong(null);
+                    }
+                  },
+                  ...userPlaylists.map(playlist => ({
+                    label: playlist.name,
+                    onClick: () => {
+                      const song = queueMenuSong.song || queueMenuSong;
+                      handleAddToPlaylist(playlist.id, song);
+                    }
+                  }))
+                ]
               },
               {
-                icon: "❌",
-                label: "Remove from queue",
+                icon: <MdRemove />,
+                label: "Remove from this playlist",
                 onClick: () => {
                   if (queueMenuSong.queueIndex !== undefined) {
                     dispatch({
@@ -352,30 +427,86 @@ const RightPanel = ({ visible, content, onClose }) => {
                   setQueueMenuSong(null);
                 }
               },
-              { type: "divider" },
               {
-                icon: "👤",
+                icon: <FaHeart />,
+                label: "Save to your Liked Songs",
+                onClick: () => {
+                  // TODO: Implement liked songs
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              {
+                icon: <FaListUl />,
+                label: "Add to queue",
+                onClick: () => {
+                  // TODO: Implement add to queue
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              {
+                icon: <FaBan />,
+                label: "Exclude from your taste profile",
+                onClick: () => {
+                  // TODO: Implement taste profile exclusion
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              {
+                icon: <FaBroadcastTower />,
+                label: "Go to song radio",
+                onClick: () => {
+                  // TODO: Implement song radio
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              {
+                icon: <FaUserAlt />,
                 label: "Go to artist",
                 onClick: () => {
                   const artist = queueMenuSong.song?.artistName || queueMenuSong.artistName || queueMenuSong.artist;
                   setQueueMenuAnchor(null);
                   setQueueMenuSong(null);
-                  // Could navigate to artist page here
+                  // TODO: Navigate to artist page
                 }
               },
               {
-                icon: "💿",
+                icon: <FaCompactDisc />,
                 label: "Go to album",
+                onClick: () => {
+                  // TODO: Navigate to album page
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              {
+                icon: <FaFile />,
+                label: "View credits",
+                onClick: () => {
+                  // TODO: Show credits modal
+                  setQueueMenuAnchor(null);
+                  setQueueMenuSong(null);
+                }
+              },
+              {
+                icon: <FaShare />,
+                label: "Share",
+                submenu: [
+                  // TODO: Add share options
+                ],
                 onClick: () => {
                   setQueueMenuAnchor(null);
                   setQueueMenuSong(null);
                 }
               },
-              { type: "divider" },
               {
-                icon: "📤",
-                label: "Share",
+                icon: <FaDesktop />,
+                label: "Open in Desktop app",
                 onClick: () => {
+                  // TODO: Implement desktop app link
                   setQueueMenuAnchor(null);
                   setQueueMenuSong(null);
                 }

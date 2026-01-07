@@ -5,6 +5,12 @@ import { BiListPlus } from "react-icons/bi";
 import { MdEdit, MdDelete } from "react-icons/md";
 import PropTypes from 'prop-types';
 import ContextMenu from './ContextMenu';
+import { usePlaylistManager } from '../hooks/usePlaylistManager';
+import { usePlayer } from '../context/PlayerContext';
+import { db } from '../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '../hooks/useAuth';
+import { showSuccessToast, showErrorToast } from '../utils/Toast';
 
 const typeIcon = {
   playlist: <FaMusic className="text-green-400 mr-2" />,
@@ -19,6 +25,7 @@ const SidebarListItem = ({
   onShowRightPanel,
   onPlayArtist,
   onPlayPlaylist,
+  onCreatePlaylist,
   isCollapsed = false,
   isMenuOpen = false,
   menuPosition = { x: 0, y: 0 },
@@ -27,6 +34,10 @@ const SidebarListItem = ({
 }) => {
   const isArtist = item.type === "artist";
   const [imgError, setImgError] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Race condition guard
+  const { deletePlaylist, updatePlaylistDetails, togglePrivacy } = usePlaylistManager();
+  const { user } = useAuth();
+  const { dispatch, actions: playerActions } = usePlayer();
 
   // Main navigation handlers (DRY - same for artist/playlist)
   const handleNameClick = isArtist
@@ -62,35 +73,230 @@ const SidebarListItem = ({
     onOpenMenu(item.id, { x: e.clientX, y: e.clientY });
   };
 
+  // Action handlers with proper error handling and race condition guards
+
+  // Add entire playlist to queue
+  const handleAddToQueue = async () => {
+    if (isProcessing || !user) return;
+
+    setIsProcessing(true);
+    try {
+      const playlistRef = doc(db, "users", user.uid, "playlists", item.id);
+      const playlistSnap = await getDoc(playlistRef);
+
+      if (!playlistSnap.exists()) {
+        throw new Error("Playlist not found");
+      }
+
+      const playlistData = playlistSnap.data();
+      const songs = playlistData.songs || [];
+
+      if (songs.length === 0) {
+        showErrorToast("This playlist is empty");
+        return;
+      }
+
+      // For each song entry, fetch the full song data from songs collection
+      for (const songEntry of songs) {
+        const songId = songEntry.songId || songEntry.id;
+        if (!songId) continue;
+
+        // Fetch song from songs collection
+        const songRef = doc(db, "songs", songId);
+        const songSnap = await getDoc(songRef);
+
+        if (songSnap.exists()) {
+          const songData = { id: songSnap.id, ...songSnap.data() };
+          dispatch({ type: playerActions.ENQUEUE, payload: { item: songData } });
+        }
+      }
+
+      showSuccessToast(`Added ${songs.length} songs to queue`);
+      onCloseMenu?.();
+    } catch (error) {
+      console.error('❌ Failed to add to queue:', error);
+      showErrorToast('Failed to add playlist to queue');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeletePlaylist = async () => {
+    if (isProcessing) return; // Prevent double-clicks
+    if (!window.confirm(`Delete playlist "${item.name}"? This cannot be undone.`)) return;
+
+    setIsProcessing(true);
+    try {
+      await deletePlaylist(item.id);
+      showSuccessToast(`Deleted "${item.name}"`);
+      onCloseMenu?.(); // Close menu after successful deletion
+    } catch (error) {
+      console.error('❌ Failed to delete playlist:', error);
+      showErrorToast('Failed to delete playlist');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTogglePrivacy = async () => {
+    if (isProcessing) return; // Prevent concurrent operations
+
+    setIsProcessing(true);
+    try {
+      const newPrivacy = !item.isPrivate;
+      await togglePrivacy(item.id, newPrivacy);
+      showSuccessToast(`Playlist is now ${newPrivacy ? 'private' : 'public'}`);
+      onCloseMenu?.(); // Close menu after successful update
+    } catch (error) {
+      console.error('❌ Failed to toggle privacy:', error);
+      showErrorToast('Failed to update privacy settings');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/playlist/${item.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      showSuccessToast('Link copied to clipboard');
+      onCloseMenu?.();
+    }).catch((error) => {
+      console.error('❌ Failed to copy link:', error);
+      showErrorToast('Failed to copy link');
+    });
+  };
+
+  const handlePinPlaylist = async () => {
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    try {
+      const newPinState = !item.isPinned;
+      await updatePlaylistDetails(item.id, { isPinned: newPinState });
+      showSuccessToast(newPinState ? 'Playlist pinned' : 'Playlist unpinned');
+      onCloseMenu?.();
+    } catch (error) {
+      console.error('❌ Failed to pin/unpin playlist:', error);
+      showErrorToast('Failed to update pin status');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleExcludeFromTasteProfile = async () => {
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    try {
+      const newState = !item.excludedFromTaste;
+      await updatePlaylistDetails(item.id, { excludedFromTaste: newState });
+      showSuccessToast(newState ? 'Excluded from taste profile' : 'Included in taste profile');
+      onCloseMenu?.();
+    } catch (error) {
+      console.error('❌ Failed to update taste profile setting:', error);
+      showErrorToast('Failed to update taste profile setting');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRemoveFromProfile = async () => {
+    if (isProcessing) return;
+    if (!window.confirm(`Remove "${item.name}" from your profile? You can add it back later.`)) return;
+
+    setIsProcessing(true);
+    try {
+      await updatePlaylistDetails(item.id, { hiddenFromProfile: true });
+      showSuccessToast('Removed from profile');
+      onCloseMenu?.();
+    } catch (error) {
+      console.error('❌ Failed to remove from profile:', error);
+      showErrorToast('Failed to remove from profile');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEditDetails = () => {
+    // TODO: Open edit modal - will implement modal in next step
+    console.log('✏️ Edit details for:', item);
+    showErrorToast('Edit Details modal coming soon!');
+    onCloseMenu?.();
+  };
+
+  const handleInviteCollaborators = () => {
+    // TODO: Open invite modal
+    console.log('👥 Invite collaborators to:', item);
+    showErrorToast('Invite Collaborators feature coming soon!');
+    onCloseMenu?.();
+  };
+
+  const handleEmbedPlaylist = () => {
+    const embedCode = `<iframe src="${window.location.origin}/embed/playlist/${item.id}" width="300" height="380" frameborder="0"></iframe>`;
+    navigator.clipboard.writeText(embedCode).then(() => {
+      showSuccessToast('Embed code copied to clipboard');
+      onCloseMenu?.();
+    }).catch((error) => {
+      console.error('❌ Failed to copy embed code:', error);
+      showErrorToast('Failed to copy embed code');
+    });
+  };
+
+  const handleFindFolder = () => {
+    // TODO: Open folder finder modal
+    console.log('🔍 Find folder for:', item);
+    showErrorToast('Folder management coming soon!');
+    onCloseMenu?.();
+  };
+
+  const handleCreateFolder = () => {
+    // TODO: Open create folder modal
+    console.log('📁 Create new folder');
+    showErrorToast('Folder management coming soon!');
+    onCloseMenu?.();
+  };
+
   const contextMenuItems = [
-    { label: 'Add to queue', icon: <BiListPlus />, onClick: () => console.log('Add to queue', item) },
-    { label: 'Remove from profile', icon: <FaEyeSlash />, onClick: () => console.log('Remove from profile', item) },
+    { label: 'Add to queue', icon: <BiListPlus />, onClick: handleAddToQueue },
+    { label: 'Remove from profile', icon: <FaEyeSlash />, onClick: handleRemoveFromProfile },
     { type: 'divider' },
-    { label: 'Edit details', icon: <MdEdit />, onClick: () => console.log('Edit details', item) },
-    { label: 'Delete', icon: <MdDelete />, onClick: () => console.log('Delete', item) },
+    { label: 'Edit details', icon: <MdEdit />, onClick: handleEditDetails },
+    { label: 'Delete', icon: <MdDelete />, onClick: handleDeletePlaylist },
     { type: 'divider' },
-    { label: 'Create playlist', icon: <FaPlus />, onClick: () => console.log('Create playlist') },
-    { label: 'Create folder', icon: <FaFolder />, onClick: () => console.log('Create folder') },
+    { label: 'Create playlist', icon: <FaPlus />, onClick: onCreatePlaylist },
+    { label: 'Create folder', icon: <FaFolder />, onClick: handleCreateFolder },
     { type: 'divider' },
-    { label: 'Make private', icon: <FaLock />, onClick: () => console.log('Make private', item) },
-    { label: 'Invite collaborators', icon: <FaUserPlus />, onClick: () => console.log('Invite collaborators', item) },
-    { label: 'Exclude from your taste profile', icon: <FaEyeSlash />, onClick: () => console.log('Exclude from taste profile', item) },
+    {
+      label: item.isPrivate ? 'Make public' : 'Make private',
+      icon: <FaLock />,
+      onClick: handleTogglePrivacy
+    },
+    { label: 'Invite collaborators', icon: <FaUserPlus />, onClick: handleInviteCollaborators },
+    {
+      label: item.excludedFromTaste ? 'Include in taste profile' : 'Exclude from your taste profile',
+      icon: <FaEyeSlash />,
+      onClick: handleExcludeFromTasteProfile
+    },
     {
       label: 'Move to folder',
       icon: <FaFolder />,
       submenu: [
-        { label: 'Find a folder', icon: <FaSearch />, onClick: () => console.log('Find folder', item) },
-        { label: 'Create folder', icon: <FaPlus />, onClick: () => console.log('Create folder from submenu') }
+        { label: 'Find a folder', icon: <FaSearch />, onClick: handleFindFolder },
+        { label: 'Create folder', icon: <FaPlus />, onClick: handleCreateFolder }
       ]
     },
-    { label: 'Pin playlist', icon: <FaThumbtack />, onClick: () => console.log('Pin playlist', item) },
+    {
+      label: item.isPinned ? 'Unpin playlist' : 'Pin playlist',
+      icon: <FaThumbtack />,
+      onClick: handlePinPlaylist
+    },
     { type: 'divider' },
     {
       label: 'Share',
       icon: <FaShare />,
       submenu: [
-        { label: 'Copy link to playlist', icon: <FaShare />, onClick: () => console.log('Copy link', item) },
-        { label: 'Embed playlist', icon: <FaShare />, onClick: () => console.log('Embed', item) }
+        { label: 'Copy link to playlist', icon: <FaShare />, onClick: handleCopyLink },
+        { label: 'Embed playlist', icon: <FaShare />, onClick: handleEmbedPlaylist }
       ]
     }
   ];
@@ -237,7 +443,9 @@ SidebarListItem.propTypes = {
   item: PropTypes.shape({
     name: PropTypes.string.isRequired,
     cover: PropTypes.string,
-    type: PropTypes.string.isRequired
+    type: PropTypes.string.isRequired,
+    id: PropTypes.string,
+    isPrivate: PropTypes.bool
   }).isRequired,
   onArtistSelect: PropTypes.func,
   onPlaylistSelect: PropTypes.func,
@@ -245,6 +453,7 @@ SidebarListItem.propTypes = {
   onShowRightPanel: PropTypes.func,
   onPlayArtist: PropTypes.func,
   onPlayPlaylist: PropTypes.func,
+  onCreatePlaylist: PropTypes.func,
   isCollapsed: PropTypes.bool,
   isMenuOpen: PropTypes.bool,
   menuPosition: PropTypes.shape({

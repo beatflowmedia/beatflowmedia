@@ -49,6 +49,7 @@ import {
   InfoOutlined
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../hooks/useModal';
 import { db, storage } from '../firebaseConfig';
 import { doc, getDoc, setDoc, updateDoc, collection, addDoc, deleteDoc, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -67,6 +68,7 @@ function TabPanel({ children, value, index }) {
 
 export default function ArtistProfileManager() {
   const { user } = useAuth();
+  const { showConfirm } = useModal();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -1189,8 +1191,9 @@ export default function ArtistProfileManager() {
                     </>
                   )}
                 </MenuItem>
-                <MenuItem onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this song?')) {
+                <MenuItem onClick={async () => {
+                  const confirmed = await showConfirm('Delete song', 'Are you sure you want to delete this song?', 'warning');
+                  if (confirmed) {
                     deleteDoc(doc(db, 'songs', selectedSong.id))
                       .then(() => {
                         setSongs(songs.filter(s => s.id !== selectedSong.id));
@@ -1237,8 +1240,9 @@ export default function ArtistProfileManager() {
                     </>
                   )}
                 </MenuItem>
-                <MenuItem onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this album?')) {
+                <MenuItem onClick={async () => {
+                  const confirmed = await showConfirm('Delete album', 'Are you sure you want to delete this album?', 'warning');
+                  if (confirmed) {
                     console.log('Deleting album:', selectedAlbum);
                     deleteDoc(doc(db, 'albums', selectedAlbum.id))
                       .then(() => {

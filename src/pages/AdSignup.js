@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { useModal } from "../hooks/useModal";
 
 export default function AdSignup() {
+  const { showAlert } = useModal();
   const [formData, setFormData] = useState({
     businessType: "",
     objective: "",
@@ -39,7 +41,7 @@ export default function AdSignup() {
       });
 
       console.log("Ad signup submitted with ID:", docRef.id);
-      alert("Thank you for your interest! Our team will contact you within 24 hours.");
+      await showAlert('Success', 'Thank you for your interest! Our team will contact you within 24 hours.', 'success');
 
       // Reset form
       setFormData({
@@ -57,7 +59,7 @@ export default function AdSignup() {
       });
     } catch (error) {
       console.error("Error submitting ad signup:", error);
-      alert("There was an error submitting your information. Please try again.");
+      await showAlert('Error', 'There was an error submitting your information. Please try again.', 'error');
     }
   };
 

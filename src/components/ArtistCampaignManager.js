@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../hooks/useModal';
 import { curatorPaymentService } from '../services/curatorPaymentService';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -30,6 +31,7 @@ import { FaMusic, FaDollarSign, FaRocket, FaCheckCircle, FaClock, FaTimesCircle 
 
 export default function ArtistCampaignManager() {
   const { user } = useAuth();
+  const { showAlert } = useModal();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -88,7 +90,7 @@ export default function ArtistCampaignManager() {
 
   const handleCreateCampaign = async () => {
     if (!selectedTrack || !targetPlaylist || budget < 25) {
-      alert('Please complete all fields. Minimum budget is $25.');
+      await showAlert('Info', 'Please complete all fields. Minimum budget is $25.', 'info');
       return;
     }
 
@@ -112,18 +114,18 @@ export default function ArtistCampaignManager() {
       }
     } catch (error) {
       console.error('Error creating campaign:', error);
-      alert(error.message || 'Failed to create campaign');
+      await showAlert('Error', error.message || 'Failed to create campaign', 'error');
     }
     setSubmitting(false);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (activeStep === 0 && !selectedTrack) {
-      alert('Please select a track');
+      await showAlert('Info', 'Please select a track', 'info');
       return;
     }
     if (activeStep === 1 && !targetPlaylist) {
-      alert('Please select a playlist');
+      await showAlert('Info', 'Please select a playlist', 'info');
       return;
     }
     if (activeStep === 1 && availablePlaylists.length === 0) {

@@ -33,8 +33,10 @@ import {
   TrendingUp,
   People
 } from '@mui/icons-material';
+import { useModal } from '../../hooks/useModal';
 
 export default function LandingPageManager() {
+  const { showConfirm, showAlert } = useModal();
   const [pages, setPages] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState(null);
@@ -132,8 +134,9 @@ export default function LandingPageManager() {
     setPages(updatedPages);
   };
 
-  const handleDelete = (pageId) => {
-    if (window.confirm('Are you sure you want to delete this landing page?')) {
+  const handleDelete = async (pageId) => {
+    const confirmed = await showConfirm('Confirm Delete', 'Are you sure you want to delete this landing page?', 'warning');
+    if (confirmed) {
       setPages(pages.filter(p => p.id !== pageId));
     }
   };

@@ -1,6 +1,7 @@
 // src/pages/ArtistSubmissionPricing.js
 // Pricing page for artist music submissions
 import { useState } from "react";
+import { useModal } from '../hooks/useModal';
 import {
   Box,
   Container,
@@ -47,6 +48,7 @@ const PRICING_TIER = {
 export default function ArtistSubmissionPricing() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showAlert } = useModal();
   const [loading, setLoading] = useState(false);
 
   const handlePurchase = async () => {
@@ -73,7 +75,7 @@ export default function ArtistSubmissionPricing() {
       const { url, error } = await response.json();
 
       if (error) {
-        alert('Error creating checkout: ' + error);
+        await showAlert('Error', 'Error creating checkout: ' + error, 'error');
         setLoading(false);
         return;
       }
@@ -82,7 +84,7 @@ export default function ArtistSubmissionPricing() {
       window.location.href = url;
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Failed to start checkout process');
+      await showAlert('Error', 'Failed to start checkout process', 'error');
       setLoading(false);
     }
   };
@@ -128,7 +130,7 @@ export default function ArtistSubmissionPricing() {
                 Get Your Music on BeatFlow
               </Typography>
               <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)', maxWidth: 700, mx: 'auto' }}>
-                Choose a plan that fits your needs. Upload your music, reach new listeners, and grow your fanbase.
+                Upload your music, reach new listeners, and grow your fanbase.
               </Typography>
             </Box>
           </Box>

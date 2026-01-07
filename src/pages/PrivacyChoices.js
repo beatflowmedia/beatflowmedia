@@ -4,9 +4,11 @@ import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { useModal } from "../hooks/useModal";
 
 export default function PrivacyChoices() {
   const { user } = useAuth();
+  const { showAlert } = useModal();
   const [preferences, setPreferences] = useState({
     personalizedAds: true,
     dataSharing: true,
@@ -56,7 +58,7 @@ export default function PrivacyChoices() {
 
   const handleSave = async () => {
     if (!user) {
-      alert('Please sign in to save preferences');
+      await showAlert('Info', 'Please sign in to save preferences', 'info');
       return;
     }
 

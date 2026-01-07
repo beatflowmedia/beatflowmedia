@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import './AgentsDashboard.css';
 import AgentLogViewer from '../components/AgentLogViewer';
+import { useModal } from '../hooks/useModal';
 
 const AgentsDashboard = () => {
+  const { showAlert } = useModal();
   const [agents, setAgents] = useState([]);
   const [metrics, setMetrics] = useState({});
   const [loading, setLoading] = useState(true);
@@ -249,7 +251,7 @@ const AgentsDashboard = () => {
           const runData = await runResponse.json();
 
           if (runResponse.ok) {
-            alert(`✅ ${runData.message}\n\nJob ID: ${runData.jobId}\n\nThe agent is now running. Refresh the dashboard in a few moments to see updated results.`);
+            await showAlert('Success', `${runData.message}\n\nJob ID: ${runData.jobId}\n\nThe agent is now running. Refresh the dashboard in a few moments to see updated results.`, 'success');
           } else {
             throw new Error(runData.error || 'Failed to start agent');
           }
@@ -271,7 +273,7 @@ const AgentsDashboard = () => {
         case 'config':
           // Edit agent configuration
           console.log(`Configuring ${agentId} agent...`);
-          alert(`Configuration UI for ${agentId} agent would be displayed here.`);
+          await showAlert('Info', `Configuration UI for ${agentId} agent would be displayed here.`, 'info');
           break;
 
         default:
@@ -286,7 +288,7 @@ const AgentsDashboard = () => {
 
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
-      alert(`Failed to ${action}: ${error.message}`);
+      await showAlert('Error', `Failed to ${action}: ${error.message}`, 'error');
     } finally {
       setActionInProgress(null);
     }

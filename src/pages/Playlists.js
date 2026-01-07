@@ -2,6 +2,7 @@
 // User playlists page
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import { useModal } from '../hooks/useModal';
 import {
   Box,
   Container,
@@ -32,6 +33,7 @@ import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'fire
 
 export default function Playlists() {
   const { user } = useAuth();
+  const { showAlert } = useModal();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [playlists, setPlaylists] = useState([]);
@@ -89,7 +91,7 @@ export default function Playlists() {
       await loadPlaylists();
     } catch (error) {
       console.error('Error creating playlist:', error);
-      alert('Failed to create playlist');
+      await showAlert('Error', 'Failed to create playlist', 'error');
     } finally {
       setCreating(false);
     }

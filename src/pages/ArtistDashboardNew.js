@@ -40,6 +40,7 @@ import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { checkMembershipStatus } from '../services/membershipService';
+import { useModal } from '../hooks/useModal';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -52,6 +53,7 @@ function TabPanel({ children, value, index }) {
 export default function ArtistDashboardNew() {
   const { user, role } = useAuth();
   const navigate = useNavigate();
+  const { showConfirm, showAlert } = useModal();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -171,7 +173,8 @@ export default function ArtistDashboardNew() {
   const handleDelete = async () => {
     if (!selectedItem) return;
 
-    if (window.confirm(`Are you sure you want to delete "${selectedItem.title}"?`)) {
+    const confirmed = await showConfirm('Delete Song', `Are you sure you want to delete "${selectedItem.title}"?`, 'warning');
+    if (confirmed) {
       try {
         await deleteDoc(doc(db, 'songs', selectedItem.id));
         setSongs(songs.filter(s => s.id !== selectedItem.id));

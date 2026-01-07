@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useModal } from '../hooks/useModal';
 import { curatorPaymentService } from '../services/curatorPaymentService';
 import {
   Box,
@@ -24,6 +25,7 @@ import { FaMusic, FaDollarSign, FaClock, FaCheckCircle, FaTimesCircle } from 're
 
 export default function CuratorSubmissionInbox() {
   const { user } = useAuth();
+  const { showAlert } = useModal();
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('pending_review');
@@ -55,32 +57,32 @@ export default function CuratorSubmissionInbox() {
     setActionLoading(true);
     try {
       await curatorPaymentService.acceptSubmission(user.uid, submissionId);
-      alert('Submission accepted! Please add the track to your playlist within 7 days.');
+      await showAlert('Success', 'Submission accepted! Please add the track to your playlist within 7 days.', 'success');
       loadSubmissions();
     } catch (error) {
       console.error('Error accepting submission:', error);
-      alert(error.message || 'Failed to accept submission');
+      await showAlert('Error', error.message || 'Failed to accept submission', 'error');
     }
     setActionLoading(false);
   };
 
   const handleReject = async () => {
     if (!selectedSubmission || !rejectReason) {
-      alert('Please provide a reason for rejection');
+      await showAlert('Info', 'Please provide a reason for rejection', 'info');
       return;
     }
 
     setActionLoading(true);
     try {
       await curatorPaymentService.rejectSubmission(user.uid, selectedSubmission.id, rejectReason);
-      alert('Submission rejected. Artist will receive a full refund.');
+      await showAlert('Success', 'Submission rejected. Artist will receive a full refund.', 'success');
       setRejectDialogOpen(false);
       setSelectedSubmission(null);
       setRejectReason('');
       loadSubmissions();
     } catch (error) {
       console.error('Error rejecting submission:', error);
-      alert(error.message || 'Failed to reject submission');
+      await showAlert('Error', error.message || 'Failed to reject submission', 'error');
     }
     setActionLoading(false);
   };
