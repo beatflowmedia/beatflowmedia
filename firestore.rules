@@ -578,6 +578,17 @@ service cloud.firestore {
       allow write: if false; // Only written by Cloud Functions
     }
 
+    // ========================================
+    // COMMUNITY WAITLIST
+    // ========================================
+
+    // Community Waitlist - allow anyone to submit, admins to read/manage
+    match /communityWaitlist/{entryId} {
+      allow create: if true; // Allow both authenticated and unauthenticated submissions
+      allow read: if isPlatformAdmin(); // Only admins can read
+      allow update, delete: if isPlatformAdmin(); // Only admins can manage
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
