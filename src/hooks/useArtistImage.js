@@ -30,12 +30,12 @@ export function useArtistImage(artistName) {
         if (!artistSnapshot.empty) {
           const artistData = artistSnapshot.docs[0].data();
 
-          // Check for artist profile image or cover
-          if (artistData.profileImage) {
+          // Check for artist profile image or cover (must be valid non-empty string)
+          if (artistData.profileImage && artistData.profileImage.trim() && artistData.profileImage !== 'undefined') {
             setImageUrl(artistData.profileImage);
             return;
           }
-          if (artistData.cover) {
+          if (artistData.cover && artistData.cover.trim() && artistData.cover !== 'undefined') {
             setImageUrl(artistData.cover);
             return;
           }
@@ -51,7 +51,7 @@ export function useArtistImage(artistName) {
 
         if (!albumSnapshot.empty) {
           const albumData = albumSnapshot.docs[0].data();
-          if (albumData.coverUrl) {
+          if (albumData.coverUrl && albumData.coverUrl.trim() && albumData.coverUrl !== 'undefined') {
             setImageUrl(albumData.coverUrl);
             return;
           }
@@ -78,12 +78,16 @@ export function useArtistImage(artistName) {
  * @returns {string} Image URL with fallback cascade
  */
 export function getArtistImageUrl(artist, albums = []) {
-  // Try artist profile image first
-  if (artist?.profileImage) return artist.profileImage;
-  if (artist?.cover) return artist.cover;
+  // Try artist profile image first (must be valid non-empty string)
+  if (artist?.profileImage && artist.profileImage.trim() && artist.profileImage !== 'undefined') {
+    return artist.profileImage;
+  }
+  if (artist?.cover && artist.cover.trim() && artist.cover !== 'undefined') {
+    return artist.cover;
+  }
 
   // Fallback to first album's cover art
-  if (albums.length > 0 && albums[0]?.coverUrl) {
+  if (albums.length > 0 && albums[0]?.coverUrl && albums[0].coverUrl.trim() && albums[0].coverUrl !== 'undefined') {
     return albums[0].coverUrl;
   }
 
