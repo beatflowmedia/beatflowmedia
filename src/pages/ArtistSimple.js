@@ -384,6 +384,23 @@ export default function ArtistSimple() {
     );
   }
 
+  // Helper function to get artist image with fallback to first album cover
+  const getArtistImage = () => {
+    // Try artist profile image first
+    if (artist.profileImage) return artist.profileImage;
+    if (artist.cover) return artist.cover;
+
+    // Fallback to first album's cover art
+    if (artistAlbums.length > 0 && artistAlbums[0].coverUrl) {
+      return artistAlbums[0].coverUrl;
+    }
+
+    // Final fallback to logo
+    return '/images/Logo.png';
+  };
+
+  const artistImage = getArtistImage();
+
   return (
     <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#121212' }}>
       {/* Artist Header with blurred background */}
@@ -401,7 +418,7 @@ export default function ArtistSimple() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: `url(${artist.profileImage || artist.cover || '/images/Logo.png'})`,
+            backgroundImage: `url(${artistImage})`,
             backgroundSize: 'cover',
             backgroundPosition: '50% 65%',
             filter: 'blur(50px) brightness(0.5)',
@@ -422,7 +439,7 @@ export default function ArtistSimple() {
       >
         <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-end', position: 'relative', zIndex: 2 }}>
           <img
-            src={artist.profileImage || artist.cover || '/images/Logo.png'}
+            src={artistImage}
             alt={artist.name}
             style={{ width: 200, height: 200, borderRadius: 8, objectFit: 'cover' }}
           />
