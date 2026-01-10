@@ -28,7 +28,8 @@ function SongPage() {
         if (songDoc.exists()) {
           const songData = { id: songDoc.id, ...songDoc.data() };
           setSong(songData);
-          // Auto-play the song when page loads
+          // Queue the song and attempt auto-play
+          // Note: Browser autoplay policies may block this without user interaction
           dispatch({ type: actions.PLAY_SONG, payload: songData });
         } else {
           setSong(null);

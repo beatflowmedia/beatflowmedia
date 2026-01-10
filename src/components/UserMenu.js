@@ -52,9 +52,11 @@ const NavBar = ({
           aria-label="Reload Home"
         >
           <img
-            src="/images/Logo.svg"
+            src="/images/Logo1.svg"
             alt="BeatFlow Logo"
             className="h-10 w-auto"
+            width="120"
+            height="40"
           />
         </button>
         <button

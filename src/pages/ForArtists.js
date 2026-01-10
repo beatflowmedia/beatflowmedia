@@ -46,6 +46,7 @@ import { useAuth } from "../context/AuthContext";
 import { parseBlob } from 'music-metadata-browser';
 import { checkMembershipStatus } from '../services/membershipService';
 import { useModal } from '../hooks/useModal';
+import { compressImage } from '../utils/imageOptimizer';
 
 const steps = ['Release Type', 'Upload Files', 'Track Details', 'Review'];
 
@@ -362,20 +363,46 @@ export default function ForArtists() {
     setForm(prev => ({ ...prev, tracks: newTracks }));
   };
 
-  const handleCoverArtUpload = (e) => {
+  const handleCoverArtUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setForm(prev => ({ ...prev, coverArt: file }));
-      setCoverPreview(URL.createObjectURL(file));
+      try {
+        // Compress image before storing
+        const compressedFile = await compressImage(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.85
+        });
+        setForm(prev => ({ ...prev, coverArt: compressedFile }));
+        setCoverPreview(URL.createObjectURL(compressedFile));
+      } catch (error) {
+        console.error('Error compressing cover art:', error);
+        // Fallback to original file if compression fails
+        setForm(prev => ({ ...prev, coverArt: file }));
+        setCoverPreview(URL.createObjectURL(file));
+      }
     }
   };
 
-  const handleCoverArtDrop = (e) => {
+  const handleCoverArtDrop = async (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      setForm(prev => ({ ...prev, coverArt: file }));
-      setCoverPreview(URL.createObjectURL(file));
+      try {
+        // Compress image before storing
+        const compressedFile = await compressImage(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.85
+        });
+        setForm(prev => ({ ...prev, coverArt: compressedFile }));
+        setCoverPreview(URL.createObjectURL(compressedFile));
+      } catch (error) {
+        console.error('Error compressing cover art:', error);
+        // Fallback to original file if compression fails
+        setForm(prev => ({ ...prev, coverArt: file }));
+        setCoverPreview(URL.createObjectURL(file));
+      }
     }
   };
 

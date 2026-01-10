@@ -9,11 +9,25 @@ service firebase.storage {
       allow delete: if request.auth.token.admin == true;
     }
 
-    // Artist uploads - covers and audio files
-    match /artist-uploads/{allPaths=**} {
+    // Artist uploads - covers are publicly readable, audio requires auth
+    match /artist-uploads/covers/{allPaths=**} {
+      allow read: if true; // Album/song covers are public
+      allow write: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024; // 10MB limit for covers
+    }
+
+    match /artist-uploads/audio/{allPaths=**} {
+      // Audio files require authentication - no public download tokens
       allow read: if request.auth != null;
       allow write: if request.auth != null
         && request.resource.size < 500 * 1024 * 1024; // 500MB limit for high-quality WAV files
+    }
+
+    match /artist-uploads/{allPaths=**} {
+      // Catch-all for other artist uploads
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 500 * 1024 * 1024;
     }
 
     // Artist profile and banner images

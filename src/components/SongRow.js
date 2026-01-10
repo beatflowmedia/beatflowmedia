@@ -42,6 +42,8 @@ const SongRow = ({
           src={song.cover || "data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50"%3E%3Crect width="50" height="50" fill="%23333"/%3E%3C/svg%3E"}
           alt="cover"
           className="w-10 h-10 rounded"
+          width="40"
+          height="40"
         />
         <div>
           <p className="text-white font-semibold">{song.title}</p>

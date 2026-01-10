@@ -227,13 +227,24 @@ export const PlayerProvider = ({ children }) => {
     const engine = engineRef.current;
     const item = state.queue[state.currentIndex];
     if (!engine || !item) return;
-    engine.load(item);
-    // Reset play count flag when loading new track
-    playCountIncrementedRef.current = false;
-    // Auto-play when switching tracks if already playing
-    if (state.isPlaying) {
-      engine.play();
-    }
+
+    // Load track asynchronously (may need to fetch signed URL)
+    engine.load(item).then(() => {
+      // Reset play count flag when loading new track
+      playCountIncrementedRef.current = false;
+      // Auto-play when switching tracks if already playing
+      if (state.isPlaying) {
+        engine.play().catch((error) => {
+          // Autoplay blocked - silently handle, user can click play
+          if (error.name === 'NotAllowedError') {
+            dispatchRaw({ type: actions.TOGGLE_PLAY });
+          }
+        });
+      }
+    }).catch((error) => {
+      console.error('Error loading track:', error);
+      // Could show error toast here
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.currentIndex, state.queue]);
 
@@ -242,7 +253,13 @@ export const PlayerProvider = ({ children }) => {
     const engine = engineRef.current;
     if (!engine) return;
     if (state.isPlaying) {
-      engine.play();
+      engine.play().catch((error) => {
+        // Autoplay blocked - user needs to click play button
+        if (error.name === 'NotAllowedError') {
+          // Revert isPlaying state so UI shows play button
+          dispatchRaw({ type: actions.TOGGLE_PLAY });
+        }
+      });
     } else {
       engine.pause();
     }

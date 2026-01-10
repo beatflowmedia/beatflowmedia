@@ -10,11 +10,6 @@ import {
   Card,
   CardContent,
   Button,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Chip,
   Paper,
   Divider
 } from '@mui/material';

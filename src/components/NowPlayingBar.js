@@ -252,6 +252,8 @@ const NowPlayingBar = memo(
               getPlaceholderImage(56, 56, '♪')
             }
             alt={`${currentTrack.title} cover`}
+            width="56"
+            height="56"
             className="w-14 h-14 rounded object-cover shadow-lg"
             onError={(e) => {
               e.target.src = getPlaceholderImage(56, 56, '♪');

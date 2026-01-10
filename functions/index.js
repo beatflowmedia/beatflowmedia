@@ -1,4 +1,5 @@
 const {onDocumentUpdated, onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onCall} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const emailConfig = require('./emailConfig');
@@ -38,6 +39,98 @@ async function sendEmail(to, subject, html) {
     console.error('Error sending email:', error);
     throw error;
   }
+}
+
+// ========================================
+// SECURE AUDIO STREAMING - SIGNED URL GENERATION
+// ========================================
+exports.getSignedAudioUrl = onCall(async (request) => {
+  // Verify user is authenticated
+  if (!request.auth) {
+    throw new Error('Authentication required to stream audio.');
+  }
+
+  const {songId} = request.data;
+
+  if (!songId) {
+    throw new Error('songId is required.');
+  }
+
+  try {
+    const userId = request.auth.uid;
+
+    // Get song data from Firestore
+    const songDoc = await admin.firestore().collection('songs').doc(songId).get();
+
+    if (!songDoc.exists) {
+      throw new Error('Song not found.');
+    }
+
+    const songData = songDoc.data();
+    const audioUrl = songData.audioUrl || songData.streamUrl;
+
+    if (!audioUrl) {
+      throw new Error('Audio URL not found for this song.');
+    }
+
+    // Check if user has purchased the song OR if it's free to stream
+    const isPurchased = await checkSongPurchase(userId, songId);
+    const isFreeToStream = songData.price === 0 || songData.streamable === true;
+
+    if (!isPurchased && !isFreeToStream) {
+      // User must purchase to stream
+      throw new Error('Purchase required to stream this song.');
+    }
+
+    // Extract the file path from the Firebase Storage URL
+    // Example: https://firebasestorage.googleapis.com/v0/b/beatflowmedia.firebasestorage.app/o/artist-uploads%2Faudio%2F1767312405420_Say%20the%20Words.wav?alt=media&token=...
+    const match = audioUrl.match(/\/o\/([^?]+)/);
+
+    if (!match) {
+      throw new Error('Invalid audio URL format.');
+    }
+
+    const filePath = decodeURIComponent(match[1]);
+
+    // Generate signed URL that expires in 1 hour
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(filePath);
+
+    const [signedUrl] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 60 * 60 * 1000, // 1 hour
+    });
+
+    // Log access for analytics
+    await admin.firestore().collection('audioAccess').add({
+      userId,
+      songId,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      isPurchased,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+    });
+
+    return {
+      signedUrl,
+      expiresAt: Date.now() + 60 * 60 * 1000
+    };
+  } catch (error) {
+    console.error('Error generating signed URL:', error);
+    throw new Error(`Failed to generate signed URL: ${error.message}`);
+  }
+});
+
+// Helper function to check if user has purchased a song
+async function checkSongPurchase(userId, songId) {
+  const purchaseDoc = await admin.firestore()
+    .collection('purchases')
+    .where('userId', '==', userId)
+    .where('songId', '==', songId)
+    .where('status', '==', 'completed')
+    .limit(1)
+    .get();
+
+  return !purchaseDoc.empty;
 }
 
 // ========================================

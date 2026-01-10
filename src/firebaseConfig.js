@@ -8,7 +8,8 @@ import {
   updateDoc
 } from "firebase/firestore";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { getStorage } from "firebase/storage"; // <-- Import Storage
+import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCoXc1YonnH1uW3P4OlAO6eAi911DdyHgs",
@@ -25,7 +26,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-const storage = getStorage(app); // <-- Initialize Storage
+const storage = getStorage(app);
+const functions = getFunctions(app);
 
 export {
   db,
@@ -37,5 +39,6 @@ export {
   doc,
   updateDoc,
   signInWithPopup,
-  storage, // <-- Export storage for resume uploads
+  storage,
+  functions,
 };

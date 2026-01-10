@@ -245,9 +245,11 @@ export default function MiniPlayer({
         </div>
         <div className="flex-1 flex justify-center items-center">
           <img
-            src="/images/Logo.svg"
+            src="/images/Logo1.svg"
             alt="BeatFlow"
             className="h-5"
+            width="60"
+            height="20"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -323,9 +325,11 @@ export default function MiniPlayer({
             <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
               <>
                 <img
-                  src="/images/Logo.svg"
+                  src="/images/Logo1.svg"
                   alt="BeatFlow"
                   className="w-32 mb-6 opacity-80"
+                  width="128"
+                  height="128"
                 />
                 <h2 className="text-xl font-bold mb-2">Welcome to BeatFlow</h2>
                 <p className="text-sm text-gray-400 mb-6">

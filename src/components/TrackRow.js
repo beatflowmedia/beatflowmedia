@@ -297,6 +297,8 @@ const TrackRow = memo(
               getPlaceholderImage(48, 48, "♪")
             }
             alt={`${track.title} cover`}
+            width="48"
+            height="48"
             className={classNames(
               "w-full h-full object-cover rounded transition-all duration-200",
               "group-hover:shadow-lg",

@@ -76,8 +76,8 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/curator-portal" className="hover:text-bf-text">
-                  Curator Portal
+                <a href="/become-curator" className="hover:text-bf-text">
+                  Become a Curator
                 </a>
               </li>
             </ul>

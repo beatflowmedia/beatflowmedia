@@ -76,3 +76,4 @@ netlify.toml
 *storybook.log
 storybook-static
 
+public/advertisements/

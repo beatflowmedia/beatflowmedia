@@ -44,7 +44,7 @@ export default function MiniPlayerPortal({ visible, ...props }) {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <meta name="description" content="BeatFlow - Premium music streaming and licensing platform">
-          <link rel="icon" href="/images/Logo.svg" type="image/svg+xml">
+          <link rel="icon" href="/images/Logo1.svg" type="image/svg+xml">
           ${styleHTML}
           <style>
             body {

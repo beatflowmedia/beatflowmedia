@@ -175,10 +175,12 @@ const NavBar = ({
           className="flex items-center focus:outline-none focus:ring-2 focus:ring-bf-green rounded"
         >
           <img
-            src="/images/Logo.svg"
+            src="/images/Logo1.svg"
             alt="BeatFlow Logo"
             className="w-auto"
             style={styles.logoHeight}
+            width="120"
+            height="36"
           />
           <span className="sr-only">BeatFlow Home</span>
         </Link>
@@ -394,10 +396,12 @@ const NavBar = ({
           {/* Menu Header */}
           <div className="flex items-center justify-between px-4 mb-6">
             <img
-              src="/images/Logo.svg"
+              src="/images/Logo1.svg"
               alt="BeatFlow Logo"
               className="w-auto"
               style={{ height: 'clamp(32px, calc(1.75rem + 0.5vw), 40px)' }}
+              width="128"
+              height="40"
             />
             <button
               onClick={() => setShowMobileMenu(false)}

@@ -12,6 +12,7 @@ import AddToPlaylistButton from '../utils/AddToPlaylistButton';
 import ShareButton from '../utils/ShareButton';
 import PlayingIndicator from '../components/PlayingIndicator';
 import PurchaseButton from '../components/PurchaseButton';
+import AlbumCard from '../components/AlbumCard';
 import useFollowArtist from '../hooks/useFollowArtist';
 import { stripeService } from '../services/stripeService';
 import { toast } from 'react-toastify';
@@ -524,52 +525,7 @@ export default function ArtistSimple() {
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 3 }}>
             {artistAlbums.map((album) => (
-              <Card
-                key={album.id}
-                onClick={() => navigate(`/album/${album.id}`)}
-                sx={{
-                  bgcolor: '#181818',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    bgcolor: '#282828',
-                    transform: 'translateY(-4px)',
-                    boxShadow: 4
-                  }
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height="180"
-                  image={album.coverUrl || '/default-album.jpg'}
-                  alt={album.title}
-                  sx={{ objectFit: 'cover' }}
-                />
-                <CardContent>
-                  <Typography
-                    variant="subtitle1"
-                    sx={{
-                      color: 'white',
-                      fontWeight: 'bold',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      mb: 0.5
-                    }}
-                  >
-                    {album.title}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'grey.400' }}>
-                    {album.releaseDate ? new Date(album.releaseDate.seconds * 1000 || album.releaseDate).getFullYear() : 'Album'}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                    <QueueMusic sx={{ fontSize: 14, color: '#1DB954' }} />
-                    <Typography variant="caption" sx={{ color: 'grey.500' }}>
-                      {album.trackCount || 0} tracks
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
+              <AlbumCard key={album.id} album={album} />
             ))}
           </Box>
         </Box>

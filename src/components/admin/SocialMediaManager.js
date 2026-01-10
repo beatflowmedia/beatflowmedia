@@ -30,9 +30,15 @@ import {
   CheckCircle,
   PhoneAndroid,
   Instagram,
-  Twitter
+  Twitter,
+  Download,
+  Save
 } from '@mui/icons-material';
 import imageOptimizationService from '../../services/imageOptimizationService';
+import { storage } from '../../firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../../firebaseConfig';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function SocialMediaManager() {
   const { showAlert } = useModal();
@@ -123,14 +129,74 @@ export default function SocialMediaManager() {
     setPreviewOpen(true);
   };
 
-  const handleSaveCampaign = async () => {
-    // In production, this would save to Firestore and upload images to Storage
-    await showAlert('Success', `Campaign saved! Generated ${generatedVariants.length} image variants`, 'success');
+  const handleDownloadVariant = (variant) => {
+    // Download single variant
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(variant.file);
+    link.download = `${campaignName}-${variant.ratio.replace(':', 'x')}.webp`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-    // Reset form
-    setCampaignName('');
-    setTargetSegment('');
-    handleRemoveImage();
+  const handleDownloadAll = () => {
+    // Download all variants
+    generatedVariants.forEach((variant, index) => {
+      setTimeout(() => {
+        handleDownloadVariant(variant);
+      }, index * 500); // Stagger downloads
+    });
+  };
+
+  const handleSaveCampaign = async () => {
+    if (!generatedVariants.length) {
+      await showAlert('Error', 'No variants to save', 'error');
+      return;
+    }
+
+    setProcessing(true);
+
+    try {
+      const uploadedVariants = [];
+
+      // Upload each variant to Firebase Storage
+      for (const variant of generatedVariants) {
+        const fileName = `${campaignName}-${variant.ratio.replace(':', 'x')}.webp`;
+        const storageRef = ref(storage, `marketing/social/${campaignName}/${fileName}`);
+
+        await uploadBytes(storageRef, variant.file);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        uploadedVariants.push({
+          ratio: variant.ratio,
+          platform: variant.platform,
+          dimensions: variant.dimensions,
+          url: downloadURL,
+          fileName
+        });
+      }
+
+      // Save campaign metadata to Firestore
+      await addDoc(collection(db, 'marketingCampaigns'), {
+        campaignName,
+        targetSegment,
+        variants: uploadedVariants,
+        createdAt: serverTimestamp(),
+        type: 'social-media'
+      });
+
+      await showAlert('Success', `Campaign saved! ${generatedVariants.length} images uploaded to Firebase Storage`, 'success');
+
+      // Reset form
+      setCampaignName('');
+      setTargetSegment('');
+      handleRemoveImage();
+    } catch (error) {
+      console.error('Save error:', error);
+      await showAlert('Error', 'Failed to save campaign: ' + error.message, 'error');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -341,7 +407,7 @@ export default function SocialMediaManager() {
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
                               {variant.dimensions.width}×{variant.dimensions.height}px
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
                               <Button
                                 size="small"
                                 variant="outlined"
@@ -350,6 +416,16 @@ export default function SocialMediaManager() {
                                 fullWidth
                               >
                                 Preview
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                startIcon={<Download />}
+                                onClick={() => handleDownloadVariant(variant)}
+                                fullWidth
+                                sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                              >
+                                Download
                               </Button>
                             </Box>
                           </CardContent>
@@ -372,18 +448,30 @@ export default function SocialMediaManager() {
                     </Box>
                   </Alert>
 
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleSaveCampaign}
-                    sx={{
-                      mt: 2,
-                      bgcolor: '#1DB954',
-                      '&:hover': { bgcolor: '#1ed760' }
-                    }}
-                  >
-                    Save Campaign & Upload Images
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<Download />}
+                      onClick={handleDownloadAll}
+                      disabled={processing}
+                    >
+                      Download All Variants
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<Save />}
+                      onClick={handleSaveCampaign}
+                      disabled={processing}
+                      sx={{
+                        bgcolor: '#1DB954',
+                        '&:hover': { bgcolor: '#1ed760' }
+                      }}
+                    >
+                      {processing ? 'Saving...' : 'Save to Firebase'}
+                    </Button>
+                  </Box>
                 </>
               )}
             </CardContent>
@@ -460,10 +548,25 @@ export default function SocialMediaManager() {
             }}
           >
             {previewVariant && (
-              <Box sx={{ textAlign: 'center' }}>
-                {previewVariant.ratio === '9:16' && <PhoneAndroid sx={{ fontSize: 200, color: 'grey.600' }} />}
-                {previewVariant.ratio === '1:1' && <Instagram sx={{ fontSize: 200, color: 'grey.600' }} />}
-                {previewVariant.ratio === '3:2' && <Twitter sx={{ fontSize: 200, color: 'grey.600' }} />}
+              <Box sx={{ textAlign: 'center', width: '100%' }}>
+                {previewVariant.file ? (
+                  <img
+                    src={URL.createObjectURL(previewVariant.file)}
+                    alt={`${previewVariant.platform} preview`}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '70vh',
+                      objectFit: 'contain',
+                      borderRadius: '8px'
+                    }}
+                  />
+                ) : (
+                  <>
+                    {previewVariant.ratio === '9:16' && <PhoneAndroid sx={{ fontSize: 200, color: 'grey.600' }} />}
+                    {previewVariant.ratio === '1:1' && <Instagram sx={{ fontSize: 200, color: 'grey.600' }} />}
+                    {previewVariant.ratio === '3:2' && <Twitter sx={{ fontSize: 200, color: 'grey.600' }} />}
+                  </>
+                )}
                 <Typography variant="h6" sx={{ mt: 2 }}>
                   {previewVariant.dimensions.width}×{previewVariant.dimensions.height}px
                 </Typography>

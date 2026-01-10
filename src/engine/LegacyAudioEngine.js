@@ -1,4 +1,5 @@
 import CoreEngine from "./CoreEngine";
+import { getSignedAudioUrl } from '../services/audioService';
 
 export default class LegacyAudioEngine extends CoreEngine {
   constructor(audioElement) {
@@ -9,15 +10,38 @@ export default class LegacyAudioEngine extends CoreEngine {
     this.audio = audioElement;
   }
 
-  load(track) {
-    const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
-    this.audio.src = src;
-    this.audio.load();
+  async load(track) {
+    try {
+      // If track has a song ID, get secure signed URL
+      if (track.id) {
+        const { signedUrl } = await getSignedAudioUrl(track.id);
+        this.audio.src = signedUrl;
+      } else {
+        // Fallback for tracks without IDs (local files, legacy)
+        const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
+        this.audio.src = src;
+      }
+      this.audio.load();
+    } catch (error) {
+      console.error('Error loading audio:', error);
+      // Still try to load with original URL as fallback
+      const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
+      this.audio.src = src;
+      this.audio.load();
+    }
   }
 
   play() {
     // Return the play promise to support awaiting in tests
-    return this.audio.play().catch(console.error);
+    return this.audio.play().catch((error) => {
+      // Browser autoplay policy may block playback without user interaction
+      if (error.name === 'NotAllowedError') {
+        console.warn('Autoplay blocked by browser. User interaction required.');
+      } else {
+        console.error('Playback error:', error);
+      }
+      throw error; // Re-throw so caller can handle
+    });
   }
 
   pause() {

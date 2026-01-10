@@ -53,6 +53,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Investors = lazy(() => import("./pages/Investors"));
 const InvestorDeck = lazy(() => import("./pages/InvestorDeck"));
 const Wrapped2024 = lazy(() => import("./pages/Wrapped2024"));
+const MarketingLanding = lazy(() => import("./pages/MarketingLanding"));
 
 // Community pages
 const Developers = lazy(() => import("./pages/Developers"));
@@ -154,6 +155,7 @@ export default function AppRoutes() {
           <Route path="new-releases" element={<CategoryPage />} />
           <Route path="discover" element={<CategoryPage />} />
           <Route path="charts/:type" element={<CategoryPage />} />
+          <Route path="song/:id" element={<SongPage />} />
         </Route>
 
         {/* Standalone Artist Dashboard - outside AppShell */}
@@ -205,7 +207,7 @@ export default function AppRoutes() {
 
         {/* Standalone routes outside of AppShell */}
         <Route path="agents-dashboard" element={<AgentsDashboard />} />
-        <Route path="song/:id" element={<SongPage />} />
+        <Route path="marketing/landing/:slug" element={<MarketingLanding />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="artist-pricing" element={<ArtistSubmissionPricing />} />
         <Route path="become-curator" element={<CuratorPricing />} />

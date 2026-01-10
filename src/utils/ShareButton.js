@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import {
   Share,
@@ -7,7 +8,8 @@ import {
   LinkedIn,
   Reddit,
   Email,
-  ContentCopy
+  ContentCopy,
+  OpenInBrowser
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import {
@@ -26,6 +28,7 @@ import {
  * Handles sharing songs via social media, email, or clipboard
  */
 export default function ShareButton({ song, size = 'small', iconSize = 'default', iconColor = 'grey.400', hoverColor = '#1DB954' }) {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -52,7 +55,10 @@ export default function ShareButton({ song, size = 'small', iconSize = 'default'
     const shareText = getShareText(song.title, song.id);
 
     try {
-      if (shareFunction === 'copy') {
+      if (shareFunction === 'open') {
+        // Navigate to song page within the app (same window)
+        navigate(`/song/${song.id}`);
+      } else if (shareFunction === 'copy') {
         await copyToClipboard(songUrl);
         toast.success('Link copied to clipboard!');
       } else if (shareFunction === 'twitter') {
@@ -101,6 +107,13 @@ export default function ShareButton({ song, size = 'small', iconSize = 'default'
           }
         }}
       >
+        <MenuItem onClick={(e) => handleShareOption(e, 'open')}>
+          <ListItemIcon>
+            <OpenInBrowser sx={{ color: '#1DB954' }} fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Open Song</ListItemText>
+        </MenuItem>
+
         <MenuItem onClick={(e) => handleShareOption(e, 'copy')}>
           <ListItemIcon>
             <ContentCopy sx={{ color: 'grey.400' }} fontSize="small" />
