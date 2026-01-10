@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useModal } from "../hooks/useModal";
+import Footer from '../components/Footer';
 
 // Resources dropdown items
 const resourcesLinks = [
@@ -419,6 +420,7 @@ export default function Advertising() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Footer from '../components/Footer';
 
 const CURATOR_BENEFITS = [
   {
@@ -277,6 +278,9 @@ export default function CuratorPricing() {
           </Grid>
         </Paper>
       </Container>
+
+      {/* Footer */}
+      <Footer />
     </Box>
   );
 }

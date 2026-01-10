@@ -47,6 +47,7 @@ import { parseBlob } from 'music-metadata-browser';
 import { checkMembershipStatus } from '../services/membershipService';
 import { useModal } from '../hooks/useModal';
 import { compressImage } from '../utils/imageOptimizer';
+import Footer from '../components/Footer';
 
 const steps = ['Release Type', 'Upload Files', 'Track Details', 'Review'];
 
@@ -2188,6 +2189,7 @@ export default function ForArtists() {
           </Box>
         </Paper>
       </Container>
+      <Footer />
     </Box>
   );
 }

@@ -35,11 +35,11 @@ export default function Footer() {
                   Artists
                 </a>
               </li>
-              {/* <li>
-                <a href="/developers" className="hover:text-bf-text">
-                  Developers
+              <li>
+                <a href="/community" className="hover:text-bf-text">
+                  Community
                 </a>
-              </li> */}
+              </li>
               <li>
                 <a href="/advertising" className="hover:text-bf-text">
                   Advertising
