@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { Box, Container, Typography, TextField, Button, Grid, Card, CardContent } from '@mui/material';
 import { MusicNote, People, Forum, School } from '@mui/icons-material';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useModal } from '../hooks/useModal';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
 
 const FEATURES = [
@@ -33,22 +34,55 @@ const FEATURES = [
 
 export default function Community() {
   const { showAlert } = useModal();
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [alreadyJoined, setAlreadyJoined] = useState(false);
+
+  // Check if user already joined waitlist
+  React.useEffect(() => {
+    const checkWaitlistStatus = async () => {
+      if (!user) return;
+
+      try {
+        const q = query(
+          collection(db, 'communityWaitlist'),
+          where('userId', '==', user.uid)
+        );
+        const snapshot = await getDocs(q);
+        setAlreadyJoined(!snapshot.empty);
+      } catch (error) {
+        console.error('Error checking waitlist status:', error);
+      }
+    };
+
+    checkWaitlistStatus();
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await addDoc(collection(db, 'communityWaitlist'), {
-        email,
+      const waitlistData = {
         submittedAt: new Date(),
         status: 'pending'
-      });
+      };
+
+      // If user is authenticated, use their info
+      if (user) {
+        waitlistData.userId = user.uid;
+        waitlistData.email = user.email;
+      } else {
+        // Otherwise use the manually entered email
+        waitlistData.email = email;
+      }
+
+      await addDoc(collection(db, 'communityWaitlist'), waitlistData);
 
       await showAlert('Success', "Thanks! We'll notify you when the community launches.", 'success');
       setEmail('');
+      setAlreadyJoined(true);
     } catch (error) {
       console.error('Error submitting email:', error);
       await showAlert('Error', 'There was an error. Please try again.', 'error');
@@ -133,7 +167,7 @@ export default function Community() {
           ))}
         </Grid>
 
-        {/* Email Signup */}
+        {/* Email Signup / Join Waitlist */}
         <Box
           sx={{
             maxWidth: 500,
@@ -142,51 +176,42 @@ export default function Community() {
             mb: 6
           }}
         >
-          <form onSubmit={handleSubmit}>
-            <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <TextField
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                fullWidth
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '50px',
-                    color: 'white',
-                    '& fieldset': {
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      borderWidth: 2
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(255, 255, 255, 0.2)'
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#1DB954'
-                    }
-                  },
-                  '& .MuiInputBase-input::placeholder': {
-                    color: '#666',
-                    opacity: 1
-                  }
-                }}
-              />
+          {alreadyJoined ? (
+            <Box
+              sx={{
+                bgcolor: 'rgba(29, 185, 84, 0.1)',
+                border: '2px solid #1DB954',
+                borderRadius: '50px',
+                py: 3,
+                px: 4
+              }}
+            >
+              <Typography variant="h6" sx={{ color: '#1DB954', fontWeight: 'bold' }}>
+                ✓ You're on the list!
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#b3b3b3', mt: 1 }}>
+                We'll email you when the community launches
+              </Typography>
+            </Box>
+          ) : user ? (
+            // Authenticated user - just show join button
+            <Box>
+              <Typography variant="body1" sx={{ color: '#b3b3b3', mb: 2 }}>
+                Signed in as <strong style={{ color: 'white' }}>{user.email}</strong>
+              </Typography>
               <Button
-                type="submit"
+                onClick={handleSubmit}
                 variant="contained"
                 disabled={loading}
                 sx={{
                   bgcolor: '#1DB954',
                   color: 'white',
                   borderRadius: '50px',
-                  px: 5,
+                  px: 6,
                   py: 2,
-                  fontSize: '1rem',
+                  fontSize: '1.1rem',
                   fontWeight: 600,
                   textTransform: 'none',
-                  minWidth: { xs: '100%', sm: 'auto' },
                   '&:hover': {
                     bgcolor: '#1ed760',
                     transform: 'scale(1.05)'
@@ -194,10 +219,68 @@ export default function Community() {
                   transition: 'all 0.3s ease'
                 }}
               >
-                {loading ? 'Submitting...' : 'Notify Me'}
+                {loading ? 'Joining...' : 'Join Waitlist'}
               </Button>
             </Box>
-          </form>
+          ) : (
+            // Not authenticated - show email input
+            <form onSubmit={handleSubmit}>
+              <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '50px',
+                      color: 'white',
+                      '& fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 2
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'rgba(255, 255, 255, 0.2)'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#1DB954'
+                      }
+                    },
+                    '& .MuiInputBase-input::placeholder': {
+                      color: '#666',
+                      opacity: 1
+                    }
+                  }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={loading}
+                  sx={{
+                    bgcolor: '#1DB954',
+                    color: 'white',
+                    borderRadius: '50px',
+                    px: 5,
+                    py: 2,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    minWidth: { xs: '100%', sm: 'auto' },
+                    '&:hover': {
+                      bgcolor: '#1ed760',
+                      transform: 'scale(1.05)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  {loading ? 'Submitting...' : 'Notify Me'}
+                </Button>
+              </Box>
+            </form>
+          )}
         </Box>
 
         {/* Social Links */}
