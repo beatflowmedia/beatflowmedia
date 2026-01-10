@@ -17,6 +17,7 @@ import useFollowArtist from '../hooks/useFollowArtist';
 import { stripeService } from '../services/stripeService';
 import { toast } from 'react-toastify';
 import { getArtistMetrics } from '../services/engagementMetrics';
+import { getArtistImageUrl } from '../hooks/useArtistImage';
 
 export default function ArtistSimple() {
   console.log('[ArtistSimple] Component mounted/rendered');
@@ -384,22 +385,8 @@ export default function ArtistSimple() {
     );
   }
 
-  // Helper function to get artist image with fallback to first album cover
-  const getArtistImage = () => {
-    // Try artist profile image first
-    if (artist.profileImage) return artist.profileImage;
-    if (artist.cover) return artist.cover;
-
-    // Fallback to first album's cover art
-    if (artistAlbums.length > 0 && artistAlbums[0].coverUrl) {
-      return artistAlbums[0].coverUrl;
-    }
-
-    // Final fallback to logo
-    return '/images/Logo.png';
-  };
-
-  const artistImage = getArtistImage();
+  // Get artist image with fallback to first album cover
+  const artistImage = getArtistImageUrl(artist, artistAlbums);
 
   return (
     <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#121212' }}>

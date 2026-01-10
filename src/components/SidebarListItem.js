@@ -11,6 +11,7 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccessToast, showErrorToast } from '../utils/Toast';
+import { useArtistImage } from '../hooks/useArtistImage';
 
 const typeIcon = {
   playlist: <FaMusic className="text-green-400 mr-2" />,
@@ -38,6 +39,9 @@ const SidebarListItem = ({
   const { deletePlaylist, updatePlaylistDetails, togglePrivacy } = usePlaylistManager();
   const { user } = useAuth();
   const { dispatch, actions: playerActions } = usePlayer();
+
+  // Fetch artist image with album fallback for artists
+  const artistImageFromDb = useArtistImage(isArtist ? item.name : null);
 
   // Main navigation handlers (DRY - same for artist/playlist)
   const handleNameClick = isArtist
@@ -307,7 +311,7 @@ const SidebarListItem = ({
     const displayImage = !imgError && item.cover
       ? item.cover
       : isArtist
-      ? "/images/Logo.png"
+      ? artistImageFromDb // Use fetched artist image with fallback
       : null;
 
     return (
@@ -416,7 +420,7 @@ const SidebarListItem = ({
         />
       ) : isArtist ? (
         <img
-          src="/images/Logo.png"
+          src={artistImageFromDb}
           alt={item.name}
           className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} object-cover flex-shrink-0 rounded-full`}
         />
