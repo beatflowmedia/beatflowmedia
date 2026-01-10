@@ -3,6 +3,8 @@ import {
   getAuth,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut
 } from "firebase/auth";
@@ -25,6 +27,31 @@ export const AuthProvider = ({ children }) => {
   const [followedArtists, setFollowedArtists] = useState([]);
 
   const auth = getAuth();
+
+  // Handle redirect result on mount
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          console.log("Sign-in redirect successful:", result.user.email);
+          // Create/update user profile after redirect
+          const userRef = doc(db, "users", result.user.uid);
+          await setDoc(
+            userRef,
+            {
+              uid: result.user.uid,
+              email: result.user.email,
+              name: result.user.displayName,
+              photoURL: result.user.photoURL
+            },
+            { merge: true }
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect sign-in error:", error);
+      });
+  }, [auth]);
 
   // Listen for auth state changes
   useEffect(() => {
@@ -113,20 +140,37 @@ export const AuthProvider = ({ children }) => {
   const signInWithGoogle = useCallback(async () => {
     try {
       const provider = new GoogleAuthProvider();
-      const { user: fbUser } = await signInWithPopup(auth, provider);
-      const userRef = doc(db, "users", fbUser.uid);
-      await setDoc(
-        userRef,
-        {
-          uid: fbUser.uid,
-          email: fbUser.email,
-          name: fbUser.displayName,
-          photoURL: fbUser.photoURL
-        },
-        { merge: true }
-      );
+
+      // Try popup first
+      try {
+        const { user: fbUser } = await signInWithPopup(auth, provider);
+        const userRef = doc(db, "users", fbUser.uid);
+        await setDoc(
+          userRef,
+          {
+            uid: fbUser.uid,
+            email: fbUser.email,
+            name: fbUser.displayName,
+            photoURL: fbUser.photoURL
+          },
+          { merge: true }
+        );
+      } catch (popupError) {
+        // If popup fails due to COOP or being blocked, fallback to redirect
+        if (
+          popupError.code === 'auth/popup-blocked' ||
+          popupError.code === 'auth/cancelled-popup-request' ||
+          popupError.message?.includes('Cross-Origin-Opener-Policy')
+        ) {
+          console.log("Popup blocked, using redirect method...");
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupError;
+        }
+      }
     } catch (e) {
       console.error("Google sign-in error:", e);
+      throw e;
     }
   }, [auth]);
 
