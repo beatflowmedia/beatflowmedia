@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   getAuth,
   onAuthStateChanged,
@@ -24,7 +24,8 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
-  const [followedArtists, setFollowedArtists] = useState([]);
+  // Use ref to store followedArtists to avoid triggering re-renders
+  const followedArtistsRef = useRef([]);
 
   const auth = getAuth();
 
@@ -58,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
         setUser(null);
-        setFollowedArtists([]);
+        followedArtistsRef.current = [];
         return;
       }
 
@@ -68,9 +69,14 @@ export const AuthProvider = ({ children }) => {
 
         // Set initial user WITHOUT likes (likes handled by separate LikesContext)
         const userData = snap.exists() ? snap.data() : {};
+        const initialFollows = userData?.follows || [];
+
+        // Initialize ref with initial follows
+        followedArtistsRef.current = initialFollows;
+
         setUser({
           ...firebaseUser,
-          follows: userData?.follows || [],
+          follows: initialFollows,
           role: userData?.role || null
         });
 
@@ -101,19 +107,26 @@ export const AuthProvider = ({ children }) => {
           (ds) => {
             const data = ds.data();
             if (data) {
-              setFollowedArtists(data?.follows || []);
-              setRole(data?.role || null);
-              // Only update user if follows/role actually changed to prevent unnecessary re-renders
-              setUser(prevUser => {
-                const newFollows = data?.follows || [];
-                const newRole = data?.role || null;
+              const newFollows = data?.follows || [];
+              const newRole = data?.role || null;
 
-                // Check if anything actually changed
-                const followsChanged = JSON.stringify(prevUser?.follows) !== JSON.stringify(newFollows);
+              // Update ref immediately (doesn't trigger re-render)
+              followedArtistsRef.current = newFollows;
+
+              // Only update state if role changed (follows changes don't need to trigger re-renders)
+              setRole(prevRole => {
+                if (prevRole !== newRole) {
+                  return newRole;
+                }
+                return prevRole;
+              });
+
+              // Only update user if role changed
+              setUser(prevUser => {
                 const roleChanged = prevUser?.role !== newRole;
 
-                if (!followsChanged && !roleChanged) {
-                  return prevUser; // No change, return same object to prevent re-render
+                if (!roleChanged) {
+                  return prevUser; // No role change, return same object to prevent re-render
                 }
 
                 return {
@@ -197,7 +210,7 @@ export const AuthProvider = ({ children }) => {
     await updateDoc(doc(db, "users", user.uid), { follows: arrayRemove(name) });
   }, [user]);
 
-  const isArtistFollowed = useCallback((name) => followedArtists.includes(name), [followedArtists]);
+  const isArtistFollowed = useCallback((name) => followedArtistsRef.current.includes(name), []);
 
   // Update user role (for creator onboarding)
   const updateUserRole = useCallback(async (newRole) => {
@@ -225,7 +238,7 @@ export const AuthProvider = ({ children }) => {
   const contextValue = useMemo(() => ({
     user,
     role,
-    followedArtists,
+    followedArtists: followedArtistsRef.current, // Use ref value to avoid triggering re-renders
     signInWithGoogle,
     signOutUser,
     updateFavorites,
@@ -235,7 +248,7 @@ export const AuthProvider = ({ children }) => {
     updateUserRole,
     hasRole,
     isCreator
-  }), [user, role, followedArtists, signInWithGoogle, signOutUser, updateFavorites, followArtist, unfollowArtist, isArtistFollowed, updateUserRole, hasRole, isCreator]);
+  }), [user, role, signInWithGoogle, signOutUser, updateFavorites, followArtist, unfollowArtist, isArtistFollowed, updateUserRole, hasRole, isCreator]);
 
   return (
     <AuthContext.Provider value={contextValue}>

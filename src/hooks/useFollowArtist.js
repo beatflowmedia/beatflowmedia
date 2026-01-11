@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { showSuccessToast } from "../utils/Toast";
 
 const useFollowArtist = (selectedArtist) => {
   const { followArtist, unfollowArtist, isArtistFollowed } = useAuth();
@@ -14,16 +13,14 @@ const useFollowArtist = (selectedArtist) => {
       }
     };
     checkFollowStatus();
-  }, [selectedArtist, isArtistFollowed]);
+  }, [selectedArtist]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFollow = async () => {
     try {
       if (isFollowing) {
         await unfollowArtist(selectedArtist);
-        showSuccessToast(`Unfollowed ${selectedArtist}`);
       } else {
         await followArtist(selectedArtist);
-        showSuccessToast(`Followed ${selectedArtist}`);
       }
       setIsFollowing(!isFollowing);
     } catch (error) {
