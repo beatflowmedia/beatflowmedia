@@ -19,6 +19,8 @@ export function useArtistImage(artistName) {
 
     const fetchArtistImage = async () => {
       try {
+        console.log('[useArtistImage] Fetching image for artist:', artistName);
+
         // Try to get artist profile image
         const artistQuery = query(
           collection(db, 'artists'),
@@ -29,38 +31,46 @@ export function useArtistImage(artistName) {
 
         if (!artistSnapshot.empty) {
           const artistData = artistSnapshot.docs[0].data();
+          console.log('[useArtistImage] Artist data:', { profileImage: artistData.profileImage, cover: artistData.cover });
 
           // Check for artist profile image or cover (must be valid non-empty string)
           if (artistData.profileImage && artistData.profileImage.trim() && artistData.profileImage !== 'undefined') {
+            console.log('[useArtistImage] Using profileImage:', artistData.profileImage);
             setImageUrl(artistData.profileImage);
             return;
           }
           if (artistData.cover && artistData.cover.trim() && artistData.cover !== 'undefined') {
+            console.log('[useArtistImage] Using cover:', artistData.cover);
             setImageUrl(artistData.cover);
             return;
           }
         }
 
         // Fallback to first album cover
+        console.log('[useArtistImage] No artist image found, checking albums...');
         const albumQuery = query(
           collection(db, 'albums'),
           where('artistName', '==', artistName),
           limit(1)
         );
         const albumSnapshot = await getDocs(albumQuery);
+        console.log('[useArtistImage] Found albums:', albumSnapshot.size);
 
         if (!albumSnapshot.empty) {
           const albumData = albumSnapshot.docs[0].data();
+          console.log('[useArtistImage] Album coverUrl:', albumData.coverUrl);
           if (albumData.coverUrl && albumData.coverUrl.trim() && albumData.coverUrl !== 'undefined') {
+            console.log('[useArtistImage] Using album cover:', albumData.coverUrl);
             setImageUrl(albumData.coverUrl);
             return;
           }
         }
 
         // Final fallback to logo
+        console.log('[useArtistImage] No valid images found, using logo fallback');
         setImageUrl('/images/Logo.png');
       } catch (error) {
-        console.error('Error fetching artist image:', error);
+        console.error('[useArtistImage] Error fetching artist image:', error);
         setImageUrl('/images/Logo.png');
       }
     };
