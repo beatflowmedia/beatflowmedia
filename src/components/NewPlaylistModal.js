@@ -8,6 +8,7 @@ const NewPlaylistModal = ({ onCreate, onCancel }) => {
   const [name, setName] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isPrivate, setIsPrivate] = useState(true); // Default to private
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
@@ -28,7 +29,7 @@ const NewPlaylistModal = ({ onCreate, onCancel }) => {
   };
 
   const handleCreate = () => {
-    onCreate(name, image);
+    onCreate(name, image, isPrivate);
   };
 
   return (
@@ -86,6 +87,31 @@ const NewPlaylistModal = ({ onCreate, onCancel }) => {
               Remove Image
             </button>
           )}
+        </div>
+
+        {/* Privacy Toggle */}
+        <div className="mb-4">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-11 h-6 rounded-full transition-colors ${isPrivate ? 'bg-gray-600' : 'bg-green-500'}`}>
+                <div className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${isPrivate ? 'translate-x-0' : 'translate-x-5'}`} />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-white text-sm font-medium">
+                {isPrivate ? 'Private' : 'Public'}
+              </span>
+              <span className="text-gray-400 text-xs">
+                {isPrivate ? 'Only you can see this playlist' : 'All users can see this playlist'}
+              </span>
+            </div>
+          </label>
         </div>
 
         <div className="flex justify-end space-x-2">

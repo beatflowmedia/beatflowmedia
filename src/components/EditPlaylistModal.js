@@ -12,7 +12,8 @@ export default function EditPlaylistModal({
   const [name, setName] = useState(playlist?.name || "");
   const [description, setDescription] = useState(playlist?.description || "");
   const [coverFile, setCoverFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(playlist?.cover || null);
+  const [coverPreview, setCoverPreview] = useState(playlist?.cover || playlist?.imageUrl || null);
+  const [isPrivate, setIsPrivate] = useState(playlist?.isPrivate ?? true);
   const [photoMenuVisible, setPhotoMenuVisible] = useState(false);
   const [photoMenuPos, setPhotoMenuPos] = useState({ x: 0, y: 0 });
   const fileInputRef = React.useRef();
@@ -40,7 +41,7 @@ export default function EditPlaylistModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ name, description, coverFile });
+    onSave({ name, description, coverFile, isPrivate });
   };
 
   return (
@@ -96,6 +97,32 @@ export default function EditPlaylistModal({
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
+
+            {/* Privacy Toggle */}
+            <div>
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isPrivate}
+                    onChange={(e) => setIsPrivate(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-11 h-6 rounded-full transition-colors ${isPrivate ? 'bg-gray-600' : 'bg-green-500'}`}>
+                    <div className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform ${isPrivate ? 'translate-x-0' : 'translate-x-5'}`} />
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-white text-sm font-medium">
+                    {isPrivate ? 'Private' : 'Public'}
+                  </span>
+                  <span className="text-gray-400 text-xs">
+                    {isPrivate ? 'Only you can see this playlist' : 'All users can see this playlist'}
+                  </span>
+                </div>
+              </label>
+            </div>
+
             <div className="flex justify-end space-x-2">
               <button
                 type="button"
@@ -121,7 +148,7 @@ export default function EditPlaylistModal({
           onClose={() => setPhotoMenuVisible(false)}
         />
         <p className="text-xs text-gray-400 mt-4 leading-tight">
-          By proceeding, you agree to give Spotify access to the image you
+          By proceeding, you agree to give BeatFlow Media access to the image you
           choose to upload. Please make sure you have the right to upload the
           image.
         </p>

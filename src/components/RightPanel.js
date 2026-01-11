@@ -25,6 +25,7 @@ const RightPanel = ({ visible, content, onClose }) => {
   const [queueMenuSong, setQueueMenuSong] = useState(null);
   const [queueMenuAnchor, setQueueMenuAnchor] = useState(null);
   const [userPlaylists, setUserPlaylists] = useState([]);
+  const [loadedPlaylistSongs, setLoadedPlaylistSongs] = useState([]);
 
   // Player and follow hooks
   const { dispatch, actions, state } = usePlayer();
@@ -58,6 +59,33 @@ const RightPanel = ({ visible, content, onClose }) => {
 
     return () => unsubscribe();
   }, [user]);
+
+  // Load playlist songs when viewing a playlist (DRY - follows Playlist page pattern)
+  useEffect(() => {
+    const loadPlaylistSongs = async () => {
+      if (content?.type !== 'playlist' || !content?.info?.songs) {
+        setLoadedPlaylistSongs([]);
+        return;
+      }
+
+      const songs = content.info.songs;
+      const songPromises = songs.map(async (entry) => {
+        const songId = entry.songId || entry.id;
+        if (!songId) return null;
+
+        const songDoc = await getDoc(doc(db, 'songs', songId));
+        if (songDoc.exists()) {
+          return { id: songDoc.id, ...songDoc.data() };
+        }
+        return null;
+      });
+
+      const loadedSongsData = await Promise.all(songPromises);
+      setLoadedPlaylistSongs(loadedSongsData.filter(Boolean));
+    };
+
+    loadPlaylistSongs();
+  }, [content?.type, content?.info?.songs]);
 
   // Fetch artist data from Firestore when artist panel is shown
   useEffect(() => {
@@ -913,27 +941,24 @@ const RightPanel = ({ visible, content, onClose }) => {
         <div className="mb-4">
           <h3 className="font-bold mb-2 text-lg">Songs</h3>
           <ul>
-            {songs.slice(0, 5).map((song, i) => (
+            {loadedPlaylistSongs.slice(0, 5).map((song, i) => (
               <li
-                key={i}
+                key={song?.id || i}
                 className="flex items-center text-gray-200 py-1 border-b border-gray-800 last:border-none"
               >
                 <img
-                  src={song.cover}
-                  alt={song.title}
+                  src={song?.coverUrl || song?.cover || '/images/default-cover.jpg'}
+                  alt={song?.title || 'Song'}
                   className="w-10 h-10 mr-2 rounded object-cover"
                 />
                 <div>
-                  <div>{song.title}</div>
-                  <div className="text-xs text-gray-400">{song.artist}</div>
+                  <div>{song?.title || 'Unknown Title'}</div>
+                  <div className="text-xs text-gray-400">{song?.artist || 'Unknown Artist'}</div>
                 </div>
               </li>
             ))}
           </ul>
         </div>
-        <button className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition w-full">
-          Play Playlist
-        </button>
       </div>
     );
   }

@@ -11,8 +11,15 @@ import { ModalProvider } from "./context/ModalContext";
 import AppRoutes from "./AppRoutes";
 import beatflowTheme from "./theme/muiTheme";
 import "./index.css"; // Tailwind or global styles
+import { cleanupPlaylistDuplicates } from "./utils/cleanupPlaylistDuplicates"; // Make cleanup function available in console
 
 export default function App() {
+  // Attach cleanup function to window on component mount
+  React.useEffect(() => {
+    window.cleanupPlaylistDuplicates = cleanupPlaylistDuplicates;
+    console.log('✅ cleanupPlaylistDuplicates() is available in console');
+  }, []);
+
   return (
     <ThemeProvider theme={beatflowTheme}>
       <CssBaseline />

@@ -218,8 +218,8 @@ const SideBar = ({
       {/* New Playlist Modal */}
       {showModal && (
         <NewPlaylistModal
-          onCreate={(name, image) => {
-            onCreatePlaylist(name, image);
+          onCreate={(name, image, isPrivate) => {
+            onCreatePlaylist(name, image, isPrivate);
             setShowModal(false);
           }}
           onCancel={() => setShowModal(false)}

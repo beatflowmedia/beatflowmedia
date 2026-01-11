@@ -1,11 +1,12 @@
-import React, { useCallback } from 'react';
-import { Box, Typography, Card, CardContent, CardMedia, IconButton, CircularProgress } from '@mui/material';
-import { PlayArrow, Favorite, FavoriteBorder, ThumbUp, ThumbUpOffAlt } from '@mui/icons-material';
+import React, { useCallback, useState } from 'react';
+import { Box, Typography, Card, CardContent, CardMedia, IconButton, CircularProgress, Menu, MenuItem } from '@mui/material';
+import { PlayArrow, Favorite, FavoriteBorder, ThumbUp, ThumbUpOffAlt, PlaylistAdd } from '@mui/icons-material';
 import { usePersonalizedSections } from '../hooks/usePersonalizedSections';
 import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { usePlaySong } from '../hooks/usePlaySong';
+import { usePlaylistManager } from '../hooks/usePlaylistManager';
 import PlayingIndicator from './PlayingIndicator';
 import SongPlayCount from './SongPlayCount';
 import SongLikeCount from './SongLikeCount';
@@ -14,8 +15,10 @@ import SongLikeCount from './SongLikeCount';
 const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFavorite }) => {
   const { isLiked } = useLikes();
   const { isFavorited } = useFavorites();
+  const { playlists, addSong } = usePlaylistManager();
   const liked = isLiked(song.id);
   const favorited = isFavorited(song.id);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handlePlayClick = useCallback(() => {
     onPlay(song);
@@ -33,6 +36,31 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFa
     onToggleFavorite(song.id, favorited);
   }, [onToggleFavorite, song.id, favorited]);
 
+  const handlePlaylistMenuOpen = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAnchorEl(e.currentTarget);
+  }, []);
+
+  const handlePlaylistMenuClose = useCallback(() => {
+    setAnchorEl(null);
+  }, []);
+
+  const handleAddToPlaylist = useCallback(async (playlistId) => {
+    try {
+      await addSong(playlistId, song);
+      console.log(`✅ Added "${song.title}" to playlist`);
+      handlePlaylistMenuClose();
+    } catch (error) {
+      if (error.message === 'Song already in playlist') {
+        console.log(`ℹ️ "${song.title}" is already in this playlist`);
+      } else {
+        console.error('❌ Failed to add song to playlist:', error);
+      }
+      handlePlaylistMenuClose();
+    }
+  }, [addSong, song, handlePlaylistMenuClose]);
+
   return (
     <Card
       sx={{
@@ -43,7 +71,8 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFa
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: 4
-        }
+        },
+        position: 'relative'
       }}
     >
       {/* Album Art */}
@@ -123,7 +152,7 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFa
           <SongLikeCount songId={song.id} />
         </Box>
 
-        {/* Like and Favorite Buttons */}
+        {/* Like, Favorite, and Add to Playlist Buttons */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 0.5 }}>
           <IconButton
             type="button"
@@ -149,7 +178,41 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFa
           >
             {favorited ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
           </IconButton>
+          <IconButton
+            type="button"
+            size="small"
+            onClick={handlePlaylistMenuOpen}
+            sx={{
+              color: 'grey.400',
+              '&:hover': { color: '#1DB954' }
+            }}
+            title="Add to playlist"
+          >
+            <PlaylistAdd fontSize="small" />
+          </IconButton>
         </Box>
+
+        {/* Playlist Selection Menu */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handlePlaylistMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        >
+          {playlists.length === 0 ? (
+            <MenuItem disabled>No playlists available</MenuItem>
+          ) : (
+            playlists.map((playlist) => (
+              <MenuItem
+                key={playlist.id}
+                onClick={() => handleAddToPlaylist(playlist.id)}
+              >
+                {playlist.name}
+              </MenuItem>
+            ))
+          )}
+        </Menu>
       </CardContent>
     </Card>
   );

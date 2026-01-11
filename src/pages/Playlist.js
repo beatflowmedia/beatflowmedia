@@ -54,6 +54,7 @@ import { db } from '../firebaseConfig';
 import {
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
@@ -85,10 +86,19 @@ function Playlist() {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isPrivatePlaylist, setIsPrivatePlaylist] = useState(true);
 
   // UI state
   const [isOwner, setIsOwner] = useState(false);
   const [isCollaborator, setIsCollaborator] = useState(false);
+
+  // Helper to get correct playlist reference
+  const getPlaylistRef = () => {
+    if (!user?.uid || !playlistId) return null;
+    return isPrivatePlaylist
+      ? doc(db, 'users', user.uid, 'playlists', playlistId)
+      : doc(db, 'playlists', playlistId);
+  };
   const [sortBy, setSortBy] = useState('custom');
   const [filterQuery, setFilterQuery] = useState('');
 
@@ -117,131 +127,164 @@ function Playlist() {
 
   // Load playlist data
   useEffect(() => {
-    if (!playlistId) {
-      console.log('No playlistId provided');
+    if (!playlistId || !user?.uid) {
+      console.log('No playlistId or user');
       return;
     }
 
     console.log('=== LOADING PLAYLIST ===', playlistId);
-    let unsubscribe;
+    let unsubscribePrivate;
+    let unsubscribePublic;
     let mounted = true;
 
-    const loadPlaylist = async () => {
-      try {
-        if (!mounted) return;
-        setLoading(true);
-        setError(null);
+    // Helper function to load tracks
+    async function loadTracks(snapshot) {
+      if (!mounted) return;
+      const data = snapshot.data();
+      const playlistEntries = data?.songs || [];
+      console.log('Playlist entries received:', playlistEntries.length);
 
-        // Load playlist metadata from user's subcollection
-        console.log('Fetching playlist document...');
-        if (!user?.uid) {
-          console.error('User not authenticated');
-          setError('Please sign in to view playlists');
-          setLoading(false);
-          return;
-        }
+      // Fetch full song data from songs collection (DRY - single source of truth)
+      const fullSongs = await Promise.all(
+        playlistEntries.map(async (entry) => {
+          // Handle both old format (full song object) and new format (just songId)
+          const songId = entry.songId || entry.id;
+          const addedAt = entry.addedAt;
 
-        const playlistDoc = await getDoc(doc(db, 'users', user.uid, 'playlists', playlistId));
+          if (!songId) {
+            console.error('Playlist entry missing songId:', entry);
+            return null;
+          }
 
-        if (!mounted) return;
+          try {
+            const songDoc = await getDoc(doc(db, 'songs', String(songId)));
 
-        if (!playlistDoc.exists()) {
-          console.error('Playlist not found:', playlistId);
-          setError('Playlist not found');
-          setLoading(false);
-          return;
-        }
+            if (songDoc.exists()) {
+              const songData = songDoc.data();
+              return {
+                id: songDoc.id,
+                ...songData,
+                addedAt: addedAt || entry.addedAt || new Date()
+              };
+            } else {
+              console.error('Song not found in Firestore:', songId);
+              return null;
+            }
+          } catch (err) {
+            console.error('Error fetching song:', songId, err);
+            return null;
+          }
+        })
+      );
 
-        const playlistData = { id: playlistDoc.id, ...playlistDoc.data() };
-        console.log('Playlist found:', playlistData.name);
-        console.log('Playlist songs:', playlistData.songs?.length || 0);
-        setPlaylist(playlistData);
+      // Filter out null entries (failed fetches)
+      const validSongs = fullSongs.filter(song => song !== null);
+      console.log('Loaded', validSongs.length, 'songs from Firestore');
 
-        // Check permissions - user is always owner of their own playlists
-        setIsOwner(true);
-        setIsCollaborator(false);
+      setTracks(validSongs);
+    }
 
-        // Set form data for editing
-        setEditForm({
-          name: playlistData.name,
-          description: playlistData.description || '',
-          isPublic: playlistData.isPublic || false,
-          allowCollaboration: playlistData.allowCollaboration || false
-        });
+    const setupListeners = async () => {
+      if (!mounted) return;
+      setLoading(true);
+      setError(null);
 
-        // Load tracks from playlist document
-        console.log('Setting up playlist listener...');
-        unsubscribe = onSnapshot(
-          doc(db, 'users', user.uid, 'playlists', playlistId),
-          async (snapshot) => {
-            if (!mounted) return;
-            const data = snapshot.data();
-            const playlistEntries = data?.songs || [];
-            console.log('Playlist entries received:', playlistEntries.length);
+      console.log('Setting up dual collection listeners...');
 
-            // Fetch full song data from songs collection (DRY - single source of truth)
-            const fullSongs = await Promise.all(
-              playlistEntries.map(async (entry) => {
-                // Handle both old format (full song object) and new format (just songId)
-                const songId = entry.songId || entry.id;
-                const addedAt = entry.addedAt;
+      // Listen to BOTH collections simultaneously
+      // Private collection listener
+      const privateRef = doc(db, 'users', user.uid, 'playlists', playlistId);
+      unsubscribePrivate = onSnapshot(
+        privateRef,
+        async (snapshot) => {
+          if (!mounted) return;
 
-                if (!songId) {
-                  console.error('Playlist entry missing songId:', entry);
-                  return null;
-                }
+          if (snapshot.exists()) {
+            // Playlist is in private collection
+            console.log('✅ Playlist found in PRIVATE collection');
+            setIsPrivatePlaylist(true);
 
-                try {
-                  console.log('Fetching song from Firestore:', songId);
-                  const songDoc = await getDoc(doc(db, 'songs', String(songId)));
+            const playlistData = { id: snapshot.id, ...snapshot.data() };
+            console.log('Playlist:', playlistData.name, '(private)');
+            setPlaylist(playlistData);
+            setIsOwner(true);
+            setIsCollaborator(false);
 
-                  if (songDoc.exists()) {
-                    const songData = songDoc.data();
-                    return {
-                      id: songDoc.id,
-                      ...songData,
-                      addedAt: addedAt || entry.addedAt || new Date()
-                    };
-                  } else {
-                    console.error('Song not found in Firestore:', songId);
-                    return null;
-                  }
-                } catch (err) {
-                  console.error('Error fetching song:', songId, err);
-                  return null;
-                }
-              })
-            );
+            setEditForm({
+              name: playlistData.name,
+              description: playlistData.description || '',
+              isPublic: playlistData.isPublic || false,
+              allowCollaboration: playlistData.allowCollaboration || false
+            });
 
-            // Filter out null entries (failed fetches)
-            const validSongs = fullSongs.filter(song => song !== null);
-            console.log('Loaded', validSongs.length, 'songs from Firestore');
-
-            setTracks(validSongs);
-            setLoading(false);
-          },
-          (error) => {
-            if (!mounted) return;
-            console.error('Error in playlist snapshot:', error);
-            setError(error.message);
+            // Load and display tracks
+            await loadTracks(snapshot);
             setLoading(false);
           }
-        );
-      } catch (err) {
-        if (!mounted) return;
-        console.error('Error loading playlist:', err);
-        setError(err.message);
-        setLoading(false);
-      }
+        },
+        (error) => {
+          console.error('Private listener error:', error);
+        }
+      );
+
+      // Public collection listener
+      const publicRef = doc(db, 'playlists', playlistId);
+      unsubscribePublic = onSnapshot(
+        publicRef,
+        async (snapshot) => {
+          if (!mounted) return;
+
+          if (snapshot.exists()) {
+            // Playlist is in public collection
+            console.log('✅ Playlist found in PUBLIC collection');
+            setIsPrivatePlaylist(false);
+
+            const playlistData = { id: snapshot.id, ...snapshot.data() };
+            console.log('Playlist:', playlistData.name, '(public)');
+            setPlaylist(playlistData);
+
+            // Check if user is owner
+            const isUserOwner = playlistData.creatorId === user.uid;
+            setIsOwner(isUserOwner);
+            setIsCollaborator(false);
+
+            setEditForm({
+              name: playlistData.name,
+              description: playlistData.description || '',
+              isPublic: playlistData.isPublic || false,
+              allowCollaboration: playlistData.allowCollaboration || false
+            });
+
+            // Load and display tracks
+            await loadTracks(snapshot);
+            setLoading(false);
+          } else if (!playlist) {
+            // Only set error if we haven't found it in either collection
+            setError('Playlist not found');
+            setLoading(false);
+            // Auto-redirect back to library after 1 second
+            setTimeout(() => {
+              navigate('/');
+            }, 1000);
+          }
+        },
+        (error) => {
+          console.error('Public listener error:', error);
+        }
+      );
     };
 
-    loadPlaylist();
+    setupListeners();
 
     return () => {
       mounted = false;
-      if (unsubscribe) {
-        console.log('Cleaning up playlist listener');
-        unsubscribe();
+      if (unsubscribePrivate) {
+        console.log('Cleaning up private playlist listener');
+        unsubscribePrivate();
+      }
+      if (unsubscribePublic) {
+        console.log('Cleaning up public playlist listener');
+        unsubscribePublic();
       }
     };
   }, [playlistId, user?.uid]);
@@ -285,9 +328,19 @@ function Playlist() {
 
   // Calculate playlist stats
   const playlistStats = React.useMemo(() => {
-    const totalDuration = tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
+    const totalDuration = tracks.reduce((sum, track) => {
+      const duration = track.duration || 0;
+      return sum + duration;
+    }, 0);
     const hours = Math.floor(totalDuration / 3600);
     const minutes = Math.floor((totalDuration % 3600) / 60);
+
+    console.log('📊 Playlist Stats:', {
+      trackCount: tracks.length,
+      totalDuration,
+      formattedDuration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+      tracksWithDuration: tracks.filter(t => t.duration).length
+    });
 
     return {
       trackCount: tracks.length,
@@ -449,14 +502,74 @@ function Playlist() {
         console.log('✅ Playlist image uploaded:', imageUrl);
       }
 
-      await updateDoc(doc(db, 'users', user.uid, 'playlists', playlistId), {
-        name: editForm.name,
-        description: editForm.description,
-        isPublic: editForm.isPublic,
-        allowCollaboration: editForm.allowCollaboration,
-        ...(imageUrl && { imageUrl }),
-        updatedAt: serverTimestamp()
-      });
+      // Check if privacy setting changed
+      const privacyChanged = editForm.isPublic !== !isPrivatePlaylist;
+      const newIsPrivate = !editForm.isPublic;
+
+      if (privacyChanged) {
+        // Privacy changed - need to move playlist between collections
+        console.log('Privacy changed:', isPrivatePlaylist ? 'private → public' : 'public → private');
+
+        const { deleteDoc } = await import('firebase/firestore');
+
+        // Get current playlist data
+        const currentRef = getPlaylistRef();
+        if (!currentRef) return;
+
+        const currentDoc = await getDoc(currentRef);
+        if (!currentDoc.exists()) {
+          toast.error('Playlist not found');
+          return;
+        }
+
+        const playlistData = currentDoc.data();
+
+        // Create in new location
+        if (newIsPrivate) {
+          // Moving to private (users/{uid}/playlists/)
+          const privateRef = doc(db, 'users', user.uid, 'playlists', playlistId);
+          await setDoc(privateRef, {
+            ...playlistData,
+            name: editForm.name,
+            description: editForm.description,
+            allowCollaboration: editForm.allowCollaboration,
+            ...(imageUrl && { imageUrl }),
+            isPrivate: true,
+            updatedAt: serverTimestamp()
+          });
+          // Delete from public collection
+          await deleteDoc(currentRef);
+          setIsPrivatePlaylist(true);
+        } else {
+          // Moving to public (/playlists/)
+          const publicRef = doc(db, 'playlists', playlistId);
+          await setDoc(publicRef, {
+            ...playlistData,
+            name: editForm.name,
+            description: editForm.description,
+            allowCollaboration: editForm.allowCollaboration,
+            ...(imageUrl && { imageUrl }),
+            creatorId: user.uid,
+            isPrivate: false,
+            updatedAt: serverTimestamp()
+          });
+          // Delete from private collection
+          await deleteDoc(currentRef);
+          setIsPrivatePlaylist(false);
+        }
+      } else {
+        // No privacy change - just update in current location
+        const playlistRef = getPlaylistRef();
+        if (!playlistRef) return;
+
+        await updateDoc(playlistRef, {
+          name: editForm.name,
+          description: editForm.description,
+          allowCollaboration: editForm.allowCollaboration,
+          ...(imageUrl && { imageUrl }),
+          updatedAt: serverTimestamp()
+        });
+      }
 
       setPlaylist(prev => ({
         ...prev,
@@ -479,8 +592,11 @@ function Playlist() {
     if (!isOwner || !user?.uid) return;
 
     try {
+      const playlistRef = getPlaylistRef();
+      if (!playlistRef) return;
+
       // Delete playlist document (songs are stored in the document, not separately)
-      await deleteDoc(doc(db, 'users', user.uid, 'playlists', playlistId));
+      await deleteDoc(playlistRef);
 
       toast.success('Playlist deleted successfully');
       navigate('/playlists');
@@ -494,9 +610,12 @@ function Playlist() {
     if (!isOwner || !user?.uid) return;
 
     try {
+      const playlistRef = getPlaylistRef();
+      if (!playlistRef) return;
+
       // Remove song from the songs array
       const updatedSongs = tracks.filter((s) => s.id !== track.id);
-      await updateDoc(doc(db, 'users', user.uid, 'playlists', playlistId), {
+      await updateDoc(playlistRef, {
         songs: updatedSongs
       });
       toast.success('Track removed from playlist');
@@ -665,7 +784,7 @@ function Playlist() {
 
           <Box sx={{ flex: 1 }}>
             <Typography variant="body2" sx={{ color: 'white', opacity: 0.8, mb: 1 }}>
-              {playlist?.isPublic ? 'Public Playlist' : 'Private Playlist'}
+              {isPrivatePlaylist ? 'Private Playlist' : 'Public Playlist'}
             </Typography>
 
             <Typography

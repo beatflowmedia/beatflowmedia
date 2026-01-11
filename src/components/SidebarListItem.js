@@ -5,6 +5,7 @@ import { BiListPlus } from "react-icons/bi";
 import { MdEdit, MdDelete } from "react-icons/md";
 import PropTypes from 'prop-types';
 import ContextMenu from './ContextMenu';
+import EditPlaylistModal from './EditPlaylistModal';
 import { usePlaylistManager } from '../hooks/usePlaylistManager';
 import { usePlayer } from '../context/PlayerContext';
 import { db } from '../firebaseConfig';
@@ -36,6 +37,7 @@ const SidebarListItem = ({
   const isArtist = item.type === "artist";
   const [imgError, setImgError] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false); // Race condition guard
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { deletePlaylist, updatePlaylistDetails, togglePrivacy } = usePlaylistManager();
   const { user } = useAuth();
   const { dispatch, actions: playerActions } = usePlayer();
@@ -242,10 +244,50 @@ const SidebarListItem = ({
   };
 
   const handleEditDetails = async () => {
-    // TODO: Open edit modal - will implement modal in next step
     console.log('✏️ Edit details for:', item);
-    await showAlert('Coming Soon', 'Edit Details modal coming soon!', 'info');
+    setIsEditModalOpen(true);
     onCloseMenu?.();
+  };
+
+  const handleSaveEdit = async (updates) => {
+    try {
+      let imageUrl = item.imageUrl;
+
+      // Upload new cover image if provided
+      if (updates.coverFile) {
+        imageUrl = await uploadCoverImage(updates.coverFile);
+        // Clear image error state to force re-render with new image
+        setImgError(false);
+      }
+
+      // Handle privacy change first if it changed
+      if (updates.isPrivate !== item.isPrivate) {
+        await togglePrivacy(item.id, updates.isPrivate);
+      }
+
+      // Update playlist details
+      await updatePlaylistDetails(item.id, {
+        name: updates.name,
+        description: updates.description,
+        imageUrl
+      });
+
+      await showAlert("Saved", "Playlist details updated successfully", "success");
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('❌ Error updating playlist:', error);
+      await showAlert("Error", "Failed to update playlist details", "error");
+    }
+  };
+
+  const uploadCoverImage = async (file) => {
+    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+    const { storage } = await import('../firebaseConfig');
+
+    const timestamp = Date.now();
+    const storageRef = ref(storage, `users/${user.uid}/playlist-covers/${timestamp}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
   };
 
   const handleInviteCollaborators = async () => {
@@ -329,8 +371,8 @@ const SidebarListItem = ({
   // If we have the right panel handler (applies to both artist AND playlist)
   if (onShowRightPanel) {
     const imageClass = isArtist ? 'rounded-full' : 'rounded';
-    const displayImage = !imgError && item.cover
-      ? item.cover
+    const displayImage = !imgError && (item.cover || item.imageUrl)
+      ? (item.cover || item.imageUrl)
       : isArtist
       ? artistImageFromDb // Use fetched artist image with fallback
       : null;
@@ -344,6 +386,7 @@ const SidebarListItem = ({
         {displayImage ? (
           <div className={`relative w-10 h-10 ${isCollapsed ? '' : 'mr-3'} shrink-0`}>
             <img
+              key={displayImage}
               src={displayImage}
               alt={item.name}
               className={`w-10 h-10 ${imageClass} object-cover border border-gray-800 cursor-pointer transition-opacity group-hover:opacity-60`}
@@ -413,54 +456,77 @@ const SidebarListItem = ({
             onClose={onCloseMenu}
           />
         )}
+
+        {/* Edit Playlist Modal */}
+        {!isArtist && isEditModalOpen && (
+          <EditPlaylistModal
+            isOpen={isEditModalOpen}
+            playlist={item}
+            onSave={handleSaveEdit}
+            onClose={() => setIsEditModalOpen(false)}
+          />
+        )}
       </div>
     );
   }
 
   // Default button layout for playlists or simple artist items (no right panel handler)
   return (
-    <button
-      className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group text-left ${isCollapsed ? 'justify-center' : ''}`}
-      onClick={handleNameClick}
-      tabIndex={0}
-      aria-label={item.name}
-      title={isArtist ? `Go to artist page: ${item.name}` : item.name}
-    >
-      {!imgError && item.cover ? (
-        <img
-          src={item.cover}
-          alt={item.name}
-          className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} object-cover flex-shrink-0 ${
-            isArtist ? 'rounded-full' : 'rounded border border-gray-800'
-          }`}
-          onError={() => {
-            if (!imgError) {
-              setImgError(true);
-            }
-          }}
-        />
-      ) : isArtist ? (
-        <img
-          src={artistImageFromDb}
-          alt={item.name}
-          className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} object-cover flex-shrink-0 rounded-full`}
-        />
-      ) : (
-        <div className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} flex items-center justify-center flex-shrink-0 rounded border border-gray-800 bg-gray-900`}>
-          <MusicNote sx={{ fontSize: 20, color: '#9ca3af' }} />
-        </div>
-      )}
-      {!isCollapsed && (
-        <div className="flex-1 min-w-0">
-          <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">
-            {item.name}
+    <>
+      <button
+        className={`flex items-center w-full px-2 py-1 rounded hover:bg-gray-800 transition group text-left ${isCollapsed ? 'justify-center' : ''}`}
+        onClick={handleNameClick}
+        tabIndex={0}
+        aria-label={item.name}
+        title={isArtist ? `Go to artist page: ${item.name}` : item.name}
+      >
+        {!imgError && (item.cover || item.imageUrl) ? (
+          <img
+            key={item.cover || item.imageUrl}
+            src={item.cover || item.imageUrl}
+            alt={item.name}
+            className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} object-cover flex-shrink-0 ${
+              isArtist ? 'rounded-full' : 'rounded border border-gray-800'
+            }`}
+            onError={() => {
+              if (!imgError) {
+                setImgError(true);
+              }
+            }}
+          />
+        ) : isArtist ? (
+          <img
+            src={artistImageFromDb}
+            alt={item.name}
+            className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} object-cover flex-shrink-0 rounded-full`}
+          />
+        ) : (
+          <div className={`w-10 h-10 ${isCollapsed ? '' : 'mr-3'} flex items-center justify-center flex-shrink-0 rounded border border-gray-800 bg-gray-900`}>
+            <MusicNote sx={{ fontSize: 20, color: '#9ca3af' }} />
           </div>
-          <div className="text-xs text-gray-400 flex items-center mt-0.5">
-            {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
+        )}
+        {!isCollapsed && (
+          <div className="flex-1 min-w-0">
+            <div className="truncate text-white text-sm font-semibold group-hover:text-green-300">
+              {item.name}
+            </div>
+            <div className="text-xs text-gray-400 flex items-center mt-0.5">
+              {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
+            </div>
           </div>
-        </div>
+        )}
+      </button>
+
+      {/* Edit Playlist Modal */}
+      {!isArtist && isEditModalOpen && (
+        <EditPlaylistModal
+          isOpen={isEditModalOpen}
+          playlist={item}
+          onSave={handleSaveEdit}
+          onClose={() => setIsEditModalOpen(false)}
+        />
       )}
-    </button>
+    </>
   );
 };
 
