@@ -128,7 +128,16 @@ const SidebarListItem = ({
 
   const handleDeletePlaylist = async () => {
     if (isProcessing) return; // Prevent double-clicks
-    if (!window.confirm(`Delete playlist "${item.name}"? This cannot be undone.`)) return;
+
+    // Use modal confirmation instead of window.confirm
+    const confirmed = await showAlert(
+      "Delete Playlist",
+      `Delete playlist "${item.name}"? This cannot be undone.`,
+      "warning",
+      true // Show confirm/cancel buttons
+    );
+
+    if (!confirmed) return;
 
     setIsProcessing(true);
     try {
@@ -208,7 +217,16 @@ const SidebarListItem = ({
 
   const handleRemoveFromProfile = async () => {
     if (isProcessing) return;
-    if (!window.confirm(`Remove "${item.name}" from your profile? You can add it back later.`)) return;
+
+    // Use modal confirmation instead of window.confirm
+    const confirmed = await showAlert(
+      "Remove from Profile",
+      `Remove "${item.name}" from your profile? You can add it back later.`,
+      "warning",
+      true // Show confirm/cancel buttons
+    );
+
+    if (!confirmed) return;
 
     setIsProcessing(true);
     try {
