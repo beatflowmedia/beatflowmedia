@@ -10,7 +10,7 @@ import { usePlayer } from '../context/PlayerContext';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
-import { showSuccessToast, showErrorToast } from '../utils/Toast';
+import { useModal } from '../hooks/useModal';
 import { useArtistImage } from '../hooks/useArtistImage';
 
 const typeIcon = {
@@ -39,6 +39,7 @@ const SidebarListItem = ({
   const { deletePlaylist, updatePlaylistDetails, togglePrivacy } = usePlaylistManager();
   const { user } = useAuth();
   const { dispatch, actions: playerActions } = usePlayer();
+  const { showAlert } = useModal();
 
   // Fetch artist image with album fallback for artists
   const artistImageFromDb = useArtistImage(isArtist ? item.name : null);
@@ -96,7 +97,7 @@ const SidebarListItem = ({
       const songs = playlistData.songs || [];
 
       if (songs.length === 0) {
-        showErrorToast("This playlist is empty");
+        await showAlert("Empty Playlist", "This playlist is empty", "error");
         return;
       }
 
@@ -115,11 +116,11 @@ const SidebarListItem = ({
         }
       }
 
-      showSuccessToast(`Added ${songs.length} songs to queue`);
+      await showAlert("Success", `Added ${songs.length} songs to queue`, "success");
       onCloseMenu?.();
     } catch (error) {
       console.error('❌ Failed to add to queue:', error);
-      showErrorToast('Failed to add playlist to queue');
+      await showAlert("Error", "Failed to add playlist to queue", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -132,11 +133,11 @@ const SidebarListItem = ({
     setIsProcessing(true);
     try {
       await deletePlaylist(item.id);
-      showSuccessToast(`Deleted "${item.name}"`);
+      await showAlert("Deleted", `Deleted "${item.name}"`, "success");
       onCloseMenu?.(); // Close menu after successful deletion
     } catch (error) {
       console.error('❌ Failed to delete playlist:', error);
-      showErrorToast('Failed to delete playlist');
+      await showAlert("Error", "Failed to delete playlist", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -149,25 +150,26 @@ const SidebarListItem = ({
     try {
       const newPrivacy = !item.isPrivate;
       await togglePrivacy(item.id, newPrivacy);
-      showSuccessToast(`Playlist is now ${newPrivacy ? 'private' : 'public'}`);
+      await showAlert("Privacy Updated", `Playlist is now ${newPrivacy ? 'private' : 'public'}`, "success");
       onCloseMenu?.(); // Close menu after successful update
     } catch (error) {
       console.error('❌ Failed to toggle privacy:', error);
-      showErrorToast('Failed to update privacy settings');
+      await showAlert("Error", "Failed to update privacy settings", "error");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const url = `${window.location.origin}/playlist/${item.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      showSuccessToast('Link copied to clipboard');
+    try {
+      await navigator.clipboard.writeText(url);
+      await showAlert("Link Copied", "Link copied to clipboard", "success");
       onCloseMenu?.();
-    }).catch((error) => {
+    } catch (error) {
       console.error('❌ Failed to copy link:', error);
-      showErrorToast('Failed to copy link');
-    });
+      await showAlert("Error", "Failed to copy link", "error");
+    }
   };
 
   const handlePinPlaylist = async () => {
@@ -177,11 +179,11 @@ const SidebarListItem = ({
     try {
       const newPinState = !item.isPinned;
       await updatePlaylistDetails(item.id, { isPinned: newPinState });
-      showSuccessToast(newPinState ? 'Playlist pinned' : 'Playlist unpinned');
+      await showAlert("Success", newPinState ? 'Playlist pinned' : 'Playlist unpinned', "success");
       onCloseMenu?.();
     } catch (error) {
       console.error('❌ Failed to pin/unpin playlist:', error);
-      showErrorToast('Failed to update pin status');
+      await showAlert("Error", "Failed to update pin status", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -194,11 +196,11 @@ const SidebarListItem = ({
     try {
       const newState = !item.excludedFromTaste;
       await updatePlaylistDetails(item.id, { excludedFromTaste: newState });
-      showSuccessToast(newState ? 'Excluded from taste profile' : 'Included in taste profile');
+      await showAlert("Taste Profile Updated", newState ? 'Excluded from taste profile' : 'Included in taste profile', "success");
       onCloseMenu?.();
     } catch (error) {
       console.error('❌ Failed to update taste profile setting:', error);
-      showErrorToast('Failed to update taste profile setting');
+      await showAlert("Error", "Failed to update taste profile setting", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -211,52 +213,53 @@ const SidebarListItem = ({
     setIsProcessing(true);
     try {
       await updatePlaylistDetails(item.id, { hiddenFromProfile: true });
-      showSuccessToast('Removed from profile');
+      await showAlert("Removed from Profile", "Removed from profile", "success");
       onCloseMenu?.();
     } catch (error) {
       console.error('❌ Failed to remove from profile:', error);
-      showErrorToast('Failed to remove from profile');
+      await showAlert("Error", "Failed to remove from profile", "error");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleEditDetails = () => {
+  const handleEditDetails = async () => {
     // TODO: Open edit modal - will implement modal in next step
     console.log('✏️ Edit details for:', item);
-    showErrorToast('Edit Details modal coming soon!');
+    await showAlert('Coming Soon', 'Edit Details modal coming soon!', 'info');
     onCloseMenu?.();
   };
 
-  const handleInviteCollaborators = () => {
+  const handleInviteCollaborators = async () => {
     // TODO: Open invite modal
     console.log('👥 Invite collaborators to:', item);
-    showErrorToast('Invite Collaborators feature coming soon!');
+    await showAlert('Coming Soon', 'Invite Collaborators feature coming soon!', 'info');
     onCloseMenu?.();
   };
 
-  const handleEmbedPlaylist = () => {
+  const handleEmbedPlaylist = async () => {
     const embedCode = `<iframe src="${window.location.origin}/embed/playlist/${item.id}" width="300" height="380" frameborder="0"></iframe>`;
-    navigator.clipboard.writeText(embedCode).then(() => {
-      showSuccessToast('Embed code copied to clipboard');
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      await showAlert("Embed Code Copied", "Embed code copied to clipboard", "success");
       onCloseMenu?.();
-    }).catch((error) => {
+    } catch (error) {
       console.error('❌ Failed to copy embed code:', error);
-      showErrorToast('Failed to copy embed code');
-    });
+      await showAlert("Error", "Failed to copy embed code", "error");
+    }
   };
 
-  const handleFindFolder = () => {
+  const handleFindFolder = async () => {
     // TODO: Open folder finder modal
     console.log('🔍 Find folder for:', item);
-    showErrorToast('Folder management coming soon!');
+    await showAlert('Coming Soon', 'Folder management coming soon!', 'info');
     onCloseMenu?.();
   };
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     // TODO: Open create folder modal
     console.log('📁 Create new folder');
-    showErrorToast('Folder management coming soon!');
+    await showAlert('Coming Soon', 'Folder management coming soon!', 'info');
     onCloseMenu?.();
   };
 
