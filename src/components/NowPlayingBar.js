@@ -247,8 +247,8 @@ const NowPlayingBar = memo(
         <div className="flex items-center space-x-3 flex-1 min-w-0">
           <img
             src={
-              currentTrack.cover ||
               currentTrack.coverUrl ||
+              currentTrack.cover ||
               getPlaceholderImage(56, 56, '♪')
             }
             alt={`${currentTrack.title} cover`}
