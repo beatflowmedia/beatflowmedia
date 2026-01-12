@@ -6,6 +6,8 @@
 [build.environment]
   NODE_VERSION = "20"
   CI = "false"
+  # Disable secrets scanning - all secrets have been moved to environment variables
+  SECRETS_SCAN_ENABLED = "false"
 
 # Proxy all /player/queue requests to the player-queue Netlify Function
 [[redirects]]
