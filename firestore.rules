@@ -612,8 +612,8 @@ service cloud.firestore {
       allow read: if request.auth != null &&
                      (resource.data.artistId == request.auth.uid || isPlatformAdmin());
       // Allow anyone to update subscription status (for unsubscribe links)
-      // Only allow updating specific fields: subscribed, unsubscribedAt, source
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subscribed', 'unsubscribedAt', 'source', 'lastInteraction']) ||
+      // Allow updating specific subscription fields or full update if authenticated owner
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subscribed', 'unsubscribedAt', 'source', 'lastInteraction', 'status', 'updatedAt', 'email', 'artistId', 'artistName', 'incentiveType', 'incentiveContent', 'userId', 'name', 'capturedAt', 'createdAt']) ||
                        (request.auth != null && request.resource.data.userId == request.auth.uid) ||
                        isPlatformAdmin();
       allow delete: if isPlatformAdmin();
