@@ -9,9 +9,11 @@ import {
   Reddit,
   Email,
   ContentCopy,
-  OpenInBrowser
+  OpenInBrowser,
+  VideoLibrary
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
+import VideoClipGenerator from '../components/VideoClipGenerator';
 import {
   getSongUrl,
   getPlaylistUrl,
@@ -40,6 +42,7 @@ export default function ShareButton({
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [videoClipDialogOpen, setVideoClipDialogOpen] = useState(false);
 
   // Safety check - don't render if both song and playlist are invalid
   if ((!song || !song.id) && (!playlist || !playlist.id)) {
@@ -77,6 +80,9 @@ export default function ShareButton({
       } else if (shareFunction === 'copy') {
         await copyToClipboard(itemUrl);
         toast.success('Link copied to clipboard!');
+      } else if (shareFunction === 'videoClip') {
+        // Open video clip generator (songs only)
+        setVideoClipDialogOpen(true);
       } else if (shareFunction === 'twitter') {
         shareOnTwitter(shareText);
       } else if (shareFunction === 'facebook') {
@@ -137,6 +143,19 @@ export default function ShareButton({
           <ListItemText>Copy Link</ListItemText>
         </MenuItem>
 
+        {/* Video Clip Generator - Songs only (2026 Hybrid Strategy) */}
+        {!isPlaylist && (
+          <>
+            <Divider sx={{ bgcolor: 'grey.700' }} />
+            <MenuItem onClick={(e) => handleShareOption(e, 'videoClip')}>
+              <ListItemIcon>
+                <VideoLibrary sx={{ color: '#ff0050' }} fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Create TikTok/Reels Clip</ListItemText>
+            </MenuItem>
+          </>
+        )}
+
         <Divider sx={{ bgcolor: 'grey.700' }} />
 
         <MenuItem onClick={(e) => handleShareOption(e, 'twitter')}>
@@ -176,6 +195,15 @@ export default function ShareButton({
           <ListItemText>Share via Email</ListItemText>
         </MenuItem>
       </Menu>
+
+      {/* Video Clip Generator Dialog */}
+      {!isPlaylist && song && (
+        <VideoClipGenerator
+          open={videoClipDialogOpen}
+          onClose={() => setVideoClipDialogOpen(false)}
+          song={song}
+        />
+      )}
     </>
   );
 }

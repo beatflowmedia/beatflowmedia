@@ -88,8 +88,15 @@ const SidebarListItem = ({
 
     setIsProcessing(true);
     try {
-      const playlistRef = doc(db, "users", user.uid, "playlists", item.id);
-      const playlistSnap = await getDoc(playlistRef);
+      // Try user's private playlists first
+      let playlistRef = doc(db, "users", user.uid, "playlists", item.id);
+      let playlistSnap = await getDoc(playlistRef);
+
+      // If not found, try global playlists collection (for followed/public playlists)
+      if (!playlistSnap.exists()) {
+        playlistRef = doc(db, "playlists", item.id);
+        playlistSnap = await getDoc(playlistRef);
+      }
 
       if (!playlistSnap.exists()) {
         throw new Error("Playlist not found");
@@ -118,7 +125,6 @@ const SidebarListItem = ({
         }
       }
 
-      await showAlert("Success", `Added ${songs.length} songs to queue`, "success");
       onCloseMenu?.();
     } catch (error) {
       console.error('❌ Failed to add to queue:', error);

@@ -78,7 +78,7 @@ export default function Goals() {
       <header className="bg-gray-800 py-6 px-6">
         <div className="max-w-6xl mx-auto">
           <Link to="/advertising" className="text-bf-green hover:underline mb-4 inline-block">
-            ê Back to Advertising
+            ÔøΩ Back to Advertising
           </Link>
           <h1 className="text-5xl font-bold mb-4">Achieve Your Marketing Goals</h1>
           <p className="text-gray-400 text-lg">

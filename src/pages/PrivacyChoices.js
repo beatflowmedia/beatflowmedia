@@ -490,7 +490,7 @@ export default function PrivacyChoices() {
               </p>
             </div>
           </div>
-        </div>
+          </div>
       </main>
       <Footer />
     </div>

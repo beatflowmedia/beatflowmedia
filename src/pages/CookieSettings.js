@@ -316,7 +316,7 @@ export default function CookieSettings() {
               </Link>
             </div>
           </div>
-        </div>
+          </div>
       </main>
       <Footer />
     </div>

@@ -1,5 +1,6 @@
 // getDocs import removed - not currently used but needed for future collaborator functionality
 import React, { useState, useEffect, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import {
   Avatar,
   Box,
@@ -66,6 +67,9 @@ import { stripeService } from '../services/stripeService';
 import { getBatchPlayCounts } from '../services/engagementMetrics';
 import { usePlaylistFollowers } from '../hooks/usePlaylistFollowers';
 import useFollowPlaylist from '../hooks/useFollowPlaylist';
+import { generatePlaylistMetaTags } from '../utils/metaTagsHelper';
+import { generatePlaylistSchema, schemaToScriptTag } from '../utils/schemaMarkup';
+import { trackPlaylistView } from '../services/conversionTracking';
 
 const SORT_OPTIONS = [
   { label: 'Custom Order', value: 'custom' },
@@ -303,6 +307,13 @@ function Playlist() {
       }
     };
   }, [playlistId, user?.uid]);
+
+  // Track playlist view for conversion tracking (2026 Hybrid Strategy)
+  useEffect(() => {
+    if (playlist) {
+      trackPlaylistView(playlist);
+    }
+  }, [playlist]);
 
   // Load play counts from songMetrics collection when tracks change
   useEffect(() => {
@@ -716,6 +727,10 @@ function Playlist() {
     return d.toLocaleDateString();
   };
 
+  // Generate SEO meta tags and Schema.org markup
+  const metaTags = playlist ? generatePlaylistMetaTags(playlist) : null;
+  const playlistSchema = playlist ? generatePlaylistSchema(playlist) : null;
+
   // Debug render state
   console.log('🎨 Rendering playlist - isOwner:', isOwner, 'isCollaborator:', isCollaborator, 'user:', user?.uid);
 
@@ -751,8 +766,25 @@ function Playlist() {
   }
 
   return (
-    <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
-      {/* Playlist Header */}
+    <>
+      {/* SEO Meta Tags & Schema.org Structured Data */}
+      {metaTags && (
+        <Helmet>
+          <title>{metaTags.title}</title>
+          {metaTags.meta.map((tag, index) => (
+            <meta key={index} {...tag} />
+          ))}
+          {metaTags.link && metaTags.link.map((linkTag, index) => (
+            <link key={index} {...linkTag} />
+          ))}
+          {playlistSchema && (
+            <script {...schemaToScriptTag(playlistSchema)} />
+          )}
+        </Helmet>
+      )}
+
+      <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
+        {/* Playlist Header */}
       <Box
         sx={{
           background: `linear-gradient(180deg, rgba(29,185,84,0.8) 0%, rgba(18,18,18,1) 100%)`,
@@ -1401,7 +1433,8 @@ function Playlist() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </>
   );
 }
 

@@ -87,6 +87,22 @@ import Avatar from '@mui/material/Avatar';
 
 const CAMPAIGN_TYPES = [
   {
+    id: "conversion_ads",
+    title: "Conversion Ads (Meta/TikTok)",
+    description: "Direct-to-platform ads with smart links and conversion tracking",
+    icon: <TrendingUp />,
+    basePrice: 200,
+    features: [
+      "Meta & TikTok Pixel tracking",
+      "Smart link generation",
+      "Conversion optimization",
+      "Real-time metrics",
+      "A/B testing"
+    ],
+    isNew: true,
+    recommended: true
+  },
+  {
     id: "playlist_placement",
     title: "Playlist Placement",
     description: "Get your music featured in curated playlists",

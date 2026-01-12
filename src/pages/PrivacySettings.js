@@ -367,7 +367,7 @@ export default function PrivacySettings() {
               Save Changes
             </button>
           </div>
-        </div>
+          </div>
       </main>
       <Footer />
     </div>

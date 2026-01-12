@@ -295,7 +295,7 @@ export default function Accessibility() {
               <a href="#" className="text-green-500 hover:underline">Web Accessibility Initiative →</a>
             </div>
           </div>
-        </div>
+          </div>
       </main>
       <Footer />
     </div>

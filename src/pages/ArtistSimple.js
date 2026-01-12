@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, Card, CardContent, CardMedia, CircularProgress, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { Box, Typography, Button, Card, CardContent, CircularProgress, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { PlayArrow, Pause, Favorite, FavoriteBorder, MoreVert, QueueMusic, PlaylistAdd, Share, ShoppingCart } from '@mui/icons-material';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
@@ -16,10 +16,11 @@ import AlbumCard from '../components/AlbumCard';
 import useFollowArtist from '../hooks/useFollowArtist';
 import { stripeService } from '../services/stripeService';
 import { toast } from 'react-toastify';
-import { getArtistMetrics } from '../services/engagementMetrics';
 import { getArtistImageUrl } from '../hooks/useArtistImage';
 import SongPlayCount from '../components/SongPlayCount';
 import { useArtistFollowers } from '../hooks/useArtistFollowers';
+import FanCaptureModal from '../components/FanCaptureModal';
+import { fanCaptureService } from '../services/fanCaptureService';
 
 export default function ArtistSimple() {
   console.log('[ArtistSimple] Component mounted/rendered');
@@ -41,6 +42,10 @@ export default function ArtistSimple() {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
   const [purchasedSongIds, setPurchasedSongIds] = useState(new Set());
+  const [fanCaptureOpen, setFanCaptureOpen] = useState(false);
+
+  // Race condition protection for Get Updates button
+  const subscribeProcessingRef = useRef(false);
 
   // Use follow artist hook
   const { isFollowing, toggleFollow } = useFollowArtist(artist?.name);
@@ -254,7 +259,7 @@ export default function ArtistSimple() {
       // Clear any error that might have been set too early
       setError(null);
     }
-  }, [artist, artistSongs, artistId]);
+  }, [artist, artistSongs, artistId, artistSongs.length]);
 
   // Show error only after giving enough time for real-time listeners to fire
   useEffect(() => {
@@ -331,6 +336,46 @@ export default function ArtistSimple() {
       }
     } catch (error) {
       console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleGetUpdates = async () => {
+    // Race condition guard - prevent duplicate submissions
+    if (subscribeProcessingRef.current) {
+      console.log('⚠️ Subscribe already processing, ignoring duplicate click');
+      return;
+    }
+
+    if (!user) {
+      // Not authenticated - show fan capture modal
+      setFanCaptureOpen(true);
+      return;
+    }
+
+    // User is authenticated - directly subscribe them using service
+    subscribeProcessingRef.current = true;
+
+    try {
+      const result = await fanCaptureService.subscribeToArtist({
+        userId: user.uid,
+        email: user.email,
+        artistId: artist?.id,
+        artistName: artist?.name,
+        source: 'artist_page',
+        incentiveType: 'newsletter',
+        incentiveContent: `Get exclusive updates, early access to new releases, and behind-the-scenes content from ${artist?.name}`
+      });
+
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error('Error subscribing to artist updates:', error);
+      toast.error('Failed to subscribe. Please try again.');
+    } finally {
+      subscribeProcessingRef.current = false;
     }
   };
 
@@ -442,6 +487,25 @@ export default function ArtistSimple() {
             <Typography variant="body2" sx={{ color: 'grey.500' }}>
               {artistSongs.length} {artistSongs.length === 1 ? 'song' : 'songs'}
             </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleGetUpdates}
+              sx={{
+                borderColor: '#1DB954',
+                color: '#1DB954',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                borderRadius: '20px',
+                '&:hover': {
+                  bgcolor: 'rgba(29, 185, 84, 0.1)',
+                  borderColor: '#1ed760'
+                }
+              }}
+            >
+              Get Updates
+            </Button>
             {user && (
               <Button
                 variant={isFollowing ? "outlined" : "contained"}
@@ -654,47 +718,62 @@ export default function ArtistSimple() {
           }
         }}
       >
-        <MenuItem onClick={() => { playSong(selectedSong); handleMenuClose(); }} sx={{ color: 'white' }}>
-          <ListItemIcon>
-            <PlayArrow sx={{ color: '#1DB954' }} />
-          </ListItemIcon>
-          <ListItemText>Play Now</ListItemText>
-        </MenuItem>
-
-        <MenuItem onClick={() => { dispatch({ type: actions.ENQUEUE, payload: { item: selectedSong } }); handleMenuClose(); }} sx={{ color: 'white' }}>
-          <ListItemIcon>
-            <QueueMusic sx={{ color: 'grey.400' }} />
-          </ListItemIcon>
-          <ListItemText>Add to Queue</ListItemText>
-        </MenuItem>
-
-        <Divider sx={{ bgcolor: 'grey.700' }} />
-
-        <MenuItem onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
-          <ListItemIcon>
-            <PlaylistAdd sx={{ color: 'grey.400' }} />
-          </ListItemIcon>
-          <ListItemText>Add to Playlist</ListItemText>
-        </MenuItem>
-
-        <MenuItem onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
-          <ListItemIcon>
-            <Share sx={{ color: 'grey.400' }} />
-          </ListItemIcon>
-          <ListItemText>Share</ListItemText>
-        </MenuItem>
-
-        <Divider sx={{ bgcolor: 'grey.700' }} />
-
-        {!purchasedSongIds.has(selectedSong?.id) && (
-          <MenuItem onClick={() => handlePurchase(selectedSong)} sx={{ color: 'white' }}>
+        {[
+          <MenuItem key="play" onClick={() => { playSong(selectedSong); handleMenuClose(); }} sx={{ color: 'white' }}>
             <ListItemIcon>
-              <ShoppingCart sx={{ color: '#1DB954' }} />
+              <PlayArrow sx={{ color: '#1DB954' }} />
             </ListItemIcon>
-            <ListItemText>Purchase ($1.99)</ListItemText>
-          </MenuItem>
-        )}
+            <ListItemText>Play Now</ListItemText>
+          </MenuItem>,
+
+          <MenuItem key="queue" onClick={() => { dispatch({ type: actions.ENQUEUE, payload: { item: selectedSong } }); handleMenuClose(); }} sx={{ color: 'white' }}>
+            <ListItemIcon>
+              <QueueMusic sx={{ color: 'grey.400' }} />
+            </ListItemIcon>
+            <ListItemText>Add to Queue</ListItemText>
+          </MenuItem>,
+
+          <Divider key="divider1" sx={{ bgcolor: 'grey.700' }} />,
+
+          <MenuItem key="playlist" onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
+            <ListItemIcon>
+              <PlaylistAdd sx={{ color: 'grey.400' }} />
+            </ListItemIcon>
+            <ListItemText>Add to Playlist</ListItemText>
+          </MenuItem>,
+
+          <MenuItem key="share" onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
+            <ListItemIcon>
+              <Share sx={{ color: 'grey.400' }} />
+            </ListItemIcon>
+            <ListItemText>Share</ListItemText>
+          </MenuItem>,
+
+          <Divider key="divider2" sx={{ bgcolor: 'grey.700' }} />,
+
+          ...(!purchasedSongIds.has(selectedSong?.id) ? [
+            <MenuItem key="purchase" onClick={() => handlePurchase(selectedSong)} sx={{ color: 'white' }}>
+              <ListItemIcon>
+                <ShoppingCart sx={{ color: '#1DB954' }} />
+              </ListItemIcon>
+              <ListItemText>Purchase ($1.99)</ListItemText>
+            </MenuItem>
+          ] : [])
+        ]}
       </Menu>
+
+      {/* Fan Capture Modal */}
+      <FanCaptureModal
+        open={fanCaptureOpen}
+        onClose={() => setFanCaptureOpen(false)}
+        artist={{
+          id: artist?.id,
+          name: artist?.name,
+          photoURL: artist?.imageUrl
+        }}
+        incentiveType="newsletter"
+        incentiveContent={`Get exclusive updates, early access to new releases, and behind-the-scenes content from ${artist?.name || 'this artist'}`}
+      />
     </Box>
     </Box>
   );

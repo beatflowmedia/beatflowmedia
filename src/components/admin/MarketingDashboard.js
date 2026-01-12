@@ -20,7 +20,11 @@ import {
   Web,
   Image as ImageIcon,
   AutoAwesome,
-  Refresh
+  Refresh,
+  Link as LinkIcon,
+  VideoLibrary,
+  Email,
+  Search
 } from '@mui/icons-material';
 
 // Lazy load sub-components
@@ -28,6 +32,10 @@ const ContentBulkGenerator = lazy(() => import('./ContentBulkGenerator'));
 const SocialMediaManager = lazy(() => import('./SocialMediaManager'));
 const LandingPageManager = lazy(() => import('./LandingPageManager'));
 const BlogManager = lazy(() => import('./BlogManager'));
+const SmartLinkManager = lazy(() => import('./SmartLinkManager'));
+const VideoToolsStudio = lazy(() => import('./VideoToolsStudio'));
+const FanCaptureManager = lazy(() => import('./FanCaptureManager'));
+const SEOManager = lazy(() => import('./SEOManager'));
 
 function TabPanel({ children, value, index }) {
   return (
@@ -178,6 +186,10 @@ export default function MarketingDashboard() {
             <Tab icon={<Web />} label="Landing Pages" />
             <Tab icon={<Article />} label="Blog Posts" />
             <Tab icon={<Campaign />} label="Social Media" />
+            <Tab icon={<LinkIcon />} label="Smart Links" />
+            <Tab icon={<VideoLibrary />} label="Video Tools" />
+            <Tab icon={<Email />} label="Fan Capture" />
+            <Tab icon={<Search />} label="SEO" />
           </Tabs>
 
           <Suspense fallback={
@@ -199,6 +211,22 @@ export default function MarketingDashboard() {
 
             <TabPanel value={activeTab} index={3}>
               <SocialMediaManager />
+            </TabPanel>
+
+            <TabPanel value={activeTab} index={4}>
+              <SmartLinkManager />
+            </TabPanel>
+
+            <TabPanel value={activeTab} index={5}>
+              <VideoToolsStudio />
+            </TabPanel>
+
+            <TabPanel value={activeTab} index={6}>
+              <FanCaptureManager />
+            </TabPanel>
+
+            <TabPanel value={activeTab} index={7}>
+              <SEOManager />
             </TabPanel>
           </Suspense>
         </Card>

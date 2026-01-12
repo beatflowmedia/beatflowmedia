@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Footer from "../components/Footer";
 import marketingService from "../services/marketingService";
+import GoogleAdSense from '../components/GoogleAdSense';
 
 export default function ForTheRecord() {
   const [posts, setPosts] = useState([]);
@@ -152,6 +153,7 @@ export default function ForTheRecord() {
 
   return (
     <>
+      <GoogleAdSense />
       <Helmet>
         <title>For the Record - BeatFlow Media News & Insights</title>
         <meta name="description" content="News, stories, and insights from BeatFlow Media. Stay updated on artist success stories, platform updates, industry insights, and more." />

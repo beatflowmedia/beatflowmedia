@@ -62,7 +62,7 @@ export function usePlaylistManager() {
     };
   }, [user]);
 
-  const createNewPlaylist = async (name, imageFile = null, isPrivate = true) => {
+  const createNewPlaylist = async (name, imageFile = null, isPrivate = true, moods = []) => {
     if (!user?.uid) throw new Error("User not authenticated");
 
     // Capitalize playlist name (Title Case)
@@ -99,6 +99,7 @@ export function usePlaylistManager() {
       name: capitalizedName,
       songs: [],
       imageUrl,
+      moods: moods || [], // 2026 Hybrid Strategy: Mood tags for algorithmic recommendations
       createdAt: new Date()
     };
 

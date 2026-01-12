@@ -1,5 +1,6 @@
 import { getDocs } from 'firebase/firestore';
 import React, { useState, useEffect, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useOutletContext } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -54,6 +55,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import ShareButton from '../utils/ShareButton';
 import SongPlayCount from '../components/SongPlayCount';
+import FanCaptureModal from '../components/FanCaptureModal';
 import {
   doc,
   getDoc,
@@ -67,6 +69,9 @@ import {
   increment
 } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { generateArtistMetaTags } from '../utils/metaTagsHelper';
+import { generateArtistSchema, schemaToScriptTag } from '../utils/schemaMarkup';
+import { trackArtistView } from '../services/conversionTracking';
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -132,6 +137,7 @@ function Artist() {
   // UI state
   const [activeTab, setActiveTab] = useState(0);
   const [showAllTracks, setShowAllTracks] = useState(false);
+  const [fanCaptureOpen, setFanCaptureOpen] = useState(false);
 
   // Load artist data
   useEffect(() => {
@@ -202,6 +208,13 @@ function Artist() {
 
     loadArtist();
   }, [artistId, musicData]);
+
+  // Track artist view for conversion tracking (2026 Hybrid Strategy)
+  useEffect(() => {
+    if (artist) {
+      trackArtistView(artist);
+    }
+  }, [artist]);
 
   // Load similar artists
   const loadSimilarArtists = async (artistData) => {
@@ -440,9 +453,30 @@ function Artist() {
 
   const displayedTracks = showAllTracks ? topTracks : topTracks.slice(0, 5);
 
+  // Generate SEO meta tags and Schema.org markup
+  const metaTags = artist ? generateArtistMetaTags(artist) : null;
+  const artistSchema = artist ? generateArtistSchema(artist) : null;
+
   return (
-    <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
-      {/* Artist Header */}
+    <>
+      {/* SEO Meta Tags & Schema.org Structured Data */}
+      {metaTags && (
+        <Helmet>
+          <title>{metaTags.title}</title>
+          {metaTags.meta.map((tag, index) => (
+            <meta key={index} {...tag} />
+          ))}
+          {metaTags.link && metaTags.link.map((linkTag, index) => (
+            <link key={index} {...linkTag} />
+          ))}
+          {artistSchema && (
+            <script {...schemaToScriptTag(artistSchema)} />
+          )}
+        </Helmet>
+      )}
+
+      <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
+        {/* Artist Header */}
       <Box
         sx={{
           background: `linear-gradient(180deg, rgba(29,185,84,0.8) 0%, rgba(18,18,18,1) 100%)`,
@@ -547,7 +581,7 @@ function Artist() {
             )}
 
             {/* Action Buttons */}
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
               <Button
                 variant="contained"
                 size="large"
@@ -1190,7 +1224,21 @@ function Artist() {
           </Fade>
         )}
       </Box>
-    </Box>
+      </Box>
+
+      {/* Fan Capture Modal - 2026 Hybrid Strategy: Direct-to-Fan Retention */}
+      <FanCaptureModal
+        open={fanCaptureOpen}
+        onClose={() => setFanCaptureOpen(false)}
+        artist={{
+          id: artist?.id,
+          name: artist?.name,
+          photoURL: artist?.photoURL || artist?.imageUrl
+        }}
+        incentiveType="newsletter"
+        incentiveContent={`Get exclusive updates, early access to new releases, and behind-the-scenes content from ${artist?.name || 'this artist'}`}
+      />
+    </>
   );
 }
 

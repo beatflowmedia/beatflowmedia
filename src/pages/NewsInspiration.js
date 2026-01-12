@@ -75,7 +75,7 @@ export default function NewsInspiration() {
       <header className="bg-gray-800 py-6 px-6">
         <div className="max-w-6xl mx-auto">
           <Link to="/advertising" className="text-bf-green hover:underline mb-4 inline-block">
-            ê Back to Advertising
+            ÔøΩ Back to Advertising
           </Link>
           <h1 className="text-5xl font-bold mb-4">News & Inspiration</h1>
           <p className="text-gray-400 text-lg">
@@ -131,7 +131,7 @@ export default function NewsInspiration() {
                   <h3 className="text-xl font-bold mb-3">{article.title}</h3>
                   <p className="text-gray-400 text-sm mb-4">{article.excerpt}</p>
                   <a href="#" className="text-bf-green hover:underline text-sm font-semibold">
-                    Read more í
+                    Read more ÔøΩ
                   </a>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function NewsInspiration() {
                 <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
                 <p className="text-gray-400 mb-6">{item.description}</p>
                 <a href={item.link} className="text-bf-green hover:underline font-semibold">
-                  Explore í
+                  Explore ÔøΩ
                 </a>
               </div>
             ))}

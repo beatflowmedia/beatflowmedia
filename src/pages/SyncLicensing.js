@@ -267,7 +267,7 @@ export default function SyncLicensing() {
               </a>
             </p>
           </div>
-        </div>
+          </div>
       </main>
       <Footer />
     </div>

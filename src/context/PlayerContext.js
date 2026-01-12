@@ -9,6 +9,7 @@ import LegacyAudioEngine from "../engine/LegacyAudioEngine";
 import MseEngine from "../engine/MseEngine";
 import useQueue from "../hooks/useQueue";
 import { trackPlay } from "../services/engagementMetrics";
+import { trackSongCompletion, trackSongSkip } from "../services/conversionTracking";
 import { useAuth } from "./AuthContext";
 
 // --------------------
@@ -92,7 +93,15 @@ function reducer(state = initialState, action) {
     case actions.TOGGLE_PLAY:
       return { ...state, isPlaying: !state.isPlaying };
     case actions.SKIP_NEXT: {
-      const { queue, currentIndex, shuffleOn, repeatMode } = state;
+      const { queue, currentIndex, shuffleOn, repeatMode, currentTime } = state;
+
+      // Track skip if user skipped before 30s (quality signal for 2026 Hybrid Strategy)
+      const currentSong = queue[currentIndex];
+      if (currentSong?.id && currentTime < 30 && currentTime > 0) {
+        // Skip tracking will be handled in dispatch wrapper
+        console.log('⏭️ Early skip detected at', currentTime + 's - Song:', currentSong.id);
+      }
+
       if (shuffleOn && queue.length > 1) {
         let next;
         do {
@@ -202,6 +211,10 @@ export const PlayerProvider = ({ children }) => {
   const [queueInitialized, setQueueInitialized] = React.useState(false);
   // Track if play count has been incremented for current song
   const playCountIncrementedRef = useRef(false);
+  // Track skip/completion metrics for current song (2026 Hybrid Strategy)
+  const completionTrackedRef = useRef(false);
+  const skipTrackedRef = useRef(false);
+  const songStartTimeRef = useRef(0);
   // Firestore-persisted queue hooks
   const {
     queue: persistedQueue,
@@ -232,8 +245,11 @@ export const PlayerProvider = ({ children }) => {
 
     // Load track asynchronously (may need to fetch signed URL)
     engine.load(item).then(() => {
-      // Reset play count flag when loading new track
+      // Reset tracking flags when loading new track
       playCountIncrementedRef.current = false;
+      completionTrackedRef.current = false;
+      skipTrackedRef.current = false;
+      songStartTimeRef.current = Date.now();
       // Auto-play when switching tracks if already playing
       if (state.isPlaying) {
         engine.play().catch((error) => {
@@ -303,6 +319,19 @@ export const PlayerProvider = ({ children }) => {
           console.error('❌ Failed to track play:', err);
         });
       }
+
+      // Track completion when user listens to 80%+ of song (2026 Hybrid Strategy)
+      if (
+        item?.id &&
+        state.duration > 0 &&
+        time >= state.duration * 0.8 &&
+        !completionTrackedRef.current
+      ) {
+        completionTrackedRef.current = true;
+        const completionPercent = Math.round((time / state.duration) * 100);
+        console.log('🎯 Completion tracking at 80% - Song:', item.id, 'Completion:', completionPercent + '%');
+        trackSongCompletion(item, completionPercent);
+      }
     });
     const unsubDuration = engine.onDurationChange((duration) =>
       dispatchRaw({ type: actions.SET_DURATION, payload: duration }),
@@ -324,6 +353,17 @@ export const PlayerProvider = ({ children }) => {
   // Enhanced dispatch that also persists queue changes and syncs playback engine
   const dispatch = (action) => {
     console.log("PlayerContext.dispatch action:", action);
+
+    // Track skip before dispatching (2026 Hybrid Strategy - quality signal)
+    if (action.type === actions.SKIP_NEXT) {
+      const currentSong = state.queue[state.currentIndex];
+      if (currentSong?.id && state.currentTime < 30 && state.currentTime > 0 && !skipTrackedRef.current) {
+        skipTrackedRef.current = true;
+        console.log('📊 Tracking early skip - Song:', currentSong.id, 'Time:', state.currentTime + 's');
+        trackSongSkip(currentSong, Math.round(state.currentTime));
+      }
+    }
+
     // Sync engine on direct control actions
     switch (action.type) {
       case actions.SET_CURRENT_TIME:

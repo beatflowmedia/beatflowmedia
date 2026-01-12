@@ -274,7 +274,7 @@ export default function NoticeAtCollection() {
               <p>Phone: 1-800-BEATFLOW</p>
             </div>
           </div>
-        </div>
+          </div>
       </main>
       <Footer />
     </div>

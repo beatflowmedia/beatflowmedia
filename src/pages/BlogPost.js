@@ -21,6 +21,7 @@ import {
   TrendingUp
 } from '@mui/icons-material';
 import marketingService from '../services/marketingService';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -2421,7 +2422,9 @@ export default function BlogPost() {
   }
 
   return (
-    <Box sx={{ bgcolor: '#0a0e14', minHeight: '100vh', color: 'white', py: 4 }}>
+    <>
+      <GoogleAdSense />
+      <Box sx={{ bgcolor: '#0a0e14', minHeight: '100vh', color: 'white', py: 4 }}>
         <Container maxWidth="md">
           {/* Back Button */}
           <Link to="/blog" style={{ color: '#1DB954', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
@@ -2634,5 +2637,6 @@ export default function BlogPost() {
           )}
         </Container>
       </Box>
+    </>
   );
 }

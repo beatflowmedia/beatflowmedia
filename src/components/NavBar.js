@@ -2,7 +2,7 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import classNames from "classnames";
-import { FaSearch, FaDownload, FaBell, FaCrown, FaUser, FaCog, FaSignOutAlt, FaBars, FaTimes } from "react-icons/fa";
+import { FaSearch, FaDownload, FaBell, FaCrown, FaUser, FaCog, FaSignOutAlt, FaBars, FaTimes, FaCompass } from "react-icons/fa";
 import { MdLibraryMusic } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
 import { useSubscription } from "../hooks/useSubscription";
@@ -226,6 +226,21 @@ const NavBar = ({
           style={styles.iconButton}
         >
           <MdLibraryMusic
+            className="text-bf-subtext hover:text-bf-text"
+            style={styles.iconMedium}
+          />
+        </button>
+
+        {/* Discover Weekly button - hidden on mobile */}
+        <button
+          type="button"
+          onClick={() => navigate('/discover-weekly')}
+          aria-label="Discover Weekly"
+          className="hidden md:flex rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition"
+          title="Discover Weekly"
+          style={styles.iconButton}
+        >
+          <FaCompass
             className="text-bf-subtext hover:text-bf-text"
             style={styles.iconMedium}
           />
@@ -465,6 +480,17 @@ const NavBar = ({
             >
               <MdLibraryMusic className="mr-3" style={styles.iconMedium} />
               <span style={{ fontSize: 'clamp(0.875rem, calc(0.8rem + 0.2vw), 1rem)' }}>Browse Music</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setShowMobileMenu(false);
+                navigate('/discover-weekly');
+              }}
+              className="w-full text-left text-white hover:bg-gray-700 flex items-center px-4 py-3"
+            >
+              <FaCompass className="mr-3" style={styles.iconMedium} />
+              <span style={{ fontSize: 'clamp(0.875rem, calc(0.8rem + 0.2vw), 1rem)' }}>Discover Weekly</span>
             </button>
 
             {user && (

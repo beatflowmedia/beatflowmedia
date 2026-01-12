@@ -360,7 +360,7 @@ export default function DownloadData() {
               </Link>.
             </p>
           </div>
-        </div>
+          </div>
       </main>
       <Footer />
     </div>

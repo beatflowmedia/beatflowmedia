@@ -61,7 +61,7 @@ export default function GetStarted() {
       <header className="bg-gradient-to-br from-bf-green to-green-700 py-16 px-6">
         <div className="max-w-6xl mx-auto text-center">
           <Link to="/advertising" className="text-black hover:underline mb-4 inline-block">
-            ê Back to Advertising
+            ÔøΩ Back to Advertising
           </Link>
           <h1 className="text-6xl font-bold mb-4 text-black">Get Started with BeatFlow Ads</h1>
           <p className="text-black text-xl max-w-3xl mx-auto">

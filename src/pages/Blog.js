@@ -20,6 +20,7 @@ import {
   TrendingUp
 } from '@mui/icons-material';
 import marketingService from '../services/marketingService';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 export default function Blog() {
   const [posts, setPosts] = useState([]);
@@ -173,7 +174,9 @@ export default function Blog() {
   }
 
   return (
-    <Box sx={{ bgcolor: '#0a0e14', minHeight: '100vh', color: 'white', py: 6 }}>
+    <>
+      <GoogleAdSense />
+      <Box sx={{ bgcolor: '#0a0e14', minHeight: '100vh', color: 'white', py: 6 }}>
         <Container maxWidth="lg">
           {/* Header */}
           <Box sx={{ mb: 6, textAlign: 'center' }}>
@@ -363,5 +366,6 @@ export default function Blog() {
           </Box>
         </Container>
       </Box>
+    </>
   );
 }

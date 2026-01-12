@@ -970,3 +970,524 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
     return null;
   }
 });
+
+// ========================================
+// 2026 HYBRID MARKETING STRATEGY - EMAIL NOTIFICATIONS
+// ========================================
+
+/**
+ * Send welcome email with exclusive content when fan captures email
+ * Triggered when fanCaptures/{captureId} document is created
+ */
+exports.onFanEmailCapture = onDocumentCreated('fanCaptures/{captureId}', async (event) => {
+  const captureData = event.data.data();
+  const {email, artistName, artistId, incentiveType, incentiveContent} = captureData;
+
+  if (!email || !artistName) {
+    console.error('Missing email or artist name in fan capture:', event.params.captureId);
+    return null;
+  }
+
+  try {
+    const welcomeEmailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0e14; color: #f9fafb;">
+        <div style="background: linear-gradient(135deg, #1db954 0%, #1ed760 100%); padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🎵 Welcome to ${artistName}'s Inner Circle!</h1>
+          <p style="color: white; margin: 15px 0 0 0; font-size: 16px;">Thanks for following on BeatFlow Media</p>
+        </div>
+
+        <div style="padding: 40px 30px; background: #111827;">
+          <p style="color: #f9fafb; font-size: 16px; line-height: 1.6;">
+            Hey there! 👋
+          </p>
+          <p style="color: #f9fafb; font-size: 16px; line-height: 1.6;">
+            As promised, here's your exclusive ${incentiveType === 'demo' ? 'unreleased demo' : 'early access content'} from ${artistName}:
+          </p>
+
+          ${incentiveContent ? `
+          <div style="background: #1f2937; padding: 25px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #1db954;">
+            <h3 style="color: #1db954; margin: 0 0 15px 0; font-size: 18px;">🎁 Your Exclusive Content</h3>
+            <p style="color: #d1d5db; margin: 0; line-height: 1.6;">${incentiveContent}</p>
+            <a href="https://beatflowmedia.com/artist/${encodeURIComponent(artistName)}"
+               style="display: inline-block; margin-top: 20px; background: #1db954; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">
+              Listen Now on BeatFlow
+            </a>
+          </div>
+          ` : ''}
+
+          <p style="color: #f9fafb; font-size: 16px; line-height: 1.6; margin-top: 30px;">
+            You'll be the first to know when ${artistName} drops new music, announces shows, or shares exclusive behind-the-scenes content.
+          </p>
+
+          <p style="color: #9ca3af; font-size: 14px; margin-top: 30px; padding-top: 30px; border-top: 1px solid #374151;">
+            You're receiving this because you followed ${artistName} on BeatFlow Media.
+            <a href="https://beatflowmedia.com/unsubscribe?email=${encodeURIComponent(email)}" style="color: #1db954; text-decoration: none;">Unsubscribe</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendEmail(
+      email,
+      `🎵 Welcome! Your exclusive content from ${artistName}`,
+      welcomeEmailHtml
+    );
+
+    console.log('Fan capture welcome email sent to:', email, 'for artist:', artistName);
+    return null;
+  } catch (error) {
+    console.error('Error sending fan capture email:', error);
+    return null;
+  }
+});
+
+/**
+ * Send Release Radar notification when artist uploads new song
+ * Triggered when songs/{songId} document is created
+ */
+exports.onNewSongRelease = onDocumentCreated('songs/{songId}', async (event) => {
+  const songData = event.data.data();
+  const {title, artistName, artist, uploadedBy, coverUrl, cover, genre} = songData;
+
+  if (!uploadedBy || !title) {
+    return null; // Skip if missing data
+  }
+
+  try {
+    // Get all fans who follow this artist (from fanCaptures collection)
+    const fansSnapshot = await admin.firestore()
+      .collection('fanCaptures')
+      .where('artistId', '==', uploadedBy)
+      .get();
+
+    if (fansSnapshot.empty) {
+      console.log('No fans to notify for artist:', artistName || artist);
+      return null;
+    }
+
+    const artistDisplayName = artistName || artist || 'Your Favorite Artist';
+    const songImage = coverUrl || cover || 'https://beatflowmedia.com/images/default-cover.jpg';
+
+    // Send email to all followers (batched to avoid rate limits)
+    const emailPromises = [];
+    fansSnapshot.forEach((doc) => {
+      const fanData = doc.data();
+      const fanEmail = fanData.email;
+
+      if (!fanEmail) return;
+
+      const releaseEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0e14; color: #f9fafb;">
+          <div style="background: linear-gradient(135deg, #1db954 0%, #1ed760 100%); padding: 40px 30px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🔥 New Release from ${artistDisplayName}!</h1>
+            <p style="color: white; margin: 15px 0 0 0; font-size: 16px;">Fresh music just dropped on BeatFlow</p>
+          </div>
+
+          <div style="padding: 40px 30px; background: #111827;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <img src="${songImage}" alt="${title}" style="width: 250px; height: 250px; border-radius: 12px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+            </div>
+
+            <h2 style="color: #1db954; text-align: center; font-size: 24px; margin: 0 0 10px 0;">${title}</h2>
+            <p style="color: #9ca3af; text-align: center; font-size: 16px; margin: 0 0 30px 0;">by ${artistDisplayName}</p>
+
+            ${genre ? `<p style="color: #d1d5db; text-align: center; margin: 0 0 30px 0;"><span style="background: #1f2937; padding: 8px 16px; border-radius: 20px; font-size: 14px;">🎸 ${genre}</span></p>` : ''}
+
+            <div style="text-align: center; margin: 40px 0;">
+              <a href="https://beatflowmedia.com/song/${event.params.songId}"
+                 style="display: inline-block; background: #1db954; color: white; padding: 15px 40px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px;">
+                ▶️ Listen Now
+              </a>
+            </div>
+
+            <p style="color: #9ca3af; font-size: 14px; text-align: center; margin-top: 40px;">
+              Be the first to stream, save, and share this new track!
+            </p>
+
+            <p style="color: #6b7280; font-size: 13px; margin-top: 40px; padding-top: 30px; border-top: 1px solid #374151; text-align: center;">
+              You're receiving this because you follow ${artistDisplayName} on BeatFlow Media.
+              <a href="https://beatflowmedia.com/unsubscribe?email=${encodeURIComponent(fanEmail)}" style="color: #1db954; text-decoration: none;">Unsubscribe</a>
+            </p>
+          </div>
+        </div>
+      `;
+
+      emailPromises.push(
+        sendEmail(
+          fanEmail,
+          `🔥 New from ${artistDisplayName}: ${title}`,
+          releaseEmailHtml
+        ).catch(err => {
+          console.error('Failed to send release email to:', fanEmail, err);
+        })
+      );
+    });
+
+    // Send all emails in batches of 10 to avoid rate limits
+    for (let i = 0; i < emailPromises.length; i += 10) {
+      const batch = emailPromises.slice(i, i + 10);
+      await Promise.all(batch);
+      // Small delay between batches
+      if (i + 10 < emailPromises.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    console.log(`Release Radar emails sent to ${emailPromises.length} fans for song: ${title}`);
+    return null;
+  } catch (error) {
+    console.error('Error sending release radar emails:', error);
+    return null;
+  }
+});
+
+/**
+ * Send campaign performance summary email to artist
+ * Triggered when campaigns/{campaignId} status changes to 'completed'
+ */
+exports.onCampaignComplete = onDocumentUpdated('campaigns/{campaignId}', async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+
+  // Only send when campaign status changes to completed
+  if (before.status === 'completed' || after.status !== 'completed') {
+    return null;
+  }
+
+  try {
+    const {
+      artistEmail,
+      artistName,
+      title,
+      type,
+      budget,
+      conversions = {},
+      performance = {},
+      startDate,
+      duration
+    } = after;
+
+    if (!artistEmail) {
+      console.error('No artist email for campaign:', event.params.campaignId);
+      return null;
+    }
+
+    const {
+      clicks = 0,
+      plays = 0,
+      follows = 0,
+      saves = 0,
+      playlistAdds = 0,
+      emailCaptures = 0,
+      completionRate = 0,
+      skipRate = 0
+    } = conversions;
+
+    const {
+      cpc = 0,
+      cpa = 0,
+      roi = 0,
+      engagement = 0
+    } = performance;
+
+    const campaignSummaryHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; background: #0a0e14; color: #f9fafb;">
+        <div style="background: linear-gradient(135deg, #1db954 0%, #1ed760 100%); padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">📊 Campaign Complete!</h1>
+          <p style="color: white; margin: 15px 0 0 0; font-size: 16px;">${title}</p>
+        </div>
+
+        <div style="padding: 40px 30px; background: #111827;">
+          <p style="color: #f9fafb; font-size: 16px;">Hi ${artistName},</p>
+          <p style="color: #f9fafb; font-size: 16px; line-height: 1.6;">
+            Your <strong>${type}</strong> campaign has completed! Here's how it performed:
+          </p>
+
+          <div style="background: #1f2937; padding: 25px; border-radius: 12px; margin: 30px 0;">
+            <h3 style="color: #1db954; margin: 0 0 20px 0; font-size: 20px;">Campaign Overview</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="color: #9ca3af; padding: 10px 0; border-bottom: 1px solid #374151;">Budget</td>
+                <td style="color: #f9fafb; padding: 10px 0; border-bottom: 1px solid #374151; text-align: right; font-weight: bold;">$${budget.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="color: #9ca3af; padding: 10px 0; border-bottom: 1px solid #374151;">Duration</td>
+                <td style="color: #f9fafb; padding: 10px 0; border-bottom: 1px solid #374151; text-align: right;">${duration} days</td>
+              </tr>
+              <tr>
+                <td style="color: #9ca3af; padding: 10px 0; border-bottom: 1px solid #374151;">ROI</td>
+                <td style="color: ${roi > 100 ? '#1db954' : '#f59e0b'}; padding: 10px 0; border-bottom: 1px solid #374151; text-align: right; font-weight: bold;">${roi.toFixed(0)}%</td>
+              </tr>
+              <tr>
+                <td style="color: #9ca3af; padding: 10px 0;">Engagement Score</td>
+                <td style="color: #f9fafb; padding: 10px 0; text-align: right; font-weight: bold;">${engagement.toFixed(0)}/100</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background: #1f2937; padding: 25px; border-radius: 12px; margin: 30px 0;">
+            <h3 style="color: #1db954; margin: 0 0 20px 0; font-size: 20px;">Performance Metrics</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+              <div>
+                <p style="color: #9ca3af; margin: 0; font-size: 14px;">Smart Link Clicks</p>
+                <p style="color: #f9fafb; margin: 5px 0 0 0; font-size: 24px; font-weight: bold;">${clicks.toLocaleString()}</p>
+              </div>
+              <div>
+                <p style="color: #9ca3af; margin: 0; font-size: 14px;">Plays</p>
+                <p style="color: #f9fafb; margin: 5px 0 0 0; font-size: 24px; font-weight: bold;">${plays.toLocaleString()}</p>
+              </div>
+              <div>
+                <p style="color: #9ca3af; margin: 0; font-size: 14px;">New Followers</p>
+                <p style="color: #1db954; margin: 5px 0 0 0; font-size: 24px; font-weight: bold;">${follows.toLocaleString()}</p>
+              </div>
+              <div>
+                <p style="color: #9ca3af; margin: 0; font-size: 14px;">Saves</p>
+                <p style="color: #1db954; margin: 5px 0 0 0; font-size: 24px; font-weight: bold;">${saves.toLocaleString()}</p>
+              </div>
+              <div>
+                <p style="color: #9ca3af; margin: 0; font-size: 14px;">Playlist Adds</p>
+                <p style="color: #f9fafb; margin: 5px 0 0 0; font-size: 24px; font-weight: bold;">${playlistAdds.toLocaleString()}</p>
+              </div>
+              <div>
+                <p style="color: #9ca3af; margin: 0; font-size: 14px;">Email Captures</p>
+                <p style="color: #f9fafb; margin: 5px 0 0 0; font-size: 24px; font-weight: bold;">${emailCaptures.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #374151;">
+              <div style="margin-bottom: 15px;">
+                <p style="color: #9ca3af; margin: 0 0 8px 0; font-size: 14px;">Completion Rate</p>
+                <div style="background: #374151; height: 8px; border-radius: 4px; overflow: hidden;">
+                  <div style="background: #1db954; height: 100%; width: ${completionRate}%;"></div>
+                </div>
+                <p style="color: #f9fafb; margin: 5px 0 0 0; font-size: 14px;">${completionRate.toFixed(1)}%</p>
+              </div>
+              <div>
+                <p style="color: #9ca3af; margin: 0 0 8px 0; font-size: 14px;">Skip Rate</p>
+                <div style="background: #374151; height: 8px; border-radius: 4px; overflow: hidden;">
+                  <div style="background: ${skipRate > 30 ? '#ef4444' : '#f59e0b'}; height: 100%; width: ${skipRate}%;"></div>
+                </div>
+                <p style="color: #f9fafb; margin: 5px 0 0 0; font-size: 14px;">${skipRate.toFixed(1)}%</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: #1f2937; padding: 25px; border-radius: 12px; margin: 30px 0;">
+            <h3 style="color: #1db954; margin: 0 0 15px 0; font-size: 20px;">Cost Analysis</h3>
+            <p style="color: #9ca3af; margin: 0;">Cost Per Click: <span style="color: #f9fafb; font-weight: bold;">$${cpc.toFixed(2)}</span></p>
+            <p style="color: #9ca3af; margin: 10px 0 0 0;">Cost Per Acquisition (Follow/Save): <span style="color: #f9fafb; font-weight: bold;">$${cpa.toFixed(2)}</span></p>
+          </div>
+
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="https://beatflowmedia.com/artist-dashboard/campaigns/${event.params.campaignId}"
+               style="display: inline-block; background: #1db954; color: white; padding: 15px 40px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px;">
+              View Full Report
+            </a>
+          </div>
+
+          <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin-top: 30px;">
+            Ready to launch your next campaign? Use these insights to optimize your targeting and budget allocation.
+          </p>
+
+          <p style="color: #6b7280; font-size: 13px; margin-top: 40px; padding-top: 30px; border-top: 1px solid #374151;">
+            Questions? Reply to this email or contact us at support@beatflowmedia.com
+          </p>
+        </div>
+      </div>
+    `;
+
+    await sendEmail(
+      artistEmail,
+      `📊 Campaign Complete: ${title} - Performance Report`,
+      campaignSummaryHtml
+    );
+
+    console.log('Campaign completion email sent to:', artistEmail, 'for campaign:', title);
+    return null;
+  } catch (error) {
+    console.error('Error sending campaign completion email:', error);
+    return null;
+  }
+});
+
+// ========================================
+// SEO - XML SITEMAP GENERATION
+// ========================================
+/**
+ * Generates XML sitemap for all songs, artists, playlists, and albums
+ * Part of 2026 Hybrid Marketing Strategy (SEO Enhancement)
+ *
+ * Usage: Call this function on schedule or manually to regenerate sitemap
+ * The sitemap is stored in Firestore and served via a public endpoint
+ */
+exports.generateSitemap = onCall(async (request) => {
+  try {
+    console.log('Generating XML sitemap...');
+
+    const baseUrl = 'https://beatflowmedia.com'; // TODO: Replace with actual domain
+    const now = new Date().toISOString();
+
+    let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Browse Page -->
+  <url>
+    <loc>${baseUrl}/browse</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Playlists Page -->
+  <url>
+    <loc>${baseUrl}/playlists</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Albums Page -->
+  <url>
+    <loc>${baseUrl}/albums</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+`;
+
+    // Fetch all public songs
+    const songsSnapshot = await admin.firestore()
+      .collection('songs')
+      .where('isPublic', '==', true)
+      .limit(5000) // Sitemap limit per file
+      .get();
+
+    console.log(`Found ${songsSnapshot.size} public songs`);
+
+    songsSnapshot.forEach((doc) => {
+      const song = doc.data();
+      const songUrl = `${baseUrl}/song/${doc.id}`;
+      const lastmod = song.updatedAt ? song.updatedAt.toDate().toISOString() : now;
+
+      sitemapXml += `
+  <!-- Song: ${song.title || 'Untitled'} -->
+  <url>
+    <loc>${songUrl}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
+    });
+
+    // Fetch all artists (from songs to get unique artists)
+    const artistsMap = new Map();
+    songsSnapshot.forEach((doc) => {
+      const song = doc.data();
+      if (song.artistId && song.artistName) {
+        artistsMap.set(song.artistId, {
+          name: song.artistName,
+          updatedAt: song.updatedAt
+        });
+      }
+    });
+
+    console.log(`Found ${artistsMap.size} unique artists`);
+
+    artistsMap.forEach((artist, artistId) => {
+      const artistUrl = `${baseUrl}/artist/${encodeURIComponent(artistId)}`;
+      const lastmod = artist.updatedAt ? artist.updatedAt.toDate().toISOString() : now;
+
+      sitemapXml += `
+  <!-- Artist: ${artist.name} -->
+  <url>
+    <loc>${artistUrl}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+    });
+
+    // Fetch all public playlists
+    const playlistsSnapshot = await admin.firestore()
+      .collection('playlists')
+      .where('isPublic', '==', true)
+      .limit(1000)
+      .get();
+
+    console.log(`Found ${playlistsSnapshot.size} public playlists`);
+
+    playlistsSnapshot.forEach((doc) => {
+      const playlist = doc.data();
+      const playlistUrl = `${baseUrl}/playlist/${doc.id}`;
+      const lastmod = playlist.updatedAt ? playlist.updatedAt.toDate().toISOString() : now;
+
+      sitemapXml += `
+  <!-- Playlist: ${playlist.name || 'Untitled'} -->
+  <url>
+    <loc>${playlistUrl}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+`;
+    });
+
+    // Fetch all public albums
+    const albumsSnapshot = await admin.firestore()
+      .collection('albums')
+      .where('isPublic', '==', true)
+      .limit(1000)
+      .get();
+
+    console.log(`Found ${albumsSnapshot.size} public albums`);
+
+    albumsSnapshot.forEach((doc) => {
+      const album = doc.data();
+      const albumUrl = `${baseUrl}/album/${doc.id}`;
+      const lastmod = album.updatedAt ? album.updatedAt.toDate().toISOString() : now;
+
+      sitemapXml += `
+  <!-- Album: ${album.title || 'Untitled'} -->
+  <url>
+    <loc>${albumUrl}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+`;
+    });
+
+    // Close the sitemap
+    sitemapXml += `</urlset>`;
+
+    // Store sitemap in Firestore for easy retrieval
+    await admin.firestore()
+      .collection('seo')
+      .doc('sitemap')
+      .set({
+        xml: sitemapXml,
+        generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        urlCount: songsSnapshot.size + artistsMap.size + playlistsSnapshot.size + albumsSnapshot.size + 4
+      });
+
+    console.log('Sitemap generated and stored successfully');
+
+    return {
+      success: true,
+      urlCount: songsSnapshot.size + artistsMap.size + playlistsSnapshot.size + albumsSnapshot.size + 4,
+      message: 'Sitemap generated successfully'
+    };
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    throw new Error(`Failed to generate sitemap: ${error.message}`);
+  }
+});

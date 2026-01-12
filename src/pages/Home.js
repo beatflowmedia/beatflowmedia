@@ -52,6 +52,7 @@ import OptimizedImage from "../components/OptimizedImage";
 // Lazy load heavy components for better initial page load
 const TrendingSongs = lazy(() => import("../components/TrendingSongs"));
 const PersonalizedSections = lazy(() => import("../components/PersonalizedSections"));
+const DiscoverWeeklyPreview = lazy(() => import("../components/DiscoverWeeklyPreview"));
 const Footer = lazy(() => import("../components/Footer"));
 
 function Home() {
@@ -704,6 +705,24 @@ function Home() {
               <PersonalizedSections />
             </Suspense>
           </Box>
+          <Divider sx={{ my: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }} />
+        </>
+      )}
+
+      {/* Discover Weekly Preview (2026 Hybrid Strategy - Algorithmic Seeding) */}
+      {(activeCategory === 'all' || activeCategory === 'music') && (
+        <>
+          <Suspense fallback={
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              p: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)'
+            }}>
+              <CircularProgress />
+            </Box>
+          }>
+            <DiscoverWeeklyPreview />
+          </Suspense>
           <Divider sx={{ my: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }} />
         </>
       )}

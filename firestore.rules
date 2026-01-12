@@ -602,6 +602,38 @@ service cloud.firestore {
       allow update, delete: if isPlatformAdmin(); // Only admins can manage
     }
 
+    // ========================================
+    // 2026 HYBRID MARKETING STRATEGY COLLECTIONS
+    // ========================================
+
+    // Fan Email Captures - authenticated/unauthenticated can create/update their own, artists can read their captures
+    match /fanCaptures/{captureId} {
+      allow create: if true; // Allow unauthenticated email captures
+      allow read: if request.auth != null &&
+                     (resource.data.artistId == request.auth.uid || isPlatformAdmin());
+      // Allow users to update their own subscription (authenticated users only)
+      allow update: if (request.auth != null &&
+                        request.resource.data.userId == request.auth.uid) ||
+                       isPlatformAdmin();
+      allow delete: if isPlatformAdmin();
+    }
+
+    // Smart Links - authenticated users can create, anyone can read
+    match /smartLinks/{linkId} {
+      allow read: if true; // Public readable for link redirection
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+                       (resource.data.createdBy == request.auth.uid || isPlatformAdmin());
+      allow delete: if request.auth != null &&
+                      (resource.data.createdBy == request.auth.uid || isPlatformAdmin());
+    }
+
+    // SEO Collection - admins can manage, anyone can read sitemap
+    match /seo/{document} {
+      allow read: if true; // Public readable for sitemap access
+      allow write: if isPlatformAdmin(); // Only admins can generate sitemap
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

@@ -8,6 +8,7 @@ import { db } from '../firebaseConfig';
 import { useModal } from '../hooks/useModal';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 const FEATURES = [
   {
@@ -92,7 +93,9 @@ export default function Community() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 8 }}>
+    <>
+      <GoogleAdSense />
+      <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 8 }}>
       <Container maxWidth="lg">
         {/* Header */}
         <Box sx={{ textAlign: 'center', mb: 8 }}>
@@ -353,5 +356,6 @@ export default function Community() {
 
       <Footer />
     </Box>
+    </>
   );
 }
