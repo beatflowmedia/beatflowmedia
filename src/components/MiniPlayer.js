@@ -213,7 +213,7 @@ export default function MiniPlayer({
         <div
           className="absolute inset-0 opacity-20 blur-3xl"
           style={{
-            backgroundImage: `url(${song.cover || "/images/default-cover.jpg"})`,
+            backgroundImage: `url(${song.coverUrl || song.cover || "/images/default-cover.jpg"})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'blur(40px)',
@@ -373,7 +373,7 @@ export default function MiniPlayer({
                       }`}
                     >
                       <div className="relative w-8 h-8 flex-shrink-0">
-                        <img src={item.cover} alt={item.title} className="w-full h-full rounded object-cover" />
+                        <img src={item.coverUrl || item.cover || "/images/default-cover.jpg"} alt={item.title} className="w-full h-full rounded object-cover" />
                         {isCurrentPlaying && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded">
                             <PlayingIndicator isPlaying={isCurrentPlaying} size="small" />
@@ -410,7 +410,7 @@ export default function MiniPlayer({
             {/* Album Art - Takes majority of space */}
             <div className="flex-1 mb-3 overflow-hidden rounded-lg">
               <img
-                src={song.cover || "/images/default-cover.jpg"}
+                src={song.coverUrl || song.cover || "/images/default-cover.jpg"}
                 alt={song.title}
                 className="w-full h-full object-cover shadow-lg"
               />
