@@ -1,6 +1,7 @@
 // src/App.js
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { AuthProvider } from "./context/AuthContext";
@@ -21,21 +22,23 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider theme={beatflowTheme}>
-      <CssBaseline />
-      <ModalProvider>
-        <AuthProvider>
-          <LikesProvider>
-            <FavoritesProvider>
-              <PlayerProvider>
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
-              </PlayerProvider>
-            </FavoritesProvider>
-          </LikesProvider>
-        </AuthProvider>
-      </ModalProvider>
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider theme={beatflowTheme}>
+        <CssBaseline />
+        <ModalProvider>
+          <AuthProvider>
+            <LikesProvider>
+              <FavoritesProvider>
+                <PlayerProvider>
+                  <BrowserRouter>
+                    <AppRoutes />
+                  </BrowserRouter>
+                </PlayerProvider>
+              </FavoritesProvider>
+            </LikesProvider>
+          </AuthProvider>
+        </ModalProvider>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 }

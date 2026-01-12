@@ -193,6 +193,7 @@ function Artist() {
           name: decodedArtistName,
           bio: artistSongs[0]?.biography || 'No biography available.',
           cover: artistSongs[0]?.cover || '/images/Logo.png',
+          imageUrl: artistSongs[0]?.cover || '/images/Logo.png',
           genre: artistSongs[0]?.category || 'Unknown'
         };
         setArtist(artistData);
@@ -219,6 +220,9 @@ function Artist() {
 
   // Auto-play specific song from smart link (query parameter: ?song=id)
   useEffect(() => {
+    // Safety checks: ensure all required dependencies are available
+    if (!dispatch || !actions || !state) return;
+
     const songId = searchParams.get('song');
     if (songId && topTracks.length > 0) {
       const songIndex = topTracks.findIndex(track => track.id === songId);
@@ -242,7 +246,7 @@ function Artist() {
         setSearchParams(searchParams, { replace: true });
       }
     }
-  }, [topTracks, searchParams, setSearchParams, dispatch, actions, state.isPlaying]);
+  }, [topTracks, searchParams, setSearchParams, dispatch, actions, state]);
 
   // Load similar artists
   const loadSimilarArtists = async (artistData) => {
