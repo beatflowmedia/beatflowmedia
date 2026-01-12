@@ -16,15 +16,10 @@ const useFollowPlaylist = (playlistId) => {
 
   const toggleFollow = async () => {
     try {
-      console.log('Toggle follow:', { playlistId, isFollowing });
       if (isFollowing) {
-        console.log('Unfollowing playlist...');
         await unfollowPlaylist(playlistId);
-        console.log('Unfollowed successfully');
       } else {
-        console.log('Following playlist...');
         await followPlaylist(playlistId);
-        console.log('Followed successfully');
       }
       setIsFollowing(!isFollowing);
     } catch (error) {
