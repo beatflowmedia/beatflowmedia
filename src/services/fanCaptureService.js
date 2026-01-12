@@ -145,10 +145,19 @@ class FanCaptureService {
       const fanCaptureRef = doc(db, 'fanCaptures', docId);
 
       // Check if subscription already exists
+      // For unauthenticated users, we can't read existing docs due to security rules
+      // So we'll just assume it might be new and use merge
       console.log('🔍 Checking for existing subscription...');
-      const existingDoc = await getDoc(fanCaptureRef);
-      const isNewSubscription = !existingDoc.exists();
-      console.log('Subscription status:', isNewSubscription ? 'NEW' : 'EXISTING');
+      let isNewSubscription = true;
+      try {
+        const existingDoc = await getDoc(fanCaptureRef);
+        isNewSubscription = !existingDoc.exists();
+        console.log('Subscription status:', isNewSubscription ? 'NEW' : 'EXISTING');
+      } catch (readError) {
+        console.log('⚠️ Could not check existing subscription (likely unauthenticated), assuming new');
+        // Permission error is expected for unauthenticated users
+        // We'll just proceed with merge which handles both cases
+      }
 
       // Prepare fan capture data
       const fanCaptureData = {
