@@ -611,9 +611,10 @@ service cloud.firestore {
       allow create: if true; // Allow unauthenticated email captures
       allow read: if request.auth != null &&
                      (resource.data.artistId == request.auth.uid || isPlatformAdmin());
-      // Allow users to update their own subscription (authenticated users only)
-      allow update: if (request.auth != null &&
-                        request.resource.data.userId == request.auth.uid) ||
+      // Allow anyone to update subscription status (for unsubscribe links)
+      // Only allow updating specific fields: subscribed, unsubscribedAt, source
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subscribed', 'unsubscribedAt', 'source', 'lastInteraction']) ||
+                       (request.auth != null && request.resource.data.userId == request.auth.uid) ||
                        isPlatformAdmin();
       allow delete: if isPlatformAdmin();
     }
