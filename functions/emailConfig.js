@@ -13,8 +13,8 @@
 module.exports = {
   // SMTP Configuration (for sending emails)
   smtp: {
-    user: 'beatflowmediagroup@gmail.com',
-    pass: 'eezqfupeocueocow', // App password for beatflowmediagroup@gmail.com
+    user: process.env.SMTP_USER || 'beatflowmediagroup@gmail.com',
+    pass: process.env.SMTP_PASSWORD, // REQUIRED: Set SMTP_PASSWORD in Netlify environment variables
     service: 'gmail'
   },
 
