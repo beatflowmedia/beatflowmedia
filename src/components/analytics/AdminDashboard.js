@@ -63,7 +63,8 @@ const PlatformOverview = ({ data }) => {
     totalAlbums: 0,
     totalPlaylists: 0,
     totalApplications: 0,
-    pendingApplications: 0
+    pendingApplications: 0,
+    errorRate: 0
   };
 
   const keyMetrics = [
@@ -156,7 +157,7 @@ const PlatformOverview = ({ data }) => {
             <Grid item xs={6} md={2}>
               <Box textAlign="center">
                 <Typography variant="h5" color="success.main">
-                  {metrics.errorRate}%
+                  {(metrics.errorRate || 0).toFixed(2)}%
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Error Rate
@@ -165,41 +166,31 @@ const PlatformOverview = ({ data }) => {
             </Grid>
             <Grid item xs={6} md={2}>
               <Box textAlign="center">
-                <Typography variant="h5" color="info.main">
-                  2.4TB
+                <Typography variant="h5" color="secondary.main">
+                  {(metrics.totalPlays || 0).toLocaleString()}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Daily Transfer
+                  Total Plays
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} md={2}>
               <Box textAlign="center">
-                <Typography variant="h5" color="secondary.main">
-                  15.7M
+                <Typography variant="h5" color="info.main">
+                  {(metrics.totalLikes || 0).toLocaleString()}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Daily Streams
+                  Total Likes
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={6} md={2}>
               <Box textAlign="center">
                 <Typography variant="h5" color="warning.main">
-                  4.2s
+                  {(metrics.totalFollows || 0).toLocaleString()}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Avg Load Time
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} md={2}>
-              <Box textAlign="center">
-                <Typography variant="h5" color="error.main">
-                  23
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Active Incidents
+                  Total Follows
                 </Typography>
               </Box>
             </Grid>

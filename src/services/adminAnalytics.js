@@ -43,7 +43,10 @@ export class AdminAnalyticsService {
         totalAlbums,
         totalPlaylists,
         totalApplications,
-        pendingApplications
+        pendingApplications,
+        totalPlays,
+        totalLikes,
+        totalFollows
       ] = await Promise.all([
         this.getCollectionCount('users'),
         this.getCollectionCount('songs'),
@@ -51,8 +54,14 @@ export class AdminAnalyticsService {
         this.getCollectionCount('albums'),
         this.getCollectionCount('playlists'),
         this.getCollectionCount('applications'),
-        this.getConditionalCount('applications', where('status', '==', 'pending'))
+        this.getConditionalCount('applications', where('status', '==', 'pending')),
+        this.getCollectionCount('playEvents'),
+        this.getCollectionCount('likeEvents'),
+        this.getCollectionCount('followEvents')
       ]);
+
+      // Calculate error rate (placeholder - would need error tracking collection)
+      const errorRate = 0.02; // 0.02% default
 
       return {
         totalUsers,
@@ -62,6 +71,10 @@ export class AdminAnalyticsService {
         totalPlaylists,
         totalApplications,
         pendingApplications,
+        totalPlays,
+        totalLikes,
+        totalFollows,
+        errorRate,
         timestamp: Date.now()
       };
     } catch (error) {
