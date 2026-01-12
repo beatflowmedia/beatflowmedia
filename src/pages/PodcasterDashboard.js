@@ -40,6 +40,7 @@ import { useModal } from '../hooks/useModal';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { useSongPlays } from '../hooks/useSongPlays';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -48,6 +49,19 @@ function TabPanel({ children, value, index }) {
     </div>
   );
 }
+
+// Utility function for formatting numbers
+const formatNumber = (num) => {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num;
+};
+
+// Helper component to display real-time play count
+const PodcastPlayCountCell = ({ podcastId }) => {
+  const playCount = useSongPlays(podcastId);
+  return <>{formatNumber(playCount)}</>;
+};
 
 export default function PodcasterDashboard() {
   const { user, role } = useAuth();
@@ -141,12 +155,6 @@ export default function PodcasterDashboard() {
       }
     }
     handleMenuClose();
-  };
-
-  const formatNumber = (num) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num;
   };
 
   const formatCurrency = (amount) => {
@@ -300,7 +308,7 @@ export default function PodcasterDashboard() {
                             color={podcast.status === 'Published' ? 'success' : 'warning'}
                           />
                         </TableCell>
-                        <TableCell align="right">{formatNumber(podcast.playCount || 0)}</TableCell>
+                        <TableCell align="right"><PodcastPlayCountCell podcastId={podcast.id} /></TableCell>
                         <TableCell align="right">{formatNumber(podcast.likeCount || 0)}</TableCell>
                         <TableCell align="right">{formatCurrency(podcast.revenue || 0)}</TableCell>
                         <TableCell align="right">

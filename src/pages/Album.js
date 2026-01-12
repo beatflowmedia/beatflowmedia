@@ -39,7 +39,7 @@ import { doc, collection, query, where, onSnapshot, updateDoc, addDoc, serverTim
 import PurchaseButton from '../components/PurchaseButton';
 import TrackRowCard from '../components/TrackRowCard';
 import { stripeService } from '../services/stripeService';
-import { getSongMetrics } from '../services/engagementMetrics';
+import { getSongMetrics, getBatchPlayCounts } from '../services/engagementMetrics';
 
 // Lazy load dialogs to reduce initial bundle size
 const Dialog = lazy(() => import('@mui/material/Dialog'));
@@ -67,6 +67,7 @@ function Album() {
   const [error, setError] = useState(null);
   const [tracks, setTracks] = useState([]);
   const [trackMetrics, setTrackMetrics] = useState({});
+  const [playCountsMap, setPlayCountsMap] = useState({});
   const [reviews, setReviews] = useState([]);
   const [userRating, setUserRating] = useState(0);
   const [userReview, setUserReview] = useState('');
@@ -160,6 +161,14 @@ function Album() {
 
           console.log('✅ Loaded', tracksData.length, 'tracks for album');
           setTracks(tracksData);
+
+          // Load play counts from songMetrics
+          if (tracksData.length > 0) {
+            const songIds = tracksData.map(t => t.id).filter(Boolean);
+            getBatchPlayCounts(songIds).then(counts => {
+              setPlayCountsMap(counts);
+            });
+          }
         }, (error) => {
           console.error('Error loading tracks:', error);
         });
@@ -251,15 +260,18 @@ function Album() {
       ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length
       : 0;
 
+    // Calculate total plays from songMetrics
+    const totalPlays = tracks.reduce((sum, track) => sum + (playCountsMap[track.id] || 0), 0);
+
     return {
       trackCount: tracks.length,
       totalDuration: totalDuration,
       formattedDuration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
-      totalPlays: tracks.reduce((sum, track) => sum + (track.playCount || 0), 0),
+      totalPlays,
       averageRating: avgRating,
       reviewCount: reviews.length
     };
-  }, [tracks, reviews]);
+  }, [tracks, reviews, playCountsMap]);
 
   // Check if we're currently playing this album
   const isPlayingThisAlbum = React.useMemo(() => {

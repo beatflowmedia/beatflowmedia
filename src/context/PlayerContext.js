@@ -8,7 +8,8 @@ import React, {
 import LegacyAudioEngine from "../engine/LegacyAudioEngine";
 import MseEngine from "../engine/MseEngine";
 import useQueue from "../hooks/useQueue";
-import { incrementPlayCount } from "../hooks/useSongPlays";
+import { trackPlay } from "../services/engagementMetrics";
+import { useAuth } from "./AuthContext";
 
 // --------------------
 // Reducer & State
@@ -184,6 +185,7 @@ const PlayerContext = createContext();
 
 export const PlayerProvider = ({ children }) => {
   const [state, dispatchRaw] = useReducer(reducer, initialState);
+  const { user } = useAuth();
   // Ref to audio element in DOM
   const audioRef = useRef(null);
   // Choose engine class based on env flag
@@ -279,7 +281,7 @@ export const PlayerProvider = ({ children }) => {
     const unsubTime = engine.onTimeUpdate((time) => {
       dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: time });
 
-      // Increment play count when song reaches 50% of duration
+      // Track play when song reaches 50% of duration (DRY - uses engagementMetrics service)
       const item = state.queue[state.currentIndex];
       if (
         item?.id &&
@@ -288,7 +290,18 @@ export const PlayerProvider = ({ children }) => {
         !playCountIncrementedRef.current
       ) {
         playCountIncrementedRef.current = true;
-        incrementPlayCount(item.id);
+        console.log('🎵 Play count triggered at 50% - Song:', item.id, 'User:', user?.uid || 'anonymous', 'Time:', time, 'Duration:', state.duration);
+        // Track play with metadata (handles race conditions with increment())
+        trackPlay(user?.uid || 'anonymous', item.id, {
+          duration: state.duration,
+          completionRate: (time / state.duration) * 100,
+          source: 'web',
+          context: 'player'
+        }).then(() => {
+          console.log('✅ Play count tracked successfully for song:', item.id);
+        }).catch(err => {
+          console.error('❌ Failed to track play:', err);
+        });
       }
     });
     const unsubDuration = engine.onDurationChange((duration) =>

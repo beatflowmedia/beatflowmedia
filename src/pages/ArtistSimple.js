@@ -18,6 +18,8 @@ import { stripeService } from '../services/stripeService';
 import { toast } from 'react-toastify';
 import { getArtistMetrics } from '../services/engagementMetrics';
 import { getArtistImageUrl } from '../hooks/useArtistImage';
+import SongPlayCount from '../components/SongPlayCount';
+import { useArtistFollowers } from '../hooks/useArtistFollowers';
 
 export default function ArtistSimple() {
   console.log('[ArtistSimple] Component mounted/rendered');
@@ -36,13 +38,22 @@ export default function ArtistSimple() {
   const [artistAlbums, setArtistAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [followerCount, setFollowerCount] = useState(0);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
   const [purchasedSongIds, setPurchasedSongIds] = useState(new Set());
 
   // Use follow artist hook
   const { isFollowing, toggleFollow } = useFollowArtist(artist?.name);
+
+  // Use real-time follower count from artistMetrics collection
+  const followerCount = useArtistFollowers(artist?.name);
+
+  // Debug: Log artist name being used for following
+  useEffect(() => {
+    if (artist?.name) {
+      console.log('🎯 Artist name used for following:', artist.name);
+    }
+  }, [artist?.name]);
 
   // Load user's purchases
   useEffect(() => {
@@ -74,35 +85,6 @@ export default function ArtistSimple() {
     return () => window.removeEventListener('purchaseComplete', handlePurchaseComplete);
   }, [user]);
 
-  // Load follower count from engagement metrics
-  useEffect(() => {
-    const loadFollowerCount = async () => {
-      if (!artistId) return;
-
-      try {
-        // Use engagement metrics service for accurate follower count
-        const metrics = await getArtistMetrics(artistId);
-        setFollowerCount(metrics.followerCount || 0);
-      } catch (error) {
-        console.error('Error loading follower metrics:', error);
-        // Fallback to old method if metrics service fails
-        if (artist?.name) {
-          try {
-            const usersQuery = query(
-              collection(db, 'users'),
-              where('followedArtists', 'array-contains', artist.name)
-            );
-            const usersSnapshot = await getDocs(usersQuery);
-            setFollowerCount(usersSnapshot.size);
-          } catch (fallbackError) {
-            console.error('Fallback follower count failed:', fallbackError);
-          }
-        }
-      }
-    };
-
-    loadFollowerCount();
-  }, [artistId, artist?.name, isFollowing]); // Reload when follow status changes
 
   // Load artist data from Firebase
   useEffect(() => {
@@ -436,11 +418,9 @@ export default function ArtistSimple() {
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
             {/* Show real follower count from Firestore */}
-            {followerCount > 0 && (
-              <Typography variant="body1" sx={{ color: 'grey.400' }}>
-                {followerCount.toLocaleString()} {followerCount === 1 ? 'follower' : 'followers'}
-              </Typography>
-            )}
+            <Typography variant="body1" sx={{ color: 'grey.400' }}>
+              {followerCount.toLocaleString()} {followerCount === 1 ? 'follower' : 'followers'}
+            </Typography>
 
             {/* Calculate and show total plays from all songs */}
             {(() => {
@@ -448,9 +428,7 @@ export default function ArtistSimple() {
               if (totalPlays > 0) {
                 return (
                   <>
-                    {followerCount > 0 && (
-                      <Typography variant="body1" sx={{ color: 'grey.600' }}>•</Typography>
-                    )}
+                    <Typography variant="body1" sx={{ color: 'grey.600' }}>•</Typography>
                     <Typography variant="body1" sx={{ color: 'grey.400' }}>
                       {totalPlays.toLocaleString()} total plays
                     </Typography>
@@ -468,7 +446,11 @@ export default function ArtistSimple() {
               <Button
                 variant={isFollowing ? "outlined" : "contained"}
                 size="small"
-                onClick={toggleFollow}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleFollow();
+                }}
                 sx={{
                   bgcolor: isFollowing ? 'transparent' : '#1DB954',
                   borderColor: '#1DB954',
@@ -594,6 +576,10 @@ export default function ArtistSimple() {
                     <Typography variant="body2" sx={{ color: 'grey.400' }}>
                       {song.artistName || artist.name}
                     </Typography>
+                  </Box>
+                  {/* Play Count */}
+                  <Box onClick={(e) => e.stopPropagation()}>
+                    <SongPlayCount songId={song.id} />
                   </Box>
                   {/* Purchase Button */}
                   <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', zIndex: 10 }}>

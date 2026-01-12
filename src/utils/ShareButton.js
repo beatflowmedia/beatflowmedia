@@ -14,7 +14,9 @@ import {
 import { toast } from 'react-toastify';
 import {
   getSongUrl,
+  getPlaylistUrl,
   getShareText,
+  getPlaylistShareText,
   shareOnTwitter,
   shareOnFacebook,
   shareOnLinkedIn,
@@ -25,17 +27,28 @@ import {
 
 /**
  * DRY Share Button Component
- * Handles sharing songs via social media, email, or clipboard
+ * Handles sharing songs or playlists via social media, email, or clipboard
  */
-export default function ShareButton({ song, size = 'small', iconSize = 'default', iconColor = 'grey.400', hoverColor = '#1DB954' }) {
+export default function ShareButton({
+  song,
+  playlist,
+  size = 'small',
+  iconSize = 'default',
+  iconColor = 'grey.400',
+  hoverColor = '#1DB954'
+}) {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
-  // Safety check - don't render if song is invalid
-  if (!song || !song.id) {
+  // Safety check - don't render if both song and playlist are invalid
+  if ((!song || !song.id) && (!playlist || !playlist.id)) {
     return null;
   }
+
+  const isPlaylist = !!playlist;
+  const item = isPlaylist ? playlist : song;
+  const itemType = isPlaylist ? 'playlist' : 'song';
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -51,27 +64,30 @@ export default function ShareButton({ song, size = 'small', iconSize = 'default'
     e.stopPropagation();
     handleClose();
 
-    const songUrl = getSongUrl(song.id);
-    const shareText = getShareText(song.title, song.id);
+    const itemUrl = isPlaylist ? getPlaylistUrl(item.id) : getSongUrl(item.id);
+    const shareText = isPlaylist
+      ? getPlaylistShareText(item.name, item.id)
+      : getShareText(item.title, item.id);
+    const itemName = isPlaylist ? item.name : item.title;
 
     try {
       if (shareFunction === 'open') {
-        // Navigate to song page within the app (same window)
-        navigate(`/song/${song.id}`);
+        // Navigate to item page within the app (same window)
+        navigate(`/${itemType}/${item.id}`);
       } else if (shareFunction === 'copy') {
-        await copyToClipboard(songUrl);
+        await copyToClipboard(itemUrl);
         toast.success('Link copied to clipboard!');
       } else if (shareFunction === 'twitter') {
         shareOnTwitter(shareText);
       } else if (shareFunction === 'facebook') {
-        shareOnFacebook(songUrl);
+        shareOnFacebook(itemUrl);
       } else if (shareFunction === 'linkedin') {
-        shareOnLinkedIn(songUrl);
+        shareOnLinkedIn(itemUrl);
       } else if (shareFunction === 'reddit') {
-        shareOnReddit(songUrl);
+        shareOnReddit(itemUrl);
       } else if (shareFunction === 'email') {
         shareViaEmail(
-          `Check out "${song.title}" on BeatFlow Media`,
+          `Check out "${itemName}" on BeatFlow Media`,
           shareText
         );
       }
@@ -111,7 +127,7 @@ export default function ShareButton({ song, size = 'small', iconSize = 'default'
           <ListItemIcon>
             <OpenInBrowser sx={{ color: '#1DB954' }} fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Open Song</ListItemText>
+          <ListItemText>Open {isPlaylist ? 'Playlist' : 'Song'}</ListItemText>
         </MenuItem>
 
         <MenuItem onClick={(e) => handleShareOption(e, 'copy')}>

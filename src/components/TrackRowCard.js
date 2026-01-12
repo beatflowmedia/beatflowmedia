@@ -16,6 +16,7 @@ import {
   MoreVert
 } from '@mui/icons-material';
 import PurchaseButton from './PurchaseButton';
+import { useSongPlays } from '../hooks/useSongPlays';
 
 /**
  * Reusable track row component for displaying songs in album and artist pages
@@ -37,6 +38,9 @@ export default function TrackRowCard({
   likeCount = 0,
   showMetrics = true
 }) {
+  // Get real-time play count from songMetrics collection
+  const playCount = useSongPlays(track?.id);
+
   return (
     <Card
       sx={{
@@ -97,7 +101,7 @@ export default function TrackRowCard({
           </Box>
           <Typography variant="body2" sx={{ color: 'grey.400' }}>
             {showArtist && artistName ? `${artistName} • ` : ''}
-            {(track.playCount || 0).toLocaleString()} plays
+            {playCount.toLocaleString()} plays
           </Typography>
         </Box>
 

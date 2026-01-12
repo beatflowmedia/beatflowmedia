@@ -41,6 +41,7 @@ import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'fire
 import { toast } from 'react-toastify';
 import { checkMembershipStatus } from '../services/membershipService';
 import { useModal } from '../hooks/useModal';
+import { useSongPlays } from '../hooks/useSongPlays';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -49,6 +50,19 @@ function TabPanel({ children, value, index }) {
     </div>
   );
 }
+
+// Utility function for formatting numbers
+const formatNumber = (num) => {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num;
+};
+
+// Helper component to display real-time play count
+const SongPlayCountCell = ({ songId }) => {
+  const playCount = useSongPlays(songId);
+  return <>{formatNumber(playCount)}</>;
+};
 
 export default function ArtistDashboardNew() {
   const { user, role } = useAuth();
@@ -185,12 +199,6 @@ export default function ArtistDashboardNew() {
       }
     }
     handleMenuClose();
-  };
-
-  const formatNumber = (num) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num;
   };
 
   const formatCurrency = (amount) => {
@@ -377,7 +385,7 @@ export default function ArtistDashboardNew() {
                             color={song.status === 'Published' ? 'success' : 'warning'}
                           />
                         </TableCell>
-                        <TableCell align="right">{formatNumber(song.playCount || 0)}</TableCell>
+                        <TableCell align="right"><SongPlayCountCell songId={song.id} /></TableCell>
                         <TableCell align="right">{formatNumber(song.likeCount || 0)}</TableCell>
                         <TableCell align="right">{formatCurrency(song.revenue || 0)}</TableCell>
                         <TableCell align="right">

@@ -18,6 +18,7 @@ import {
   arrayRemove,
   onSnapshot
 } from "firebase/firestore";
+import { trackFollow, trackUnfollow, trackPlaylistFollow, trackPlaylistUnfollow } from "../services/engagementMetrics";
 
 const AuthContext = createContext(null);
 
@@ -26,6 +27,8 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   // Use ref to store followedArtists to avoid triggering re-renders
   const followedArtistsRef = useRef([]);
+  // Use ref to store followedPlaylists to avoid triggering re-renders
+  const followedPlaylistsRef = useRef([]);
 
   const auth = getAuth();
 
@@ -60,6 +63,7 @@ export const AuthProvider = ({ children }) => {
       if (!firebaseUser) {
         setUser(null);
         followedArtistsRef.current = [];
+        followedPlaylistsRef.current = [];
         return;
       }
 
@@ -70,9 +74,11 @@ export const AuthProvider = ({ children }) => {
         // Set initial user WITHOUT likes (likes handled by separate LikesContext)
         const userData = snap.exists() ? snap.data() : {};
         const initialFollows = userData?.follows || [];
+        const initialPlaylistFollows = userData?.followedPlaylists || [];
 
-        // Initialize ref with initial follows
+        // Initialize refs with initial follows
         followedArtistsRef.current = initialFollows;
+        followedPlaylistsRef.current = initialPlaylistFollows;
 
         setUser({
           ...firebaseUser,
@@ -108,10 +114,12 @@ export const AuthProvider = ({ children }) => {
             const data = ds.data();
             if (data) {
               const newFollows = data?.follows || [];
+              const newPlaylistFollows = data?.followedPlaylists || [];
               const newRole = data?.role || null;
 
-              // Update ref immediately (doesn't trigger re-render)
+              // Update refs immediately (doesn't trigger re-render)
               followedArtistsRef.current = newFollows;
+              followedPlaylistsRef.current = newPlaylistFollows;
 
               // Only update state if role changed (follows changes don't need to trigger re-renders)
               setRole(prevRole => {
@@ -203,14 +211,35 @@ export const AuthProvider = ({ children }) => {
   const followArtist = useCallback(async (name) => {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid), { follows: arrayUnion(name) });
+    // Track follow event and update artistMetrics
+    await trackFollow(user.uid, name, name);
   }, [user]);
 
   const unfollowArtist = useCallback(async (name) => {
     if (!user) return;
     await updateDoc(doc(db, "users", user.uid), { follows: arrayRemove(name) });
+    // Track unfollow event and update artistMetrics
+    await trackUnfollow(user.uid, name, name);
   }, [user]);
 
   const isArtistFollowed = useCallback((name) => followedArtistsRef.current.includes(name), []);
+
+  // Follow/unfollow playlist
+  const followPlaylist = useCallback(async (playlistId) => {
+    if (!user) return;
+    await updateDoc(doc(db, "users", user.uid), { followedPlaylists: arrayUnion(playlistId) });
+    // Track follow event and update playlistMetrics
+    await trackPlaylistFollow(user.uid, playlistId);
+  }, [user]);
+
+  const unfollowPlaylist = useCallback(async (playlistId) => {
+    if (!user) return;
+    await updateDoc(doc(db, "users", user.uid), { followedPlaylists: arrayRemove(playlistId) });
+    // Track unfollow event and update playlistMetrics
+    await trackPlaylistUnfollow(user.uid, playlistId);
+  }, [user]);
+
+  const isPlaylistFollowed = useCallback((playlistId) => followedPlaylistsRef.current.includes(playlistId), []);
 
   // Update user role (for creator onboarding)
   const updateUserRole = useCallback(async (newRole) => {
@@ -239,16 +268,20 @@ export const AuthProvider = ({ children }) => {
     user,
     role,
     followedArtists: followedArtistsRef.current, // Use ref value to avoid triggering re-renders
+    followedPlaylists: followedPlaylistsRef.current, // Use ref value to avoid triggering re-renders
     signInWithGoogle,
     signOutUser,
     updateFavorites,
     followArtist,
     unfollowArtist,
     isArtistFollowed,
+    followPlaylist,
+    unfollowPlaylist,
+    isPlaylistFollowed,
     updateUserRole,
     hasRole,
     isCreator
-  }), [user, role, signInWithGoogle, signOutUser, updateFavorites, followArtist, unfollowArtist, isArtistFollowed, updateUserRole, hasRole, isCreator]);
+  }), [user, role, signInWithGoogle, signOutUser, updateFavorites, followArtist, unfollowArtist, isArtistFollowed, followPlaylist, unfollowPlaylist, isPlaylistFollowed, updateUserRole, hasRole, isCreator]);
 
   return (
     <AuthContext.Provider value={contextValue}>

@@ -63,6 +63,9 @@ import {
 } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { stripeService } from '../services/stripeService';
+import { getBatchPlayCounts } from '../services/engagementMetrics';
+import { usePlaylistFollowers } from '../hooks/usePlaylistFollowers';
+import useFollowPlaylist from '../hooks/useFollowPlaylist';
 
 const SORT_OPTIONS = [
   { label: 'Custom Order', value: 'custom' },
@@ -84,9 +87,16 @@ function Playlist() {
   // Playlist state
   const [playlist, setPlaylist] = useState(null);
   const [tracks, setTracks] = useState([]);
+  const [playCountsMap, setPlayCountsMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPrivatePlaylist, setIsPrivatePlaylist] = useState(true);
+
+  // Use real-time follower count from playlistMetrics collection
+  const followerCount = usePlaylistFollowers(playlistId);
+
+  // Use follow playlist hook
+  const { isFollowing, toggleFollow } = useFollowPlaylist(playlistId);
 
   // UI state
   const [isOwner, setIsOwner] = useState(false);
@@ -104,7 +114,6 @@ function Playlist() {
 
   // Modal states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [, setShareDialogOpen] = useState(false);
   const [, setCollaboratorDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -245,8 +254,14 @@ function Playlist() {
 
             // Check if user is owner
             const isUserOwner = playlistData.creatorId === user.uid;
+            console.log('🔍 Owner check - creatorId:', playlistData.creatorId, 'user.uid:', user.uid, 'isOwner:', isUserOwner);
+
+            // Check if user is collaborator
+            const isUserCollaborator = playlistData.collaborators?.includes(user.uid) || false;
+            console.log('🔍 Collaborator check:', isUserCollaborator, 'collaborators:', playlistData.collaborators);
+
             setIsOwner(isUserOwner);
-            setIsCollaborator(false);
+            setIsCollaborator(isUserCollaborator);
 
             setEditForm({
               name: playlistData.name,
@@ -289,6 +304,19 @@ function Playlist() {
     };
   }, [playlistId, user?.uid]);
 
+  // Load play counts from songMetrics collection when tracks change
+  useEffect(() => {
+    const loadPlayCounts = async () => {
+      if (tracks.length === 0) return;
+
+      const songIds = tracks.map(track => track.id).filter(Boolean);
+      const counts = await getBatchPlayCounts(songIds);
+      setPlayCountsMap(counts);
+    };
+
+    loadPlayCounts();
+  }, [tracks]);
+
   // Filter and sort tracks
   const filteredAndSortedTracks = React.useMemo(() => {
     let filtered = tracks;
@@ -319,12 +347,12 @@ function Playlist() {
         case 'duration':
           return (b.duration || 0) - (a.duration || 0);
         case 'popularity':
-          return (b.playCount || 0) - (a.playCount || 0);
+          return (playCountsMap[b.id] || 0) - (playCountsMap[a.id] || 0);
         default:
           return 0;
       }
     });
-  }, [tracks, filterQuery, sortBy]);
+  }, [tracks, filterQuery, sortBy, playCountsMap]);
 
   // Calculate playlist stats
   const playlistStats = React.useMemo(() => {
@@ -342,14 +370,17 @@ function Playlist() {
       tracksWithDuration: tracks.filter(t => t.duration).length
     });
 
+    // Calculate total plays from songMetrics
+    const totalPlays = tracks.reduce((sum, track) => sum + (playCountsMap[track.id] || 0), 0);
+
     return {
       trackCount: tracks.length,
       totalDuration: totalDuration,
       formattedDuration: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
-      followers: playlist?.followers || 0,
-      plays: tracks.reduce((sum, track) => sum + (track.playCount || 0), 0)
+      followers: followerCount,
+      plays: totalPlays
     };
-  }, [tracks, playlist]);
+  }, [tracks, playCountsMap, followerCount]);
 
   // Check if we're currently playing this playlist
   const isPlayingThisPlaylist = React.useMemo(() => {
@@ -388,24 +419,9 @@ function Playlist() {
     }
   }, [tracks, dispatch, actions, state.isPlaying, state.queue, state.currentIndex]);
 
-  const handleShufflePlay = useCallback(() => {
-    if (tracks.length === 0) return;
-
-    // Shuffle tracks and start playing
-    const shuffled = [...tracks].sort(() => Math.random() - 0.5);
-    dispatch({
-      type: actions.SET_QUEUE,
-      payload: {
-        queue: shuffled,
-        currentIndex: 0
-      }
-    });
-
-    // Only toggle if already playing, otherwise ensure it starts
-    if (!state.isPlaying) {
-      dispatch({ type: actions.TOGGLE_PLAY });
-    }
-  }, [tracks, dispatch, actions, state.isPlaying]);
+  const handleToggleShuffle = useCallback(() => {
+    dispatch({ type: actions.TOGGLE_SHUFFLE });
+  }, [dispatch, actions]);
 
   const handlePlayTrack = useCallback((track, index) => {
     // Set playlist as queue starting from selected track
@@ -607,7 +623,7 @@ function Playlist() {
   };
 
   const handleRemoveTrack = async (track) => {
-    if (!isOwner || !user?.uid) return;
+    if ((!isOwner && !isCollaborator) || !user?.uid) return;
 
     try {
       const playlistRef = getPlaylistRef();
@@ -627,7 +643,7 @@ function Playlist() {
 
   // eslint-disable-next-line no-unused-vars
   const handleReorderTracks = async (result) => {
-    if (!result.destination || !isOwner || !user?.uid) return;
+    if (!result.destination || (!isOwner && !isCollaborator) || !user?.uid) return;
 
     const sourceIndex = result.source.index;
     const destIndex = result.destination.index;
@@ -685,22 +701,6 @@ function Playlist() {
   //   }
   // };
 
-  const handleFollowPlaylist = async () => {
-    if (!user || isOwner) return;
-
-    try {
-      // Note: Following playlists only works for shared/public playlists
-      // Since playlists are in user subcollections, this feature may need redesign
-      await updateDoc(doc(db, 'users', user.uid), {
-        followedPlaylists: arrayUnion(playlistId)
-      });
-
-      toast.success('Following playlist');
-    } catch (err) {
-      console.error('Error following playlist:', err);
-      toast.error('Failed to follow playlist');
-    }
-  };
 
   // eslint-disable-next-line no-unused-vars
   const formatDuration = (seconds) => {
@@ -715,6 +715,9 @@ function Playlist() {
     const d = date.toDate ? date.toDate() : new Date(date);
     return d.toLocaleDateString();
   };
+
+  // Debug render state
+  console.log('🎨 Rendering playlist - isOwner:', isOwner, 'isCollaborator:', isCollaborator, 'user:', user?.uid);
 
   if (loading) {
     return (
@@ -829,6 +832,16 @@ function Playlist() {
               <Typography variant="body2" sx={{ color: 'grey.300' }}>
                 {playlistStats.trackCount} songs, {playlistStats.formattedDuration}
               </Typography>
+              <Typography variant="body2" sx={{ color: 'grey.300' }}>
+                •
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: 'grey.300' }}
+                title="Total cumulative plays from all songs in this playlist"
+              >
+                {playlistStats.plays.toLocaleString()} total song plays
+              </Typography>
             </Box>
 
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -850,46 +863,54 @@ function Playlist() {
 
               <IconButton
                 size="large"
-                onClick={() => dispatch({ type: actions.TOGGLE_SHUFFLE })}
+                onClick={handleToggleShuffle}
                 disabled={tracks.length === 0}
                 sx={{
                   color: state.shuffleOn ? '#1DB954' : 'grey.300',
                   '&:hover': { color: state.shuffleOn ? '#1ed760' : 'white' }
                 }}
-                title={state.shuffleOn ? 'Disable shuffle' : 'Enable shuffle'}
+                title={state.shuffleOn ? "Shuffle on" : "Shuffle off"}
               >
                 <Shuffle />
               </IconButton>
 
               {!isOwner && user && (
                 <Button
-                  variant="outlined"
+                  variant={isFollowing ? "contained" : "outlined"}
                   size="large"
                   startIcon={<PersonAdd />}
-                  onClick={handleFollowPlaylist}
+                  onClick={toggleFollow}
                   sx={{
-                    borderColor: 'grey.500',
+                    borderColor: isFollowing ? '#1DB954' : 'grey.500',
+                    bgcolor: isFollowing ? '#1DB954' : 'transparent',
                     color: 'white',
-                    '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' }
+                    '&:hover': {
+                      borderColor: isFollowing ? '#1ed760' : 'white',
+                      bgcolor: isFollowing ? '#1ed760' : 'rgba(255,255,255,0.1)'
+                    }
                   }}
                 >
-                  Follow
+                  {isFollowing ? 'Following' : 'Follow'}
                 </Button>
               )}
 
-              <IconButton
+              <ShareButton
+                playlist={playlist}
                 size="large"
-                onClick={() => setShareDialogOpen(true)}
-                sx={{ color: 'grey.300', '&:hover': { color: 'white' } }}
-              >
-                <Share />
-              </IconButton>
+                iconSize="large"
+                iconColor="grey.300"
+                hoverColor="white"
+              />
 
               {isOwner && (
                 <IconButton
                   size="large"
-                  onClick={() => setEditDialogOpen(true)}
+                  onClick={() => {
+                    console.log('✏️ Edit button clicked - isOwner:', isOwner);
+                    setEditDialogOpen(true);
+                  }}
                   sx={{ color: 'grey.300', '&:hover': { color: 'white' } }}
+                  title="Edit playlist (owner only)"
                 >
                   <Edit />
                 </IconButton>
@@ -1168,15 +1189,17 @@ function Playlist() {
 
         <Divider sx={{ bgcolor: 'grey.700' }} />
 
-        <MenuItem
-          onClick={() => handlePurchaseTrack(selectedTrack)}
-          sx={{ color: 'white' }}
-        >
-          <ListItemIcon>
-            <ShoppingCart sx={{ color: '#1DB954' }} />
-          </ListItemIcon>
-          <ListItemText>Purchase ($0.99)</ListItemText>
-        </MenuItem>
+        {selectedTrack && user && selectedTrack.uploadedBy !== user.uid && (
+          <MenuItem
+            onClick={() => handlePurchaseTrack(selectedTrack)}
+            sx={{ color: 'white' }}
+          >
+            <ListItemIcon>
+              <ShoppingCart sx={{ color: '#1DB954' }} />
+            </ListItemIcon>
+            <ListItemText>Purchase (${((selectedTrack.price || 99) / 100).toFixed(2)})</ListItemText>
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Edit Playlist Dialog */}

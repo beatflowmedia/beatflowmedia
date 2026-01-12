@@ -53,6 +53,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import ShareButton from '../utils/ShareButton';
+import SongPlayCount from '../components/SongPlayCount';
 import {
   doc,
   getDoc,
@@ -68,6 +69,18 @@ import {
 import { toast } from 'react-toastify';
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
+// Utility function for formatting numbers
+const formatNumber = (num) => {
+  if (!num && num !== 0) return '0';
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+};
 
 function Artist() {
   // Hooks must be called first
@@ -364,16 +377,6 @@ function Artist() {
       toast.error('Failed to update follow status');
     }
   }, [user, artist, followArtist, unfollowArtist, isArtistFollowed]);
-
-  const formatNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
 
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -771,9 +774,9 @@ function Artist() {
                           )}
                         </Box>
 
-                        <Typography variant="body2" sx={{ color: 'grey.400', minWidth: 60 }}>
-                          {formatNumber(track.playCount || 0)}
-                        </Typography>
+                        <Box sx={{ minWidth: 60 }}>
+                          <SongPlayCount songId={track.id} />
+                        </Box>
 
                         <IconButton
                           size="small"

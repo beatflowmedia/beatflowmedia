@@ -57,6 +57,7 @@ import { toast } from 'react-toastify';
 import StripeConnectOnboarding from '../components/StripeConnectOnboarding';
 import { checkMembershipStatus } from '../services/membershipService';
 import ArtistCampaignManager from '../components/ArtistCampaignManager';
+import { useSongPlays } from '../hooks/useSongPlays';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -65,6 +66,18 @@ function TabPanel({ children, value, index }) {
     </div>
   );
 }
+
+// Helper component to display real-time play count
+const SongPlayChip = ({ songId }) => {
+  const playCount = useSongPlays(songId);
+  if (playCount === 0) return null;
+  return <Chip label={`${playCount.toLocaleString()} plays`} size="small" sx={{ mt: 0.5 }} />;
+};
+
+const SongPlayText = ({ songId }) => {
+  const playCount = useSongPlays(songId);
+  return <>{playCount.toLocaleString()} plays</>;
+};
 
 export default function ArtistProfileManager() {
   const { user } = useAuth();
@@ -1088,7 +1101,7 @@ export default function ArtistProfileManager() {
                               size="small"
                               sx={{ mt: 0.5, mr: 1 }}
                             />
-                            {song.playCount > 0 && <Chip label={`${song.playCount.toLocaleString()} plays`} size="small" sx={{ mt: 0.5 }} />}
+                            <SongPlayChip songId={song.id} />
                           </>
                         }
                       />
@@ -1670,7 +1683,7 @@ export default function ArtistProfileManager() {
                               secondary={
                                 <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
                                   <Typography variant="caption" color="text.secondary">
-                                    {(song.playCount || 0).toLocaleString()} plays
+                                    <SongPlayText songId={song.id} />
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary">
                                     {(song.likeCount || 0).toLocaleString()} likes
@@ -1726,7 +1739,7 @@ export default function ArtistProfileManager() {
                                     {(song.likeCount || 0).toLocaleString()} likes
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary">
-                                    {(song.playCount || 0).toLocaleString()} plays
+                                    <SongPlayText songId={song.id} />
                                   </Typography>
                                 </Box>
                               }

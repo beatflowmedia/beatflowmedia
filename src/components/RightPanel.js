@@ -9,7 +9,7 @@ import useFollowArtist from '../hooks/useFollowArtist';
 import { useAuth } from '../context/AuthContext';
 import { useModal } from '../hooks/useModal';
 import { PlayArrow } from '@mui/icons-material';
-import { FaPlus, FaHeart, FaListUl, FaUserAlt, FaCompactDisc, FaShare, FaDesktop, FaBan, FaBroadcastTower, FaFile, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaHeart, FaListUl, FaUserAlt, FaCompactDisc, FaShare, FaDesktop, FaBan, FaBroadcastTower, FaFile, FaSearch, FaThumbtack } from 'react-icons/fa';
 import { MdRemove } from 'react-icons/md';
 import { showSuccessToast, showErrorToast } from '../utils/Toast';
 
@@ -60,15 +60,30 @@ const RightPanel = ({ visible, content, onClose }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // Load playlist songs when viewing a playlist (DRY - follows Playlist page pattern)
+  // Load playlist songs when viewing a playlist with real-time updates (DRY - follows Playlist page pattern)
   useEffect(() => {
-    const loadPlaylistSongs = async () => {
-      if (content?.type !== 'playlist' || !content?.info?.songs) {
+    if (content?.type !== 'playlist' || !content?.info?.id || !user) {
+      setLoadedPlaylistSongs([]);
+      return;
+    }
+
+    const playlistId = content.info.id;
+    const isPrivate = content.info.isPrivate;
+
+    // Set up listener based on playlist privacy
+    const playlistRef = isPrivate
+      ? doc(db, 'users', user.uid, 'playlists', playlistId)
+      : doc(db, 'playlists', playlistId);
+
+    const unsubscribe = onSnapshot(playlistRef, async (snapshot) => {
+      if (!snapshot.exists()) {
         setLoadedPlaylistSongs([]);
         return;
       }
 
-      const songs = content.info.songs;
+      const data = snapshot.data();
+      const songs = data?.songs || [];
+
       const songPromises = songs.map(async (entry) => {
         const songId = entry.songId || entry.id;
         if (!songId) return null;
@@ -82,10 +97,10 @@ const RightPanel = ({ visible, content, onClose }) => {
 
       const loadedSongsData = await Promise.all(songPromises);
       setLoadedPlaylistSongs(loadedSongsData.filter(Boolean));
-    };
+    });
 
-    loadPlaylistSongs();
-  }, [content?.type, content?.info?.songs]);
+    return () => unsubscribe();
+  }, [content?.type, content?.info?.id, content?.info?.isPrivate, user]);
 
   // Fetch artist data from Firestore when artist panel is shown
   useEffect(() => {
@@ -863,8 +878,9 @@ const RightPanel = ({ visible, content, onClose }) => {
                             <div className="text-white text-sm font-medium truncate">
                               {song.title}
                             </div>
-                            <div className="text-gray-400 text-xs truncate">
-                              {song.artistName || song.artist || displayName}
+                            <div className="text-gray-400 text-xs truncate flex items-center gap-1">
+                              <FaThumbtack className="text-green-400 text-[10px]" />
+                              <span>{song.artistName || song.artist || displayName}</span>
                               {!isFromSameArtist && (
                                 <span className="ml-1 text-green-400 text-[10px]">• Similar</span>
                               )}
@@ -885,13 +901,6 @@ const RightPanel = ({ visible, content, onClose }) => {
 
             {/* Actions */}
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={handlePlayArtist}
-                disabled={artistSongs.length === 0}
-                className="bg-green-500 text-white font-bold px-4 py-2 rounded hover:bg-green-600 transition disabled:bg-gray-600 disabled:cursor-not-allowed"
-              >
-                Play
-              </button>
               <button
                 onClick={toggleFollow}
                 className={`px-4 py-2 rounded transition ${

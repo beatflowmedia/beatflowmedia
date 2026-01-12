@@ -190,7 +190,6 @@ const SidebarListItem = ({
     try {
       const newPinState = !item.isPinned;
       await updatePlaylistDetails(item.id, { isPinned: newPinState });
-      await showAlert("Success", newPinState ? 'Playlist pinned' : 'Playlist unpinned', "success");
       onCloseMenu?.();
     } catch (error) {
       console.error('❌ Failed to pin/unpin playlist:', error);
@@ -323,41 +322,52 @@ const SidebarListItem = ({
     onCloseMenu?.();
   };
 
+  // Check if user owns this playlist
+  const isOwner = user && (
+    // For private playlists, user always owns them (they're in user's subcollection)
+    item.isPrivate !== false ||
+    // For public playlists, check creatorId
+    item.creatorId === user.uid
+  );
+
   const contextMenuItems = [
     { label: 'Add to queue', icon: <BiListPlus />, onClick: handleAddToQueue },
-    { label: 'Remove from profile', icon: <FaEyeSlash />, onClick: handleRemoveFromProfile },
-    { type: 'divider' },
-    { label: 'Edit details', icon: <MdEdit />, onClick: handleEditDetails },
-    { label: 'Delete', icon: <MdDelete />, onClick: handleDeletePlaylist },
-    { type: 'divider' },
-    { label: 'Create playlist', icon: <FaPlus />, onClick: onCreatePlaylist },
-    { label: 'Create folder', icon: <FaFolder />, onClick: handleCreateFolder },
-    { type: 'divider' },
-    {
-      label: item.isPrivate ? 'Make public' : 'Make private',
-      icon: <FaLock />,
-      onClick: handleTogglePrivacy
-    },
-    { label: 'Invite collaborators', icon: <FaUserPlus />, onClick: handleInviteCollaborators },
-    {
-      label: item.excludedFromTaste ? 'Include in taste profile' : 'Exclude from your taste profile',
-      icon: <FaEyeSlash />,
-      onClick: handleExcludeFromTasteProfile
-    },
-    {
-      label: 'Move to folder',
-      icon: <FaFolder />,
-      submenu: [
-        { label: 'Find a folder', icon: <FaSearch />, onClick: handleFindFolder },
-        { label: 'Create folder', icon: <FaPlus />, onClick: handleCreateFolder }
-      ]
-    },
-    {
-      label: item.isPinned ? 'Unpin playlist' : 'Pin playlist',
-      icon: <FaThumbtack />,
-      onClick: handlePinPlaylist
-    },
-    { type: 'divider' },
+    // Only show these options if user owns the playlist
+    ...(isOwner ? [
+      { label: 'Remove from profile', icon: <FaEyeSlash />, onClick: handleRemoveFromProfile },
+      { type: 'divider' },
+      { label: 'Edit details', icon: <MdEdit />, onClick: handleEditDetails },
+      { label: 'Delete', icon: <MdDelete />, onClick: handleDeletePlaylist },
+      { type: 'divider' },
+      { label: 'Create playlist', icon: <FaPlus />, onClick: onCreatePlaylist },
+      { label: 'Create folder', icon: <FaFolder />, onClick: handleCreateFolder },
+      { type: 'divider' },
+      {
+        label: item.isPrivate ? 'Make public' : 'Make private',
+        icon: <FaLock />,
+        onClick: handleTogglePrivacy
+      },
+      { label: 'Invite collaborators', icon: <FaUserPlus />, onClick: handleInviteCollaborators },
+      {
+        label: item.excludedFromTaste ? 'Include in taste profile' : 'Exclude from your taste profile',
+        icon: <FaEyeSlash />,
+        onClick: handleExcludeFromTasteProfile
+      },
+      {
+        label: 'Move to folder',
+        icon: <FaFolder />,
+        submenu: [
+          { label: 'Find a folder', icon: <FaSearch />, onClick: handleFindFolder },
+          { label: 'Create folder', icon: <FaPlus />, onClick: handleCreateFolder }
+        ]
+      },
+      {
+        label: item.isPinned ? 'Unpin playlist' : 'Pin playlist',
+        icon: <FaThumbtack />,
+        onClick: handlePinPlaylist
+      },
+      { type: 'divider' }
+    ] : []),
     {
       label: 'Share',
       icon: <FaShare />,
@@ -441,6 +451,7 @@ const SidebarListItem = ({
               onClick={handleNameClick}
               title={`${isArtist ? 'Go to artist page' : 'Go to playlist page'}`}
             >
+              {!isArtist && item.isPinned && <FaThumbtack className="text-green-400 mr-1" />}
               {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
             </button>
           </div>
@@ -511,6 +522,7 @@ const SidebarListItem = ({
               {item.name}
             </div>
             <div className="text-xs text-gray-400 flex items-center mt-0.5">
+              {!isArtist && item.isPinned && <FaThumbtack className="text-green-400 mr-1" />}
               {typeIcon[item.type]} {isArtist ? 'Artist' : 'Playlist'}
             </div>
           </div>

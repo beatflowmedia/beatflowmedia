@@ -23,6 +23,8 @@ import {
  * Stores both aggregate counts and individual events for ML analysis
  */
 export const trackPlay = async (userId, songId, metadata = {}) => {
+  console.log('📊 [trackPlay] Starting - userId:', userId, 'songId:', songId, 'metadata:', metadata);
+
   try {
     const playEvent = {
       userId,
@@ -34,26 +36,34 @@ export const trackPlay = async (userId, songId, metadata = {}) => {
       context: metadata.context || 'browse' // browse, playlist, search, album, etc.
     };
 
+    console.log('📊 [trackPlay] Storing play event:', playEvent);
     // Store individual play event for ML analysis
     await setDoc(doc(collection(db, 'playEvents')), playEvent);
+    console.log('✅ [trackPlay] Play event stored');
 
     // Update aggregate song metrics
+    console.log('📊 [trackPlay] Updating songMetrics for:', songId);
     const songMetricsRef = doc(db, 'songMetrics', songId);
     await setDoc(songMetricsRef, {
       playCount: increment(1),
       lastPlayed: serverTimestamp(),
       updatedAt: serverTimestamp()
     }, { merge: true });
+    console.log('✅ [trackPlay] Song metrics updated');
 
     // Update user listening history count
+    console.log('📊 [trackPlay] Updating userMetrics for:', userId);
     const userMetricsRef = doc(db, 'userMetrics', userId);
     await setDoc(userMetricsRef, {
       totalPlays: increment(1),
       lastActive: serverTimestamp()
     }, { merge: true });
+    console.log('✅ [trackPlay] User metrics updated');
 
+    console.log('🎉 [trackPlay] All tracking complete for song:', songId);
   } catch (error) {
-    console.error('Error tracking play:', error);
+    console.error('❌ [trackPlay] Error tracking play:', error);
+    throw error;
   }
 };
 
@@ -159,15 +169,90 @@ export const trackUnfollow = async (userId, artistId, artistName) => {
     // Store individual unfollow event
     await setDoc(doc(collection(db, 'followEvents')), unfollowEvent);
 
-    // Update artist metrics
+    // Update artist metrics - check if document exists first to prevent negative counts
     const artistMetricsRef = doc(db, 'artistMetrics', artistId);
-    await setDoc(artistMetricsRef, {
-      followerCount: increment(-1),
+    const metricsSnap = await getDoc(artistMetricsRef);
+
+    if (metricsSnap.exists() && (metricsSnap.data().followerCount || 0) > 0) {
+      await setDoc(artistMetricsRef, {
+        followerCount: increment(-1),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } else {
+      // If document doesn't exist or count is 0, just set to 0
+      await setDoc(artistMetricsRef, {
+        followerCount: 0,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+
+  } catch (error) {
+    console.error('Error tracking unfollow:', error);
+  }
+};
+
+/**
+ * Track a playlist follow event
+ */
+export const trackPlaylistFollow = async (userId, playlistId) => {
+  try {
+    const followEvent = {
+      userId,
+      playlistId,
+      timestamp: serverTimestamp(),
+      action: 'follow'
+    };
+
+    // Store individual follow event
+    await setDoc(doc(collection(db, 'playlistFollowEvents')), followEvent);
+
+    // Update playlist metrics
+    const playlistMetricsRef = doc(db, 'playlistMetrics', playlistId);
+    await setDoc(playlistMetricsRef, {
+      followerCount: increment(1),
+      lastFollowed: serverTimestamp(),
       updatedAt: serverTimestamp()
     }, { merge: true });
 
   } catch (error) {
-    console.error('Error tracking unfollow:', error);
+    console.error('Error tracking playlist follow:', error);
+  }
+};
+
+/**
+ * Track a playlist unfollow event
+ */
+export const trackPlaylistUnfollow = async (userId, playlistId) => {
+  try {
+    const unfollowEvent = {
+      userId,
+      playlistId,
+      timestamp: serverTimestamp(),
+      action: 'unfollow'
+    };
+
+    // Store individual unfollow event
+    await setDoc(doc(collection(db, 'playlistFollowEvents')), unfollowEvent);
+
+    // Update playlist metrics - check if document exists first to prevent negative counts
+    const playlistMetricsRef = doc(db, 'playlistMetrics', playlistId);
+    const metricsSnap = await getDoc(playlistMetricsRef);
+
+    if (metricsSnap.exists() && (metricsSnap.data().followerCount || 0) > 0) {
+      await setDoc(playlistMetricsRef, {
+        followerCount: increment(-1),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } else {
+      // If document doesn't exist or count is 0, just set to 0
+      await setDoc(playlistMetricsRef, {
+        followerCount: 0,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
+
+  } catch (error) {
+    console.error('Error tracking playlist unfollow:', error);
   }
 };
 
@@ -309,6 +394,42 @@ export const getActiveListeners = async (artistId) => {
   } catch (error) {
     console.error('Error calculating active listeners:', error);
     return 0;
+  }
+};
+
+/**
+ * Get play counts for multiple songs (for aggregations)
+ */
+export const getBatchPlayCounts = async (songIds) => {
+  try {
+    if (!songIds || songIds.length === 0) return {};
+
+    const playCountMap = {};
+
+    // Fetch play counts in batches (Firestore limitation: max 10 per query)
+    const batchSize = 10;
+    for (let i = 0; i < songIds.length; i += batchSize) {
+      const batch = songIds.slice(i, i + batchSize);
+
+      const promises = batch.map(async (songId) => {
+        const metricsRef = doc(db, 'songMetrics', songId);
+        const metricsSnap = await getDoc(metricsRef);
+        return {
+          songId,
+          playCount: metricsSnap.exists() ? (metricsSnap.data().playCount || 0) : 0
+        };
+      });
+
+      const results = await Promise.all(promises);
+      results.forEach(({ songId, playCount }) => {
+        playCountMap[songId] = playCount;
+      });
+    }
+
+    return playCountMap;
+  } catch (error) {
+    console.error('Error getting batch play counts:', error);
+    return {};
   }
 };
 

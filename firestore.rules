@@ -429,6 +429,12 @@ service cloud.firestore {
       allow read: if isPlatformAdmin();
     }
 
+    // Playlist Follow Events - individual playlist follow/unfollow tracking for ML
+    match /playlistFollowEvents/{eventId} {
+      allow create: if request.auth != null;
+      allow read: if isPlatformAdmin();
+    }
+
     // Song Metrics - aggregate engagement data
     match /songMetrics/{songId} {
       allow read: if true;
@@ -443,6 +449,12 @@ service cloud.firestore {
 
     // Artist Metrics - aggregate engagement data
     match /artistMetrics/{artistId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Playlist Metrics - aggregate engagement data
+    match /playlistMetrics/{playlistId} {
       allow read: if true;
       allow write: if request.auth != null;
     }

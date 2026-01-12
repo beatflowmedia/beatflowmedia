@@ -9,11 +9,27 @@ export function getSongUrl(songId) {
 }
 
 /**
+ * Build the canonical URL for a given playlist id.
+ */
+export function getPlaylistUrl(playlistId) {
+  const encoded = encodeURIComponent(playlistId);
+  return `${window.location.origin}/playlist/${encoded}`;
+}
+
+/**
  * Build the share text you want pre-populated.
  */
 export function getShareText(title, songId) {
   const url = getSongUrl(songId);
   return `🎵 Check out "${title}" on BeatFlow Media! 🔗 ${url}`;
+}
+
+/**
+ * Build the share text for playlists.
+ */
+export function getPlaylistShareText(name, playlistId) {
+  const url = getPlaylistUrl(playlistId);
+  return `🎵 Check out "${name}" playlist on BeatFlow Media! 🔗 ${url}`;
 }
 
 export function shareOnTwitter(text) {
