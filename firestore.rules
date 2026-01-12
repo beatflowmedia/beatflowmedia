@@ -622,8 +622,10 @@ service cloud.firestore {
     match /smartLinks/{linkId} {
       allow read: if true; // Public readable for link redirection
       allow create: if request.auth != null;
-      allow update: if request.auth != null &&
-                       (resource.data.createdBy == request.auth.uid || isPlatformAdmin());
+      // Allow anyone to update click analytics fields (for social sharing)
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clicks', 'lastClickedAt', 'plays', 'follows', 'saves', 'conversions']) ||
+                       (request.auth != null && resource.data.createdBy == request.auth.uid) ||
+                       isPlatformAdmin();
       allow delete: if request.auth != null &&
                       (resource.data.createdBy == request.auth.uid || isPlatformAdmin());
     }
