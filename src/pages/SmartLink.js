@@ -72,9 +72,25 @@ export default function SmartLink() {
       let targetUrl = '/';
 
       if (type === 'song') {
-        targetUrl = `/song/${targetId}`;
+        // For songs, redirect to artist page with song ID to auto-play
+        // First fetch the song to get artist name
+        console.log('[SmartLink] Processing song type, targetId:', targetId);
+        const songDoc = await getDoc(doc(db, 'songs', targetId));
+        console.log('[SmartLink] Song doc exists?', songDoc.exists());
+        if (songDoc.exists()) {
+          const songData = songDoc.data();
+          console.log('[SmartLink] Song data:', songData);
+          const artistName = songData.artist || songData.artistName || 'Unknown Artist';
+          targetUrl = `/artist/${encodeURIComponent(artistName)}?song=${targetId}`;
+          console.log('[SmartLink] Redirecting to:', targetUrl);
+        } else {
+          console.log('[SmartLink] Song not found, falling back to song page');
+          targetUrl = `/song/${targetId}`; // Fallback to song page
+        }
       } else if (type === 'artist') {
         targetUrl = `/artist/${encodeURIComponent(targetId)}`;
+      } else if (type === 'album') {
+        targetUrl = `/album/${targetId}`;
       } else if (type === 'playlist') {
         targetUrl = `/playlist/${targetId}`;
       }

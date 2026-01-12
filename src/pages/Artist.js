@@ -51,7 +51,7 @@ import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
 import { useFavorites } from '../context/FavoritesContext';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import ShareButton from '../utils/ShareButton';
 import SongPlayCount from '../components/SongPlayCount';
@@ -91,6 +91,7 @@ function Artist() {
   // Hooks must be called first
   const { artistId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { state, dispatch, actions } = usePlayer();
   const { user, followArtist, unfollowArtist, isArtistFollowed } = useAuth();
   const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
@@ -215,6 +216,33 @@ function Artist() {
       trackArtistView(artist);
     }
   }, [artist]);
+
+  // Auto-play specific song from smart link (query parameter: ?song=id)
+  useEffect(() => {
+    const songId = searchParams.get('song');
+    if (songId && topTracks.length > 0) {
+      const songIndex = topTracks.findIndex(track => track.id === songId);
+      if (songIndex !== -1) {
+        // Found the song, auto-play it
+        dispatch({
+          type: actions.SET_QUEUE,
+          payload: {
+            queue: topTracks,
+            currentIndex: songIndex
+          }
+        });
+
+        // Start playing
+        if (!state.isPlaying) {
+          dispatch({ type: actions.TOGGLE_PLAY });
+        }
+
+        // Remove the query parameter to clean up URL
+        searchParams.delete('song');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [topTracks, searchParams, setSearchParams, dispatch, actions, state.isPlaying]);
 
   // Load similar artists
   const loadSimilarArtists = async (artistData) => {
