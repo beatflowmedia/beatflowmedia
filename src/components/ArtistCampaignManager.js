@@ -168,7 +168,7 @@ export default function ArtistCampaignManager() {
     }
   };
 
-  const steps = ['Select Track', 'Choose Playlist', 'Set Budget'];
+  const steps = ['Select Your Track', 'Choose Curator Playlist', 'Set Submission Budget'];
 
   if (loading) {
     return (
@@ -182,7 +182,7 @@ export default function ArtistCampaignManager() {
     <Box>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#fff' }}>
-          Campaign Manager
+          Playlist Placement Campaigns
         </Typography>
         <Button
           variant="contained"
@@ -194,12 +194,12 @@ export default function ArtistCampaignManager() {
             fontWeight: 'bold'
           }}
         >
-          Create Campaign
+          Submit to Playlist
         </Button>
       </Box>
 
       <Alert severity="info" sx={{ mb: 3, bgcolor: '#0a0a0a', color: '#fff' }}>
-        Pitch your tracks to curators and get featured on their playlists. Budget range: $25-$1,000 per placement.
+        <strong>Pay curators to review and potentially add your tracks to their playlists.</strong> Curators receive payment regardless of acceptance. If rejected, you receive a full refund. Budget range: $25-$1,000 per placement.
       </Alert>
 
       {/* Active Campaigns */}
@@ -207,10 +207,10 @@ export default function ArtistCampaignManager() {
         <Card sx={{ bgcolor: '#181818', textAlign: 'center', p: 6 }}>
           <FaMusic size={48} color="#404040" style={{ marginBottom: 16 }} />
           <Typography variant="h6" sx={{ color: '#b3b3b3', mb: 2 }}>
-            No active campaigns
+            No playlist submissions yet
           </Typography>
           <Typography variant="body2" sx={{ color: '#808080', mb: 3 }}>
-            Create your first campaign to get your music on curator playlists
+            Submit your tracks to curator playlists and get discovered by new listeners
           </Typography>
           <Button
             variant="contained"
@@ -218,7 +218,7 @@ export default function ArtistCampaignManager() {
             onClick={() => setCreateDialogOpen(true)}
             sx={{ bgcolor: '#1db954', '&:hover': { bgcolor: '#1ed760' } }}
           >
-            Create Campaign
+            Submit to Playlist
           </Button>
         </Card>
       ) : (
@@ -250,7 +250,7 @@ export default function ArtistCampaignManager() {
                         </Typography>
                       </Box>
                       <Typography variant="caption" sx={{ color: '#808080' }}>
-                        Campaign budget
+                        Submission budget
                       </Typography>
                     </Grid>
 
@@ -292,7 +292,7 @@ export default function ArtistCampaignManager() {
         fullWidth
       >
         <DialogTitle sx={{ bgcolor: '#181818', color: '#fff' }}>
-          Create Playlist Campaign
+          Submit Track to Curator Playlist
         </DialogTitle>
         <DialogContent sx={{ bgcolor: '#181818', mt: 2 }}>
           <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
@@ -313,6 +313,9 @@ export default function ArtistCampaignManager() {
           {/* Step 1: Select Track */}
           {activeStep === 0 && (
             <Box>
+              <Typography variant="body2" sx={{ color: '#b3b3b3', mb: 2 }}>
+                Choose which track you want to submit to a curator's playlist
+              </Typography>
               <FormControl fullWidth>
                 <InputLabel sx={{ color: '#b3b3b3' }}>Select Track</InputLabel>
                 <Select
@@ -333,7 +336,7 @@ export default function ArtistCampaignManager() {
               </FormControl>
               {userTracks.length === 0 && (
                 <Alert severity="warning" sx={{ mt: 2 }}>
-                  You need to upload tracks before creating a campaign
+                  You need to upload tracks before submitting to a playlist
                 </Alert>
               )}
             </Box>
@@ -343,8 +346,11 @@ export default function ArtistCampaignManager() {
           {activeStep === 1 && (
             <Box>
               <Typography variant="body2" sx={{ color: '#b3b3b3', mb: 2 }}>
-                Select a curator playlist for your track placement
+                Select a curator playlist for your track placement. Curators typically respond within 48 hours.
               </Typography>
+              <Alert severity="info" sx={{ mb: 2, bgcolor: '#0a0a0a' }}>
+                <strong>How it works:</strong> Submit your track → Curator reviews within 48 hours → If accepted: added to playlist → If rejected: full refund
+              </Alert>
               <Grid container spacing={2}>
                 {availablePlaylists.map((playlist) => (
                   <Grid item xs={12} key={playlist.id}>
@@ -380,26 +386,27 @@ export default function ArtistCampaignManager() {
           {activeStep === 2 && (
             <Box>
               <Typography variant="body2" sx={{ color: '#b3b3b3', mb: 2 }}>
-                Set your campaign budget ($25-$1,000)
+                Set your submission budget. This is the curator fee for reviewing your track.
               </Typography>
               <TextField
                 fullWidth
                 type="number"
-                label="Budget (USD)"
+                label="Submission Budget (USD)"
                 value={budget}
                 onChange={(e) => setBudget(Number(e.target.value))}
                 InputProps={{
                   startAdornment: <FaDollarSign style={{ marginRight: 8, color: '#1db954' }} />
                 }}
+                helperText="Minimum: $25 | Maximum: $1,000"
                 sx={{
                   '& .MuiInputBase-root': { color: '#fff' },
                   '& .MuiInputLabel-root': { color: '#b3b3b3' },
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#404040' }
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#404040' },
+                  '& .MuiFormHelperText-root': { color: '#808080' }
                 }}
               />
               <Alert severity="info" sx={{ mt: 2, bgcolor: '#0a0a0a' }}>
-                Your payment will be held in escrow until the curator accepts and adds your track to their playlist.
-                If rejected, you'll receive a full refund.
+                <strong>Payment & Refund Policy:</strong> Your payment is held securely until the curator reviews your track. If accepted, payment is released to the curator and your track is added to their playlist. If rejected, you receive a full refund within 3-5 business days.
               </Alert>
             </Box>
           )}
