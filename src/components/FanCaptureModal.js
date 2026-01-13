@@ -34,6 +34,7 @@ import { useAuth } from '../context/AuthContext';
 function FanCaptureModal({
   open,
   onClose,
+  onSuccess,
   artist,
   incentiveType = 'newsletter',
   incentiveContent = ''
@@ -69,6 +70,7 @@ function FanCaptureModal({
 
           if (result.success) {
             toast.success(result.message);
+            onSuccess?.(); // Notify parent component of success
             // Reset and close
             setEmail('');
             setName('');
@@ -142,6 +144,7 @@ function FanCaptureModal({
 
       if (result.success) {
         toast.success(result.message);
+        onSuccess?.(); // Notify parent component of success
 
         // Reset form
         setEmail('');

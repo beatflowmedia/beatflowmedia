@@ -43,6 +43,8 @@ export default function ArtistSimple() {
   const [selectedSong, setSelectedSong] = useState(null);
   const [purchasedSongIds, setPurchasedSongIds] = useState(new Set());
   const [fanCaptureOpen, setFanCaptureOpen] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
 
   // Race condition protection for Get Updates button
   const subscribeProcessingRef = useRef(false);
@@ -59,6 +61,29 @@ export default function ArtistSimple() {
       console.log('🎯 Artist name used for following:', artist.name);
     }
   }, [artist?.name]);
+
+  // Check subscription status
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user || !artist?.name) {
+        setIsSubscribed(false);
+        return;
+      }
+
+      setCheckingSubscription(true);
+      try {
+        const subscribed = await fanCaptureService.isSubscribed(user.uid, artist.name);
+        setIsSubscribed(subscribed);
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        setIsSubscribed(false);
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, [user, artist?.name]);
 
   // Load user's purchases
   useEffect(() => {
@@ -368,6 +393,7 @@ export default function ArtistSimple() {
 
       if (result.success) {
         toast.success(result.message);
+        setIsSubscribed(true); // Update subscription state
       } else {
         toast.error(result.message);
       }
@@ -488,23 +514,30 @@ export default function ArtistSimple() {
               {artistSongs.length} {artistSongs.length === 1 ? 'song' : 'songs'}
             </Typography>
             <Button
-              variant="outlined"
+              variant={isSubscribed ? "contained" : "outlined"}
               size="small"
               onClick={handleGetUpdates}
+              disabled={checkingSubscription || isSubscribed}
               sx={{
-                borderColor: '#1DB954',
-                color: '#1DB954',
+                borderColor: isSubscribed ? 'transparent' : '#1DB954',
+                bgcolor: isSubscribed ? 'rgba(29, 185, 84, 0.2)' : 'transparent',
+                color: isSubscribed ? '#1ed760' : '#1DB954',
                 textTransform: 'none',
                 fontWeight: 600,
                 px: 3,
                 borderRadius: '20px',
                 '&:hover': {
-                  bgcolor: 'rgba(29, 185, 84, 0.1)',
-                  borderColor: '#1ed760'
+                  bgcolor: isSubscribed ? 'rgba(29, 185, 84, 0.3)' : 'rgba(29, 185, 84, 0.1)',
+                  borderColor: isSubscribed ? 'transparent' : '#1ed760'
+                },
+                '&:disabled': {
+                  borderColor: isSubscribed ? 'transparent' : '#1DB954',
+                  color: isSubscribed ? '#1ed760' : '#1DB954',
+                  opacity: isSubscribed ? 1 : 0.6
                 }
               }}
             >
-              Get Updates
+              {checkingSubscription ? 'Checking...' : (isSubscribed ? '✓ Subscribed' : 'Get Updates')}
             </Button>
             {user && (
               <Button
@@ -766,6 +799,7 @@ export default function ArtistSimple() {
       <FanCaptureModal
         open={fanCaptureOpen}
         onClose={() => setFanCaptureOpen(false)}
+        onSuccess={() => setIsSubscribed(true)}
         artist={{
           id: artist?.id,
           name: artist?.name,
