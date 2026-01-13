@@ -260,6 +260,39 @@ function FanCaptureModal({
             </Alert>
           )}
 
+          {/* Benefits Section */}
+          <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(29, 185, 84, 0.1)', borderRadius: 2, border: '1px solid rgba(29, 185, 84, 0.3)' }}>
+            <Typography variant="subtitle2" sx={{ color: '#1ed760', mb: 1.5, fontWeight: 600 }}>
+              What you'll get:
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <Typography sx={{ color: '#1ed760', fontSize: '1.2rem', lineHeight: 1 }}>✓</Typography>
+                <Typography variant="body2" sx={{ color: 'grey.300' }}>
+                  Exclusive early access to new releases
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <Typography sx={{ color: '#1ed760', fontSize: '1.2rem', lineHeight: 1 }}>✓</Typography>
+                <Typography variant="body2" sx={{ color: 'grey.300' }}>
+                  Behind-the-scenes content and updates
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <Typography sx={{ color: '#1ed760', fontSize: '1.2rem', lineHeight: 1 }}>✓</Typography>
+                <Typography variant="body2" sx={{ color: 'grey.300' }}>
+                  Special offers and promotions
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <Typography sx={{ color: '#1ed760', fontSize: '1.2rem', lineHeight: 1 }}>✓</Typography>
+                <Typography variant="body2" sx={{ color: 'grey.300' }}>
+                  Notifications about upcoming shows and events
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
           {/* Google Sign-in Button */}
           <Button
             fullWidth
@@ -385,6 +418,11 @@ function FanCaptureModal({
               </Typography>
             </Box>
           )}
+
+          {/* Privacy Note */}
+          <Typography variant="caption" sx={{ color: 'grey.500', mt: 3, display: 'block', textAlign: 'center' }}>
+            🔒 We respect your privacy. Unsubscribe anytime. No spam, ever.
+          </Typography>
         </DialogContent>
 
         <DialogActions>
