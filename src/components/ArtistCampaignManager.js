@@ -128,10 +128,14 @@ export default function ArtistCampaignManager() {
       await showAlert('Info', 'Please select a playlist', 'info');
       return;
     }
-    if (activeStep === 1 && availablePlaylists.length === 0) {
+
+    // Move to next step
+    setActiveStep((prev) => prev + 1);
+
+    // Load playlists when entering step 2 (after moving from step 1)
+    if (activeStep === 0 && availablePlaylists.length === 0) {
       loadAvailablePlaylists();
     }
-    setActiveStep((prev) => prev + 1);
   };
 
   const handleBack = () => {
