@@ -45,6 +45,7 @@ export default function ArtistSimple() {
   const [fanCaptureOpen, setFanCaptureOpen] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
+  const [processingSubscription, setProcessingSubscription] = useState(false);
 
   // Race condition protection for Get Updates button
   const subscribeProcessingRef = useRef(false);
@@ -64,6 +65,8 @@ export default function ArtistSimple() {
 
   // Check subscription status
   useEffect(() => {
+    let cancelled = false;
+
     const checkSubscription = async () => {
       if (!user || !artist?.name) {
         setIsSubscribed(false);
@@ -73,16 +76,26 @@ export default function ArtistSimple() {
       setCheckingSubscription(true);
       try {
         const subscribed = await fanCaptureService.isSubscribed(user.uid, artist.name);
-        setIsSubscribed(subscribed);
+        if (!cancelled) {
+          setIsSubscribed(subscribed);
+        }
       } catch (error) {
         console.error('Error checking subscription:', error);
-        setIsSubscribed(false);
+        if (!cancelled) {
+          setIsSubscribed(false);
+        }
       } finally {
-        setCheckingSubscription(false);
+        if (!cancelled) {
+          setCheckingSubscription(false);
+        }
       }
     };
 
     checkSubscription();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, artist?.name]);
 
   // Load user's purchases
@@ -379,6 +392,7 @@ export default function ArtistSimple() {
 
     // User is authenticated - toggle subscription
     subscribeProcessingRef.current = true;
+    setProcessingSubscription(true);
 
     try {
       let result;
@@ -416,6 +430,7 @@ export default function ArtistSimple() {
       toast.error('Failed to update subscription. Please try again.');
     } finally {
       subscribeProcessingRef.current = false;
+      setProcessingSubscription(false);
     }
   };
 
@@ -531,7 +546,7 @@ export default function ArtistSimple() {
               variant={isSubscribed ? "contained" : "outlined"}
               size="small"
               onClick={handleGetUpdates}
-              disabled={checkingSubscription}
+              disabled={checkingSubscription || processingSubscription}
               sx={{
                 borderColor: isSubscribed ? 'transparent' : '#1DB954',
                 bgcolor: isSubscribed ? 'rgba(29, 185, 84, 0.2)' : 'transparent',
@@ -552,7 +567,7 @@ export default function ArtistSimple() {
                 }
               }}
             >
-              {checkingSubscription ? 'Checking...' : (isSubscribed ? '✓ Subscribed' : 'Get Updates')}
+              {checkingSubscription ? 'Checking...' : processingSubscription ? (isSubscribed ? 'Unsubscribing...' : 'Subscribing...') : (isSubscribed ? '✓ Subscribed' : 'Get Updates')}
             </Button>
             {user && (
               <Button
