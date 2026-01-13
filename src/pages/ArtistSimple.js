@@ -320,7 +320,8 @@ export default function ArtistSimple() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [loading, artistId]); // Only depend on loading and artistId, not artist/artistSongs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, artistId]); // Only depend on loading and artistId, not artist/artistSongs to avoid infinite loop
 
   // Like/favorite toggle handler (DRY - same as Home.js)
   const handleMenuOpen = (event, song) => {
@@ -385,7 +386,8 @@ export default function ArtistSimple() {
     }
 
     if (!user) {
-      // Not authenticated - show fan capture modal
+      // Not authenticated - show info modal first, then fan capture modal
+      // For now, just open the fan capture modal which has the info
       setFanCaptureOpen(true);
       return;
     }

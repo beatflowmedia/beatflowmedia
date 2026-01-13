@@ -91,7 +91,7 @@ function FanCaptureModal({
     };
 
     subscribeAfterGoogleSignIn();
-  }, [user, open, artist, incentiveType, incentiveContent, onClose]);
+  }, [user, open, artist, incentiveType, incentiveContent, onClose, onSuccess]);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
