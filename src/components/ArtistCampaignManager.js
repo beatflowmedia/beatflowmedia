@@ -199,7 +199,7 @@ export default function ArtistCampaignManager() {
       </Box>
 
       <Alert severity="info" sx={{ mb: 3, bgcolor: '#0a0a0a', color: '#fff' }}>
-        <strong>Pay curators to review and potentially add your tracks to their playlists.</strong> Curators receive payment regardless of acceptance. If rejected, you receive a full refund. Budget range: $25-$1,000 per placement.
+        <strong>Submit your track to curator playlists for review.</strong> Payment is only released to the curator if they accept and add your track. If rejected, you receive a full refund. Budget range: $25-$1,000 per placement.
       </Alert>
 
       {/* Active Campaigns */}
@@ -349,7 +349,7 @@ export default function ArtistCampaignManager() {
                 Select a curator playlist for your track placement. Curators typically respond within 48 hours.
               </Typography>
               <Alert severity="info" sx={{ mb: 2, bgcolor: '#0a0a0a' }}>
-                <strong>How it works:</strong> Submit your track → Curator reviews within 48 hours → If accepted: added to playlist → If rejected: full refund
+                <strong>How it works:</strong> Submit your track → Curator reviews within 48 hours → If accepted: payment released & track added to playlist → If rejected: full refund (no charge)
               </Alert>
               <Grid container spacing={2}>
                 {availablePlaylists.map((playlist) => (
@@ -406,7 +406,7 @@ export default function ArtistCampaignManager() {
                 }}
               />
               <Alert severity="info" sx={{ mt: 2, bgcolor: '#0a0a0a' }}>
-                <strong>Payment & Refund Policy:</strong> Your payment is held securely until the curator reviews your track. If accepted, payment is released to the curator and your track is added to their playlist. If rejected, you receive a full refund within 3-5 business days.
+                <strong>Payment & Refund Policy:</strong> Your payment is held securely in escrow until the curator reviews your track. If they accept and add your track to their playlist, payment is released to the curator. If rejected, you receive a full refund within 3-5 business days - no charge for rejections.
               </Alert>
             </Box>
           )}
