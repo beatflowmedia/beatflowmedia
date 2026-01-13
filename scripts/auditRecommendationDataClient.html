@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Recommendation System Data Audit</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a1a;
+      color: #00ff00;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1, h2 { color: #1DB954; }
+    .section { margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 8px; }
+    .metric { margin: 10px 0; }
+    .good { color: #1DB954; }
+    .warn { color: #FFA500; }
+    .error { color: #FF4444; }
+    pre { background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Recommendation System Data Audit</h1>
+  <div id="output"></div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, query, getDocs, limit, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Firebase config (from your firebaseConfig.js)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBduwEEy1YKxMPqV0SAOr0EchPqrm9y4pk",
+      authDomain: "music-license-app-41ce3.firebaseapp.com",
+      databaseURL: "https://music-license-app-41ce3-default-rtdb.firebaseio.com",
+      projectId: "music-license-app-41ce3",
+      storageBucket: "music-license-app-41ce3.firebasestorage.app",
+      messagingSenderId: "103893086848",
+      appId: "1:103893086848:web:b1eb4d4bcd6bcf9da64ab2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const output = document.getElementById('output');
+
+    function log(message, className = '') {
+      const div = document.createElement('div');
+      div.className = `metric ${className}`;
+      div.innerHTML = message;
+      output.appendChild(div);
+    }
+
+    function logSection(title) {
+      const section = document.createElement('div');
+      section.className = 'section';
+      section.innerHTML = `<h2>${title}</h2>`;
+      output.appendChild(section);
+      return section;
+    }
+
+    async function auditData() {
+      try {
+        // 1. Songs Collection
+        const songsSection = logSection('📀 SONGS COLLECTION');
+        const songsQuery = query(collection(db, 'songs'), limit(1000));
+        const songsSnapshot = await getDocs(songsQuery);
+        const totalSongs = songsSnapshot.size;
+
+        songsSection.innerHTML += `
+          <div class="metric">Total songs (sample): <span class="${totalSongs > 0 ? 'good' : 'error'}">${totalSongs}</span></div>
+        `;
+
+        if (totalSongs > 0) {
+          const sampleSong = songsSnapshot.docs[0].data();
+          songsSection.innerHTML += `
+            <div class="metric">Sample song:</div>
+            <pre>${JSON.stringify(sampleSong, null, 2).substring(0, 800)}...</pre>
+          `;
+
+          const songsWithAcoustics = songsSnapshot.docs.filter(doc => doc.data().acousticFeatures).length;
+          const songsWithGenre = songsSnapshot.docs.filter(doc => doc.data().genre || doc.data().category).length;
+
+          songsSection.innerHTML += `
+            <div class="metric ${songsWithAcoustics > 0 ? 'good' : 'warn'}">
+              Songs with acoustic features: ${songsWithAcoustics}/${totalSongs}
+            </div>
+            <div class="metric ${songsWithGenre > 0 ? 'good' : 'error'}">
+              Songs with genre/category: ${songsWithGenre}/${totalSongs}
+            </div>
+          `;
+
+          // Genre distribution
+          const genreMap = {};
+          songsSnapshot.docs.forEach(doc => {
+            const genre = doc.data().genre || doc.data().category || 'Unknown';
+            genreMap[genre] = (genreMap[genre] || 0) + 1;
+          });
+
+          const genreHTML = Object.entries(genreMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([genre, count]) => `<div class="metric">  ${genre}: ${count}</div>`)
+            .join('');
+
+          songsSection.innerHTML += `
+            <div class="metric">Genre distribution:</div>
+            ${genreHTML}
+          `;
+        }
+
+        // 2. Playlists Collection
+        const playlistsSection = logSection('📋 PLAYLISTS COLLECTION');
+        const playlistsQuery = query(collection(db, 'playlists'), limit(1000));
+        const playlistsSnapshot = await getDocs(playlistsQuery);
+        const totalPlaylists = playlistsSnapshot.size;
+
+        playlistsSection.innerHTML += `
+          <div class="metric">Total public playlists: <span class="${totalPlaylists > 0 ? 'good' : 'error'}">${totalPlaylists}</span></div>
+        `;
+
+        if (totalPlaylists > 0) {
+          const samplePlaylist = playlistsSnapshot.docs[0].data();
+          playlistsSection.innerHTML += `
+            <div class="metric">Sample playlist:</div>
+            <pre>${JSON.stringify(samplePlaylist, null, 2).substring(0, 600)}...</pre>
+          `;
+
+          const playlistsWithProfile = playlistsSnapshot.docs.filter(doc =>
+            doc.data().playlistProfile || doc.data().targetGenres
+          ).length;
+
+          const totalSongsInPlaylists = playlistsSnapshot.docs.reduce((sum, doc) => {
+            const songs = doc.data().songs || [];
+            return sum + songs.length;
+          }, 0);
+
+          playlistsSection.innerHTML += `
+            <div class="metric ${playlistsWithProfile > 0 ? 'good' : 'warn'}">
+              Playlists with profile data: ${playlistsWithProfile}/${totalPlaylists}
+            </div>
+            <div class="metric">
+              Average songs per playlist: ${(totalSongsInPlaylists / totalPlaylists).toFixed(1)}
+            </div>
+          `;
+        }
+
+        // 3. Users Collection
+        const usersSection = logSection('👥 USERS COLLECTION');
+        const usersQuery = query(collection(db, 'users'), limit(1000));
+        const usersSnapshot = await getDocs(usersQuery);
+        const totalUsers = usersSnapshot.size;
+
+        usersSection.innerHTML += `
+          <div class="metric">Total users (sample): <span class="${totalUsers > 0 ? 'good' : 'error'}">${totalUsers}</span></div>
+        `;
+
+        if (totalUsers > 0) {
+          const usersWithPreferences = usersSnapshot.docs.filter(doc =>
+            doc.data().preferences || doc.data().favoriteGenres
+          ).length;
+
+          usersSection.innerHTML += `
+            <div class="metric ${usersWithPreferences > 0 ? 'good' : 'warn'}">
+              Users with preference data: ${usersWithPreferences}/${totalUsers}
+            </div>
+          `;
+        }
+
+        // 4. Play Events
+        const playEventsSection = logSection('▶️ PLAY EVENTS COLLECTION');
+        const playEventsQuery = query(collection(db, 'playEvents'), orderBy('timestamp', 'desc'), limit(1000));
+        const playEventsSnapshot = await getDocs(playEventsQuery);
+        const totalPlayEvents = playEventsSnapshot.size;
+
+        playEventsSection.innerHTML += `
+          <div class="metric">Total play events (recent 1000): <span class="${totalPlayEvents > 0 ? 'good' : 'error'}">${totalPlayEvents}</span></div>
+        `;
+
+        if (totalPlayEvents > 0) {
+          const sampleEvent = playEventsSnapshot.docs[0].data();
+          playEventsSection.innerHTML += `
+            <div class="metric">Sample play event:</div>
+            <pre>${JSON.stringify(sampleEvent, null, 2)}</pre>
+          `;
+
+          const eventsWithCompletionRate = playEventsSnapshot.docs.filter(doc =>
+            doc.data().completionRate !== undefined
+          ).length;
+
+          const avgCompletionRate = playEventsSnapshot.docs.reduce((sum, doc) => {
+            return sum + (doc.data().completionRate || 0);
+          }, 0) / totalPlayEvents;
+
+          playEventsSection.innerHTML += `
+            <div class="metric">
+              Events with completion rate: ${eventsWithCompletionRate}/${totalPlayEvents}
+            </div>
+            <div class="metric">
+              Average completion rate: ${(avgCompletionRate * 100).toFixed(1)}%
+            </div>
+          `;
+        }
+
+        // 5. Like Events
+        const likeEventsSection = logSection('❤️ LIKE EVENTS COLLECTION');
+        const likeEventsQuery = query(collection(db, 'likeEvents'), orderBy('timestamp', 'desc'), limit(1000));
+        const likeEventsSnapshot = await getDocs(likeEventsQuery);
+        const totalLikeEvents = likeEventsSnapshot.size;
+
+        likeEventsSection.innerHTML += `
+          <div class="metric">Total like events (recent 1000): <span class="${totalLikeEvents > 0 ? 'good' : 'error'}">${totalLikeEvents}</span></div>
+        `;
+
+        // Summary
+        const summarySection = logSection('📊 SUMMARY & RECOMMENDATIONS');
+        const readyForPhase1 = totalSongs > 0 && totalPlaylists > 0 && totalUsers > 0 && totalPlayEvents > 0;
+
+        summarySection.innerHTML += `
+          <div class="metric"><strong>✅ Data Availability:</strong></div>
+          <div class="metric ${totalSongs > 0 ? 'good' : 'error'}">  • Songs: ${totalSongs > 0 ? '✓' : '✗'} (${totalSongs} found)</div>
+          <div class="metric ${totalPlaylists > 0 ? 'good' : 'error'}">  • Playlists: ${totalPlaylists > 0 ? '✓' : '✗'} (${totalPlaylists} found)</div>
+          <div class="metric ${totalUsers > 0 ? 'good' : 'error'}">  • Users: ${totalUsers > 0 ? '✓' : '✗'} (${totalUsers} found)</div>
+          <div class="metric ${totalPlayEvents > 0 ? 'good' : 'error'}">  • Play Events: ${totalPlayEvents > 0 ? '✓' : '✗'} (${totalPlayEvents} found)</div>
+          <div class="metric ${totalLikeEvents > 0 ? 'good' : 'error'}">  • Like Events: ${totalLikeEvents > 0 ? '✓' : '✗'} (${totalLikeEvents} found)</div>
+
+          <div class="metric" style="margin-top: 20px;"><strong>🚀 Ready for Phase 1?</strong></div>
+          <div class="metric ${readyForPhase1 ? 'good' : 'error'}" style="font-size: 1.2em; font-weight: bold;">
+            ${readyForPhase1 ? 'YES ✓ - Sufficient data to start recommendations' : 'NOT YET ✗ - Need more base data'}
+          </div>
+        `;
+
+        log('<br>✅ Audit complete!', 'good');
+
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+        console.error('Full error:', error);
+      }
+    }
+
+    // Run audit
+    auditData();
+  </script>
+</body>
+</html>
