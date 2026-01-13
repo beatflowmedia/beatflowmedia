@@ -781,48 +781,46 @@ export default function ArtistSimple() {
           }
         }}
       >
-        {[
-          <MenuItem key="play" onClick={() => { playSong(selectedSong); handleMenuClose(); }} sx={{ color: 'white' }}>
+        <MenuItem key="play" onClick={() => { playSong(selectedSong); handleMenuClose(); }} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <PlayArrow sx={{ color: '#1DB954' }} />
+          </ListItemIcon>
+          <ListItemText>Play Now</ListItemText>
+        </MenuItem>
+
+        <MenuItem key="queue" onClick={() => { dispatch({ type: actions.ENQUEUE, payload: { item: selectedSong } }); handleMenuClose(); }} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <QueueMusic sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Add to Queue</ListItemText>
+        </MenuItem>
+
+        <Divider key="divider1" sx={{ bgcolor: 'grey.700' }} />
+
+        <MenuItem key="playlist" onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <PlaylistAdd sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Add to Playlist</ListItemText>
+        </MenuItem>
+
+        <MenuItem key="share" onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
+          <ListItemIcon>
+            <Share sx={{ color: 'grey.400' }} />
+          </ListItemIcon>
+          <ListItemText>Share</ListItemText>
+        </MenuItem>
+
+        <Divider key="divider2" sx={{ bgcolor: 'grey.700' }} />
+
+        {!purchasedSongIds.has(selectedSong?.id) && (
+          <MenuItem key="purchase" onClick={() => handlePurchase(selectedSong)} sx={{ color: 'white' }}>
             <ListItemIcon>
-              <PlayArrow sx={{ color: '#1DB954' }} />
+              <ShoppingCart sx={{ color: '#1DB954' }} />
             </ListItemIcon>
-            <ListItemText>Play Now</ListItemText>
-          </MenuItem>,
-
-          <MenuItem key="queue" onClick={() => { dispatch({ type: actions.ENQUEUE, payload: { item: selectedSong } }); handleMenuClose(); }} sx={{ color: 'white' }}>
-            <ListItemIcon>
-              <QueueMusic sx={{ color: 'grey.400' }} />
-            </ListItemIcon>
-            <ListItemText>Add to Queue</ListItemText>
-          </MenuItem>,
-
-          <Divider key="divider1" sx={{ bgcolor: 'grey.700' }} />,
-
-          <MenuItem key="playlist" onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
-            <ListItemIcon>
-              <PlaylistAdd sx={{ color: 'grey.400' }} />
-            </ListItemIcon>
-            <ListItemText>Add to Playlist</ListItemText>
-          </MenuItem>,
-
-          <MenuItem key="share" onClick={() => handleMenuClose()} sx={{ color: 'white' }}>
-            <ListItemIcon>
-              <Share sx={{ color: 'grey.400' }} />
-            </ListItemIcon>
-            <ListItemText>Share</ListItemText>
-          </MenuItem>,
-
-          <Divider key="divider2" sx={{ bgcolor: 'grey.700' }} />,
-
-          ...(!purchasedSongIds.has(selectedSong?.id) ? [
-            <MenuItem key="purchase" onClick={() => handlePurchase(selectedSong)} sx={{ color: 'white' }}>
-              <ListItemIcon>
-                <ShoppingCart sx={{ color: '#1DB954' }} />
-              </ListItemIcon>
-              <ListItemText>Purchase ($1.99)</ListItemText>
-            </MenuItem>
-          ] : [])
-        ]}
+            <ListItemText>Purchase ($1.99)</ListItemText>
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Fan Capture Modal */}
