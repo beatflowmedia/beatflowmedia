@@ -367,7 +367,7 @@ export default function ArtistSimple() {
   const handleGetUpdates = async () => {
     // Race condition guard - prevent duplicate submissions
     if (subscribeProcessingRef.current) {
-      console.log('⚠️ Subscribe already processing, ignoring duplicate click');
+      console.log('⚠️ Subscribe/unsubscribe already processing, ignoring duplicate click');
       return;
     }
 
@@ -377,29 +377,43 @@ export default function ArtistSimple() {
       return;
     }
 
-    // User is authenticated - directly subscribe them using service
+    // User is authenticated - toggle subscription
     subscribeProcessingRef.current = true;
 
     try {
-      const result = await fanCaptureService.subscribeToArtist({
-        userId: user.uid,
-        email: user.email,
-        artistId: artist?.id,
-        artistName: artist?.name,
-        source: 'artist_page',
-        incentiveType: 'newsletter',
-        incentiveContent: `Get exclusive updates, early access to new releases, and behind-the-scenes content from ${artist?.name}`
-      });
+      let result;
 
-      if (result.success) {
-        toast.success(result.message);
-        setIsSubscribed(true); // Update subscription state
+      if (isSubscribed) {
+        // Unsubscribe
+        result = await fanCaptureService.unsubscribe(user.uid, artist?.name);
+        if (result.success) {
+          toast.success(result.message);
+          setIsSubscribed(false); // Update subscription state
+        } else {
+          toast.error(result.message);
+        }
       } else {
-        toast.error(result.message);
+        // Subscribe
+        result = await fanCaptureService.subscribeToArtist({
+          userId: user.uid,
+          email: user.email,
+          artistId: artist?.id,
+          artistName: artist?.name,
+          source: 'artist_page',
+          incentiveType: 'newsletter',
+          incentiveContent: `Get exclusive updates, early access to new releases, and behind-the-scenes content from ${artist?.name}`
+        });
+
+        if (result.success) {
+          toast.success(result.message);
+          setIsSubscribed(true); // Update subscription state
+        } else {
+          toast.error(result.message);
+        }
       }
     } catch (error) {
-      console.error('Error subscribing to artist updates:', error);
-      toast.error('Failed to subscribe. Please try again.');
+      console.error('Error toggling subscription:', error);
+      toast.error('Failed to update subscription. Please try again.');
     } finally {
       subscribeProcessingRef.current = false;
     }
@@ -517,7 +531,7 @@ export default function ArtistSimple() {
               variant={isSubscribed ? "contained" : "outlined"}
               size="small"
               onClick={handleGetUpdates}
-              disabled={checkingSubscription || isSubscribed}
+              disabled={checkingSubscription}
               sx={{
                 borderColor: isSubscribed ? 'transparent' : '#1DB954',
                 bgcolor: isSubscribed ? 'rgba(29, 185, 84, 0.2)' : 'transparent',
@@ -527,13 +541,14 @@ export default function ArtistSimple() {
                 px: 3,
                 borderRadius: '20px',
                 '&:hover': {
-                  bgcolor: isSubscribed ? 'rgba(29, 185, 84, 0.3)' : 'rgba(29, 185, 84, 0.1)',
-                  borderColor: isSubscribed ? 'transparent' : '#1ed760'
+                  bgcolor: isSubscribed ? 'rgba(239, 68, 68, 0.1)' : 'rgba(29, 185, 84, 0.1)',
+                  borderColor: isSubscribed ? 'transparent' : '#1ed760',
+                  color: isSubscribed ? '#ef4444' : '#1DB954'
                 },
                 '&:disabled': {
-                  borderColor: isSubscribed ? 'transparent' : '#1DB954',
-                  color: isSubscribed ? '#1ed760' : '#1DB954',
-                  opacity: isSubscribed ? 1 : 0.6
+                  borderColor: '#1DB954',
+                  color: '#1DB954',
+                  opacity: 0.6
                 }
               }}
             >
