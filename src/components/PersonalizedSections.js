@@ -332,7 +332,13 @@ export default function PersonalizedSections() {
               }
             }}
           >
-            {section.songs.map((song) => {
+            {section.songs.reduce((uniqueSongs, song) => {
+              // Only add if we haven't seen this cover art before
+              if (!uniqueSongs.some(s => (s.cover || s.coverUrl) === (song.cover || song.coverUrl))) {
+                uniqueSongs.push(song);
+              }
+              return uniqueSongs;
+            }, []).map((song) => {
               const isPlaying = isSongPlaying(song);
 
               return (

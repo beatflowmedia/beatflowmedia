@@ -412,7 +412,13 @@ function DiscoverWeekly() {
       {/* Track Grid */}
       {currentTracks.length > 0 ? (
         <Grid container spacing={2}>
-          {currentTracks.map(track => renderTrackCard(track))}
+          {currentTracks.reduce((uniqueTracks, track) => {
+            // Only add if we haven't seen this cover art before
+            if (!uniqueTracks.some(t => (t.coverUrl || t.cover) === (track.coverUrl || track.cover))) {
+              uniqueTracks.push(track);
+            }
+            return uniqueTracks;
+          }, []).map(track => renderTrackCard(track))}
         </Grid>
       ) : (
         <Box sx={{ textAlign: 'center', py: 8 }}>

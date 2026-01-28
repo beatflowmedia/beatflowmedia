@@ -137,13 +137,19 @@ function DiscoverWeeklyPreview() {
       </Box>
 
       {/* Track Grid */}
-      <Grid container spacing={'clamp(0.5rem, calc(0.25rem + 1vw), 2rem)'}>
-        {recommendations.slice(0, 6).map((track) => {
+      <Grid container spacing={'clamp(2rem, calc(1.5rem + 3vw), 4rem)'}>
+        {recommendations.slice(0, 20).reduce((uniqueTracks, track) => {
+          // Only add if we haven't seen this cover art before
+          if (!uniqueTracks.some(t => (t.coverUrl || t.cover) === (track.coverUrl || track.cover))) {
+            uniqueTracks.push(track);
+          }
+          return uniqueTracks;
+        }, []).slice(0, 6).map((track) => {
           const isCurrentTrack = state.queue[state.currentIndex]?.id === track.id;
           const isPlaying = isCurrentTrack && state.isPlaying;
 
           return (
-            <Grid item xs={6} sm={4} md={3} lg={2} key={track.id}>
+            <Grid item xs={6} sm={4} md={3} lg={2} key={track.id} sx={{ px: 'clamp(0.25rem, calc(0.125rem + 0.75vw), 0.75rem)' }}>
               <Card
                 sx={{
                   bgcolor: '#1a1a1a',

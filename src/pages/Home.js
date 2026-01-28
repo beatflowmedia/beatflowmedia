@@ -689,10 +689,96 @@ function Home() {
       </Box>
 
 
+      {/* Recently Released Albums Section - Top */}
+      {recentAlbums.length > 0 && (
+        <>
+          <Box sx={{ mb: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }}>
+            <Typography sx={{
+              color: 'text.primary',
+              fontSize: 'clamp(1.125rem, calc(0.875rem + 1vw), 1.75rem)',
+              mb: 'clamp(1rem, calc(0.5rem + 1vw), 2rem)',
+              fontWeight: 'bold'
+            }}>
+              Recently Released Albums
+            </Typography>
+            <Grid container spacing={'clamp(2rem, calc(1.5rem + 3vw), 4rem)'}>
+              {recentAlbums.map((album) => (
+                <Grid item xs={6} sm={4} md={2.4} lg={2} key={album.id} sx={{ px: 'clamp(0.25rem, calc(0.125rem + 0.75vw), 0.75rem)' }}>
+                  <Card
+                    onClick={() => navigate(`/album/${album.id}`)}
+                    sx={{
+                      bgcolor: '#1e1e1e',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 4,
+                        bgcolor: '#282828'
+                      }
+                    }}
+                  >
+                    <OptimizedImage
+                      src={album.coverUrl}
+                      alt={album.title}
+                      fallback="/default-album.jpg"
+                      sx={{
+                        width: '100%',
+                        height: 'auto',
+                        aspectRatio: '1 / 1'
+                      }}
+                    />
+                    <CardContent sx={{ pb: 'clamp(0.5rem, calc(0.25rem + 1vw), 2rem)' }}>
+                      <Typography
+                        sx={{
+                          color: 'text.primary',
+                          fontWeight: 'bold',
+                          fontSize: 'clamp(0.875rem, calc(0.75rem + 0.3vw), 1rem)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {album.title}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: 'clamp(0.75rem, calc(0.7rem + 0.2vw), 0.875rem)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {album.artistName || album.artist}
+                      </Typography>
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'clamp(0.25rem, calc(0.125rem + 0.3vw), 1rem)',
+                        mt: 'clamp(0.25rem, calc(0.125rem + 0.3vw), 1rem)'
+                      }}>
+                        <QueueMusic sx={{ fontSize: 'clamp(12px, calc(0.75rem + 0.2vw), 14px)', color: '#1DB954' }} />
+                        <Typography sx={{
+                          color: 'text.secondary',
+                          fontSize: 'clamp(0.625rem, calc(0.6rem + 0.2vw), 0.75rem)'
+                        }}>
+                          {album.trackCount || 0} tracks
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+          <Divider sx={{ my: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }} />
+        </>
+      )}
+
       {/* Personalized Sections (only for logged in users and 'all'/'music' categories) */}
       {user && (activeCategory === 'all' || activeCategory === 'music') && (
         <>
-          <Box sx={{ mb: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }}>
+          <Box sx={{ mb: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }}>
             <Suspense fallback={
               <Box sx={{
                 display: 'flex',
@@ -723,12 +809,12 @@ function Home() {
           }>
             <DiscoverWeeklyPreview />
           </Suspense>
-          <Divider sx={{ my: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }} />
+          <Divider sx={{ my: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }} />
         </>
       )}
 
       {/* Trending Songs Section */}
-      <Box sx={{ mb: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }}>
+      <Box sx={{ mb: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }}>
         <Suspense fallback={
           <Box sx={{
             display: 'flex',
@@ -742,11 +828,11 @@ function Home() {
         </Suspense>
       </Box>
 
-      <Divider sx={{ my: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }} />
+      <Divider sx={{ my: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }} />
 
       {/* Featured Artists Section */}
       {featuredArtists.length > 0 && (
-        <Box sx={{ mb: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }}>
+        <Box sx={{ mb: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }}>
           <Typography sx={{
             color: 'text.primary',
             fontSize: 'clamp(1.125rem, calc(0.875rem + 1vw), 1.75rem)',
@@ -824,91 +910,7 @@ function Home() {
         </Box>
       )}
 
-      {/* Recently Released Albums Section */}
-      {recentAlbums.length > 0 && (
-        <>
-          <Divider sx={{ my: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }} />
-          <Box sx={{ mb: 'clamp(1.5rem, calc(1rem + 2vw), 4rem)' }}>
-            <Typography sx={{
-              color: 'text.primary',
-              fontSize: 'clamp(1.125rem, calc(0.875rem + 1vw), 1.75rem)',
-              mb: 'clamp(1rem, calc(0.5rem + 1vw), 2rem)',
-              fontWeight: 'bold'
-            }}>
-              Recently Released Albums
-            </Typography>
-            <Grid container spacing={'clamp(0.5rem, calc(0.25rem + 1vw), 2rem)'}>
-              {recentAlbums.map((album) => (
-                <Grid item xs={6} sm={4} md={2.4} lg={2} key={album.id}>
-                  <Card
-                    onClick={() => navigate(`/album/${album.id}`)}
-                    sx={{
-                      bgcolor: '#1e1e1e',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: 4,
-                        bgcolor: '#282828'
-                      }
-                    }}
-                  >
-                    <OptimizedImage
-                      src={album.coverUrl}
-                      alt={album.title}
-                      fallback="/default-album.jpg"
-                      sx={{
-                        width: '100%',
-                        height: 'auto',
-                        aspectRatio: '1 / 1'
-                      }}
-                    />
-                    <CardContent sx={{ pb: 'clamp(0.5rem, calc(0.25rem + 1vw), 2rem)' }}>
-                      <Typography
-                        sx={{
-                          color: 'text.primary',
-                          fontWeight: 'bold',
-                          fontSize: 'clamp(0.875rem, calc(0.75rem + 0.3vw), 1rem)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {album.title}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          color: 'text.secondary',
-                          fontSize: 'clamp(0.75rem, calc(0.7rem + 0.2vw), 0.875rem)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {album.artistName || album.artist}
-                      </Typography>
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'clamp(0.25rem, calc(0.125rem + 0.3vw), 1rem)',
-                        mt: 'clamp(0.25rem, calc(0.125rem + 0.3vw), 1rem)'
-                      }}>
-                        <QueueMusic sx={{ fontSize: 'clamp(12px, calc(0.75rem + 0.2vw), 14px)', color: '#1DB954' }} />
-                        <Typography sx={{
-                          color: 'text.secondary',
-                          fontSize: 'clamp(0.625rem, calc(0.6rem + 0.2vw), 0.75rem)'
-                        }}>
-                          {album.trackCount || 0} tracks
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </>
-      )}
+
 
       {/* Main Content Grid */}
       <Grid container spacing={2}>
