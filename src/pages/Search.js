@@ -176,9 +176,18 @@ function Search() {
     const results = { songs: [], artists: [], albums: [], playlists: [] };
 
     try {
-      // Search songs - load all and filter client-side (Firestore doesn't support text search)
+      // Search songs - use query with limit for better performance
+      // Note: Firestore doesn't support full-text search, so we fetch visible songs
+      // and filter client-side. Limited to 1000 most recent songs for performance.
       console.log('Fetching songs from Firestore...');
-      const songsSnapshot = await getDocs(collection(db, "songs"));
+      const songsQuery = query(
+        collection(db, "songs"),
+        where("isVisible", "!=", false),
+        orderBy("isVisible"),
+        orderBy("createdAt", "desc"),
+        limit(1000)
+      );
+      const songsSnapshot = await getDocs(songsQuery);
       console.log('Songs fetched:', songsSnapshot.docs.length);
       results.songs = songsSnapshot.docs
         .map((doc) => ({
@@ -187,9 +196,6 @@ function Search() {
           type: "song"
         }))
         .filter((song) => {
-          // Filter out hidden songs first
-          if (song.isVisible === false) return false;
-
           const title = (song.title || "").toLowerCase();
           const artist = (song.artist || song.artistName || "").toLowerCase();
           const album = (song.album || song.albumName || "").toLowerCase();
@@ -205,8 +211,13 @@ function Search() {
 
       console.log('Songs after filtering:', results.songs.length);
 
-      // Search artists
-      const artistsSnapshot = await getDocs(collection(db, "artists"));
+      // Search artists - limit to 200 most recent
+      const artistsQuery = query(
+        collection(db, "artists"),
+        orderBy("createdAt", "desc"),
+        limit(200)
+      );
+      const artistsSnapshot = await getDocs(artistsQuery);
       results.artists = artistsSnapshot.docs
         .map((doc) => ({
           id: doc.id,
@@ -220,8 +231,15 @@ function Search() {
         })
         .slice(0, 10);
 
-      // Search albums
-      const albumsSnapshot = await getDocs(collection(db, "albums"));
+      // Search albums - use query with limit and filter
+      const albumsQuery = query(
+        collection(db, "albums"),
+        where("isVisible", "!=", false),
+        orderBy("isVisible"),
+        orderBy("releaseDate", "desc"),
+        limit(500)
+      );
+      const albumsSnapshot = await getDocs(albumsQuery);
       results.albums = albumsSnapshot.docs
         .map((doc) => ({
           id: doc.id,
@@ -229,9 +247,6 @@ function Search() {
           type: "album"
         }))
         .filter((album) => {
-          // Filter out hidden albums first
-          if (album.isVisible === false) return false;
-
           const title = (album.title || album.name || "").toLowerCase();
           const artist = (album.artist || album.artistName || "").toLowerCase();
           return title.includes(searchTerm) || artist.includes(searchTerm);

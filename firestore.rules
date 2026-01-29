@@ -637,6 +637,16 @@ service cloud.firestore {
       allow write: if isPlatformAdmin(); // Only admins can generate sitemap
     }
 
+    // ========================================
+    // PLATFORM STATS & ANALYTICS
+    // ========================================
+
+    // Platform Stats - admins can write, anyone can read aggregate stats
+    match /platformStats/{statsDoc} {
+      allow read: if true; // Public readable for platform metrics
+      allow write: if isPlatformAdmin(); // Only admins can initialize/update stats
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

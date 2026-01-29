@@ -1311,6 +1311,127 @@ exports.onCampaignComplete = onDocumentUpdated('campaigns/{campaignId}', async (
 });
 
 // ========================================
+// PLATFORM STATS AUTO-UPDATE
+// ========================================
+/**
+ * Auto-update platformStats when songs are created or deleted
+ */
+exports.updateStatsOnSongCreate = onDocumentCreated('songs/{songId}', async (event) => {
+  try {
+    const statsRef = admin.firestore().collection('platformStats').doc('global');
+    await statsRef.update({
+      totalSongs: admin.firestore.FieldValue.increment(1),
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('Platform stats updated: song created');
+  } catch (error) {
+    console.error('Error updating stats on song create:', error);
+  }
+});
+
+exports.updateStatsOnSongDelete = onDocumentUpdated('songs/{songId}', async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+
+  // Check if song was soft-deleted (isVisible changed to false)
+  if (before.isVisible !== false && after.isVisible === false) {
+    try {
+      const statsRef = admin.firestore().collection('platformStats').doc('global');
+      await statsRef.update({
+        totalSongs: admin.firestore.FieldValue.increment(-1),
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('Platform stats updated: song deleted');
+    } catch (error) {
+      console.error('Error updating stats on song delete:', error);
+    }
+  }
+});
+
+/**
+ * Auto-update platformStats when albums are created or deleted
+ */
+exports.updateStatsOnAlbumCreate = onDocumentCreated('albums/{albumId}', async (event) => {
+  try {
+    const statsRef = admin.firestore().collection('platformStats').doc('global');
+    await statsRef.update({
+      totalAlbums: admin.firestore.FieldValue.increment(1),
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('Platform stats updated: album created');
+  } catch (error) {
+    console.error('Error updating stats on album create:', error);
+  }
+});
+
+exports.updateStatsOnAlbumDelete = onDocumentUpdated('albums/{albumId}', async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+
+  // Check if album was soft-deleted (isVisible changed to false)
+  if (before.isVisible !== false && after.isVisible === false) {
+    try {
+      const statsRef = admin.firestore().collection('platformStats').doc('global');
+      await statsRef.update({
+        totalAlbums: admin.firestore.FieldValue.increment(-1),
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('Platform stats updated: album deleted');
+    } catch (error) {
+      console.error('Error updating stats on album delete:', error);
+    }
+  }
+});
+
+/**
+ * Auto-update platformStats when artists are created
+ */
+exports.updateStatsOnArtistCreate = onDocumentCreated('artists/{artistId}', async (event) => {
+  try {
+    const statsRef = admin.firestore().collection('platformStats').doc('global');
+    await statsRef.update({
+      totalArtists: admin.firestore.FieldValue.increment(1),
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('Platform stats updated: artist created');
+  } catch (error) {
+    console.error('Error updating stats on artist create:', error);
+  }
+});
+
+/**
+ * Auto-update platformStats when users are created
+ */
+exports.updateStatsOnUserCreate = onDocumentCreated('users/{userId}', async (event) => {
+  try {
+    const statsRef = admin.firestore().collection('platformStats').doc('global');
+    await statsRef.update({
+      totalUsers: admin.firestore.FieldValue.increment(1),
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('Platform stats updated: user created');
+  } catch (error) {
+    console.error('Error updating stats on user create:', error);
+  }
+});
+
+/**
+ * Auto-update platformStats when playlists are created
+ */
+exports.updateStatsOnPlaylistCreate = onDocumentCreated('playlists/{playlistId}', async (event) => {
+  try {
+    const statsRef = admin.firestore().collection('platformStats').doc('global');
+    await statsRef.update({
+      totalPlaylists: admin.firestore.FieldValue.increment(1),
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('Platform stats updated: playlist created');
+  } catch (error) {
+    console.error('Error updating stats on playlist create:', error);
+  }
+});
+
+// ========================================
 // SEO - XML SITEMAP GENERATION
 // ========================================
 /**

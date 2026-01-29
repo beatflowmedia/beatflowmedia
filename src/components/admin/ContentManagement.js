@@ -37,7 +37,7 @@ import {
   Delete
 } from '@mui/icons-material';
 import { db } from '../../firebaseConfig';
-import { collection, query, getDocs, doc, updateDoc, where, deleteDoc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, where, deleteDoc, orderBy, limit } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { useModal } from '../../hooks/useModal';
 
@@ -79,8 +79,13 @@ export default function ContentManagement() {
     try {
       setLoading(true);
 
-      // Load all songs
-      const songsSnapshot = await getDocs(collection(db, 'songs'));
+      // Load songs with limit for performance (admin can paginate for more)
+      const songsQuery = query(
+        collection(db, 'songs'),
+        orderBy('createdAt', 'desc'),
+        limit(500) // Reasonable limit for admin dashboard, add pagination if needed
+      );
+      const songsSnapshot = await getDocs(songsQuery);
       const songsData = songsSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -91,8 +96,13 @@ export default function ContentManagement() {
       });
       setSongs(songsData);
 
-      // Load all albums
-      const albumsSnapshot = await getDocs(collection(db, 'albums'));
+      // Load albums with limit for performance
+      const albumsQuery = query(
+        collection(db, 'albums'),
+        orderBy('createdAt', 'desc'),
+        limit(200) // Reasonable limit for admin dashboard
+      );
+      const albumsSnapshot = await getDocs(albumsQuery);
       const albumsData = albumsSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -103,7 +113,7 @@ export default function ContentManagement() {
       });
       setAlbums(albumsData);
 
-      console.log('Loaded content:', songsData.length, 'songs,', albumsData.length, 'albums');
+      console.log('Loaded content:', songsData.length, 'songs (max 500),', albumsData.length, 'albums (max 200)');
     } catch (error) {
       console.error('Error loading content:', error);
       toast.error('Failed to load content');

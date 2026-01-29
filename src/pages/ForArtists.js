@@ -656,6 +656,27 @@ export default function ForArtists() {
     setTimeout(() => setStatus({ type: '', message: '' }), 2000);
   };
 
+  const copyFeaturedArtistToAllTracks = (sourceIndex) => {
+    const sourceFeaturedArtist = form.tracks[sourceIndex].featuredArtists;
+
+    if (!sourceFeaturedArtist) {
+      setStatus({ type: 'warning', message: 'No featured artist to copy' });
+      return;
+    }
+
+    const newTracks = form.tracks.map((track, index) => {
+      if (index === sourceIndex) return track;
+      return {
+        ...track,
+        featuredArtists: sourceFeaturedArtist
+      };
+    });
+
+    setForm(prev => ({ ...prev, tracks: newTracks }));
+    setStatus({ type: 'success', message: `Applied featured artist to ${form.tracks.length - 1} track(s)` });
+    setTimeout(() => setStatus({ type: '', message: '' }), 2000);
+  };
+
   const addWriter = (trackIndex) => {
     const newTracks = [...form.tracks];
     if (!Array.isArray(newTracks[trackIndex].writers)) {
@@ -1450,14 +1471,26 @@ export default function ForArtists() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Featured Artists"
-                value={track.featuredArtists}
-                onChange={(e) => handleTrackChange(index, 'featuredArtists', e.target.value)}
-                placeholder="e.g., ft. Artist Name"
-                helperText="Leave blank if none"
-              />
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                <TextField
+                  fullWidth
+                  label="Featured Artists"
+                  value={track.featuredArtists}
+                  onChange={(e) => handleTrackChange(index, 'featuredArtists', e.target.value)}
+                  placeholder="e.g., ft. Artist Name"
+                  helperText="Leave blank if none"
+                />
+                {form.tracks.length > 1 && track.featuredArtists && (
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => copyFeaturedArtistToAllTracks(index)}
+                    sx={{ mt: 1, minWidth: 80, fontSize: '0.7rem' }}
+                  >
+                    Apply to All
+                  </Button>
+                )}
+              </Box>
             </Grid>
 
             <Grid item xs={12} md={6}>
