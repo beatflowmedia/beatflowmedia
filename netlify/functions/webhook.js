@@ -141,6 +141,13 @@ async function handleCheckoutSessionCompleted(session) {
 
   console.log(`✅ Processing purchase: userId=${userId}, itemId=${itemId}, itemType=${itemType}`);
 
+  // Calculate expiration date for artist memberships (1 year from now)
+  let expirationDate = null;
+  if (itemType === 'artist_membership') {
+    expirationDate = new Date();
+    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+  }
+
   try {
     // Handle artist membership subscription
     if (itemType === 'artist_membership') {
@@ -152,9 +159,6 @@ async function handleCheckoutSessionCompleted(session) {
         const userDoc = await userRef.get();
         console.log('📄 User document exists:', userDoc.exists);
 
-        // Calculate expiration date (1 year from now)
-        const expirationDate = new Date();
-        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
         console.log('📅 Expiration date calculated:', expirationDate.toISOString());
 
         const membershipData = {
