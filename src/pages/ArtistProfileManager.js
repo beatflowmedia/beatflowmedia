@@ -59,6 +59,7 @@ import StripeConnectOnboarding from '../components/StripeConnectOnboarding';
 import { checkMembershipStatus } from '../services/membershipService';
 import ArtistCampaignManager from '../components/ArtistCampaignManager';
 import { useSongPlays } from '../hooks/useSongPlays';
+import ForArtists from './ForArtists';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -170,6 +171,7 @@ export default function ArtistProfileManager() {
       try {
         setLoadingMembership(true);
         const status = await checkMembershipStatus(user.uid);
+        console.log('🔍 Artist Profile - Membership Status:', status);
         setMembershipStatus(status);
       } catch (error) {
         console.error('Error checking membership:', error);
@@ -183,10 +185,17 @@ export default function ArtistProfileManager() {
 
   // Redirect to pricing if no active membership
   useEffect(() => {
-    if (!loadingMembership && !membershipStatus.active) {
+    console.log('🔍 Artist Profile - Redirect check:', {
+      loadingMembership,
+      active: membershipStatus.active,
+      user: !!user
+    });
+
+    if (!loadingMembership && !membershipStatus.active && user) {
+      console.log('⚠️ Redirecting to artist-pricing - no active membership');
       navigate('/artist-pricing');
     }
-  }, [loadingMembership, membershipStatus.active, navigate]);
+  }, [loadingMembership, membershipStatus.active, navigate, user]);
 
   useEffect(() => {
     // Wait a moment for auth to initialize before redirecting
@@ -817,7 +826,7 @@ export default function ArtistProfileManager() {
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={() => navigate('/for-artists')} sx={{ mr: 2, color: 'text.primary' }}>
+            <IconButton onClick={() => navigate('/')} sx={{ mr: 2, color: 'text.primary' }}>
               <ArrowBack />
             </IconButton>
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
@@ -828,8 +837,8 @@ export default function ArtistProfileManager() {
             variant="contained"
             startIcon={<MusicNote />}
             onClick={() => {
-              console.log('Upload Music clicked!', { artistName, bio });
-              navigate('/for-artists');
+              console.log('Upload Music clicked - switching to upload tab');
+              setActiveTab(1); // Switch to Upload Music tab
             }}
             sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
           >
@@ -865,7 +874,8 @@ export default function ArtistProfileManager() {
             }}
           >
             <Tab label="Profile" />
-            <Tab label="Music" />
+            <Tab label="Upload Music" />
+            <Tab label="My Music" />
             <Tab label="Social Links" />
             <Tab label="Tour Dates" />
             <Tab label="Campaigns" />
@@ -875,6 +885,7 @@ export default function ArtistProfileManager() {
 
           {/* Profile Tab */}
           <TabPanel value={activeTab} index={0}>
+
             <CardContent>
               <Grid container spacing={3}>
                 {/* Profile Image */}
@@ -977,8 +988,13 @@ export default function ArtistProfileManager() {
             </CardContent>
           </TabPanel>
 
-          {/* Music Tab */}
+          {/* Upload Music Tab */}
           <TabPanel value={activeTab} index={1}>
+            <ForArtists embedded={true} />
+          </TabPanel>
+
+          {/* My Music Tab */}
+          <TabPanel value={activeTab} index={2}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 3 }}>Your Music</Typography>
 
@@ -1258,7 +1274,7 @@ export default function ArtistProfileManager() {
           </TabPanel>
 
           {/* Social Links Tab */}
-          <TabPanel value={activeTab} index={2}>
+          <TabPanel value={activeTab} index={3}>
             <CardContent>
               <Alert severity="info" sx={{ mb: 3 }}>
                 Add your social media links to connect with fans across platforms
@@ -1304,7 +1320,7 @@ export default function ArtistProfileManager() {
           </TabPanel>
 
           {/* Tour Dates Tab */}
-          <TabPanel value={activeTab} index={3}>
+          <TabPanel value={activeTab} index={4}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6">Upcoming Shows</Typography>
@@ -1371,12 +1387,12 @@ export default function ArtistProfileManager() {
           </TabPanel>
 
           {/* Campaigns Tab */}
-          <TabPanel value={activeTab} index={4}>
+          <TabPanel value={activeTab} index={5}>
             <ArtistCampaignManager />
           </TabPanel>
 
           {/* Statistics Tab */}
-          <TabPanel value={activeTab} index={5}>
+          <TabPanel value={activeTab} index={6}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 3 }}>Your Statistics</Typography>
 
@@ -1746,7 +1762,7 @@ export default function ArtistProfileManager() {
           </TabPanel>
 
           {/* Payouts Tab */}
-          <TabPanel value={activeTab} index={6}>
+          <TabPanel value={activeTab} index={7}>
             <StripeConnectOnboarding totalRevenue={totalRevenue} purchases={purchases} />
           </TabPanel>
         </Card>

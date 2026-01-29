@@ -49,80 +49,115 @@ import Footer from '../components/Footer';
 
 const steps = ['Release Type', 'Upload Files', 'Track Details', 'Review'];
 
-// Comprehensive genre list based on industry standards
-const PLATFORM_GENRES = [
-  'Afrobeat',
-  'Alternative',
-  'Ambient',
-  'Bluegrass',
-  'Blues',
-  'Boom Bap',
-  'Breakbeat',
-  'Children\'s Music',
-  'Classical',
-  'Comedy',
-  'Country',
-  'Dance',
-  'Dancehall',
-  'Deep House',
-  'Disco',
-  'Downtempo',
-  'Drum & Bass',
-  'Dub',
-  'Dubstep',
-  'EDM',
-  'Electro',
-  'Electronic',
-  'Emo',
-  'Experimental',
-  'Folk',
-  'Funk',
-  'Garage',
-  'Gospel',
-  'Grime',
-  'Grunge',
-  'Hardcore',
-  'Hip-Hop',
-  'House',
-  'Indie',
-  'Industrial',
-  'Instrumental',
-  'Jazz',
-  'Jungle',
-  'K-Pop',
-  'Latin',
-  'Lo-Fi',
-  'Metal',
-  'Minimal',
-  'New Age',
-  'Nu Jazz',
-  'Phonk',
-  'Pop',
-  'Post-Rock',
-  'Progressive',
-  'Psychedelic',
-  'Punk',
-  'R&B',
-  'Rap',
-  'Reggae',
-  'Reggaeton',
-  'Rock',
-  'Shoegaze',
-  'Singer-Songwriter',
-  'Ska',
-  'Soul',
-  'Soundtrack',
-  'Spoken Word',
-  'Synthpop',
-  'Synthwave',
-  'Techno',
-  'Trance',
-  'Trap',
-  'Trip-Hop',
-  'UK Garage',
-  'Vaporwave',
-  'World'
-].sort();
+// Industry-standard genre classification (2026) - Future-proofed for AI & Hybrid Genres
+const GENRE_CATEGORIES = {
+  'Pop': {
+    label: 'Pop',
+    subgenres: ['Adult Contemporary', 'K-Pop', 'J-Pop', 'C-Pop', 'Synth-pop', 'Electropop', 'Hyperpop', 'Indie Pop', 'Pop Rock', 'Sophisti-pop', 'City Pop', 'Glitchcore']
+  },
+  'Hip-Hop / Rap': {
+    label: 'Hip-Hop / Rap',
+    subgenres: ['Trap', 'Drill', 'UK Drill', 'Brooklyn Drill', 'Lo-Fi Rap', 'Alternative Rap', 'Old School', 'Boom Bap', 'PluggnB', 'Cloud Rap', 'Conscious Rap', 'Emo Rap', 'Grime', 'West Coast Rap']
+  },
+  'Rock': {
+    label: 'Rock',
+    subgenres: ['Alternative', 'Indie Rock', 'Punk', 'Hard Rock', 'Heavy Metal', 'Post-Punk', 'Grunge', 'Shoegaze', 'Post-Rock', 'Emo', 'Math Rock', 'Midwest Emo', 'Modern Rock']
+  },
+  'R&B / Soul': {
+    label: 'R&B / Soul',
+    subgenres: ['Neo-Soul', 'Contemporary R&B', 'Funk', 'Disco', 'Motown', 'Quiet Storm', 'Alternative R&B', 'Latin Alt-Soul']
+  },
+  'Country': {
+    label: 'Country',
+    subgenres: ['Americana', 'Bluegrass', 'Country Pop', 'Honky Tonk', 'Outlaw Country', 'Country Rock', 'Hick-Hop', 'Country-Trap']
+  },
+  'Electronic / EDM': {
+    label: 'Electronic / EDM',
+    subgenres: [
+      // House
+      'Deep House', 'Tech House', 'Progressive House', 'Acid House', 'Future House', 'Tropical House', 'Nu Disco', 'Amapiano',
+      // Techno
+      'Minimal Techno', 'Industrial Techno', 'Detroit Techno', 'Hard Techno',
+      // Bass Music
+      'Dubstep', 'Future Bass', 'Drum & Bass', 'Liquid DnB', 'Neurofunk', 'Jungle', 'Riddim', 'Dream-Bass',
+      // Trance
+      'Psytrance', 'Uplifting Trance', 'Progressive Trance', 'Future Rave', 'Goa Trance', 'Euro-trance',
+      // Ambient / Chill
+      'Downtempo', 'Trip Hop', 'New Age', 'Lo-Fi Beats', 'Chillwave', 'Dark Ambient', 'Chillhop', 'Drone Music',
+      // Other
+      'UK Garage', 'Breakbeat', 'Vaporwave', 'Synthwave', 'Hardstyle', 'Mallsoft'
+    ]
+  },
+  'Latin': {
+    label: 'Latin',
+    subgenres: ['Reggaeton', 'Salsa', 'Bachata', 'Cumbia', 'Latin Trap', 'Banda', 'Merengue', 'Urbano Latino', 'Corridos Tumbados', 'Baile Funk']
+  },
+  'Afrobeats': {
+    label: 'Afrobeats',
+    subgenres: ['Afro-fusion', 'Amapiano', 'Highlife', 'Kuduro', 'Afro-house', 'Afrofuturism', 'Gqom']
+  },
+  'Reggae': {
+    label: 'Reggae',
+    subgenres: ['Dancehall', 'Dub', 'Ska', 'Rocksteady', 'Roots Reggae']
+  },
+  'Jazz': {
+    label: 'Jazz',
+    subgenres: ['Swing', 'Bebop', 'Jazz Fusion', 'Smooth Jazz', 'Bossa Nova', 'Nu Jazz', 'Jazz-Drill', 'Acid Jazz']
+  },
+  'Classical': {
+    label: 'Classical',
+    subgenres: ['Baroque', 'Romantic', 'Modern Classical', 'Orchestral', 'Chamber Music', 'Opera', 'Neoclassical', 'Minimalism', 'Chamber Pop']
+  },
+  'Soundtrack': {
+    label: 'Soundtrack',
+    subgenres: ['Film Scores', 'Video Game Music', 'Anime', 'TV Themes', 'Epic Orchestral', 'Trailer Music', 'Cinematic Score']
+  },
+  'Christian / Gospel': {
+    label: 'Christian / Gospel',
+    subgenres: ['Contemporary Christian Music (CCM)', 'Gospel', 'Praise & Worship', 'Southern Gospel', 'Alt-Gospel']
+  },
+  'Functional': {
+    label: 'Functional',
+    subgenres: ['Children\'s Music', 'Holiday', 'Meditation', 'Nature Sounds', 'Sleep Music', 'Workout', 'Lo-Fi Focus', 'Productivity', 'Wellness', 'Solfeggio Frequencies', 'Binaural Beats']
+  },
+  'Alternative / Indie': {
+    label: 'Alternative / Indie',
+    subgenres: ['Indie Folk', 'Indie Electronic', 'Art Pop', 'Experimental', 'Singer-Songwriter', 'IDM', 'Sound Collage']
+  },
+  'Metal': {
+    label: 'Metal',
+    subgenres: ['Death Metal', 'Black Metal', 'Thrash Metal', 'Doom Metal', 'Metalcore', 'Nu Metal', 'Trap-Metal', 'Rage']
+  },
+  'World': {
+    label: 'World',
+    subgenres: ['Ethnic', 'Folk', 'Traditional', 'World Fusion', 'Punjabi Pop']
+  },
+  'Blues': {
+    label: 'Blues',
+    subgenres: ['Delta Blues', 'Electric Blues', 'Blues Rock', 'Chicago Blues']
+  },
+  'Folk': {
+    label: 'Folk',
+    subgenres: ['Contemporary Folk', 'Traditional Folk', 'Folk Rock', 'Indie Folk', 'Synth-Folk']
+  },
+  'Experimental / Phonk': {
+    label: 'Experimental / Phonk',
+    subgenres: ['Phonk', 'Drift Phonk', 'Brazilian Phonk', 'Lo-Fi Phonk', 'Glitch', 'Noise']
+  }
+};
+
+// Get all main genres
+const MAIN_GENRES = Object.keys(GENRE_CATEGORIES).sort();
+
+// Helper function to get subgenres for a main genre
+const getSubgenres = (mainGenre) => {
+  return GENRE_CATEGORIES[mainGenre]?.subgenres || [];
+};
+
+// Flatten all subgenres for backward compatibility (temporary during migration)
+const PLATFORM_GENRES = MAIN_GENRES.flatMap(mainGenre =>
+  GENRE_CATEGORIES[mainGenre].subgenres
+).sort();
 
 
 const initialForm = {
@@ -131,10 +166,13 @@ const initialForm = {
   artist: '',
 
   // Default metadata to apply to all tracks
-  defaultPrimaryGenre: '',
-  defaultAdditionalGenres: [],
+  defaultMainGenre: '',
+  defaultSubGenre: '',
+  defaultAdditionalSubGenres: [], // Up to 3 additional sub-genres
   defaultWriters: [''],
   defaultWriterRoles: ['both'],
+  defaultProducers: [''],
+  defaultProducerRoles: ['producer'],
 
   // Album-level information
   previouslyReleased: false,
@@ -152,8 +190,9 @@ const initialForm = {
   // Track information
   tracks: [{
     title: '',
-    primaryGenre: '',
-    additionalGenres: [],
+    mainGenre: '',
+    subGenre: '',
+    additionalSubGenres: [],
     explicit: false,
     isInstrumental: false,
     isRadioEdit: false,
@@ -166,6 +205,8 @@ const initialForm = {
     writerRoles: ['both'], // 'music', 'lyrics', or 'both' for each writer
     composers: '',
     publishers: '',
+    producers: [''],
+    producerRoles: ['producer'],
     featuredArtists: '',
     remixer: '',
     isrc: '',
@@ -177,7 +218,7 @@ const initialForm = {
   description: ''
 };
 
-export default function ForArtists() {
+export default function ForArtists({ embedded = false }) {
   const { user: authUser } = useAuth();
   const { showAlert } = useModal();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -190,17 +231,17 @@ export default function ForArtists() {
   const [uploadStage, setUploadStage] = useState(''); // What's currently being uploaded
   const [uploadComplete, setUploadComplete] = useState(false);
   const [customGenres, setCustomGenres] = useState([]);
-  const [membershipStatus, setMembershipStatus] = useState({ active: false, expiresAt: null, daysRemaining: null });
-  const [loadingMembership, setLoadingMembership] = useState(true);
+  const [membershipStatus, setMembershipStatus] = useState({ active: true, expiresAt: null, daysRemaining: null }); // Default to active when embedded
+  const [loadingMembership, setLoadingMembership] = useState(embedded ? false : true); // Skip loading when embedded
   const navigate = useNavigate();
 
   useEffect(() => {
     loadCustomGenres();
-    if (authUser) {
+    if (authUser && !embedded) {
       loadMembershipStatus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUser]);
+  }, [authUser, embedded]);
 
   // Check for successful membership purchase
   useEffect(() => {
@@ -226,15 +267,17 @@ export default function ForArtists() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, authUser]);
 
-  // Redirect to pricing page if no active membership (but not if coming from successful payment)
+  // Redirect to pricing page if no active membership (but not if coming from successful payment or embedded)
   useEffect(() => {
+    if (embedded) return; // Skip redirect when embedded in artist profile
+
     const membershipParam = searchParams.get('membership');
     const isReturningFromPayment = membershipParam === 'active';
 
     if (!loadingMembership && !membershipStatus.active && !isReturningFromPayment) {
       navigate('/artist-pricing');
     }
-  }, [loadingMembership, membershipStatus.active, navigate, searchParams]);
+  }, [loadingMembership, membershipStatus.active, navigate, searchParams, embedded]);
 
   const loadMembershipStatus = async () => {
     try {
@@ -324,12 +367,17 @@ export default function ForArtists() {
       const updatedTracks = form.tracks.map(track => ({
         ...track,
         // Only apply defaults if track doesn't already have values
-        primaryGenre: track.primaryGenre || form.defaultPrimaryGenre,
-        additionalGenres: track.additionalGenres.length > 0 ? track.additionalGenres : [...form.defaultAdditionalGenres],
+        mainGenre: track.mainGenre || form.defaultMainGenre,
+        subGenre: track.subGenre || form.defaultSubGenre,
+        additionalSubGenres: track.additionalSubGenres.length > 0 ? track.additionalSubGenres : [...form.defaultAdditionalSubGenres],
         writers: track.writers.length === 1 && track.writers[0] === '' ? [...form.defaultWriters] : track.writers,
         writerRoles: track.writerRoles.length === 1 && track.writerRoles[0] === 'both' && form.defaultWriters.length > 1
           ? [...form.defaultWriterRoles]
-          : track.writerRoles
+          : track.writerRoles,
+        producers: track.producers.length === 1 && track.producers[0] === '' ? [...form.defaultProducers] : track.producers,
+        producerRoles: track.producerRoles.length === 1 && track.producerRoles[0] === 'producer' && form.defaultProducers.length > 1
+          ? [...form.defaultProducerRoles]
+          : track.producerRoles
       }));
       setForm(prev => ({ ...prev, tracks: updatedTracks }));
     }
@@ -348,12 +396,25 @@ export default function ForArtists() {
         return;
       }
 
-      // Check for missing primary genre
-      const missingGenreIndex = form.tracks.findIndex(t => !t.primaryGenre);
+      // Check for missing main genre
+      const missingGenreIndex = form.tracks.findIndex(t => !t.mainGenre);
       if (missingGenreIndex !== -1) {
-        setStatus({ type: 'error', message: `Please select primary genre for Track ${missingGenreIndex + 1}` });
+        setStatus({ type: 'error', message: `Please select main genre for Track ${missingGenreIndex + 1}` });
         setTimeout(() => {
-          const element = document.getElementById(`track-primary-genre-${missingGenreIndex}`);
+          const element = document.getElementById(`track-main-genre-${missingGenreIndex}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+        return;
+      }
+
+      // Check for missing sub-genre
+      const missingSubGenreIndex = form.tracks.findIndex(t => !t.subGenre);
+      if (missingSubGenreIndex !== -1) {
+        setStatus({ type: 'error', message: `Please select sub-genre for Track ${missingSubGenreIndex + 1}` });
+        setTimeout(() => {
+          const element = document.getElementById(`track-sub-genre-${missingSubGenreIndex}`);
           if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
@@ -450,14 +511,23 @@ export default function ForArtists() {
         }
 
         // Also extract genres if available and field is empty
-        if (!form.tracks[index].primaryGenre && metadata.common.genre && metadata.common.genre.length > 0) {
-          const matchedGenres = metadata.common.genre
+        if (!form.tracks[index].mainGenre && metadata.common.genre && metadata.common.genre.length > 0) {
+          const matchedSubgenres = metadata.common.genre
             .map(metaGenre => PLATFORM_GENRES.find(g => g.toLowerCase() === metaGenre.toLowerCase()))
             .filter(Boolean);
-          if (matchedGenres.length > 0) {
-            handleTrackChange(index, 'primaryGenre', matchedGenres[0]);
-            if (matchedGenres.length > 1) {
-              handleTrackChange(index, 'additionalGenres', matchedGenres.slice(1, 5));
+
+          if (matchedSubgenres.length > 0) {
+            // Try to find the main genre that contains this subgenre
+            const firstSubgenre = matchedSubgenres[0];
+            for (const [mainGenre, data] of Object.entries(GENRE_CATEGORIES)) {
+              if (data.subgenres.includes(firstSubgenre)) {
+                handleTrackChange(index, 'mainGenre', mainGenre);
+                handleTrackChange(index, 'subGenre', firstSubgenre);
+                if (matchedSubgenres.length > 1) {
+                  handleTrackChange(index, 'additionalSubGenres', matchedSubgenres.slice(1, 4));
+                }
+                break;
+              }
             }
           }
         }
@@ -537,8 +607,9 @@ export default function ForArtists() {
       const file = files[i];
       const trackData = {
         title: file.name.replace(/\.[^/.]+$/, ''), // Default to filename
-        primaryGenre: '',
-        additionalGenres: [],
+        mainGenre: '',
+        subGenre: '',
+        additionalSubGenres: [],
         explicit: false,
         isInstrumental: false,
         isRadioEdit: false,
@@ -551,6 +622,8 @@ export default function ForArtists() {
         writerRoles: ['both'],
         composers: '',
         publishers: '',
+        producers: [''],
+        producerRoles: ['producer'],
         featuredArtists: '',
         remixer: '',
         isrc: '',
@@ -597,8 +670,9 @@ export default function ForArtists() {
       ...prev,
       tracks: [...prev.tracks, {
         title: '',
-        primaryGenre: '',
-        additionalGenres: [],
+        mainGenre: '',
+        subGenre: '',
+        additionalSubGenres: [],
         explicit: false,
         isInstrumental: false,
         isRadioEdit: false,
@@ -611,6 +685,8 @@ export default function ForArtists() {
         writerRoles: ['both'],
         composers: '',
         publishers: '',
+        producers: [''],
+        producerRoles: ['producer'],
         featuredArtists: '',
         remixer: '',
         isrc: '',
@@ -629,11 +705,12 @@ export default function ForArtists() {
   };
 
   const copyGenresToAllTracks = (sourceIndex) => {
-    const sourcePrimary = form.tracks[sourceIndex].primaryGenre;
-    const sourceAdditional = form.tracks[sourceIndex].additionalGenres;
+    const sourceMain = form.tracks[sourceIndex].mainGenre;
+    const sourceSub = form.tracks[sourceIndex].subGenre;
+    const sourceAdditional = form.tracks[sourceIndex].additionalSubGenres;
 
-    if (!sourcePrimary) {
-      setStatus({ type: 'warning', message: 'No primary genre to copy' });
+    if (!sourceMain || !sourceSub) {
+      setStatus({ type: 'warning', message: 'No main/sub-genre to copy' });
       return;
     }
 
@@ -641,8 +718,9 @@ export default function ForArtists() {
       if (index === sourceIndex) return track;
       return {
         ...track,
-        primaryGenre: sourcePrimary,
-        additionalGenres: [...sourceAdditional]
+        mainGenre: sourceMain,
+        subGenre: sourceSub,
+        additionalSubGenres: [...sourceAdditional]
       };
     });
     setForm(prev => ({ ...prev, tracks: newTracks }));
@@ -777,6 +855,84 @@ export default function ForArtists() {
     setForm(prev => ({ ...prev, defaultWriterRoles: newRoles }));
   };
 
+  // Default producer management functions (for Step 0)
+  const addDefaultProducer = () => {
+    setForm(prev => ({
+      ...prev,
+      defaultProducers: [...prev.defaultProducers, ''],
+      defaultProducerRoles: [...prev.defaultProducerRoles, 'producer']
+    }));
+  };
+
+  const removeDefaultProducer = (producerIndex) => {
+    if (form.defaultProducers.length > 1) {
+      const newProducers = [...form.defaultProducers];
+      const newRoles = [...form.defaultProducerRoles];
+      newProducers.splice(producerIndex, 1);
+      newRoles.splice(producerIndex, 1);
+      setForm(prev => ({
+        ...prev,
+        defaultProducers: newProducers,
+        defaultProducerRoles: newRoles
+      }));
+    }
+  };
+
+  const updateDefaultProducer = (producerIndex, value) => {
+    const newProducers = [...form.defaultProducers];
+    newProducers[producerIndex] = value;
+    setForm(prev => ({ ...prev, defaultProducers: newProducers }));
+  };
+
+  const updateDefaultProducerRole = (producerIndex, role) => {
+    const newRoles = [...form.defaultProducerRoles];
+    newRoles[producerIndex] = role;
+    setForm(prev => ({ ...prev, defaultProducerRoles: newRoles }));
+  };
+
+  // Per-track producer management functions
+  const addProducer = (trackIndex) => {
+    const newTracks = [...form.tracks];
+    if (!Array.isArray(newTracks[trackIndex].producers)) {
+      newTracks[trackIndex].producers = [];
+    }
+    if (!Array.isArray(newTracks[trackIndex].producerRoles)) {
+      newTracks[trackIndex].producerRoles = [];
+    }
+    newTracks[trackIndex].producers.push('');
+    newTracks[trackIndex].producerRoles.push('producer');
+    setForm(prev => ({ ...prev, tracks: newTracks }));
+  };
+
+  const removeProducer = (trackIndex, producerIndex) => {
+    const newTracks = [...form.tracks];
+    if (Array.isArray(newTracks[trackIndex].producers)) {
+      newTracks[trackIndex].producers.splice(producerIndex, 1);
+      if (Array.isArray(newTracks[trackIndex].producerRoles)) {
+        newTracks[trackIndex].producerRoles.splice(producerIndex, 1);
+      }
+      setForm(prev => ({ ...prev, tracks: newTracks }));
+    }
+  };
+
+  const updateProducer = (trackIndex, producerIndex, value) => {
+    const newTracks = [...form.tracks];
+    if (!Array.isArray(newTracks[trackIndex].producers)) {
+      newTracks[trackIndex].producers = [];
+    }
+    newTracks[trackIndex].producers[producerIndex] = value;
+    setForm(prev => ({ ...prev, tracks: newTracks }));
+  };
+
+  const updateProducerRole = (trackIndex, producerIndex, role) => {
+    const newTracks = [...form.tracks];
+    if (!Array.isArray(newTracks[trackIndex].producerRoles)) {
+      newTracks[trackIndex].producerRoles = [];
+    }
+    newTracks[trackIndex].producerRoles[producerIndex] = role;
+    setForm(prev => ({ ...prev, tracks: newTracks }));
+  };
+
   const handleSubmit = async () => {
     setStatus({ type: '', message: '' });
     setLoading(true);
@@ -830,8 +986,9 @@ export default function ForArtists() {
 
         trackData.push({
           title: track.title,
-          primaryGenre: track.primaryGenre,
-          additionalGenres: track.additionalGenres,
+          mainGenre: track.mainGenre,
+          subGenre: track.subGenre,
+          additionalSubGenres: track.additionalSubGenres,
           explicit: track.explicit,
           isInstrumental: track.isInstrumental,
           isRadioEdit: track.isRadioEdit,
@@ -844,6 +1001,7 @@ export default function ForArtists() {
           writerRoles: track.writerRoles,
           composers: track.composers,
           publishers: track.publishers,
+          producers: track.producers,
           featuredArtists: track.featuredArtists,
           remixer: track.remixer,
           isrc: track.isrc,
@@ -967,40 +1125,84 @@ export default function ForArtists() {
             sx={{ mb: 3 }}
           />
 
-          {/* Default Primary Genre */}
+          {/* Genre Selection - Industry Standard */}
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            Genre Classification
+          </Typography>
+          <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(29, 185, 84, 0.05)', border: '1px solid rgba(29, 185, 84, 0.3)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              ℹ️ <strong>Primary vs. Additional Genres</strong>
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              • <strong>Main Genre</strong> determines which main charts your song can enter
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              • <strong>Sub-genre</strong> helps with accurate playlisting and discovery
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              • Use <strong>Additional Sub-genres</strong> for hybrid/micro-genres (up to 3)
+            </Typography>
+          </Paper>
+
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Default Primary Genre</InputLabel>
+                <InputLabel>Main Genre *</InputLabel>
                 <Select
-                  value={form.defaultPrimaryGenre}
-                  label="Default Primary Genre"
-                  onChange={(e) => handleFormChange('defaultPrimaryGenre', e.target.value)}
+                  value={form.defaultMainGenre}
+                  label="Main Genre *"
+                  onChange={(e) => {
+                    handleFormChange('defaultMainGenre', e.target.value);
+                    // Reset sub-genre when main genre changes
+                    handleFormChange('defaultSubGenre', '');
+                    handleFormChange('defaultAdditionalSubGenres', []);
+                  }}
                 >
                   <MenuItem value="">
-                    <em>Select later (per track)</em>
+                    <em>Select main genre</em>
                   </MenuItem>
-                  {[...PLATFORM_GENRES, ...customGenres].map(genre => (
+                  {MAIN_GENRES.map(genre => (
                     <MenuItem key={genre} value={genre}>{genre}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                Will be applied to all tracks (optional)
+                Primary category for DSP charts (optional)
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Additional Genres (max 4)</InputLabel>
+              <FormControl fullWidth disabled={!form.defaultMainGenre}>
+                <InputLabel>Primary Sub-Genre</InputLabel>
+                <Select
+                  value={form.defaultSubGenre}
+                  label="Primary Sub-Genre"
+                  onChange={(e) => handleFormChange('defaultSubGenre', e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>Select sub-genre</em>
+                  </MenuItem>
+                  {form.defaultMainGenre && getSubgenres(form.defaultMainGenre).map(subgenre => (
+                    <MenuItem key={subgenre} value={subgenre}>{subgenre}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Specific style within {form.defaultMainGenre || 'main genre'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControl fullWidth disabled={!form.defaultMainGenre || !form.defaultSubGenre}>
+                <InputLabel>Additional Sub-Genres (max 3)</InputLabel>
                 <Select
                   multiple
-                  value={form.defaultAdditionalGenres}
-                  label="Additional Genres (max 4)"
+                  value={form.defaultAdditionalSubGenres}
+                  label="Additional Sub-Genres (max 3)"
                   onChange={(e) => {
                     const value = e.target.value;
-                    if (value.length <= 4) {
-                      handleFormChange('defaultAdditionalGenres', value);
+                    if (value.length <= 3) {
+                      handleFormChange('defaultAdditionalSubGenres', value);
                     }
                   }}
                   renderValue={(selected) => (
@@ -1011,22 +1213,22 @@ export default function ForArtists() {
                     </Box>
                   )}
                 >
-                  {[...PLATFORM_GENRES, ...customGenres]
-                    .filter(genre => genre !== form.defaultPrimaryGenre)
-                    .map(genre => (
+                  {form.defaultMainGenre && getSubgenres(form.defaultMainGenre)
+                    .filter(subgenre => subgenre !== form.defaultSubGenre)
+                    .map(subgenre => (
                       <MenuItem
-                        key={genre}
-                        value={genre}
-                        disabled={form.defaultAdditionalGenres.length >= 4 && !form.defaultAdditionalGenres.includes(genre)}
+                        key={subgenre}
+                        value={subgenre}
+                        disabled={form.defaultAdditionalSubGenres.length >= 3 && !form.defaultAdditionalSubGenres.includes(subgenre)}
                       >
-                        <Checkbox checked={form.defaultAdditionalGenres.indexOf(genre) > -1} />
-                        {genre}
+                        <Checkbox checked={form.defaultAdditionalSubGenres.indexOf(subgenre) > -1} />
+                        {subgenre}
                       </MenuItem>
                     ))}
                 </Select>
               </FormControl>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                {form.defaultAdditionalGenres.length}/4 additional genres
+                {form.defaultAdditionalSubGenres.length}/3 additional sub-genres selected
               </Typography>
             </Grid>
           </Grid>
@@ -1097,6 +1299,78 @@ export default function ForArtists() {
             sx={{ mb: 2 }}
           >
             Add Another Songwriter
+          </Button>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Default Producer(s) */}
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            Producer(s) / Credits
+          </Typography>
+          <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(156, 39, 176, 0.1)', border: '1px solid rgba(156, 39, 176, 0.3)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              ℹ️ <strong>Production Credits</strong>
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              • Specify the role for each producer (Producer, Executive Producer, Vocal Producer, etc.)
+            </Typography>
+          </Paper>
+
+          {form.defaultProducers.map((producer, producerIndex) => (
+            <Grid container spacing={2} key={`default-producer-${producerIndex}`} sx={{ mb: 2 }}>
+              <Grid item xs={12} md={5}>
+                <TextField
+                  fullWidth
+                  label={`Producer ${producerIndex + 1} - Name`}
+                  value={producer}
+                  onChange={(e) => updateDefaultProducer(producerIndex, e.target.value)}
+                  placeholder="e.g., John Smith"
+                  helperText="Enter producer's name"
+                />
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <FormControl fullWidth>
+                  <InputLabel>Role</InputLabel>
+                  <Select
+                    value={form.defaultProducerRoles[producerIndex] || 'producer'}
+                    label="Role"
+                    onChange={(e) => updateDefaultProducerRole(producerIndex, e.target.value)}
+                  >
+                    <MenuItem value="producer">Producer (Music Producer)</MenuItem>
+                    <MenuItem value="executive_producer">Executive Producer</MenuItem>
+                    <MenuItem value="co_producer">Co-Producer</MenuItem>
+                    <MenuItem value="vocal_producer">Vocal Producer</MenuItem>
+                    <MenuItem value="additional_production">Additional Production</MenuItem>
+                    <MenuItem value="associate_producer">Associate Producer / Assistant Producer</MenuItem>
+                    <MenuItem value="technical_producer">Technical Producer (Engineer/Producer)</MenuItem>
+                    <MenuItem value="beat_maker">Beat Maker</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={2}>
+                {form.defaultProducers.length > 1 && (
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="error"
+                    onClick={() => removeDefaultProducer(producerIndex)}
+                    sx={{ height: 56 }}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </Grid>
+            </Grid>
+          ))}
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={addDefaultProducer}
+            startIcon={<Add />}
+            sx={{ mb: 2 }}
+          >
+            Add Another Producer
           </Button>
         </Box>
       )}
@@ -1299,15 +1573,17 @@ export default function ForArtists() {
               {form.artist}
             </Typography>
           </Grid>
-          {form.defaultPrimaryGenre && (
+          {form.defaultMainGenre && form.defaultSubGenre && (
             <Grid item xs={12} md={6}>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                Default Genre(s)
+                Default Genre
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                <Chip label={form.defaultPrimaryGenre} size="small" color="primary" />
-                {form.defaultAdditionalGenres.map(genre => (
-                  <Chip key={genre} label={genre} size="small" />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+                <Chip label={form.defaultMainGenre} size="small" color="primary" />
+                <Typography variant="caption">→</Typography>
+                <Chip label={form.defaultSubGenre} size="small" color="success" />
+                {form.defaultAdditionalSubGenres.map(subgenre => (
+                  <Chip key={subgenre} label={subgenre} size="small" />
                 ))}
               </Box>
             </Grid>
@@ -1328,7 +1604,7 @@ export default function ForArtists() {
             <Typography variant="h6">
               Track {index + 1}
             </Typography>
-            {form.tracks.length > 1 && track.primaryGenre && (
+            {form.tracks.length > 1 && track.mainGenre && track.subGenre && (
               <Button
                 size="small"
                 variant="outlined"
@@ -1354,32 +1630,51 @@ export default function ForArtists() {
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth required error={!track.primaryGenre && status.type === 'error'}>
-                <InputLabel>Primary Genre *</InputLabel>
+              <FormControl fullWidth required error={!track.mainGenre && status.type === 'error'}>
+                <InputLabel>Main Genre *</InputLabel>
                 <Select
-                  id={`track-primary-genre-${index}`}
-                  value={track.primaryGenre}
-                  label="Primary Genre *"
-                  onChange={(e) => handleTrackChange(index, 'primaryGenre', e.target.value)}
+                  id={`track-main-genre-${index}`}
+                  value={track.mainGenre}
+                  label="Main Genre *"
+                  onChange={(e) => {
+                    handleTrackChange(index, 'mainGenre', e.target.value);
+                    // Reset sub-genres when main genre changes
+                    handleTrackChange(index, 'subGenre', '');
+                    handleTrackChange(index, 'additionalSubGenres', []);
+                  }}
                 >
-                  {[...PLATFORM_GENRES, ...customGenres].map(genre => (
+                  {MAIN_GENRES.map(genre => (
                     <MenuItem key={genre} value={genre}>{genre}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Additional Genres (max 4)</InputLabel>
+              <FormControl fullWidth required error={!track.subGenre && status.type === 'error'} disabled={!track.mainGenre}>
+                <InputLabel>Primary Sub-Genre *</InputLabel>
+                <Select
+                  id={`track-sub-genre-${index}`}
+                  value={track.subGenre}
+                  label="Primary Sub-Genre *"
+                  onChange={(e) => handleTrackChange(index, 'subGenre', e.target.value)}
+                >
+                  {track.mainGenre && getSubgenres(track.mainGenre).map(subgenre => (
+                    <MenuItem key={subgenre} value={subgenre}>{subgenre}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth disabled={!track.mainGenre || !track.subGenre}>
+                <InputLabel>Additional Sub-Genres (max 3)</InputLabel>
                 <Select
                   multiple
-                  value={track.additionalGenres}
-                  label="Additional Genres (max 4)"
+                  value={track.additionalSubGenres}
+                  label="Additional Sub-Genres (max 3)"
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Limit to 4 additional genres
-                    if (value.length <= 4) {
-                      handleTrackChange(index, 'additionalGenres', value);
+                    if (value.length <= 3) {
+                      handleTrackChange(index, 'additionalSubGenres', value);
                     }
                   }}
                   renderValue={(selected) => (
@@ -1390,22 +1685,22 @@ export default function ForArtists() {
                     </Box>
                   )}
                 >
-                  {[...PLATFORM_GENRES, ...customGenres]
-                    .filter(genre => genre !== track.primaryGenre)
-                    .map(genre => (
+                  {track.mainGenre && getSubgenres(track.mainGenre)
+                    .filter(subgenre => subgenre !== track.subGenre)
+                    .map(subgenre => (
                       <MenuItem
-                        key={genre}
-                        value={genre}
-                        disabled={track.additionalGenres.length >= 4 && !track.additionalGenres.includes(genre)}
+                        key={subgenre}
+                        value={subgenre}
+                        disabled={track.additionalSubGenres.length >= 3 && !track.additionalSubGenres.includes(subgenre)}
                       >
-                        <Checkbox checked={track.additionalGenres.indexOf(genre) > -1} />
-                        {genre}
+                        <Checkbox checked={track.additionalSubGenres.indexOf(subgenre) > -1} />
+                        {subgenre}
                       </MenuItem>
                     ))}
                 </Select>
               </FormControl>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                {track.additionalGenres.length}/4 additional genres selected
+                {track.additionalSubGenres.length}/3 additional sub-genres selected
               </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -1657,6 +1952,86 @@ export default function ForArtists() {
                 sx={{ mb: 2 }}
               >
                 Add Another Songwriter
+              </Button>
+            </Grid>
+
+            {/* Producer(s) Section */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                  Producer(s) / Credits
+                </Typography>
+                {form.tracks.length > 1 && (track.producers || []).length > 0 && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => copyTrackInfoToAll(index, 'producers')}
+                    sx={{ fontSize: '0.7rem' }}
+                  >
+                    Copy Producers to All Tracks
+                  </Button>
+                )}
+              </Box>
+            </Grid>
+
+            {/* Multiple Producers */}
+            {(track.producers || ['']).map((producer, producerIndex) => (
+              <React.Fragment key={`producer-${producerIndex}`}>
+                <Grid item xs={12} md={5}>
+                  <TextField
+                    fullWidth
+                    label={`Producer ${producerIndex + 1} - Name`}
+                    value={producer}
+                    onChange={(e) => updateProducer(index, producerIndex, e.target.value)}
+                    placeholder="e.g., John Smith"
+                    helperText="Enter producer's name"
+                  />
+                </Grid>
+                <Grid item xs={12} md={5}>
+                  <FormControl fullWidth>
+                    <InputLabel>Role</InputLabel>
+                    <Select
+                      value={(track.producerRoles || [])[producerIndex] || 'producer'}
+                      label="Role"
+                      onChange={(e) => updateProducerRole(index, producerIndex, e.target.value)}
+                    >
+                      <MenuItem value="producer">Producer (Music Producer)</MenuItem>
+                      <MenuItem value="executive_producer">Executive Producer</MenuItem>
+                      <MenuItem value="co_producer">Co-Producer</MenuItem>
+                      <MenuItem value="vocal_producer">Vocal Producer</MenuItem>
+                      <MenuItem value="additional_production">Additional Production</MenuItem>
+                      <MenuItem value="associate_producer">Associate Producer / Assistant Producer</MenuItem>
+                      <MenuItem value="technical_producer">Technical Producer (Engineer/Producer)</MenuItem>
+                      <MenuItem value="beat_maker">Beat Maker</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={2}>
+                  {(track.producers || []).length > 1 && (
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="error"
+                      onClick={() => removeProducer(index, producerIndex)}
+                      sx={{ height: 56 }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Grid>
+              </React.Fragment>
+            ))}
+
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => addProducer(index)}
+                startIcon={<Add />}
+                sx={{ mb: 2 }}
+              >
+                Add Another Producer
               </Button>
             </Grid>
 
@@ -2035,17 +2410,19 @@ export default function ForArtists() {
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
-                    <Typography variant="caption" color="text.secondary">Primary Genre</Typography>
-                    <Box sx={{ mt: 0.5 }}>
-                      <Chip label={track.primaryGenre} size="small" color="primary" />
+                    <Typography variant="caption" color="text.secondary">Genre</Typography>
+                    <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+                      <Chip label={track.mainGenre} size="small" color="primary" />
+                      <Typography variant="caption" sx={{ mx: 0.5 }}>→</Typography>
+                      <Chip label={track.subGenre} size="small" color="success" />
                     </Box>
                   </Grid>
-                  {track.additionalGenres.length > 0 && (
+                  {track.additionalSubGenres && track.additionalSubGenres.length > 0 && (
                     <Grid item xs={12}>
-                      <Typography variant="caption" color="text.secondary">Additional Genres</Typography>
+                      <Typography variant="caption" color="text.secondary">Additional Sub-Genres</Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                        {track.additionalGenres.map((genre) => (
-                          <Chip key={genre} label={genre} size="small" />
+                        {track.additionalSubGenres.map((subgenre) => (
+                          <Chip key={subgenre} label={subgenre} size="small" />
                         ))}
                       </Box>
                     </Grid>
@@ -2060,6 +2437,32 @@ export default function ForArtists() {
                       {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
                     </Typography>
                   </Grid>
+                  {track.producers && track.producers.length > 0 && track.producers[0] !== '' && (
+                    <Grid item xs={12}>
+                      <Typography variant="caption" color="text.secondary">Producer(s)</Typography>
+                      <Box sx={{ mt: 0.5 }}>
+                        {track.producers.map((producer, pIndex) => {
+                          const role = (track.producerRoles || [])[pIndex] || 'producer';
+                          const roleLabel = {
+                            'producer': 'Producer',
+                            'executive_producer': 'Executive Producer',
+                            'co_producer': 'Co-Producer',
+                            'vocal_producer': 'Vocal Producer',
+                            'additional_production': 'Additional Production',
+                            'associate_producer': 'Associate Producer',
+                            'technical_producer': 'Technical Producer',
+                            'beat_maker': 'Beat Maker'
+                          }[role] || 'Producer';
+
+                          return producer ? (
+                            <Typography key={pIndex} variant="body2" sx={{ display: 'block' }}>
+                              {producer} <span style={{ color: '#888', fontSize: '0.85em' }}>({roleLabel})</span>
+                            </Typography>
+                          ) : null;
+                        })}
+                      </Box>
+                    </Grid>
+                  )}
                   {track.explicit && (
                     <Grid item xs={12}>
                       <Chip label="Explicit Content" size="small" color="warning" />
@@ -2143,11 +2546,9 @@ export default function ForArtists() {
     return null;
   }
 
-  // Main upload form
-  return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 4 }}>
-      <Container maxWidth="lg">
-        <Paper sx={{ p: 4, bgcolor: '#1e1e1e' }}>
+  // Main upload form content
+  const uploadFormContent = (
+    <Paper sx={{ p: 4, bgcolor: embedded ? 'transparent' : '#1e1e1e', boxShadow: embedded ? 'none' : undefined }}>
           {/* Artist Profile Banner - Only show for inactive memberships */}
           {!membershipStatus.active && (
             <Alert
@@ -2436,6 +2837,17 @@ export default function ForArtists() {
             )}
           </Box>
         </Paper>
+  );
+
+  // Return based on embedded mode
+  if (embedded) {
+    return uploadFormContent;
+  }
+
+  return (
+    <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 4 }}>
+      <Container maxWidth="lg">
+        {uploadFormContent}
       </Container>
       <Footer />
     </Box>

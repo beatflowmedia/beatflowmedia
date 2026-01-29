@@ -31,6 +31,7 @@ export async function checkMembershipStatus(userId) {
 
     // Debug logging
     console.log('🔍 Membership check for user', userId);
+    console.log('  Full user data:', userData);
     console.log('  artistMembershipActive:', userData.artistMembershipActive);
     console.log('  artistStripeSubscriptionId:', artistSubscriptionId);
     console.log('  artistSubscriptionStatus:', artistSubscriptionStatus);
