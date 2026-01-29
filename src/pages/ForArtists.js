@@ -20,9 +20,7 @@ import {
   Chip,
   Alert,
   LinearProgress,
-  IconButton,
   Paper,
-  FormGroup,
   FormControlLabel,
   Checkbox,
   Radio,
@@ -132,6 +130,12 @@ const initialForm = {
   albumTitle: '',
   artist: '',
 
+  // Default metadata to apply to all tracks
+  defaultPrimaryGenre: '',
+  defaultAdditionalGenres: [],
+  defaultWriters: [''],
+  defaultWriterRoles: ['both'],
+
   // Album-level information
   previouslyReleased: false,
   originalReleaseDate: '',
@@ -195,6 +199,7 @@ export default function ForArtists() {
     if (authUser) {
       loadMembershipStatus();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser]);
 
   // Check for successful membership purchase
@@ -218,6 +223,7 @@ export default function ForArtists() {
       // Scroll to top to show the success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, authUser]);
 
   // Redirect to pricing page if no active membership (but not if coming from successful payment)
@@ -234,6 +240,7 @@ export default function ForArtists() {
     try {
       setLoadingMembership(true);
       const status = await checkMembershipStatus(authUser.uid);
+      console.log('🔍 Membership status loaded for', authUser.email, ':', status);
       setMembershipStatus(status);
     } catch (error) {
       console.error('Error loading membership:', error);
@@ -276,10 +283,23 @@ export default function ForArtists() {
     setStatus({ type: '', message: '' });
 
     // Validation for each step
-    if (activeStep === 0 && !form.releaseType) {
-      setStatus({ type: 'error', message: 'Please select a release type' });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
+    if (activeStep === 0) {
+      if (!form.releaseType) {
+        setStatus({ type: 'error', message: 'Please select a release type' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (!form.artist) {
+        setStatus({ type: 'error', message: 'Please enter artist name' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => {
+          const element = document.getElementById('artist-name-field-step0');
+          if (element) {
+            element.focus();
+          }
+        }, 100);
+        return;
+      }
     }
     if (activeStep === 1) {
       if (!form.coverArt) {
@@ -299,20 +319,21 @@ export default function ForArtists() {
         }, 100);
         return;
       }
+
+      // Apply default metadata to all tracks before moving to Step 2
+      const updatedTracks = form.tracks.map(track => ({
+        ...track,
+        // Only apply defaults if track doesn't already have values
+        primaryGenre: track.primaryGenre || form.defaultPrimaryGenre,
+        additionalGenres: track.additionalGenres.length > 0 ? track.additionalGenres : [...form.defaultAdditionalGenres],
+        writers: track.writers.length === 1 && track.writers[0] === '' ? [...form.defaultWriters] : track.writers,
+        writerRoles: track.writerRoles.length === 1 && track.writerRoles[0] === 'both' && form.defaultWriters.length > 1
+          ? [...form.defaultWriterRoles]
+          : track.writerRoles
+      }));
+      setForm(prev => ({ ...prev, tracks: updatedTracks }));
     }
     if (activeStep === 2) {
-      if (!form.artist) {
-        setStatus({ type: 'error', message: 'Please enter artist name' });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(() => {
-          const element = document.getElementById('artist-name-field');
-          if (element) {
-            element.focus();
-          }
-        }, 100);
-        return;
-      }
-
       // Check for missing track titles
       const missingTitleIndex = form.tracks.findIndex(t => !t.title);
       if (missingTitleIndex !== -1) {
@@ -719,14 +740,41 @@ export default function ForArtists() {
     setForm(prev => ({ ...prev, tracks: newTracks }));
   };
 
-  const copyArtistToAllTracks = () => {
-    if (!form.artist) {
-      setStatus({ type: 'warning', message: 'Please enter artist name first' });
-      return;
+  // Removed unused function copyArtistToAllTracks - artist name is already global
+
+  // Default writer management functions (for Step 0)
+  const addDefaultWriter = () => {
+    setForm(prev => ({
+      ...prev,
+      defaultWriters: [...prev.defaultWriters, ''],
+      defaultWriterRoles: [...prev.defaultWriterRoles, 'both']
+    }));
+  };
+
+  const removeDefaultWriter = (writerIndex) => {
+    if (form.defaultWriters.length > 1) {
+      const newWriters = [...form.defaultWriters];
+      const newRoles = [...form.defaultWriterRoles];
+      newWriters.splice(writerIndex, 1);
+      newRoles.splice(writerIndex, 1);
+      setForm(prev => ({
+        ...prev,
+        defaultWriters: newWriters,
+        defaultWriterRoles: newRoles
+      }));
     }
-    // Artist name is already global, but we can show confirmation
-    setStatus({ type: 'success', message: 'Artist name applies to all tracks' });
-    setTimeout(() => setStatus({ type: '', message: '' }), 2000);
+  };
+
+  const updateDefaultWriter = (writerIndex, value) => {
+    const newWriters = [...form.defaultWriters];
+    newWriters[writerIndex] = value;
+    setForm(prev => ({ ...prev, defaultWriters: newWriters }));
+  };
+
+  const updateDefaultWriterRole = (writerIndex, role) => {
+    const newRoles = [...form.defaultWriterRoles];
+    newRoles[writerIndex] = role;
+    setForm(prev => ({ ...prev, defaultWriterRoles: newRoles }));
   };
 
   const handleSubmit = async () => {
@@ -887,6 +935,169 @@ export default function ForArtists() {
             required
             sx={{ mb: 2 }}
           />
+        </Box>
+      )}
+
+      {/* Pre-populate Common Information */}
+      {form.releaseType && (
+        <Box sx={{ mt: 4 }}>
+          <Divider sx={{ mb: 3 }} />
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+            Common Information
+          </Typography>
+          <Paper sx={{ p: 2, mb: 3, bgcolor: 'rgba(29, 185, 84, 0.05)', border: '1px solid rgba(29, 185, 84, 0.3)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              💡 <strong>Save Time!</strong> Enter common information here and it will be automatically applied to all tracks.
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              You can still customize individual tracks later if needed.
+            </Typography>
+          </Paper>
+
+          {/* Artist Name */}
+          <TextField
+            id="artist-name-field-step0"
+            fullWidth
+            label="Artist / Band Name *"
+            value={form.artist}
+            onChange={(e) => handleFormChange('artist', e.target.value)}
+            required
+            placeholder="e.g., Percy Rice, The Awesome Band"
+            helperText="Your stage name or band name - applies to all tracks"
+            sx={{ mb: 3 }}
+          />
+
+          {/* Default Primary Genre */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Default Primary Genre</InputLabel>
+                <Select
+                  value={form.defaultPrimaryGenre}
+                  label="Default Primary Genre"
+                  onChange={(e) => handleFormChange('defaultPrimaryGenre', e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>Select later (per track)</em>
+                  </MenuItem>
+                  {[...PLATFORM_GENRES, ...customGenres].map(genre => (
+                    <MenuItem key={genre} value={genre}>{genre}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Will be applied to all tracks (optional)
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Additional Genres (max 4)</InputLabel>
+                <Select
+                  multiple
+                  value={form.defaultAdditionalGenres}
+                  label="Additional Genres (max 4)"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= 4) {
+                      handleFormChange('defaultAdditionalGenres', value);
+                    }
+                  }}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip key={value} label={value} size="small" />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {[...PLATFORM_GENRES, ...customGenres]
+                    .filter(genre => genre !== form.defaultPrimaryGenre)
+                    .map(genre => (
+                      <MenuItem
+                        key={genre}
+                        value={genre}
+                        disabled={form.defaultAdditionalGenres.length >= 4 && !form.defaultAdditionalGenres.includes(genre)}
+                      >
+                        <Checkbox checked={form.defaultAdditionalGenres.indexOf(genre) > -1} />
+                        {genre}
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                {form.defaultAdditionalGenres.length}/4 additional genres
+              </Typography>
+            </Grid>
+          </Grid>
+
+          {/* Default Songwriters */}
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            Default Songwriter(s) - Real Names
+          </Typography>
+          <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(33, 150, 243, 0.1)', border: '1px solid rgba(33, 150, 243, 0.3)' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              ℹ️ <strong>Use Real Names, Not Stage Names</strong>
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              • Songwriters are credited by their <strong>real/legal names</strong>, not stage names
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              • Example: Use "John Smith" instead of "DJ Awesome"
+            </Typography>
+          </Paper>
+
+          {form.defaultWriters.map((writer, writerIndex) => (
+            <Grid container spacing={2} key={`default-writer-${writerIndex}`} sx={{ mb: 2 }}>
+              <Grid item xs={12} md={5}>
+                <TextField
+                  fullWidth
+                  label={`Songwriter ${writerIndex + 1} - Real Name`}
+                  value={writer}
+                  onChange={(e) => updateDefaultWriter(writerIndex, e.target.value)}
+                  placeholder="e.g., John Smith"
+                  helperText="Enter legal/real name, not stage name"
+                />
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <FormControl fullWidth>
+                  <InputLabel>Contribution</InputLabel>
+                  <Select
+                    value={form.defaultWriterRoles[writerIndex] || 'both'}
+                    label="Contribution"
+                    onChange={(e) => updateDefaultWriterRole(writerIndex, e.target.value)}
+                  >
+                    <MenuItem value="both">Music & Lyrics</MenuItem>
+                    <MenuItem value="music">Music Only</MenuItem>
+                    <MenuItem value="lyrics">Lyrics Only</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={2}>
+                {form.defaultWriters.length > 1 && (
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="error"
+                    onClick={() => removeDefaultWriter(writerIndex)}
+                    sx={{ height: 56 }}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </Grid>
+            </Grid>
+          ))}
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={addDefaultWriter}
+            startIcon={<Add />}
+            sx={{ mb: 2 }}
+          >
+            Add Another Songwriter
+          </Button>
         </Box>
       )}
     </Box>
@@ -1077,37 +1288,39 @@ export default function ForArtists() {
         Track Information
       </Typography>
 
-      {/* Artist Name */}
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          id="artist-name-field"
-          fullWidth
-          label="Artist / Band Name"
-          value={form.artist}
-          onChange={(e) => handleFormChange('artist', e.target.value)}
-          required
-          error={!form.artist && status.type === 'error'}
-          placeholder="e.g., Percy Rice, The Awesome Band"
-          helperText="Your stage name or band name - this will be displayed prominently"
-        />
-        <Paper sx={{ p: 2, mt: 2, bgcolor: 'rgba(33, 150, 243, 0.1)', border: '1px solid rgba(33, 150, 243, 0.3)' }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-            ℹ️ <strong>Artist Name vs. Songwriter Name</strong>
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            • <strong>Artist Name</strong> (this field): Your stage/band name, displayed prominently everywhere
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            • <strong>Songwriter Name</strong> (below): Real/legal names, shown only in credits/lyrics
-          </Typography>
-        </Paper>
-      </Box>
-
-      <Divider sx={{ my: 4 }} />
+      {/* Artist Name - Display Only */}
+      <Paper sx={{ p: 3, mb: 3, bgcolor: 'rgba(29, 185, 84, 0.05)', border: '1px solid rgba(29, 185, 84, 0.3)' }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              Artist / Band Name
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              {form.artist}
+            </Typography>
+          </Grid>
+          {form.defaultPrimaryGenre && (
+            <Grid item xs={12} md={6}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                Default Genre(s)
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                <Chip label={form.defaultPrimaryGenre} size="small" color="primary" />
+                {form.defaultAdditionalGenres.map(genre => (
+                  <Chip key={genre} label={genre} size="small" />
+                ))}
+              </Box>
+            </Grid>
+          )}
+        </Grid>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+          ✓ Applied to all tracks. You can override these values per track below.
+        </Typography>
+      </Paper>
 
       {/* Individual Track Details */}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Set genre and details for each track below. You can copy genres across all tracks using the button.
+        Customize details for each track. Default values from Step 1 are pre-filled.
       </Typography>
       {form.tracks.map((track, index) => (
         <Paper key={index} sx={{ p: 3, mb: 3, border: '1px solid #333' }}>
@@ -1935,33 +2148,35 @@ export default function ForArtists() {
     <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 4 }}>
       <Container maxWidth="lg">
         <Paper sx={{ p: 4, bgcolor: '#1e1e1e' }}>
-          {/* Artist Profile Banner */}
-          <Alert
-            severity="info"
-            sx={{
-              mb: 3,
-              bgcolor: 'rgba(29, 185, 84, 0.1)',
-              border: '1px solid #1DB954',
-              '& .MuiAlert-message': { width: '100%' }
-            }}
-            action={
-              <Button
-                size="small"
-                variant="contained"
-                onClick={() => window.location.href = '/artist-pricing'}
-                sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
-              >
-                View Pricing
-              </Button>
-            }
-          >
-            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-              Need to upgrade your artist membership?
-            </Typography>
-            <Typography variant="caption">
-              Check out our artist pricing plans to continue uploading music
-            </Typography>
-          </Alert>
+          {/* Artist Profile Banner - Only show for inactive memberships */}
+          {!membershipStatus.active && (
+            <Alert
+              severity="info"
+              sx={{
+                mb: 3,
+                bgcolor: 'rgba(29, 185, 84, 0.1)',
+                border: '1px solid #1DB954',
+                '& .MuiAlert-message': { width: '100%' }
+              }}
+              action={
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={() => window.location.href = '/artist-pricing'}
+                  sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                >
+                  View Pricing
+                </Button>
+              }
+            >
+              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                Need to upgrade your artist membership?
+              </Typography>
+              <Typography variant="caption">
+                Check out our artist pricing plans to continue uploading music
+              </Typography>
+            </Alert>
+          )}
 
           {/* Header */}
           <Box sx={{ mb: 4 }}>

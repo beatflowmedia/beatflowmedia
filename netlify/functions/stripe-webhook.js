@@ -144,11 +144,15 @@ async function handleCheckoutSessionCompleted(session) {
 
         const membershipData = {
           artistMembershipActive: true,
+          artistMembershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
+          artistMembershipStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+          artistStripeSubscriptionId: session.subscription,
+          artistStripeCustomerId: session.customer,
+          artistSubscriptionStatus: 'active',
+          membershipType: 'annual',
+          // Keep legacy fields for backward compatibility
           membershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
-          membershipStartedAt: admin.firestore.FieldValue.serverTimestamp(),
-          stripeSubscriptionId: session.subscription,
-          stripeCustomerId: session.customer,
-          membershipType: 'annual'
+          membershipStartedAt: admin.firestore.FieldValue.serverTimestamp()
         };
 
         console.log('💾 Membership data to save:', JSON.stringify({
@@ -378,11 +382,20 @@ async function handleSubscriptionUpdate(subscription) {
   console.log('Subscription updated:', subscription.id);
 
   try {
-    // Find user by subscription ID
-    const usersSnapshot = await db.collection('users')
-      .where('stripeSubscriptionId', '==', subscription.id)
+    // Try to find user by artist subscription ID first
+    let usersSnapshot = await db.collection('users')
+      .where('artistStripeSubscriptionId', '==', subscription.id)
       .limit(1)
       .get();
+
+    // Fallback to listener subscription check if not found
+    let isArtistSubscription = !usersSnapshot.empty;
+    if (usersSnapshot.empty) {
+      usersSnapshot = await db.collection('users')
+        .where('listenerStripeSubscriptionId', '==', subscription.id)
+        .limit(1)
+        .get();
+    }
 
     if (usersSnapshot.empty) {
       console.log('No user found for subscription:', subscription.id);
@@ -392,23 +405,46 @@ async function handleSubscriptionUpdate(subscription) {
     const userDoc = usersSnapshot.docs[0];
     const userId = userDoc.id;
 
-    // Update membership expiration if subscription is active
-    if (subscription.status === 'active') {
-      const expirationDate = new Date(subscription.current_period_end * 1000);
+    // Update artist membership expiration if subscription is active
+    if (isArtistSubscription) {
+      if (subscription.status === 'active') {
+        const expirationDate = new Date(subscription.current_period_end * 1000);
 
-      await db.collection('users').doc(userId).update({
-        artistMembershipActive: true,
-        membershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
-        subscriptionStatus: subscription.status
-      });
+        await db.collection('users').doc(userId).update({
+          artistMembershipActive: true,
+          artistMembershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
+          artistSubscriptionStatus: subscription.status,
+          // Legacy fields for backward compatibility
+          membershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate)
+        });
 
-      console.log(`✅ Updated membership expiration for user ${userId}: ${expirationDate.toISOString()}`);
+        console.log(`✅ Updated artist membership expiration for user ${userId}: ${expirationDate.toISOString()}`);
+      } else {
+        // Handle non-active statuses (past_due, unpaid, etc.)
+        await db.collection('users').doc(userId).update({
+          artistSubscriptionStatus: subscription.status
+        });
+        console.log(`⚠️ Artist subscription status updated to ${subscription.status} for user ${userId}`);
+      }
     } else {
-      // Handle non-active statuses (past_due, unpaid, etc.)
-      await db.collection('users').doc(userId).update({
-        subscriptionStatus: subscription.status
-      });
-      console.log(`⚠️ Subscription status updated to ${subscription.status} for user ${userId}`);
+      // Update listener premium subscription
+      if (subscription.status === 'active') {
+        const expirationDate = new Date(subscription.current_period_end * 1000);
+
+        await db.collection('users').doc(userId).update({
+          isPremium: true,
+          premiumActive: true,
+          listenerSubscriptionStatus: subscription.status,
+          listenerSubscriptionExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate)
+        });
+
+        console.log(`✅ Updated listener premium for user ${userId}: ${expirationDate.toISOString()}`);
+      } else {
+        await db.collection('users').doc(userId).update({
+          listenerSubscriptionStatus: subscription.status
+        });
+        console.log(`⚠️ Listener subscription status updated to ${subscription.status} for user ${userId}`);
+      }
     }
   } catch (error) {
     console.error('Error updating subscription:', error);
@@ -422,11 +458,20 @@ async function handleSubscriptionCancelled(subscription) {
   console.log('Subscription cancelled:', subscription.id);
 
   try {
-    // Find user by subscription ID
-    const usersSnapshot = await db.collection('users')
-      .where('stripeSubscriptionId', '==', subscription.id)
+    // Try to find user by artist subscription ID first
+    let usersSnapshot = await db.collection('users')
+      .where('artistStripeSubscriptionId', '==', subscription.id)
       .limit(1)
       .get();
+
+    // Fallback to listener subscription check if not found
+    let isArtistSubscription = !usersSnapshot.empty;
+    if (usersSnapshot.empty) {
+      usersSnapshot = await db.collection('users')
+        .where('listenerStripeSubscriptionId', '==', subscription.id)
+        .limit(1)
+        .get();
+    }
 
     if (usersSnapshot.empty) {
       console.log('No user found for subscription:', subscription.id);
@@ -436,14 +481,26 @@ async function handleSubscriptionCancelled(subscription) {
     const userDoc = usersSnapshot.docs[0];
     const userId = userDoc.id;
 
-    // Deactivate membership
-    await db.collection('users').doc(userId).update({
-      artistMembershipActive: false,
-      subscriptionStatus: 'cancelled',
-      membershipCancelledAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    if (isArtistSubscription) {
+      // Deactivate artist membership
+      await db.collection('users').doc(userId).update({
+        artistMembershipActive: false,
+        artistSubscriptionStatus: 'cancelled',
+        artistMembershipCancelledAt: admin.firestore.FieldValue.serverTimestamp()
+      });
 
-    console.log(`❌ Membership deactivated for user ${userId}`);
+      console.log(`❌ Artist membership deactivated for user ${userId}`);
+    } else {
+      // Deactivate listener premium
+      await db.collection('users').doc(userId).update({
+        isPremium: false,
+        premiumActive: false,
+        listenerSubscriptionStatus: 'cancelled',
+        listenerSubscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      console.log(`❌ Listener premium deactivated for user ${userId}`);
+    }
   } catch (error) {
     console.error('Error handling subscription cancellation:', error);
   }

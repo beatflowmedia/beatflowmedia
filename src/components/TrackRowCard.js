@@ -168,35 +168,41 @@ export default function TrackRowCard({
 
         {/* Favorite Button (Heart) */}
         {onToggleFavorite && (
-          <IconButton
-            size="small"
-            onClickCapture={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onToggleFavorite(track);
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onMouseDownCapture={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            sx={{
-              color: isFavorited ? '#e91e63' : 'grey.400',
-              '&:hover': { color: isFavorited ? '#f06292' : '#e91e63' },
-              position: 'relative',
-              zIndex: 10
-            }}
-            title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', position: 'relative', zIndex: 10 }}
+            onClickCapture={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDownCapture={(e) => e.stopPropagation()}
           >
-            {isFavorited ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
-          </IconButton>
+            <IconButton
+              size="small"
+              onClickCapture={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite(track);
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onMouseDownCapture={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              sx={{
+                color: isFavorited ? '#e91e63' : 'grey.400',
+                '&:hover': { color: isFavorited ? '#f06292' : '#e91e63' }
+              }}
+              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {isFavorited ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
+            </IconButton>
+          </Box>
         )}
 
         {/* More Options */}

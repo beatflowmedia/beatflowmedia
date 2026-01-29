@@ -49,7 +49,8 @@ const actions = {
   CLEAR: "CLEAR",
   SET_CURRENT_TIME: "SET_CURRENT_TIME",
   SET_DURATION: "SET_DURATION",
-  SET_VOLUME: "SET_VOLUME"
+  SET_VOLUME: "SET_VOLUME",
+  SYNC_QUEUE: "SYNC_QUEUE"
 };
 
 function reducer(state = initialState, action) {
@@ -185,6 +186,17 @@ function reducer(state = initialState, action) {
     }
     case actions.CLEAR:
       return { ...state, queue: [], currentIndex: 0, isPlaying: false };
+    case actions.SYNC_QUEUE: {
+      // Sync queue with fresh Firebase data (updates coverUrl, artistImage, etc.)
+      const freshSongsMap = new Map(
+        action.payload.map(song => [song.id, song])
+      );
+      const syncedQueue = state.queue.map(queuedSong => {
+        const freshData = freshSongsMap.get(queuedSong.id);
+        return freshData ? { ...queuedSong, ...freshData } : queuedSong;
+      });
+      return { ...state, queue: syncedQueue };
+    }
     default:
       return state;
   }

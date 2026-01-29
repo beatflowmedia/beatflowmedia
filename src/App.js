@@ -15,6 +15,7 @@ import "./index.css"; // Tailwind or global styles
 import { cleanupPlaylistDuplicates } from "./utils/cleanupPlaylistDuplicates"; // Make cleanup function available in console
 import { initializePlatformStats } from "./utils/initializePlatformStats"; // Platform stats initialization
 import { cleanupDuplicateCollections } from "./utils/cleanupDuplicateCollections"; // Duplicate collections cleanup
+import { migrateArtistImages } from "./utils/migrateArtistImages"; // Artist image migration
 
 export default function App() {
   // Attach utility functions to window on component mount
@@ -22,9 +23,11 @@ export default function App() {
     window.cleanupPlaylistDuplicates = cleanupPlaylistDuplicates;
     window.initializePlatformStats = initializePlatformStats;
     window.cleanupDuplicateCollections = cleanupDuplicateCollections;
+    window.migrateArtistImages = migrateArtistImages;
     console.log('✅ cleanupPlaylistDuplicates() is available in console');
     console.log('✅ initializePlatformStats() is available in console');
     console.log('✅ cleanupDuplicateCollections() is available in console');
+    console.log('✅ migrateArtistImages() is available in console');
   }, []);
 
   return (

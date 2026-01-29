@@ -29,7 +29,8 @@ import {
   CircularProgress,
   Menu,
   MenuItem,
-  Tooltip
+  Tooltip,
+  Paper
 } from '@mui/material';
 import {
   CloudUpload,
@@ -151,6 +152,8 @@ export default function ArtistProfileManager() {
     releaseDate: '',
     recordLabel: ''
   });
+  const [newSubmissionCoverFile, setNewSubmissionCoverFile] = useState(null);
+  const [submissionCoverPreview, setSubmissionCoverPreview] = useState(null);
 
   // Membership status
   const [membershipStatus, setMembershipStatus] = useState({ active: false, expiresAt: null, daysRemaining: null });
@@ -231,6 +234,48 @@ export default function ArtistProfileManager() {
     return () => unsubscribe();
   }, [user, loadingMembership, membershipStatus.active]);
 
+  // Real-time listener for songs - only after membership verified
+  useEffect(() => {
+    if (!user || loadingMembership) return;
+    if (!membershipStatus.active) return; // Don't load data if no membership
+
+    const songsQuery = query(
+      collection(db, 'songs'),
+      where('uploadedBy', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(songsQuery, (snapshot) => {
+      const songsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSongs(songsData);
+      console.log('Real-time songs update:', songsData.length);
+    }, (error) => {
+      console.error('Error loading songs:', error);
+    });
+
+    return () => unsubscribe();
+  }, [user, loadingMembership, membershipStatus.active]);
+
+  // Real-time listener for submissions - only after membership verified
+  useEffect(() => {
+    if (!user || loadingMembership) return;
+    if (!membershipStatus.active) return; // Don't load data if no membership
+
+    const submissionsQuery = query(
+      collection(db, 'artistSubmissions'),
+      where('uploadedBy', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(submissionsQuery, (snapshot) => {
+      const submissionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSubmissions(submissionsData);
+      console.log('Real-time submissions update:', submissionsData.length);
+    }, (error) => {
+      console.error('Error loading submissions:', error);
+    });
+
+    return () => unsubscribe();
+  }, [user, loadingMembership, membershipStatus.active]);
+
   const loadArtistProfile = async () => {
     try {
       setLoading(true);
@@ -238,11 +283,9 @@ export default function ArtistProfileManager() {
 
       // Load artist profile
       const artistDoc = await getDoc(doc(db, 'artists', user.uid));
-      let artistNameForQuery = '';
       if (artistDoc.exists()) {
         const data = artistDoc.data();
         setArtistName(data.name || '');
-        artistNameForQuery = data.name || '';
         setBio(data.bio || '');
         setGenre(data.genre || '');
         setProfileImage(data.profileImage || '');
@@ -259,136 +302,18 @@ export default function ArtistProfileManager() {
       const tours = toursSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTourDates(tours.sort((a, b) => new Date(a.date) - new Date(b.date)));
 
-      // Load songs - try both uploadedBy (for submissions) and artist name (for imported songs)
-      let songsData = [];
+      // Songs, Albums, and Submissions are now loaded via real-time listeners (see useEffect above)
 
-      // First, get songs by uploadedBy (approved submissions)
-      const songsQueryByUser = query(
-        collection(db, 'songs'),
-        where('uploadedBy', '==', user.uid)
+      // Load purchases/revenue for this artist - optimized single query
+      // NOTE: This requires a composite index on (artistId, status)
+      const purchasesQuery = query(
+        collection(db, 'purchases'),
+        where('artistId', '==', user.uid),
+        where('status', '==', 'completed')
       );
-      const songsSnapshotByUser = await getDocs(songsQueryByUser);
-      songsData = songsSnapshotByUser.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log('Loaded songs by uploadedBy:', songsData.length);
-
-      // Also get songs by artist name (imported from musicData.json)
-      if (artistNameForQuery) {
-        const songsQueryByName = query(
-          collection(db, 'songs'),
-          where('artist', '==', artistNameForQuery)
-        );
-        const songsSnapshotByName = await getDocs(songsQueryByName);
-        const songsByName = songsSnapshotByName.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('Loaded songs by artist name:', songsByName.length, artistNameForQuery);
-
-        // Merge, avoiding duplicates
-        const existingIds = new Set(songsData.map(s => s.id));
-        songsByName.forEach(song => {
-          if (!existingIds.has(song.id)) {
-            songsData.push(song);
-          }
-        });
-      }
-
-      // Also try user's email and display name
-      if (user.email) {
-        const emailPrefix = user.email.split('@')[0];
-        const songsQueryByEmail = query(
-          collection(db, 'songs'),
-          where('artist', '==', emailPrefix)
-        );
-        const songsSnapshotByEmail = await getDocs(songsQueryByEmail);
-        const songsByEmail = songsSnapshotByEmail.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('Loaded songs by email prefix:', songsByEmail.length, emailPrefix);
-
-        const existingIds = new Set(songsData.map(s => s.id));
-        songsByEmail.forEach(song => {
-          if (!existingIds.has(song.id)) {
-            songsData.push(song);
-          }
-        });
-
-        // Special handling for percyricemusic@gmail.com -> Percy Rice
-        if (user.email === 'percyricemusic@gmail.com') {
-          const percyQuery = query(
-            collection(db, 'songs'),
-            where('artist', '==', 'Percy Rice')
-          );
-          const percySnapshot = await getDocs(percyQuery);
-          const percySongs = percySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          console.log('Loaded Percy Rice songs:', percySongs.length);
-
-          const existingIds2 = new Set(songsData.map(s => s.id));
-          percySongs.forEach(song => {
-            if (!existingIds2.has(song.id)) {
-              songsData.push(song);
-            }
-          });
-        }
-      }
-
-      setSongs(songsData);
-      console.log('Total songs loaded:', songsData.length, songsData);
-
-      // Albums are now loaded via real-time listener (see useEffect above)
-
-      // Also check for pending submissions
-      const submissionsQuery = query(
-        collection(db, 'artistSubmissions'),
-        where('uploadedBy', '==', user.uid)
-      );
-      const submissionsSnapshot = await getDocs(submissionsQuery);
-      const submissionsData = submissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSubmissions(submissionsData);
-      console.log('Found submissions:', submissionsData.length, submissionsData);
-
-      // Load purchases/revenue for this artist
-      let purchasesData = [];
-
-      // Try querying by artistId first (for new purchases with artistId field)
-      if (user.uid) {
-        const purchasesByIdQuery = query(
-          collection(db, 'purchases'),
-          where('artistId', '==', user.uid),
-          where('status', '==', 'completed')
-        );
-        const purchasesByIdSnapshot = await getDocs(purchasesByIdQuery);
-        purchasesData = purchasesByIdSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('Found', purchasesData.length, 'purchases by artistId');
-      }
-
-      // If no purchases found by artistId, try by artistName from profile
-      if (purchasesData.length === 0 && artistNameForQuery) {
-        const purchasesByNameQuery = query(
-          collection(db, 'purchases'),
-          where('artistName', '==', artistNameForQuery),
-          where('status', '==', 'completed')
-        );
-        const purchasesByNameSnapshot = await getDocs(purchasesByNameQuery);
-        purchasesData = purchasesByNameSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('Found', purchasesData.length, 'purchases by artistName from profile:', artistNameForQuery);
-      }
-
-      // If still no purchases, try by artist name from user's songs (fallback)
-      if (purchasesData.length === 0 && songsData.length > 0) {
-        // Get unique artist names from the songs
-        const artistNames = [...new Set(songsData.map(s => s.artist || s.artistName).filter(Boolean))];
-        console.log('Trying artist names from songs:', artistNames);
-
-        for (const name of artistNames) {
-          const purchasesByNameQuery = query(
-            collection(db, 'purchases'),
-            where('artistName', '==', name),
-            where('status', '==', 'completed')
-          );
-          const purchasesByNameSnapshot = await getDocs(purchasesByNameQuery);
-          const foundPurchases = purchasesByNameSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          if (foundPurchases.length > 0) {
-            purchasesData.push(...foundPurchases);
-            console.log('Found', foundPurchases.length, 'purchases by artistName from songs:', name);
-          }
-        }
-      }
+      const purchasesSnapshot = await getDocs(purchasesQuery);
+      const purchasesData = purchasesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Loaded purchases:', purchasesData.length);
 
       setPurchases(purchasesData);
 
@@ -681,11 +606,7 @@ export default function ArtistProfileManager() {
           await Promise.all(updatePromises);
           console.log(`✅ Successfully updated all songs!`);
 
-          // Update songs state to reflect the visibility change
-          const songIds = albumSongsSnapshot.docs.map(doc => doc.id);
-          setSongs(songs.map(s =>
-            songIds.includes(s.id) ? { ...s, isVisible: newVisibility } : s
-          ));
+          // No need to update local state - real-time listener will handle it automatically
 
           toast.success(`Album and ${albumSongsSnapshot.size} song(s) ${newVisibility ? 'shown' : 'hidden'} on platform`);
         } else {
@@ -696,12 +617,11 @@ export default function ArtistProfileManager() {
         toast.success(`Song ${newVisibility ? 'shown' : 'hidden'} on platform`);
       }
 
-      // Update local state
+      // No need to update local state - real-time listener will handle it automatically
+      // Close menus
       if (itemType === 'song') {
-        setSongs(songs.map(s => s.id === item.id ? { ...s, isVisible: newVisibility } : s));
         setSongMenuAnchor(null);
       } else {
-        setAlbums(albums.map(a => a.id === item.id ? { ...a, isVisible: newVisibility } : a));
         setAlbumMenuAnchor(null);
       }
     } catch (error) {
@@ -727,7 +647,7 @@ export default function ArtistProfileManager() {
         console.log('Uploading new cover art...');
         const coverRef = ref(
           storage,
-          `song-covers/${editingSong.id}_${Date.now()}_${newCoverFile.name}`
+          `artist-uploads/covers/${editingSong.id}_${Date.now()}_${newCoverFile.name}`
         );
         await uploadBytes(coverRef, newCoverFile);
         coverUrl = await getDownloadURL(coverRef);
@@ -750,12 +670,7 @@ export default function ArtistProfileManager() {
 
       await setDoc(doc(db, 'songs', editingSong.id), updateData, { merge: true });
 
-      // Update local state
-      setSongs(songs.map(s =>
-        s.id === editingSong.id
-          ? { ...s, ...editForm, coverUrl, cover: coverUrl }
-          : s
-      ));
+      // No need to update local state - real-time listener will handle it automatically
 
       console.log('Song updated successfully!');
       toast.success('Song updated successfully!');
@@ -780,6 +695,10 @@ export default function ArtistProfileManager() {
       releaseDate: submission.releaseDate || '',
       recordLabel: submission.recordLabel || ''
     });
+    if (submission.coverUrl) {
+      setSubmissionCoverPreview(submission.coverUrl);
+    }
+    setNewSubmissionCoverFile(null);
     setEditSubmissionDialogOpen(true);
   };
 
@@ -788,28 +707,96 @@ export default function ArtistProfileManager() {
 
     try {
       setSaving(true);
+      let coverUrl = editingSubmission.coverUrl;
+
+      // Upload new cover art if one was selected
+      if (newSubmissionCoverFile) {
+        console.log('Uploading new submission cover art...');
+        const coverRef = ref(
+          storage,
+          `artist-uploads/covers/${editingSubmission.id}_${Date.now()}_${newSubmissionCoverFile.name}`
+        );
+        await uploadBytes(coverRef, newSubmissionCoverFile);
+        coverUrl = await getDownloadURL(coverRef);
+        console.log('New submission cover URL:', coverUrl);
+      }
+
+      console.log('About to update submission in Firestore');
+
       await updateDoc(doc(db, 'artistSubmissions', editingSubmission.id), {
         albumTitle: submissionEditForm.albumTitle,
         artistName: submissionEditForm.artistName,
         genre: submissionEditForm.genre,
         releaseDate: submissionEditForm.releaseDate,
         recordLabel: submissionEditForm.recordLabel,
+        coverUrl: coverUrl,
         updatedAt: new Date().toISOString()
       });
 
-      // Update local state
-      setSubmissions(submissions.map(s =>
-        s.id === editingSubmission.id
-          ? { ...s, ...submissionEditForm }
-          : s
-      ));
+      console.log('Submission updated in Firestore');
+
+      // Sync cover to published album and songs (client-side for instant updates)
+      // onSnapshot listeners will detect these changes and update UI immediately
+      console.log('Checking if submission is published:', {
+        status: editingSubmission.status,
+        publishedAlbumId: editingSubmission.publishedAlbumId,
+        publishedSongIds: editingSubmission.publishedSongIds
+      });
+
+      if (editingSubmission.status === 'published') {
+        const updates = [];
+
+        // Update artist profile image
+        console.log('Syncing cover to artist profile:', user.uid);
+        updates.push(
+          updateDoc(doc(db, 'artists', user.uid), {
+            profileImage: coverUrl,
+            updatedAt: new Date()
+          })
+        );
+        setProfileImage(coverUrl); // Update local state immediately
+
+        if (editingSubmission.publishedAlbumId) {
+          console.log('Syncing cover to album:', editingSubmission.publishedAlbumId);
+          updates.push(
+            updateDoc(doc(db, 'albums', editingSubmission.publishedAlbumId), {
+              coverUrl: coverUrl,
+              updatedAt: new Date()
+            })
+          );
+        }
+
+        if (editingSubmission.publishedSongIds && editingSubmission.publishedSongIds.length > 0) {
+          console.log('Syncing cover to', editingSubmission.publishedSongIds.length, 'songs');
+          editingSubmission.publishedSongIds.forEach(songId => {
+            updates.push(
+              updateDoc(doc(db, 'songs', songId), {
+                coverUrl: coverUrl,
+                cover: coverUrl,
+                artistImage: coverUrl, // Add artist image for sidebar
+                updatedAt: new Date()
+              })
+            );
+          });
+        }
+
+        if (updates.length > 0) {
+          await Promise.all(updates);
+          console.log('✅ Cover synced to artist profile, album and songs');
+        }
+      } else {
+        console.log('⚠️ Submission is not published, skipping album/song sync');
+      }
 
       toast.success('Submission updated successfully!');
       setEditSubmissionDialogOpen(false);
       setEditingSubmission(null);
+      setNewSubmissionCoverFile(null);
+      setSubmissionCoverPreview(null);
     } catch (error) {
-      console.error('Error updating submission:', error);
-      toast.error('Failed to update submission');
+      console.error('❌ Error updating submission:', error);
+      console.error('Error details:', error.message, error.stack);
+      toast.error('Failed to update submission: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -841,13 +828,8 @@ export default function ArtistProfileManager() {
             variant="contained"
             startIcon={<MusicNote />}
             onClick={() => {
-              // Check if profile is complete before allowing upload
-              if (!artistName || !bio) {
-                toast.warning('Please complete your profile (Name & Bio) before uploading music!');
-                setActiveTab(0); // Switch to Profile tab
-              } else {
-                navigate('/for-artists?upload=true');
-              }
+              console.log('Upload Music clicked!', { artistName, bio });
+              navigate('/for-artists');
             }}
             sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
           >
@@ -1209,7 +1191,7 @@ export default function ArtistProfileManager() {
                   if (confirmed) {
                     deleteDoc(doc(db, 'songs', selectedSong.id))
                       .then(() => {
-                        setSongs(songs.filter(s => s.id !== selectedSong.id));
+                        // No need to update local state - real-time listener will handle it automatically
                         toast.success('Song deleted');
                       })
                       .catch((error) => {
@@ -1259,7 +1241,7 @@ export default function ArtistProfileManager() {
                     console.log('Deleting album:', selectedAlbum);
                     deleteDoc(doc(db, 'albums', selectedAlbum.id))
                       .then(() => {
-                        setAlbums(albums.filter(a => a.id !== selectedAlbum.id));
+                        // No need to update local state - real-time listener will handle it automatically
                         toast.success('Album deleted');
                       })
                       .catch((error) => {
@@ -1947,6 +1929,49 @@ export default function ArtistProfileManager() {
           <DialogTitle>Edit Submission</DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2 }}>
+              {/* Cover Art Upload */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Cover Art
+                </Typography>
+                <Paper
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    border: '2px dashed #333',
+                    bgcolor: 'rgba(29, 185, 84, 0.05)',
+                    transition: 'all 0.3s',
+                    '&:hover': { borderColor: '#1DB954', bgcolor: 'rgba(29, 185, 84, 0.1)' },
+                    textAlign: 'center'
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    fullWidth
+                  >
+                    Upload New Cover Art
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setNewSubmissionCoverFile(file);
+                          setSubmissionCoverPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </Button>
+                </Paper>
+                {submissionCoverPreview && (
+                  <Box sx={{ mb: 2 }}>
+                    <img src={submissionCoverPreview} alt="Cover Preview" style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: 8 }} />
+                  </Box>
+                )}
+              </Box>
+
               <TextField
                 fullWidth
                 label="Album Title"

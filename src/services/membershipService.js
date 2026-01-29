@@ -22,10 +22,26 @@ export async function checkMembershipStatus(userId) {
     }
 
     const userData = userDoc.data();
-    const isActive = userData.artistMembershipActive || false;
-    const expiresAt = userData.membershipExpiresAt?.toDate() || null;
 
-    // Calculate days remaining
+    // Artist subscription fields (namespaced to avoid conflicts with listener premium)
+    const isActive = userData.artistMembershipActive || false;
+    const expiresAt = userData.artistMembershipExpiresAt?.toDate() || userData.membershipExpiresAt?.toDate() || null;
+    const artistSubscriptionId = userData.artistStripeSubscriptionId || null;
+    const artistSubscriptionStatus = userData.artistSubscriptionStatus || null;
+
+    // Debug logging
+    console.log('🔍 Membership check for user', userId);
+    console.log('  artistMembershipActive:', userData.artistMembershipActive);
+    console.log('  artistStripeSubscriptionId:', artistSubscriptionId);
+    console.log('  artistSubscriptionStatus:', artistSubscriptionStatus);
+    console.log('  artistMembershipExpiresAt:', userData.artistMembershipExpiresAt);
+    console.log('  membershipExpiresAt (legacy):', userData.membershipExpiresAt);
+    console.log('  expiresAt (computed):', expiresAt);
+
+    // Check if has active artist subscription
+    const hasActiveArtistSubscription = artistSubscriptionId && artistSubscriptionStatus === 'active';
+
+    // Calculate days remaining (only for time-limited memberships, not subscriptions)
     let daysRemaining = null;
     if (expiresAt) {
       const now = new Date();
@@ -33,11 +49,17 @@ export async function checkMembershipStatus(userId) {
       daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
 
+    // Artist is active if:
+    // 1. Has active Stripe artist subscription (artistSubscriptionStatus === 'active'), OR
+    // 2. Has artistMembershipActive flag AND expiresAt is in the future
+    const active = hasActiveArtistSubscription || (isActive && expiresAt && expiresAt > new Date());
+
     return {
-      active: isActive && (expiresAt ? expiresAt > new Date() : false),
+      active,
       expiresAt,
       daysRemaining,
-      subscriptionId: userData.stripeSubscriptionId || null
+      subscriptionId: artistSubscriptionId,
+      subscriptionStatus: artistSubscriptionStatus
     };
   } catch (error) {
     console.error('Error checking membership status:', error);

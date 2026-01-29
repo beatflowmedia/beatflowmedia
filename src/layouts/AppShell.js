@@ -12,9 +12,9 @@ import ErrorBoundary from "../components/ErrorBoundary";
 
 import { usePlaylistManager } from "../hooks/usePlaylistManager";
 import { usePlayerActions } from "../hooks/usePlayerActions";
+import { usePlayer } from "../context/PlayerContext";
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
-import musicData from "../musicData.json";
 import { buildArtistInfo } from "../utils/buildArtistInfo";
 
 import styles from "./LayoutGrid.module.css";
@@ -36,12 +36,15 @@ export default function AppShell() {
   const navigate = useNavigate();
   const { playlists, createNewPlaylist, addSong, removeSong } = usePlaylistManager();
 
-  // Load songs from Firebase for sidebar (combines with local musicData.json)
+  // Load songs from Firebase (single source of truth)
   const [firebaseSongs, setFirebaseSongs] = useState([]);
-  const allSongs = useMemo(() => [...musicData, ...firebaseSongs], [firebaseSongs]);
+  const allSongs = useMemo(() => firebaseSongs, [firebaseSongs]);
 
   // Use unified player actions hook (replaces local state + event system)
-  const { playSong, playArtist, currentSong, isPlaying } = usePlayerActions(musicData);
+  const { playSong, playArtist, currentSong, isPlaying } = usePlayerActions(firebaseSongs);
+
+  // Get PlayerContext dispatch to sync queue with Firebase updates
+  const { dispatch, actions } = usePlayer();
 
   // UI State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Desktop: collapse to icons-only
@@ -53,7 +56,7 @@ export default function AppShell() {
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Load songs from Firebase
+  // Load songs from Firebase and sync player queue
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "songs"), (snapshot) => {
       const songs = snapshot.docs.map(doc => ({
@@ -62,10 +65,17 @@ export default function AppShell() {
         artist: doc.data().artistName || doc.data().artist
       }));
       setFirebaseSongs(songs);
+
+      // Sync player queue with fresh Firebase data (updates coverUrl, artistImage, etc.)
+      dispatch({
+        type: actions.SYNC_QUEUE,
+        payload: songs
+      });
+      console.log('🔄 Player queue synced with Firebase updates');
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [dispatch, actions]);
 
   // Right Panel Handlers
   const openRightPanel = useCallback((content) => {

@@ -159,11 +159,17 @@ async function handleCheckoutSessionCompleted(session) {
 
         const membershipData = {
           artistMembershipActive: true,
+          artistMembershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
+          artistMembershipStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+          artistStripeSubscriptionId: session.subscription,
+          artistStripeCustomerId: session.customer,
+          artistSubscriptionStatus: 'active',
+          membershipType: 'annual',
+          // Keep legacy fields for backward compatibility
           membershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
           membershipStartedAt: admin.firestore.FieldValue.serverTimestamp(),
           stripeSubscriptionId: session.subscription,
-          stripeCustomerId: session.customer,
-          membershipType: 'annual'
+          stripeCustomerId: session.customer
         };
 
         console.log('💾 Membership data to save:', JSON.stringify({
@@ -493,6 +499,9 @@ async function handleSubscriptionUpdate(subscription) {
 
       await db.collection('users').doc(userId).update({
         artistMembershipActive: true,
+        artistMembershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
+        artistSubscriptionStatus: subscription.status,
+        // Legacy fields for backward compatibility
         membershipExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
         subscriptionStatus: subscription.status
       });
@@ -501,7 +510,8 @@ async function handleSubscriptionUpdate(subscription) {
     } else {
       // Handle non-active statuses (past_due, unpaid, etc.)
       await db.collection('users').doc(userId).update({
-        subscriptionStatus: subscription.status
+        artistSubscriptionStatus: subscription.status,
+        subscriptionStatus: subscription.status  // Legacy
       });
       console.log(`⚠️ Subscription status updated to ${subscription.status} for user ${userId}`);
     }
@@ -534,6 +544,9 @@ async function handleSubscriptionCancelled(subscription) {
     // Deactivate membership
     await db.collection('users').doc(userId).update({
       artistMembershipActive: false,
+      artistSubscriptionStatus: 'cancelled',
+      artistMembershipCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+      // Legacy fields
       subscriptionStatus: 'cancelled',
       membershipCancelledAt: admin.firestore.FieldValue.serverTimestamp()
     });

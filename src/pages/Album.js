@@ -365,20 +365,31 @@ function Album() {
   }, [user, checkIsLiked, addLike, removeLike]);
 
   const handleToggleFavorite = useCallback(async (track) => {
+    console.log('Album: handleToggleFavorite called', { track: track?.id, user: user?.uid });
+    
     if (!user) {
       toast.error('Please sign in to favorite songs');
       return;
     }
 
     try {
+      console.log('Album: Checking if favorited for track:', track.id);
       const favorited = checkIsFavorited(track.id);
+      console.log('Album: Current favorited status:', favorited);
+      
       if (favorited) {
+        console.log('Album: Removing favorite for track:', track.id);
         await removeFavorite(track.id);
+        toast.success('Removed from favorites');
       } else {
+        console.log('Album: Adding favorite for track:', track.id);
         await addFavorite(track.id);
+        toast.success('Added to favorites');
       }
+      console.log('Album: Successfully toggled favorite for track:', track.id);
     } catch (err) {
-      console.error('Failed to update favorites:', err);
+      console.error('Album: Failed to update favorites:', err);
+      toast.error('Failed to update favorites');
     }
   }, [user, checkIsFavorited, addFavorite, removeFavorite]);
 
@@ -582,7 +593,7 @@ function Album() {
               height={300}
               fallback="/default-album-cover.jpg"
               priority={true}
-              sx={{ objectFit: 'cover' }}
+              sx={{ objectFit: 'contain', width: '100%', height: '100%' }}
             />
           </Card>
 

@@ -123,7 +123,7 @@ const MusicPlayer = ({ onShowRightPanel }) => {
           {song ? (
             <>
               <img
-                src={song.cover || getPlaceholderImage(50, 50)}
+                src={song.coverUrl || song.cover || getPlaceholderImage(50, 50)}
                 alt="cover"
                 className="w-12 h-12 object-cover rounded mr-3"
               />

@@ -22,7 +22,8 @@ function buildSidebarItems(musicData, playlists, filter, search) {
     .map((artistSong) => ({
       id: `artist-${artistSong.artist}`,
       name: artistSong.artist,
-      cover: `/artistImages/${artistSong.artist}.jpg`,
+      // Use artistImage from song if available (synced from artist profile), otherwise fallback to static
+      cover: artistSong.artistImage || artistSong.coverUrl || artistSong.cover || `/artistImages/${artistSong.artist}.jpg`,
       type: "artist"
     }));
 

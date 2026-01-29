@@ -34,16 +34,19 @@ export function useSubscription(user) {
           return;
         }
 
-        // Check if user has an active subscription AND a Stripe customer ID
-        const isActive = (userData.subscriptionStatus === 'active' || userData.isPremium || userData.premiumActive)
-                        && userData.stripeCustomerId;
+        // Check if user has an active LISTENER subscription (not artist membership)
+        const listenerSubscriptionStatus = userData.listenerSubscriptionStatus || null;
+        const listenerCustomerId = userData.listenerStripeCustomerId || userData.stripeCustomerId || null;
+        const isActive = (listenerSubscriptionStatus === 'active' || userData.isPremium || userData.premiumActive)
+                        && listenerCustomerId;
 
         setHasSubscription(isActive);
         setSubscriptionData({
-          status: userData.subscriptionStatus || null,
+          status: listenerSubscriptionStatus,
           tier: userData.premiumTier || userData.subscriptionPlan || null,
-          customerId: userData.stripeCustomerId || null,
-          isPremium: userData.isPremium || userData.premiumActive || false
+          customerId: listenerCustomerId,
+          isPremium: userData.isPremium || userData.premiumActive || false,
+          expiresAt: userData.listenerSubscriptionExpiresAt?.toDate() || null
         });
       } catch (error) {
         console.error('Error checking subscription:', error);
