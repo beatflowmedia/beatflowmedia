@@ -33,9 +33,53 @@ export class AdminAnalyticsService {
 
   /**
    * Get platform overview statistics
+   * OPTIMIZED: Reads from platformStats aggregate collection instead of expensive counts
    */
   async getPlatformStats() {
     try {
+      // First, try to get stats from the optimized platformStats collection
+      const platformStatsDoc = await getDocs(
+        query(collection(db, 'platformStats'), limit(1))
+      );
+
+      if (!platformStatsDoc.empty) {
+        const stats = platformStatsDoc.docs[0].data();
+
+        // Get additional stats that aren't in platformStats yet
+        const [
+          totalApplications,
+          pendingApplications,
+          totalPlays,
+          totalLikes,
+          totalFollows
+        ] = await Promise.all([
+          this.getCollectionCount('applications'),
+          this.getConditionalCount('applications', where('status', '==', 'pending')),
+          this.getCollectionCount('playEvents'),
+          this.getCollectionCount('likeEvents'),
+          this.getCollectionCount('followEvents')
+        ]);
+
+        return {
+          totalUsers: stats.totalUsers || 0,
+          totalSongs: stats.totalSongs || 0,
+          totalArtists: stats.totalArtists || 0,
+          totalAlbums: stats.totalAlbums || 0,
+          totalPlaylists: stats.totalPlaylists || 0,
+          totalApplications,
+          pendingApplications,
+          totalPlays,
+          totalLikes,
+          totalFollows,
+          errorRate: 0.02, // placeholder
+          timestamp: Date.now(),
+          lastUpdated: stats.lastUpdated?.toDate() || new Date()
+        };
+      }
+
+      // Fallback to expensive counts if platformStats doesn't exist
+      console.warn('platformStats collection not found, using expensive counts. Run initializePlatformStats()');
+
       const [
         totalUsers,
         totalSongs,
@@ -60,9 +104,6 @@ export class AdminAnalyticsService {
         this.getCollectionCount('followEvents')
       ]);
 
-      // Calculate error rate (placeholder - would need error tracking collection)
-      const errorRate = 0.02; // 0.02% default
-
       return {
         totalUsers,
         totalSongs,
@@ -74,7 +115,7 @@ export class AdminAnalyticsService {
         totalPlays,
         totalLikes,
         totalFollows,
-        errorRate,
+        errorRate: 0.02,
         timestamp: Date.now()
       };
     } catch (error) {
