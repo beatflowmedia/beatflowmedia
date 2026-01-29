@@ -42,8 +42,9 @@ import {
 } from "@mui/icons-material";
 import { contentIngestionService } from "../services/contentIngestionService";
 import { adminAnalytics } from "../services/adminAnalytics";
-import { db } from "../firebaseConfig";
+import { db, storage } from "../firebaseConfig";
 import { collection, getDocs, query, orderBy, limit, where, Timestamp } from "firebase/firestore";
+import { ref, listAll, getMetadata } from "firebase/storage";
 
 const ContentIngestionDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -79,12 +80,44 @@ const ContentIngestionDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const calculateStorageUsage = async () => {
+    try {
+      // Calculate storage usage from Firebase Storage
+      const storageRef = ref(storage);
+      let totalSize = 0;
+
+      // List all files in storage and sum their sizes
+      const listResult = await listAll(storageRef);
+
+      // Get metadata for all files
+      const metadataPromises = listResult.items.map(item => getMetadata(item));
+      const metadataList = await Promise.all(metadataPromises);
+
+      // Sum up all file sizes
+      totalSize = metadataList.reduce((sum, metadata) => sum + (metadata.size || 0), 0);
+
+      // Firebase Storage free tier: 5GB = 5 * 1024 * 1024 * 1024 bytes
+      const storageLimit = 5 * 1024 * 1024 * 1024;
+      const percentage = (totalSize / storageLimit) * 100;
+
+      return {
+        percentage,
+        usedBytes: totalSize,
+        usedReadable: formatFileSize(totalSize),
+        limitReadable: '5 GB'
+      };
+    } catch (error) {
+      console.error('Error calculating storage usage:', error);
+      return { percentage: 0, usedBytes: 0, usedReadable: '0 B', limitReadable: '5 GB' };
+    }
+  };
+
   const loadDashboardData = async () => {
     try {
       setRefreshing(true);
 
       // Fetch data from Firestore instead of API endpoints
-      const [contentStats, uploads, errors, completedCount, processingCount, pendingCount] = await Promise.all([
+      const [contentStats, uploads, errors, completedCount, processingCount, pendingCount, storageUsage] = await Promise.all([
         adminAnalytics.getContentStats(),
         fetchRecentUploads(),
         fetchErrorLogs(),
@@ -100,7 +133,8 @@ const ContentIngestionDashboard = () => {
         getDocs(query(
           collection(db, 'artistSubmissions'),
           where('status', '==', 'pending')
-        )).then(snap => snap.size)
+        )).then(snap => snap.size),
+        calculateStorageUsage()
       ]);
 
       // Calculate metrics from Firebase counts (not limited sample)
@@ -124,7 +158,7 @@ const ContentIngestionDashboard = () => {
             upload: pendingCount, // Real count from Firebase
             processing: processingCount // Real count from Firebase
           },
-          storage_usage: { percentage: 0 } // Not tracking this yet
+          storage_usage: storageUsage // Real Firebase Storage usage
         },
         systemHealth: {
           status: 'healthy',
@@ -502,6 +536,9 @@ const ContentIngestionDashboard = () => {
                       1,
                     ) || 0}
                     %
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    {dashboardData.metrics.storage_usage?.usedReadable || '0 B'} / {dashboardData.metrics.storage_usage?.limitReadable || '5 GB'}
                   </Typography>
                 </Box>
               </Box>

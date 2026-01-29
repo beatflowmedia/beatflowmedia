@@ -13,9 +13,6 @@ export default function AdminApplications() {
         <Link to="/admin/dashboard" className="block hover:text-gray-300">
           Dashboard
         </Link>
-        <Link to="/admin/panel" className="block hover:text-gray-300">
-          Music Panel
-        </Link>
         <Link to="/admin/applications" className="block hover:text-gray-300">
           Job Applications
         </Link>
