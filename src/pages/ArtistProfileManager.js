@@ -824,26 +824,13 @@ export default function ArtistProfileManager() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
       <Container maxWidth="lg">
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={() => navigate('/')} sx={{ mr: 2, color: 'text.primary' }}>
-              <ArrowBack />
-            </IconButton>
-            <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
-              Artist Profile
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<MusicNote />}
-            onClick={() => {
-              console.log('Upload Music clicked - switching to upload tab');
-              setActiveTab(1); // Switch to Upload Music tab
-            }}
-            sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
-          >
-            Upload Music
-          </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+          <IconButton onClick={() => navigate('/')} sx={{ mr: 2, color: 'text.primary' }}>
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+            Artist Profile
+          </Typography>
         </Box>
 
         {/* Banner Image */}
