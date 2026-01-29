@@ -84,20 +84,34 @@ const ContentIngestionDashboard = () => {
       setRefreshing(true);
 
       // Fetch data from Firestore instead of API endpoints
-      const [contentStats, uploads, errors] = await Promise.all([
+      const [contentStats, uploads, errors, completedCount, processingCount, pendingCount] = await Promise.all([
         adminAnalytics.getContentStats(),
         fetchRecentUploads(),
-        fetchErrorLogs()
+        fetchErrorLogs(),
+        // Get accurate counts from Firebase
+        getDocs(query(
+          collection(db, 'artistSubmissions'),
+          where('status', 'in', ['approved', 'published'])
+        )).then(snap => snap.size),
+        getDocs(query(
+          collection(db, 'artistSubmissions'),
+          where('status', '==', 'under_review')
+        )).then(snap => snap.size),
+        getDocs(query(
+          collection(db, 'artistSubmissions'),
+          where('status', '==', 'pending')
+        )).then(snap => snap.size)
       ]);
 
-      // Calculate metrics from real data
+      // Calculate metrics from Firebase counts (not limited sample)
       const totalSubmissions = contentStats?.totalSubmissions || 0;
-      const completedSubmissions = uploads.filter(u => u.status === 'completed').length;
-      const processingSubmissions = uploads.filter(u => u.status === 'processing').length;
-      const successRate = totalSubmissions > 0 ? (completedSubmissions / totalSubmissions) * 100 : 0;
+      const successRate = totalSubmissions > 0 ? (completedCount / totalSubmissions) * 100 : 0;
 
-      // Calculate average processing time
-      const completedUploads = uploads.filter(u => u.status === 'completed' && u.processingTime);
+      // Calculate average processing time from completed uploads in recent sample
+      const completedUploads = uploads.filter(u =>
+        (u.status === 'completed' || u.status === 'approved' || u.status === 'published') &&
+        u.processingTime
+      );
       const avgProcessingTime = completedUploads.length > 0
         ? completedUploads.reduce((sum, u) => sum + u.processingTime, 0) / completedUploads.length
         : 0;
@@ -107,8 +121,8 @@ const ContentIngestionDashboard = () => {
           upload_success_rate: { value: successRate },
           processing_time: { average: avgProcessingTime },
           queue_depth: {
-            upload: uploads.filter(u => u.status === 'pending').length,
-            processing: processingSubmissions
+            upload: pendingCount, // Real count from Firebase
+            processing: processingCount // Real count from Firebase
           },
           storage_usage: { percentage: 0 } // Not tracking this yet
         },
