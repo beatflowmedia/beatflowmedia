@@ -17,7 +17,9 @@ service firebase.storage {
     }
 
     match /artist-uploads/audio/{allPaths=**} {
-      // Audio files require authentication - no public download tokens
+      // Secure audio streaming: Requires authentication
+      // Signed URLs are generated via Cloud Function (getSignedAudioUrl)
+      // This provides security, analytics, and monetization capabilities
       allow read: if request.auth != null;
       allow write: if request.auth != null
         && request.resource.size < 500 * 1024 * 1024; // 500MB limit for high-quality WAV files

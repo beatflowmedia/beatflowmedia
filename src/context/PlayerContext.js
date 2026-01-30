@@ -54,6 +54,22 @@ const actions = {
 };
 
 function reducer(state = initialState, action) {
+  // Validate action structure
+  if (!action || typeof action !== 'object') {
+    console.error('Invalid action dispatched:', action);
+    return state;
+  }
+
+  if (!action.type) {
+    console.error('Action missing type property:', action);
+    return state;
+  }
+
+  if (typeof action.type === 'function') {
+    console.error('Action type cannot be a function. You may be dispatching an async action creator directly. Dispatch the result instead:', action);
+    return state;
+  }
+
   switch (action.type) {
     case actions.SET_CURRENT_TIME:
       return { ...state, currentTime: action.payload };
@@ -227,6 +243,8 @@ export const PlayerProvider = ({ children }) => {
   const completionTrackedRef = useRef(false);
   const skipTrackedRef = useRef(false);
   const songStartTimeRef = useRef(0);
+  // Track last loaded track index to prevent infinite loading loops
+  const lastLoadedIndexRef = useRef(-1);
   // Firestore-persisted queue hooks
   const {
     queue: persistedQueue,
@@ -249,51 +267,87 @@ export const PlayerProvider = ({ children }) => {
     }
   }, [persistedQueue, queueLoading, queueError, queueInitialized]);
 
-  // Load new track into engine when currentIndex or queue changes
+  // Load new track into engine when currentIndex changes
   useEffect(() => {
     const engine = engineRef.current;
     const item = state.queue[state.currentIndex];
-    if (!engine || !item) return;
 
-    // Load track asynchronously (may need to fetch signed URL)
+    // Prevent loading if no engine, no item, or already loaded this index
+    if (!engine || !item || lastLoadedIndexRef.current === state.currentIndex) {
+      return;
+    }
+
+    console.log('[PlayerContext] Loading new track:', item.title || item.name, 'at index', state.currentIndex);
+    lastLoadedIndexRef.current = state.currentIndex;
+
+    // Load track asynchronously
     engine.load(item).then(() => {
+      console.log('[PlayerContext] Track loaded successfully, readyState:', audioRef.current?.readyState);
       // Reset tracking flags when loading new track
       playCountIncrementedRef.current = false;
       completionTrackedRef.current = false;
       skipTrackedRef.current = false;
       songStartTimeRef.current = Date.now();
-      // Auto-play when switching tracks if already playing
+
+      // If we should be playing, start playback now that track is loaded
       if (state.isPlaying) {
+        console.log('[PlayerContext] Auto-playing after track load');
         engine.play().catch((error) => {
-          // Autoplay blocked - silently handle, user can click play
           if (error.name === 'NotAllowedError') {
+            console.warn('[PlayerContext] Autoplay blocked after load');
             dispatchRaw({ type: actions.TOGGLE_PLAY });
+          } else {
+            console.error('[PlayerContext] Playback error after load:', error);
           }
         });
       }
     }).catch((error) => {
-      console.error('Error loading track:', error);
-      // Could show error toast here
+      console.error('[PlayerContext] Error loading track:', error);
+      lastLoadedIndexRef.current = -1; // Reset on error to allow retry
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.currentIndex, state.queue]);
+  }, [state.currentIndex]); // Only depend on currentIndex, NOT queue
 
   // Control play/pause when isPlaying flag changes
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine) return;
+    const audioElement = audioRef.current;
+    if (!engine || !audioElement) return;
+
+    function handlePlayError(error) {
+      console.error('Playback error:', error.name, error.message);
+
+      if (error.name === 'NotAllowedError') {
+        // Autoplay blocked - revert isPlaying state
+        dispatchRaw({ type: actions.TOGGLE_PLAY });
+      } else if (error.name === 'AbortError') {
+        // Play was interrupted - ignore, likely switching tracks
+        console.log('Play aborted, likely track switching');
+      } else {
+        // Other errors - log for debugging
+        console.error('Unexpected playback error:', error);
+      }
+    }
+
     if (state.isPlaying) {
-      engine.play().catch((error) => {
-        // Autoplay blocked - user needs to click play button
-        if (error.name === 'NotAllowedError') {
-          // Revert isPlaying state so UI shows play button
-          dispatchRaw({ type: actions.TOGGLE_PLAY });
-        }
-      });
+      // Check if audio is ready to play (HAVE_CURRENT_DATA = 2 or higher)
+      if (audioElement.readyState >= 2) {
+        // Audio is ready, play immediately
+        console.log('[PlayerContext] Playing immediately, readyState:', audioElement.readyState);
+        engine.play().catch(handlePlayError);
+      } else {
+        // Wait for audio to be ready
+        console.log('[PlayerContext] Waiting for canplay, readyState:', audioElement.readyState);
+        const onCanPlay = () => {
+          console.log('[PlayerContext] canplay fired, attempting play');
+          engine.play().catch(handlePlayError);
+        };
+        audioElement.addEventListener('canplay', onCanPlay, { once: true });
+        return () => audioElement.removeEventListener('canplay', onCanPlay);
+      }
     } else {
       engine.pause();
     }
-  }, [state.isPlaying]);
+  }, [state.isPlaying]); // REVERTED: currentIndex causes infinite loop
 
   // Handle global PLAY_SONG events via reducer
   useEffect(() => {
@@ -306,6 +360,8 @@ export const PlayerProvider = ({ children }) => {
   // Subscribe to engine events: time, duration, volume, ended
   useEffect(() => {
     const engine = engineRef.current;
+    if (!engine) return;
+
     const unsubTime = engine.onTimeUpdate((time) => {
       dispatchRaw({ type: actions.SET_CURRENT_TIME, payload: time });
 
@@ -360,7 +416,7 @@ export const PlayerProvider = ({ children }) => {
       unsubVolume();
       unsubEnded();
     };
-  }, [state.queue, state.currentIndex, state.duration]);
+  }, [state.queue, state.currentIndex, state.duration, user]);
 
   // Enhanced dispatch that also persists queue changes and syncs playback engine
   const dispatch = (action) => {

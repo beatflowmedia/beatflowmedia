@@ -1,13 +1,16 @@
 const {onDocumentUpdated, onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onCall} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const nodemailer = require('nodemailer');
-const emailConfig = require('./emailConfig');
+const crypto = require('crypto');
 
 admin.initializeApp();
 
-// Helper function to send email
+// Helper function to send email (lazy-load nodemailer to avoid timeout)
 async function sendEmail(to, subject, html) {
+  // Lazy-load heavy dependencies
+  const nodemailer = require('nodemailer');
+  const emailConfig = require('./emailConfig');
+
   // Get email credentials from centralized config
   const {smtp, addresses} = emailConfig;
 
@@ -56,6 +59,8 @@ exports.getSignedAudioUrl = onCall(async (request) => {
     throw new Error('songId is required.');
   }
 
+  let songData = null; // Declare outside try block for error logging
+
   try {
     const userId = request.auth.uid;
 
@@ -66,37 +71,49 @@ exports.getSignedAudioUrl = onCall(async (request) => {
       throw new Error('Song not found.');
     }
 
-    const songData = songDoc.data();
+    songData = songDoc.data();
     const audioUrl = songData.audioUrl || songData.streamUrl;
 
     if (!audioUrl) {
       throw new Error('Audio URL not found for this song.');
     }
 
-    // Check if user has purchased the song OR if it's free to stream
+    // Spotify-style model: Authenticated users can stream
+    // Purchase gives ownership/download rights, not streaming access
     const isPurchased = await checkSongPurchase(userId, songId);
-    const isFreeToStream = songData.price === 0 || songData.streamable === true;
 
-    if (!isPurchased && !isFreeToStream) {
-      // User must purchase to stream
-      throw new Error('Purchase required to stream this song.');
-    }
+    // All authenticated users can stream
+    // Purchase tracking is for analytics and download rights
+    console.log(`Streaming access granted for user ${userId} on song ${songId}`, {
+      isPurchased,
+      songTitle: songData.title
+    });
 
     // Extract the file path from the Firebase Storage URL
     // Example: https://firebasestorage.googleapis.com/v0/b/beatflowmedia.firebasestorage.app/o/artist-uploads%2Faudio%2F1767312405420_Say%20the%20Words.wav?alt=media&token=...
     const match = audioUrl.match(/\/o\/([^?]+)/);
 
     if (!match) {
+      console.error('Failed to parse audio URL:', audioUrl);
       throw new Error('Invalid audio URL format.');
     }
 
     const filePath = decodeURIComponent(match[1]);
+    console.log('Generating signed URL for file path:', filePath);
 
     // Generate signed URL that expires in 1 hour
     const bucket = admin.storage().bucket();
     const file = bucket.file(filePath);
 
+    // Check if file exists first
+    const [exists] = await file.exists();
+    if (!exists) {
+      console.error('File does not exist:', filePath);
+      throw new Error('Audio file not found in storage.');
+    }
+
     const [signedUrl] = await file.getSignedUrl({
+      version: 'v4',
       action: 'read',
       expires: Date.now() + 60 * 60 * 1000, // 1 hour
     });
@@ -115,7 +132,12 @@ exports.getSignedAudioUrl = onCall(async (request) => {
       expiresAt: Date.now() + 60 * 60 * 1000
     };
   } catch (error) {
-    console.error('Error generating signed URL:', error);
+    console.error('Detailed error generating signed URL:', {
+      songId,
+      audioUrl: songData?.audioUrl,
+      error: error.message,
+      stack: error.stack
+    });
     throw new Error(`Failed to generate signed URL: ${error.message}`);
   }
 });
@@ -831,7 +853,6 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
 
   try {
     // Generate unique access token and expiration (7 days)
-    const crypto = require('crypto');
     const accessToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days

@@ -11,34 +11,107 @@ export default class LegacyAudioEngine extends CoreEngine {
   }
 
   async load(track) {
-    try {
-      // If track has a song ID, get secure signed URL
-      if (track.id) {
+    console.log('[LegacyAudioEngine] Loading track:', track);
+
+    // Try to get secure signed URL if song has an ID
+    if (track.id) {
+      try {
+        console.log('[LegacyAudioEngine] Fetching signed URL for song:', track.id);
         const { signedUrl } = await getSignedAudioUrl(track.id);
-        this.audio.src = signedUrl;
-      } else {
-        // Fallback for tracks without IDs (local files, legacy)
-        const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
-        this.audio.src = src;
+        console.log('[LegacyAudioEngine] Got signed URL, loading audio');
+
+        return new Promise((resolve, reject) => {
+          this._setupAudioLoad(signedUrl, resolve, reject);
+        });
+      } catch (error) {
+        console.error('[LegacyAudioEngine] Error getting signed URL:', error);
+
+        // If it's an auth/permission error, re-throw so UI can show proper message
+        if (error.message?.includes('sign in') || error.message?.includes('Purchase required')) {
+          throw error;
+        }
+
+        // For other errors, fall back to direct URL
+        console.warn('[LegacyAudioEngine] Falling back to direct URL');
       }
-      this.audio.load();
-    } catch (error) {
-      console.error('Error loading audio:', error);
-      // Still try to load with original URL as fallback
-      const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
-      this.audio.src = src;
-      this.audio.load();
     }
+
+    // Fallback: Use direct URL from track data
+    const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
+    console.log('[LegacyAudioEngine] Loading audio from direct URL:', src);
+
+    return new Promise((resolve, reject) => {
+      this._setupAudioLoad(src, resolve, reject);
+    });
+  }
+
+  _setupAudioLoad(src, resolve, reject) {
+
+    // Add one-time event listeners
+    const handleLoadedMetadata = () => {
+      console.log('[LegacyAudioEngine] Metadata loaded successfully:', {
+        duration: this.audio.duration,
+        readyState: this.audio.readyState,
+        src: this.audio.src
+      });
+      cleanup();
+      resolve();
+    };
+
+    const handleError = (e) => {
+      console.error('[LegacyAudioEngine] Audio loading error:', {
+        error: e.target.error,
+        code: e.target.error?.code,
+        message: e.target.error?.message,
+        networkState: this.audio.networkState,
+        readyState: this.audio.readyState,
+        src: this.audio.src
+      });
+      cleanup();
+      reject(new Error(`Failed to load audio: ${e.target.error?.message || 'Unknown error'}`));
+    };
+
+    const handleCanPlay = () => {
+      console.log('[LegacyAudioEngine] Audio can play:', {
+        duration: this.audio.duration,
+        readyState: this.audio.readyState
+      });
+    };
+
+    const cleanup = () => {
+      this.audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      this.audio.removeEventListener('error', handleError);
+      this.audio.removeEventListener('canplay', handleCanPlay);
+    };
+
+    // Add event listeners
+    this.audio.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+    this.audio.addEventListener('error', handleError, { once: true });
+    this.audio.addEventListener('canplay', handleCanPlay, { once: true });
+
+    // Set source and load
+    this.audio.src = src;
+    this.audio.load();
+
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      if (this.audio.readyState < 1) {
+        console.warn('[LegacyAudioEngine] Load timeout - metadata not loaded after 10s');
+        cleanup();
+        reject(new Error('Audio loading timeout'));
+      }
+    }, 10000);
   }
 
   play() {
+    console.log('[LegacyAudioEngine] play() called, readyState:', this.audio.readyState, 'src:', this.audio.src);
     // Return the play promise to support awaiting in tests
     return this.audio.play().catch((error) => {
       // Browser autoplay policy may block playback without user interaction
       if (error.name === 'NotAllowedError') {
-        console.warn('Autoplay blocked by browser. User interaction required.');
+        console.warn('[LegacyAudioEngine] Autoplay blocked by browser. User interaction required.');
       } else {
-        console.error('Playback error:', error);
+        console.error('[LegacyAudioEngine] Playback error:', error);
       }
       throw error; // Re-throw so caller can handle
     });
