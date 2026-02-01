@@ -1,6 +1,7 @@
 // src/pages/ArtistSubmissionPricing.js
 // Pricing page for artist music submissions
 import { useState } from "react";
+import { Helmet } from 'react-helmet-async';
 import { useModal } from '../hooks/useModal';
 import {
   Box,
@@ -85,8 +86,21 @@ export default function ArtistSubmissionPricing() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 8 }}>
-      <Container maxWidth="lg">
+    <>
+      <Helmet>
+        <title>Join BeatFlow - Artist Membership $25/year</title>
+        <meta property="og:title" content="Join BeatFlow - Artist Membership $25/year" />
+        <meta property="og:description" content="Upload your music, reach new listeners, and grow your fanbase." />
+        <meta property="og:image" content="https://beatflowmediagroup.com/path-to-share-image.jpg" />
+        <meta property="og:url" content="https://beatflowmediagroup.com/artist-pricing" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Join BeatFlow - Artist Membership $25/year" />
+        <meta name="twitter:description" content="Upload your music, reach new listeners, and grow your fanbase." />
+        <meta name="twitter:image" content="https://beatflowmediagroup.com/path-to-share-image.jpg" />
+      </Helmet>
+      <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 8 }}>
+        <Container maxWidth="lg">
         {/* Hero Section with Image */}
         <Box sx={{ textAlign: 'center', mb: 8 }}>
           <Box
@@ -341,7 +355,8 @@ export default function ArtistSubmissionPricing() {
             Get Started Now
           </Button>
         </Box>
-      </Container>
-    </Box>
+        </Container>
+      </Box>
+    </>
   );
 }
