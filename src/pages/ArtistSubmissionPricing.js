@@ -91,13 +91,13 @@ export default function ArtistSubmissionPricing() {
         <title>Join BeatFlow - Artist Membership $25/year</title>
         <meta property="og:title" content="Join BeatFlow - Artist Membership $25/year" />
         <meta property="og:description" content="Upload your music, reach new listeners, and grow your fanbase." />
-        <meta property="og:image" content="https://beatflowmediagroup.com/path-to-share-image.jpg" />
+        <meta property="og:image" content="https://beatflowmediagroup.com/images/beatflow-share.png" />
         <meta property="og:url" content="https://beatflowmediagroup.com/artist-pricing" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Join BeatFlow - Artist Membership $25/year" />
         <meta name="twitter:description" content="Upload your music, reach new listeners, and grow your fanbase." />
-        <meta name="twitter:image" content="https://beatflowmediagroup.com/path-to-share-image.jpg" />
+        <meta name="twitter:image" content="https://beatflowmediagroup.com/images/beatflow-share.png" />
       </Helmet>
       <Box sx={{ minHeight: '100vh', bgcolor: '#121212', py: 8 }}>
         <Container maxWidth="lg">
