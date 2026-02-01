@@ -11,6 +11,8 @@ export default async (request, context) => {
       title: 'Join BeatFlow - Artist Membership $25/year',
       description: 'Upload your music, reach new listeners, and grow your fanbase.',
       image: 'https://beatflowmediagroup.com/images/beatflow-share.png',
+      imageWidth: '1024',
+      imageHeight: '1024',
       url: 'https://beatflowmediagroup.com/artist-pricing'
     },
     // Add more routes as needed
@@ -20,6 +22,8 @@ export default async (request, context) => {
     title: 'BeatFlow - Web Player: Licensing Music By Independent Artists',
     description: 'License and stream music from independent artists',
     image: 'https://beatflowmediagroup.com/images/beatflow-share.png',
+    imageWidth: '1024',
+    imageHeight: '1024',
     url: `https://beatflowmediagroup.com${path}`
   };
 
@@ -36,6 +40,14 @@ export default async (request, context) => {
     .replace(
       /<meta property="og:image" content="[^"]*" \/>/,
       `<meta property="og:image" content="${meta.image}" />`
+    )
+    .replace(
+      /<meta property="og:image:width" content="[^"]*" \/>/,
+      `<meta property="og:image:width" content="${meta.imageWidth}" />`
+    )
+    .replace(
+      /<meta property="og:image:height" content="[^"]*" \/>/,
+      `<meta property="og:image:height" content="${meta.imageHeight}" />`
     )
     .replace(
       /<meta property="og:url" content="[^"]*" \/>/,
