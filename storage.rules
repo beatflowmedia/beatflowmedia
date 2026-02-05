@@ -1,6 +1,11 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Admin access - allow admins to list and manage all storage
+    match /{allPaths=**} {
+      allow list: if request.auth != null && request.auth.token.admin == true;
+    }
+
     // Allow authenticated users to upload application resumes
     match /applications/{allPaths=**} {
       // Any signed-in user can upload and read their uploaded resumes
