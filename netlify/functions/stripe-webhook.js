@@ -201,6 +201,68 @@ async function handleCheckoutSessionCompleted(session) {
       return; // Exit early for artist membership
     }
 
+    // Handle studio sample license purchases
+    if (itemType === 'studio_sample') {
+      console.log(`🎵 Processing studio sample license purchase for sample ${itemId}`);
+
+      try {
+        // Get sample details
+        const sampleRef = db.collection('studioSamples').doc(itemId);
+        const sampleDoc = await sampleRef.get();
+
+        let sampleData = {
+          title: session.metadata.sampleTitle || 'Unknown Sample',
+          artist: session.metadata.artist || 'BeatFlow Studio'
+        };
+
+        if (sampleDoc.exists) {
+          sampleData = sampleDoc.data();
+        }
+
+        // Create purchase record
+        const purchaseData = {
+          userId: userId || 'guest',
+          itemId,
+          itemType: 'studio_sample',
+          itemName: sampleData.title,
+          artistName: sampleData.artist,
+          licenseType: session.metadata.licenseType || 'personal',
+          price: session.amount_total / 100,
+          currency: session.currency,
+          status: 'completed',
+          stripeSessionId: session.id,
+          stripePaymentIntent: session.payment_intent,
+          customerEmail: session.customer_email,
+          purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+          metadata: session.metadata
+        };
+
+        const purchaseRef = await db.collection('purchases').add(purchaseData);
+        console.log(`✅ Purchase record created: ${purchaseRef.id}`);
+
+        // Create download record for the user
+        if (userId && userId !== 'guest') {
+          await db.collection('downloads').add({
+            userId,
+            purchaseId: purchaseRef.id,
+            itemId,
+            itemType: 'studio_sample',
+            itemName: sampleData.title,
+            licenseType: session.metadata.licenseType || 'personal',
+            downloadedAt: null, // Will be set when user actually downloads
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          console.log(`✅ Download record created for user ${userId}`);
+        }
+
+        console.log(`✅ Studio sample license purchase completed for ${itemId}`);
+        return; // Exit early for studio samples
+      } catch (error) {
+        console.error('❌ Error processing studio sample purchase:', error);
+        throw error;
+      }
+    }
+
     // Handle playlist submission escrow payments
     if (itemType === 'playlist_submission') {
       console.log(`🎵 Processing playlist submission escrow payment for submission ${itemId}`);
