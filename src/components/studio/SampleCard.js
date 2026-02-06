@@ -10,9 +10,9 @@ export default function SampleCard({ sample, isPlaying, onPlay, onLicense }) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-all duration-300 hover:shadow-xl hover:transform hover:scale-[1.02] group">
+    <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-all duration-300 hover:shadow-lg group">
       {/* Cover Image with Play Button Overlay */}
-      <div className="relative aspect-square overflow-hidden bg-gray-900">
+      <div className="relative aspect-video overflow-hidden bg-gray-900">
         <img
           src={imageError ? '/images/Logo.png' : sample.coverUrl}
           alt={sample.title}
@@ -24,10 +24,10 @@ export default function SampleCard({ sample, isPlaying, onPlay, onLicense }) {
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
           <button
             onClick={() => onPlay(sample)}
-            className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 hover:scale-110 shadow-lg"
+            className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 hover:scale-110 shadow-lg"
             aria-label={isPlaying ? 'Pause' : 'Play preview'}
           >
-            {isPlaying ? <FaPause size={20} /> : <FaPlay size={20} className="ml-1" />}
+            {isPlaying ? <FaPause size={16} /> : <FaPlay size={16} className="ml-0.5" />}
           </button>
         </div>
 
@@ -47,21 +47,21 @@ export default function SampleCard({ sample, isPlaying, onPlay, onLicense }) {
       </div>
 
       {/* Card Content */}
-      <div className="p-4">
+      <div className="p-3">
         {/* Title and Artist */}
-        <h3 className="text-white font-semibold text-base mb-1 line-clamp-1">
+        <h3 className="text-white font-semibold text-sm mb-0.5 line-clamp-1">
           {sample.title}
         </h3>
-        <p className="text-gray-400 text-sm mb-3">
+        <p className="text-gray-400 text-xs mb-2">
           {sample.artist}
         </p>
 
         {/* Mood Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {sample.moods.slice(0, 3).map((mood) => (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {sample.moods.slice(0, 2).map((mood) => (
             <span
               key={mood}
-              className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full capitalize"
+              className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full capitalize"
             >
               {mood}
             </span>
@@ -70,23 +70,15 @@ export default function SampleCard({ sample, isPlaying, onPlay, onLicense }) {
 
         {/* Price and CTA */}
         <div className="flex items-center justify-between">
-          <div className="text-white font-bold text-lg">
+          <div className="text-white font-bold text-base">
             ${sample.price}
           </div>
           <button
             onClick={() => onLicense(sample)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-all transform hover:scale-105"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors"
           >
             License
           </button>
-        </div>
-
-        {/* Use Cases */}
-        <div className="mt-3 pt-3 border-t border-gray-700">
-          <p className="text-gray-500 text-xs mb-1">Perfect for:</p>
-          <p className="text-gray-400 text-xs capitalize">
-            {sample.useCases.join(', ')}
-          </p>
         </div>
       </div>
     </div>

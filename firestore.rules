@@ -647,6 +647,27 @@ service cloud.firestore {
       allow write: if isPlatformAdmin(); // Only admins can initialize/update stats
     }
 
+    // ========================================
+    // BEATFLOW STUDIO PORTAL
+    // ========================================
+
+    // Studio Inquiries - unauthenticated can create, admins can read/manage
+    match /studioInquiries/{inquiryId} {
+      allow create: if true; // Allow unauthenticated consultation requests
+      allow read, update, delete: if isPlatformAdmin();
+    }
+
+    // Studio Projects - admins only
+    match /studioProjects/{projectId} {
+      allow read, write: if isPlatformAdmin();
+    }
+
+    // Studio Samples - anyone can read, admins can manage
+    match /studioSamples/{sampleId} {
+      allow read: if true; // Public readable for sample browsing
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import SampleCard from '../../components/studio/SampleCard';
 import UseCaseFilter from '../../components/studio/UseCaseFilter';
 import MoodFilter from '../../components/studio/MoodFilter';
 import MusicPlayer from '../../components/MusicPlayer';
 import { usePlayerActions } from '../../hooks/usePlayerActions';
+import { getStudioSamples } from '../../services/studioSamplesService';
 
-// Mock sample data
+// Fallback mock sample data if Firestore is empty
 const MOCK_SAMPLES = [
   {
     id: 'sample-1',
@@ -254,17 +255,47 @@ export default function StudioSamples() {
   const [selectedUseCase, setSelectedUseCase] = useState('all');
   const [selectedMood, setSelectedMood] = useState('all');
   const [playingSampleId, setPlayingSampleId] = useState(null);
+  const [samples, setSamples] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const { playSong, currentSong, isPlaying } = usePlayerActions();
 
+  // Fetch samples from Firestore
+  useEffect(() => {
+    const fetchSamples = async () => {
+      try {
+        setLoading(true);
+        const fetchedSamples = await getStudioSamples();
+
+        // If no samples in Firestore, use mock data as fallback
+        if (fetchedSamples.length === 0) {
+          console.log('No samples in Firestore, using mock data');
+          setSamples(MOCK_SAMPLES);
+        } else {
+          setSamples(fetchedSamples);
+        }
+      } catch (err) {
+        console.error('Error loading samples:', err);
+        setError(err.message);
+        // Fall back to mock data on error
+        setSamples(MOCK_SAMPLES);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSamples();
+  }, []);
+
   // Filter samples based on selected filters
   const filteredSamples = useMemo(() => {
-    return MOCK_SAMPLES.filter(sample => {
-      const matchesUseCase = selectedUseCase === 'all' || sample.useCases.includes(selectedUseCase);
-      const matchesMood = selectedMood === 'all' || sample.moods.includes(selectedMood);
+    return samples.filter(sample => {
+      const matchesUseCase = selectedUseCase === 'all' || sample.useCases?.includes(selectedUseCase);
+      const matchesMood = selectedMood === 'all' || sample.moods?.includes(selectedMood);
       return matchesUseCase && matchesMood;
     });
-  }, [selectedUseCase, selectedMood]);
+  }, [samples, selectedUseCase, selectedMood]);
 
   const handlePlaySample = (sample) => {
     if (currentSong?.id === sample.id) {
@@ -334,12 +365,28 @@ export default function StudioSamples() {
           {/* Results Count */}
           <div className="mb-6">
             <p className="text-gray-400 text-sm">
-              Showing {filteredSamples.length} of {MOCK_SAMPLES.length} samples
+              Showing {filteredSamples.length} of {samples.length} samples
             </p>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-20">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              <p className="text-gray-400 mt-4">Loading samples...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="text-center py-20">
+              <p className="text-red-400 mb-4">Error loading samples: {error}</p>
+              <p className="text-gray-400 text-sm">Showing cached samples instead</p>
+            </div>
+          )}
+
           {/* Sample Grid */}
-          {filteredSamples.length > 0 ? (
+          {!loading && filteredSamples.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-32">
               {filteredSamples.map((sample) => (
                 <SampleCard
@@ -351,7 +398,7 @@ export default function StudioSamples() {
                 />
               ))}
             </div>
-          ) : (
+          ) : !loading && (
             <div className="text-center py-20">
               <p className="text-gray-400 text-lg mb-4">No samples match your filters</p>
               <button
