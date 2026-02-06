@@ -130,7 +130,7 @@ export default function NewsInspiration() {
                   </div>
                   <h3 className="text-xl font-bold mb-3">{article.title}</h3>
                   <p className="text-gray-400 text-sm mb-4">{article.excerpt}</p>
-                  <a href="#" className="text-bf-green hover:underline text-sm font-semibold">
+                  <a href="/#" className="text-bf-green hover:underline text-sm font-semibold">
                     Read more �
                   </a>
                 </div>

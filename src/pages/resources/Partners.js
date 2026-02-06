@@ -155,21 +155,21 @@ export default function Partners() {
               <p className="text-gray-400 mb-4">
                 Access our comprehensive API docs for seamless integration.
               </p>
-              <a href="#" className="text-bf-green hover:underline">View docs →</a>
+              <a href="/#" className="text-bf-green hover:underline">View docs →</a>
             </div>
             <div className="bg-gray-900 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-3">Certification Program</h3>
               <p className="text-gray-400 mb-4">
                 Get certified as a BeatFlow Advertising expert.
               </p>
-              <a href="#" className="text-bf-green hover:underline">Learn more →</a>
+              <a href="/#" className="text-bf-green hover:underline">Learn more →</a>
             </div>
             <div className="bg-gray-900 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-3">Partner Portal</h3>
               <p className="text-gray-400 mb-4">
                 Access tools, support, and co-marketing resources.
               </p>
-              <a href="#" className="text-bf-green hover:underline">Login →</a>
+              <a href="/#" className="text-bf-green hover:underline">Login →</a>
             </div>
           </div>
         </div>

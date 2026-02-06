@@ -54,7 +54,7 @@ export class EventValidator {
    * Find event schema by name
    */
   findEventSchema(eventName) {
-    for (const [category, events] of Object.entries(this.schemas)) {
+    for (const [, events] of Object.entries(this.schemas)) {
       if (events[eventName]) {
         return events[eventName];
       }

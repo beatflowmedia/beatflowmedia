@@ -47,15 +47,7 @@ import {
   DialogActions,
   Snackbar
 } from '@mui/material';
-import {
-  ContentCopy,
-  OpenInNew,
-  Add,
-  TrendingUp,
-  Link as LinkIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
+import { ContentCopy, OpenInNew, Add, Link as LinkIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 const SITE_URL = process.env.REACT_APP_SITE_URL || 'https://beatflowmediagroup.com';
 

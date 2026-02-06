@@ -145,12 +145,6 @@ export default function ForTheRecord() {
     }
   ];
 
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = date.toDate ? date.toDate() : new Date(date);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
   return (
     <>
       <GoogleAdSense />

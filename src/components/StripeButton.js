@@ -1,6 +1,5 @@
 // src/components/StripeButton.jsx
 import { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import { useAuth } from "../context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
@@ -9,7 +8,6 @@ import Modal from "./Modal";
 
 export default function StripeButton({ priceId, children, className = "" }) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [hasSubscription, setHasSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });

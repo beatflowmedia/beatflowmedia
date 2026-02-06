@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import { CheckCircle, Download, Home } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { stripeService } from '../services/stripeService';
 
 export default function PurchaseSuccess() {
   const navigate = useNavigate();
@@ -105,13 +104,28 @@ export default function PurchaseSuccess() {
         }));
         console.log('✅ Dispatched purchaseComplete event:', purchaseData.itemId);
       } else {
-        // Webhook still processing - show a generic success message
-        console.log('⏳ Webhook still processing, showing generic success');
-        setPurchase({
-          itemName: 'Your Purchase',
-          price: 0,
-          itemType: 'processing'
-        });
+        // Webhook still processing - check if this is an artist membership from URL metadata
+        console.log('⏳ Webhook still processing, checking session metadata...');
+
+        // Try to get session metadata from Stripe to determine type
+        const response = await fetch(`/.netlify/functions/get-session?session_id=${sessionId}`);
+        if (response.ok) {
+          const sessionData = await response.json();
+          const itemType = sessionData.metadata?.itemType || 'processing';
+
+          setPurchase({
+            itemName: itemType === 'artist_membership' ? 'BeatFlow Artist Membership' : 'Your Purchase',
+            price: sessionData.amount_total ? sessionData.amount_total / 100 : 0,
+            itemType: itemType
+          });
+        } else {
+          // Fallback to generic
+          setPurchase({
+            itemName: 'Your Purchase',
+            price: 0,
+            itemType: 'processing'
+          });
+        }
       }
 
       setLoading(false);
@@ -190,7 +204,19 @@ export default function PurchaseSuccess() {
                     mb: 3
                   }}
                 />
-                {purchase.itemType === 'premium_subscription' || purchase.itemType === 'processing' ? (
+                {purchase.itemType === 'artist_membership' ? (
+                  <>
+                    <Typography variant="h4" gutterBottom>
+                      Welcome to BeatFlow Artists!
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                      Your artist membership is now active
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                      Start uploading your music now - unlimited uploads for one year
+                    </Typography>
+                  </>
+                ) : purchase.itemType === 'premium_subscription' ? (
                   <>
                     <Typography variant="h4" gutterBottom>
                       Welcome to BeatFlow Premium!
@@ -200,6 +226,18 @@ export default function PurchaseSuccess() {
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
                       Enjoy ad-free music, high-quality audio, and unlimited downloads
+                    </Typography>
+                  </>
+                ) : purchase.itemType === 'processing' ? (
+                  <>
+                    <Typography variant="h4" gutterBottom>
+                      Payment Successful!
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                      Your payment is being processed
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                      You'll receive a confirmation email shortly
                     </Typography>
                   </>
                 ) : (
@@ -230,7 +268,18 @@ export default function PurchaseSuccess() {
                 )}
 
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-                  {purchase.itemType === 'premium_subscription' ? (
+                  {purchase.itemType === 'artist_membership' ? (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      startIcon={<Download />}
+                      onClick={() => navigate('/for-artists?membership=active')}
+                      sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' } }}
+                    >
+                      Start Uploading
+                    </Button>
+                  ) : purchase.itemType === 'premium_subscription' ? (
                     <Button
                       variant="contained"
                       color="success"
@@ -253,14 +302,16 @@ export default function PurchaseSuccess() {
                       Go to Downloads
                     </Button>
                   )}
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    startIcon={<Home />}
-                    onClick={() => navigate('/')}
-                  >
-                    Return Home
-                  </Button>
+                  {purchase.itemType !== 'artist_membership' && (
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      startIcon={<Home />}
+                      onClick={() => navigate('/')}
+                    >
+                      Return Home
+                    </Button>
+                  )}
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>

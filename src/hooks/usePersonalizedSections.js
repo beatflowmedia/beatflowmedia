@@ -189,7 +189,7 @@ const fetchRecommendedForToday = async (user) => {
     // Get user's liked songs to understand preferences
     const likedSongs = await fetchLikedSongs(user.likes || []);
     const genres = extractGenres(likedSongs);
-    const artists = extractArtists(likedSongs);
+    // const artists = extractArtists(likedSongs); // Unused for now
 
     // Get trending songs from user's favorite genres
     let recommendations = [];
@@ -330,7 +330,7 @@ const fetchMadeForYou = async (user) => {
   try {
     const likedSongs = await fetchLikedSongs(user.likes || []);
     const genres = extractGenres(likedSongs);
-    const artists = extractArtists(likedSongs);
+    // const artists = extractArtists(likedSongs); // Unused for now
 
     // Mix of genres and artists
     const recommendations = [];

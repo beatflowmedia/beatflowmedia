@@ -38,8 +38,6 @@ import AddToPlaylistButton from '../utils/AddToPlaylistButton';
 import ShareButton from '../utils/ShareButton';
 import PurchaseButton from '../components/PurchaseButton';
 import PlayingIndicator from '../components/PlayingIndicator';
-import Add from '@mui/icons-material/Add';
-import People from '@mui/icons-material/People';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
@@ -59,8 +57,7 @@ import {
   updateDoc,
   deleteDoc,
   onSnapshot,
-  serverTimestamp,
-  arrayUnion
+  serverTimestamp
 } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { stripeService } from '../services/stripeService';

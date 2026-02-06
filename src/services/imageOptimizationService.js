@@ -299,4 +299,5 @@ class ImageOptimizationService {
   }
 }
 
-export default new ImageOptimizationService();
+const imageOptimizationService = new ImageOptimizationService();
+export default imageOptimizationService;

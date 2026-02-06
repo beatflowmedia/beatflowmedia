@@ -37,16 +37,26 @@ export async function getSignedAudioUrl(songId) {
     return { signedUrl, expiresAt };
   } catch (error) {
     console.error('Error getting signed audio URL:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      stack: error.stack
+    });
 
     // Provide user-friendly error messages
-    if (error.message?.includes('Authentication required')) {
+    if (error.code === 'unauthenticated' || error.message?.includes('Authentication required')) {
       throw new Error('Please sign in to stream audio.');
     } else if (error.message?.includes('Purchase required')) {
       throw new Error('Purchase this song to stream it.');
-    } else if (error.message?.includes('Song not found')) {
+    } else if (error.message?.includes('Song not found') || error.message?.includes('not found')) {
       throw new Error('Song not available.');
+    } else if (error.code === 'internal' || error.message?.includes('INTERNAL')) {
+      // Firebase internal error - likely permissions or configuration issue
+      console.error('Firebase INTERNAL error - check Cloud Function logs and service account permissions');
+      throw new Error('Audio streaming temporarily unavailable. Please try again later.');
     } else {
-      throw new Error('Failed to load audio. Please try again.');
+      throw new Error(`Failed to load audio: ${error.message || 'Please try again.'}`);
     }
   }
 }

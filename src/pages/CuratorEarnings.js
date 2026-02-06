@@ -21,14 +21,7 @@ import {
   Alert,
   Divider
 } from '@mui/material';
-import {
-  TrendingUp,
-  AttachMoney,
-  Schedule,
-  CheckCircle,
-  Star,
-  PlaylistPlay
-} from '@mui/icons-material';
+import { AttachMoney, Schedule, CheckCircle, Star, PlaylistPlay } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 // Pricing tiers based on playlist followers

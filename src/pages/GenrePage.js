@@ -4,17 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  CircularProgress,
-  IconButton,
-  Chip
-} from '@mui/material';
+import { Box, Typography, Grid, Card, CardMedia, CardContent, CircularProgress, IconButton } from '@mui/material';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';

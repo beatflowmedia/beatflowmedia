@@ -289,10 +289,10 @@ export default function Accessibility() {
               Learn more about accessibility features on different platforms:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <a href="#" className="text-green-500 hover:underline">Apple Accessibility →</a>
-              <a href="#" className="text-green-500 hover:underline">Android Accessibility →</a>
-              <a href="#" className="text-green-500 hover:underline">Windows Accessibility →</a>
-              <a href="#" className="text-green-500 hover:underline">Web Accessibility Initiative →</a>
+              <a href="/#" className="text-green-500 hover:underline">Apple Accessibility →</a>
+              <a href="/#" className="text-green-500 hover:underline">Android Accessibility →</a>
+              <a href="/#" className="text-green-500 hover:underline">Windows Accessibility →</a>
+              <a href="/#" className="text-green-500 hover:underline">Web Accessibility Initiative →</a>
             </div>
           </div>
           </div>

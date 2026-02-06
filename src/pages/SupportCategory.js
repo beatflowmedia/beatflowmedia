@@ -5,7 +5,7 @@ import NavBar from "../components/NavBar";
 import { FiChevronDown, FiChevronUp, FiArrowLeft } from "react-icons/fi";
 
 export default function SupportCategory() {
-  const { region = "us", category } = useParams();
+  const { category } = useParams();
   const [openIndex, setOpenIndex] = useState(null);
 
   // Map category slugs to readable titles

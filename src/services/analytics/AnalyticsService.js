@@ -717,4 +717,5 @@ class AnalyticsService {
 }
 
 // Export singleton instance
-export default new AnalyticsService();
+const analyticsService = new AnalyticsService();
+export default analyticsService;

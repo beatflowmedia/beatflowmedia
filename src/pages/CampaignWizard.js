@@ -1,86 +1,10 @@
 import { useState, useEffect , useCallback } from "react";
 import { usePlayer } from "../context/PlayerContext";
-import {
-  Box,
-  Grid,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  Slider,
-  Switch,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  FormLabel,
-  Checkbox,
-  FormGroup,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Paper,
-  Divider,
-  LinearProgress,
-  Alert,
-  Autocomplete,
-  DatePicker,
-  TimePicker,
-  IconButton,
-  Collapse,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Badge
-} from "@mui/material";
-import {
-  Campaign,
-  TrendingUp,
-  People,
-  AttachMoney,
-  Schedule,
-  LocationOn,
-  MusicNote,
-  Analytics,
-  Visibility,
-  Share,
-  PlayArrow,
-  Star,
-  CheckCircle,
-  Warning,
-  Info,
-  Help,
-  Add,
-  Remove,
-  Edit,
-  Delete,
-  Preview,
-  Send,
-  ExpandMore,
-  ExpandLess
-} from "@mui/icons-material";
+import { Box, Grid, Typography, Card, CardContent, Button, Stepper, Step, StepLabel, TextField, Chip, Slider, FormControlLabel, Checkbox, FormGroup, Dialog, DialogTitle, DialogContent, DialogActions, Paper, LinearProgress, Alert, Autocomplete, IconButton, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
+import { Campaign, TrendingUp, People, AttachMoney, Schedule, MusicNote, Analytics, Share, PlayArrow, CheckCircle } from '@mui/icons-material';
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
-import {
-  collection,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  query,
-  where,
-  getDocs
-} from "firebase/firestore";
+import { collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { toast } from "react-toastify";
 import { addDoc } from 'firebase/firestore';
 import Avatar from '@mui/material/Avatar';

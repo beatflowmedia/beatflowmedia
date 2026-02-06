@@ -4,19 +4,7 @@
  */
 
 import { db } from '../firebaseConfig';
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  increment,
-  serverTimestamp,
-  collection,
-  query,
-  where,
-  getDocs,
-  onSnapshot
-} from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment, serverTimestamp, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 
 /**
  * Track a song play event

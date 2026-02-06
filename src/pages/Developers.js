@@ -29,7 +29,7 @@ export default function Developers() {
               <p className="text-gray-400 mb-4">
                 Access BeatFlow Media's music catalog, user data, and playback controls through our RESTful API.
               </p>
-              <a href="#" className="text-green-500 hover:underline font-semibold">
+              <a href="/#" className="text-green-500 hover:underline font-semibold">
                 View Documentation →
               </a>
             </div>
@@ -39,7 +39,7 @@ export default function Developers() {
               <p className="text-gray-400 mb-4">
                 Official SDKs for iOS, Android, and Web make integration quick and easy.
               </p>
-              <a href="#" className="text-green-500 hover:underline font-semibold">
+              <a href="/#" className="text-green-500 hover:underline font-semibold">
                 Browse SDKs →
               </a>
             </div>
@@ -49,7 +49,7 @@ export default function Developers() {
               <p className="text-gray-400 mb-4">
                 Get started quickly with our collection of code samples and tutorials.
               </p>
-              <a href="#" className="text-green-500 hover:underline font-semibold">
+              <a href="/#" className="text-green-500 hover:underline font-semibold">
                 See Examples →
               </a>
             </div>
@@ -100,7 +100,7 @@ export default function Developers() {
                 <p className="text-gray-400 mb-4">
                   Comprehensive guides and API references to help you integrate BeatFlow Media.
                 </p>
-                <a href="#" className="text-green-500 hover:underline">
+                <a href="/#" className="text-green-500 hover:underline">
                   Read the Docs →
                 </a>
               </div>
@@ -109,7 +109,7 @@ export default function Developers() {
                 <p className="text-gray-400 mb-4">
                   Join our community of developers to ask questions and share knowledge.
                 </p>
-                <a href="#" className="text-green-500 hover:underline">
+                <a href="/#" className="text-green-500 hover:underline">
                   Visit Forum →
                 </a>
               </div>
@@ -118,7 +118,7 @@ export default function Developers() {
                 <p className="text-gray-400 mb-4">
                   Stay updated with the latest API changes and new features.
                 </p>
-                <a href="#" className="text-green-500 hover:underline">
+                <a href="/#" className="text-green-500 hover:underline">
                   View Changelog →
                 </a>
               </div>
@@ -127,7 +127,7 @@ export default function Developers() {
                 <p className="text-gray-400 mb-4">
                   Monitor API health and subscribe to status updates.
                 </p>
-                <a href="#" className="text-green-500 hover:underline">
+                <a href="/#" className="text-green-500 hover:underline">
                   Check Status →
                 </a>
               </div>

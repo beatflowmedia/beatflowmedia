@@ -815,14 +815,14 @@ export default function ArtistSimple() {
 
         <Divider key="divider2" sx={{ bgcolor: 'grey.700' }} />
 
-        {!purchasedSongIds.has(selectedSong?.id) && (
+        {!purchasedSongIds.has(selectedSong?.id) ? (
           <MenuItem key="purchase" onClick={() => handlePurchase(selectedSong)} sx={{ color: 'white' }}>
             <ListItemIcon>
               <ShoppingCart sx={{ color: '#1DB954' }} />
             </ListItemIcon>
             <ListItemText>Purchase ($1.99)</ListItemText>
           </MenuItem>
-        )}
+        ) : null}
       </Menu>
 
       {/* Fan Capture Modal */}

@@ -604,4 +604,5 @@ class MarketingService {
   }
 }
 
-export default new MarketingService();
+const marketingServiceInstance = new MarketingService();
+export default marketingServiceInstance;

@@ -1,15 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { db, storage } from "../firebaseConfig";
-import {
-  getDoc,
-  setDoc,
-  doc,
-  collection,
-  updateDoc,
-  query,
-  where,
-  getDocs
-} from "firebase/firestore";
+import { getDoc, setDoc, doc, collection, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "./useAuth"; // ✅ Auth hook
 import { onSnapshot, arrayUnion } from 'firebase/firestore';

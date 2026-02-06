@@ -1,30 +1,8 @@
 // src/pages/artist/GenreManagement.js
 // Genre and Category management for artists
 import { useState, useEffect } from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  Grid,
-  IconButton,
-  Alert,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction
-} from '@mui/material';
-import { Add, Edit, Delete, Check, Close } from '@mui/icons-material';
+import { Box, Container, Typography, Card, CardContent, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Chip, IconButton, Alert, Tabs, Tab, List, ListItem, ListItemText, ListItemSecondaryAction } from '@mui/material';
+import { Add, Edit, Delete } from '@mui/icons-material';
 import { db } from '../firebaseConfig';
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';

@@ -234,7 +234,7 @@ export const PlayerProvider = ({ children }) => {
     if (audioRef.current && !engineRef.current) {
       engineRef.current = new EngineClass(audioRef.current);
     }
-  }, [EngineClass]);
+  }, [EngineClass]); // eslint-disable-next-line react-hooks/exhaustive-deps
   // Track if we've initialized queue from Firestore
   const [queueInitialized, setQueueInitialized] = React.useState(false);
   // Track if play count has been incremented for current song

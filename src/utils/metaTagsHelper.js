@@ -264,7 +264,7 @@ export const generateSearchMetaTags = (query) => ({
   ]
 });
 
-export default {
+const metaTagsHelper = {
   getBaseMetaTags,
   generateSongMetaTags,
   generateArtistMetaTags,
@@ -273,3 +273,4 @@ export default {
   generateHomeMetaTags,
   generateSearchMetaTags
 };
+export default metaTagsHelper;;

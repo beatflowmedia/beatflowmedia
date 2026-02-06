@@ -269,7 +269,7 @@ export class PrivacyManager {
   categorizeScreenSize(resolution) {
     if (!resolution) return "unknown";
 
-    const [width, height] = resolution.split("x").map(Number);
+    const [width] = resolution.split("x").map(Number);
     if (width < 768) return "mobile";
     if (width < 1024) return "tablet";
     if (width < 1920) return "desktop";

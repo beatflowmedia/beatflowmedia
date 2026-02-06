@@ -20,16 +20,10 @@ import {
   DialogActions,
   TextField
 } from '@mui/material';
-import {
-  ArrowBack,
-  QueueMusic,
-  Add,
-  PlayArrow,
-  MoreVert
-} from '@mui/icons-material';
+import { ArrowBack, QueueMusic, Add, PlayArrow } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Playlists() {
   const { user } = useAuth();

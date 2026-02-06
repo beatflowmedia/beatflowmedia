@@ -407,7 +407,7 @@ class RecommendationService {
         'pop': ['dance', 'top 40', 'mainstream']
       };
 
-      for (const [family, variants] of Object.entries(genreFamilies)) {
+      for (const [, variants] of Object.entries(genreFamilies)) {
         if (variants.some(v => songGenre.includes(v)) &&
             variants.some(v => playlistName.includes(v))) {
           score = 0.75;

@@ -32,18 +32,7 @@ import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 import IconButton from '@mui/material/IconButton';
-import {
-  TrendingUp,
-  TrendingDown,
-  AttachMoney,
-  People,
-  MusicNote,
-  FileDownload,
-  MonetizationOn,
-  PlayArrow,
-  LocationOn,
-  Campaign
-} from '@mui/icons-material';
+import { TrendingUp, TrendingDown, AttachMoney, People, MusicNote, FileDownload, MonetizationOn, PlayArrow, LocationOn, Campaign } from '@mui/icons-material';
 import {
   LineChart,
   Line,
@@ -63,16 +52,7 @@ import {
 } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  getDocs,
-  Timestamp
-} from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, getDocs, Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 const METRIC_COLORS = {

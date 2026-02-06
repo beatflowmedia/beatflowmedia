@@ -2,7 +2,7 @@
 // This syncs each song with its artist's profileImage
 
 import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 
 export async function migrateArtistImages() {
   console.log('🔄 Starting artist image migration...');

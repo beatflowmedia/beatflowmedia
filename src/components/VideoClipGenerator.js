@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -44,8 +44,6 @@ function VideoClipGenerator({ open, onClose, song }) {
   const [overlayText, setOverlayText] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generatedClipUrl, setGeneratedClipUrl] = useState(null);
-
-  const audioRef = useRef(null);
 
   const handleGenerate = async () => {
     setGenerating(true);

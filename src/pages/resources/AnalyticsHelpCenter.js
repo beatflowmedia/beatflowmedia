@@ -202,7 +202,7 @@ export default function AnalyticsHelpCenter() {
               <div key={idx} className="bg-gray-800 p-6 rounded-lg">
                 <h3 className="text-xl font-bold mb-3">{guide.title}</h3>
                 <p className="text-gray-400 mb-4">{guide.description}</p>
-                <a href="#" className="text-bf-green hover:underline">Read guide →</a>
+                <a href="/#" className="text-bf-green hover:underline">Read guide →</a>
               </div>
             ))}
           </div>
@@ -219,21 +219,21 @@ export default function AnalyticsHelpCenter() {
               <p className="text-gray-400 mb-4">
                 Understand which touchpoints drive conversions with multi-touch attribution.
               </p>
-              <a href="#" className="text-bf-green hover:underline">Learn more →</a>
+              <a href="/#" className="text-bf-green hover:underline">Learn more →</a>
             </div>
             <div className="bg-gray-900 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-3 text-bf-green">A/B Testing</h3>
               <p className="text-gray-400 mb-4">
                 Run controlled experiments to optimize creative and targeting.
               </p>
-              <a href="#" className="text-bf-green hover:underline">Learn more →</a>
+              <a href="/#" className="text-bf-green hover:underline">Learn more →</a>
             </div>
             <div className="bg-gray-900 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-3 text-bf-green">Brand Lift Studies</h3>
               <p className="text-gray-400 mb-4">
                 Measure the impact of your campaigns on brand awareness and perception.
               </p>
-              <a href="#" className="text-bf-green hover:underline">Learn more →</a>
+              <a href="/#" className="text-bf-green hover:underline">Learn more →</a>
             </div>
           </div>
         </div>

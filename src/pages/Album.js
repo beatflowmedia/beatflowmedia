@@ -174,7 +174,7 @@ function Album() {
         });
 
         // Defer reviews loading to reduce initial blocking - not critical for LCP
-        const reviewsTimeout = setTimeout(() => {
+        /* const reviewsTimeout = */ setTimeout(() => {
           const reviewsQuery = query(
             collection(db, 'albumReviews'),
             where('albumId', '==', albumId)

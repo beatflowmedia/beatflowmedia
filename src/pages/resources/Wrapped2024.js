@@ -131,17 +131,17 @@ export default function Wrapped2024() {
             <div className="bg-gray-900 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-2">TechStart Inc.</h3>
               <p className="text-gray-400 mb-4">Increased app downloads by 340% with targeted audio ads during peak commute hours.</p>
-              <a href="#" className="text-bf-green hover:underline">Read case study →</a>
+              <a href="/#" className="text-bf-green hover:underline">Read case study →</a>
             </div>
             <div className="bg-gray-900 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-2">FreshBite Foods</h3>
               <p className="text-gray-400 mb-4">Achieved 92% brand recall with podcast sponsorships in the food & lifestyle category.</p>
-              <a href="#" className="text-bf-green hover:underline">Read case study →</a>
+              <a href="/#" className="text-bf-green hover:underline">Read case study →</a>
             </div>
             <div className="bg-gray-900 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-2">Urban Threads</h3>
               <p className="text-gray-400 mb-4">Drove 250% ROI with video ads targeting Gen Z fashion enthusiasts.</p>
-              <a href="#" className="text-bf-green hover:underline">Read case study →</a>
+              <a href="/#" className="text-bf-green hover:underline">Read case study →</a>
             </div>
           </div>
         </div>

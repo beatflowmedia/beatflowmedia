@@ -12,7 +12,6 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
 import Search from '@mui/icons-material/Search';
-import { getDocs } from 'firebase/firestore';
 import { useState, useEffect, useCallback } from "react";
 import RequestPayout from '../components/RequestPayout';
 import Box from '@mui/material/Box';
@@ -20,15 +19,11 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
 import Rating from '@mui/material/Rating';
-import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -37,27 +32,15 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
-import Badge from '@mui/material/Badge';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
-import Fade from '@mui/material/Fade';
-import Slide from '@mui/material/Slide';
-import Alert from '@mui/material/Alert';
-import LinearProgress from '@mui/material/LinearProgress';
 import Tooltip from '@mui/material/Tooltip';
-import MusicNote from '@mui/icons-material/MusicNote';
-import Person from '@mui/icons-material/Person';
-import CalendarToday from '@mui/icons-material/CalendarToday';
-import AccessTime from '@mui/icons-material/AccessTime';
 import ThumbUp from '@mui/icons-material/ThumbUp';
 import ThumbDown from '@mui/icons-material/ThumbDown';
 import Comment from '@mui/icons-material/Comment';
-import Send from '@mui/icons-material/Send';
 import AttachMoney from '@mui/icons-material/AttachMoney';
 import Analytics from '@mui/icons-material/Analytics';
-import Dashboard from '@mui/icons-material/Dashboard';
-import Notifications from '@mui/icons-material/Notifications';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
@@ -71,7 +54,6 @@ import {
   onSnapshot,
   updateDoc,
   doc,
-  getDoc,
   setDoc,
   addDoc,
   serverTimestamp,

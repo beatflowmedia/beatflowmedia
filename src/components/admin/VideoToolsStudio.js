@@ -1,7 +1,5 @@
 import React from 'react';
 import { Box, Typography, Alert } from '@mui/material';
-import VideoClipGenerator from '../VideoClipGenerator';
-
 /**
  * VideoToolsStudio - Admin dashboard tab for video clip generation
  * Part of 2026 Hybrid Marketing Strategy (Content-led Discovery)

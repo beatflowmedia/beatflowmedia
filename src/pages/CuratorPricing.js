@@ -17,16 +17,7 @@ import {
   Paper,
   Divider
 } from '@mui/material';
-import {
-  Check,
-  MusicNote,
-  Star,
-  TrendingUp,
-  People,
-  PlaylistPlay,
-  AttachMoney,
-  Dashboard
-} from '@mui/icons-material';
+import { Check, Star, TrendingUp, People, PlaylistPlay, AttachMoney, Dashboard } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
@@ -80,7 +71,7 @@ const FEATURES = [
 export default function CuratorPricing() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   const handleApply = () => {
     if (!user) {

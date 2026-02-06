@@ -71,7 +71,7 @@ exports.handler = async (event, context) => {
           },
         ],
         mode: 'subscription',
-        success_url: `${process.env.URL || 'http://localhost:8888'}/for-artists?membership=active`,
+        success_url: `${process.env.URL || 'http://localhost:8888'}/purchase/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.URL || 'http://localhost:8888'}/purchase/cancelled`,
         customer_email: email || userEmail,
         metadata: {

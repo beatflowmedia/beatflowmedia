@@ -287,7 +287,7 @@ export const schemaToScriptTag = (schema) => {
   };
 };
 
-export default {
+const schemaMarkup = {
   generateOrganizationSchema,
   generateWebSiteSchema,
   generateSongSchema,
@@ -299,3 +299,4 @@ export default {
   generateGraphSchema,
   schemaToScriptTag
 };
+export default schemaMarkup;;

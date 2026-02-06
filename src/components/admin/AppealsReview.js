@@ -21,8 +21,8 @@ import {
   Tabs,
   Tab
 } from '@mui/material';
-import { CheckCircle, Cancel, InfoOutlined, AutoAwesome, AttachFile, InsertLink, OpenInNew } from '@mui/icons-material';
-import { collection, query, getDocs, doc, updateDoc, where, orderBy } from 'firebase/firestore';
+import { CheckCircle, Cancel, AutoAwesome, AttachFile, InsertLink, OpenInNew } from '@mui/icons-material';
+import { collection, query, getDocs, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { toast } from 'react-toastify';
 

@@ -50,7 +50,7 @@ export default class LegacyAudioEngine extends CoreEngine {
     this.audio.pause();
 
     // Store current time in case we need it
-    const wasPlaying = !this.audio.paused;
+    // Removed unused: const wasPlaying
 
     // Add one-time event listeners
     const handleLoadedMetadata = () => {

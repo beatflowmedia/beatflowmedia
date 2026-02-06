@@ -99,13 +99,6 @@
     "prepare": "husky install",
     "husky:install": "sh .husky/install.sh"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest",
-      "plugin:storybook/recommended"
-    ]
-  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -154,6 +147,7 @@
     "prop-types": "^15.8.1",
     "sharp": "^0.34.5",
     "storybook": "^9.1.7",
+    "typescript": "^5.9.3",
     "webpack": "^5.101.3",
     "whatwg-fetch": "^3.6.20"
   },

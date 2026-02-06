@@ -2,21 +2,7 @@
 // Liked songs page
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  IconButton,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  CircularProgress,
-  Avatar,
-  Chip
-} from '@mui/material';
+import { Box, Container, Typography, Card, CardContent, IconButton, List, ListItem, ListItemIcon, ListItemText, CircularProgress, Avatar } from '@mui/material';
 import {
   ArrowBack,
   Favorite,

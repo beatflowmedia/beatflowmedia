@@ -24,16 +24,7 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
     (uploadedBy && user.uid === uploadedBy)
   );
 
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🎯 [PurchaseButton RENDER]');
-  console.log('Props:', { itemId, itemType, price, compact });
-  console.log('State:', { checking, purchased, loading });
-  console.log('User:', { hasUser: !!user, userId: user?.uid, email: user?.email });
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
   useEffect(() => {
-    console.log('🔄 [PurchaseButton useEffect] Triggered');
-    console.log('Dependencies:', { hasUser: !!user, itemId, itemType });
 
     const checkStatus = async () => {
       await checkPurchaseStatus();
@@ -46,9 +37,7 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
   // Listen for purchase completion events
   useEffect(() => {
     const handlePurchaseComplete = (event) => {
-      console.log('🎉 [PurchaseButton] Purchase complete event received:', event.detail);
       if (event.detail?.itemId === itemId) {
-        console.log('✅ [PurchaseButton] Event matches this item - re-checking purchase status');
         checkPurchaseStatus();
       }
     };
@@ -59,50 +48,25 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
   }, [itemId]);
 
   const checkPurchaseStatus = async () => {
-    console.log('🔍 [checkPurchaseStatus] STARTED');
-
     if (!user || !itemId) {
-      console.warn('⚠️ [checkPurchaseStatus] Missing required data:', {
-        hasUser: !!user,
-        userId: user?.uid,
-        itemId
-      });
       setChecking(false);
       return;
     }
 
     try {
-      console.log('✅ [checkPurchaseStatus] Has user and itemId - proceeding with check');
-      console.log('   User ID:', user.uid);
-      console.log('   Item ID:', itemId);
-      console.log('   Item Type:', itemType);
-
       setChecking(true);
       let hasPurchased = false;
 
       if (itemType === 'song') {
-        console.log('📀 [checkPurchaseStatus] Checking SONG purchase via canDownloadSong()');
         hasPurchased = await stripeService.canDownloadSong(user.uid, itemId);
-        console.log('📀 [checkPurchaseStatus] canDownloadSong() returned:', hasPurchased);
       } else if (itemType === 'album') {
-        console.log('💿 [checkPurchaseStatus] Checking ALBUM purchase');
         hasPurchased = await stripeService.hasPurchasedAlbum(user.uid, itemId);
-        console.log('💿 [checkPurchaseStatus] hasPurchasedAlbum() returned:', hasPurchased);
       }
-
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('✨ [checkPurchaseStatus] RESULT:',  hasPurchased ? '✅ PURCHASED' : '❌ NOT PURCHASED');
-      console.log('   Item ID:', itemId);
-      console.log('   Setting purchased state to:', hasPurchased);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       setPurchased(hasPurchased);
     } catch (error) {
-      console.error('❌ [checkPurchaseStatus] ERROR:', error);
-      console.error('   Error details:', error.message);
-      console.error('   Stack:', error.stack);
+      console.error('PurchaseButton: Error checking purchase status:', error.message);
     } finally {
-      console.log('🏁 [checkPurchaseStatus] FINISHED - setting checking to false');
       setChecking(false);
     }
   };

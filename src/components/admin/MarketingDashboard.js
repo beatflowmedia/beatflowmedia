@@ -14,18 +14,7 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
-import {
-  Campaign,
-  Article,
-  Web,
-  Image as ImageIcon,
-  AutoAwesome,
-  Refresh,
-  Link as LinkIcon,
-  VideoLibrary,
-  Email,
-  Search
-} from '@mui/icons-material';
+import { Campaign, Article, Web, Image as ImageIcon, AutoAwesome, Link as LinkIcon, VideoLibrary, Email, Search } from '@mui/icons-material';
 
 // Lazy load sub-components
 const ContentBulkGenerator = lazy(() => import('./ContentBulkGenerator'));

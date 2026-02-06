@@ -1,44 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import {
-  Box,
-  Card,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Collapse,
-  Paper,
-  IconButton,
-  Chip,
-  LinearProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
-} from '@mui/material';
-import {
-  CheckCircle,
-  InfoOutlined,
-  ExpandMore,
-  ExpandLess,
-  CloudUpload,
-  Delete,
-  InsertLink,
-  AttachFile,
-  PictureAsPdf,
-  Image as ImageIcon
-} from '@mui/icons-material';
+import { Box, Card, TextField, Button, Typography, Alert, FormControl, InputLabel, Select, MenuItem, CircularProgress, Paper, IconButton, Chip, LinearProgress } from '@mui/material';
+import { CloudUpload, Delete, InsertLink, AttachFile, PictureAsPdf, Image as ImageIcon } from '@mui/icons-material';
 import { collection, addDoc, doc, getDoc, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebaseConfig';

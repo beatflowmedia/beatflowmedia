@@ -20,7 +20,6 @@ import {
   ArrowBack,
   TrendingUp
 } from '@mui/icons-material';
-import marketingService from '../services/marketingService';
 import GoogleAdSense from '../components/GoogleAdSense';
 
 export default function BlogPost() {

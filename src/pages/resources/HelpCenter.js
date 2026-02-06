@@ -89,7 +89,7 @@ export default function HelpCenter() {
                 <ul className="space-y-2">
                   {category.topics.map((topic, topicIdx) => (
                     <li key={topicIdx}>
-                      <a href="#" className="text-gray-400 hover:text-bf-green transition">
+                      <a href="/#" className="text-gray-400 hover:text-bf-green transition">
                         {topic}
                       </a>
                     </li>

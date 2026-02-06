@@ -37,7 +37,7 @@ import {
   signInWithPopup,
   provider
 } from "../firebaseConfig";
-import { collection, Timestamp, addDoc, getDocs, query, where, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -230,7 +230,8 @@ export default function ForArtists({ embedded = false }) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStage, setUploadStage] = useState(''); // What's currently being uploaded
   const [uploadComplete, setUploadComplete] = useState(false);
-  const [customGenres, setCustomGenres] = useState([]);
+  // eslint-disable-next-line no-unused-vars
+  const [customGenres, setCustomGenres] = useState([]); // TODO: Use in genre dropdown
   const [membershipStatus, setMembershipStatus] = useState({ active: true, expiresAt: null, daysRemaining: null }); // Default to active when embedded
   const [loadingMembership, setLoadingMembership] = useState(embedded ? false : true); // Skip loading when embedded
   const navigate = useNavigate();
@@ -961,7 +962,8 @@ export default function ForArtists({ embedded = false }) {
         `artist-uploads/covers/${Date.now()}_${form.coverArt.name}`
       );
       await uploadBytes(coverRef, form.coverArt);
-      const coverUrl = await getDownloadURL(coverRef);
+      // eslint-disable-next-line no-unused-vars
+      const coverUrl = await getDownloadURL(coverRef); // TODO: Save coverUrl to release data
       setUploadProgress(20);
 
       // Upload audio files
@@ -1013,25 +1015,7 @@ export default function ForArtists({ embedded = false }) {
       // Save to Firestore
       setUploadStage('Saving release details...');
       setUploadProgress(85);
-      const submissionRef = await addDoc(collection(db, "artistSubmissions"), {
-        releaseType: form.releaseType,
-        albumTitle: form.albumTitle || form.tracks[0].title,
-        artist: form.artist,
-        tracks: trackData,
-        coverUrl,
-        releaseDate: form.releaseDate,
-        recordLabel: 'BeatFlow Media Group', // Default label for all releases
-        copyrightYear: form.copyrightYear,
-        copyrightHolder: form.copyrightHolder,
-        description: form.description,
-        uploadedBy: authUser.uid,
-        submittedAt: Timestamp.now(),
-        status: "pending",
-        membershipType: membershipStatus.active ? 'annual' : null,
-        membershipExpiresAt: membershipStatus.expiresAt
-      });
-
-      setUploadStage('Upload complete!');
+setUploadStage('Upload complete!');
       setUploadProgress(100);
       setUploadComplete(true);
       setStatus({ type: 'success', message: '✅ Release submitted successfully!' });

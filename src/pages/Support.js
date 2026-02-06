@@ -25,34 +25,7 @@ export default function Support() {
     { label: "Family Plan Management", path: "/help/family-plan" },
     { label: "Update Payment Details", path: "/help/update-payment" },
   ];
-
-  const resources = [
-    { label: "About Us", path: "/about" },
-    { label: "Jobs", path: "/jobs" },
-    { label: "Newsroom", path: "/news" },
-    { label: "Artists", path: "/for-artists" },
-    { label: "Developers", path: "/developers" },
-    { label: "Advertisers", path: "/advertising" },
-    { label: "Investors", path: "/investors" },
-    { label: "Vendors", path: "/vendors" },
-  ];
-
-  const toolsAndPlans = [
-    { label: "Web Player", path: "/web-player" },
-    { label: "Mobile Apps", path: "/mobile-app" },
-    { label: "Contact Support", path: "/contact" },
-    { label: "Free Plan", path: "/plans/free" },
-    { label: "Premium Plans", path: "/plans/premium" },
-  ];
-
-  const legalAndPrivacy = [
-    { label: "Terms of Service", path: "/legal" },
-    { label: "Privacy Policy", path: "/privacy-policy" },
-    { label: "Cookies", path: "/cookies" },
-    { label: "Accessibility", path: "/accessibility" },
-  ];
-
-  return (
+return (
     <div className="flex flex-col min-h-screen bg-bf-page">
       {/* Main navigation */}
       <NavBar />

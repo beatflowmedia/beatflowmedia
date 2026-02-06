@@ -293,7 +293,7 @@ export const trackSongSkip = (song, skipTime) => {
   }
 };
 
-export default {
+const conversionTracking = {
   trackPageView,
   trackConversion,
   trackSongView,
@@ -311,3 +311,4 @@ export default {
   trackSongCompletion,
   trackSongSkip
 };
+export default conversionTracking;;
