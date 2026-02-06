@@ -277,8 +277,15 @@ export const PlayerProvider = ({ children }) => {
       return;
     }
 
+    // Don't load tracks on page mount unless user wants to play
+    // This prevents slow initial loads
+    if (!state.isPlaying && lastLoadedIndexRef.current === -1) {
+      console.log('[PlayerContext] Skipping initial load until user clicks play');
+      return;
+    }
+
     // Only skip loading if we're trying to reload the exact same track at the same index
-    // This allows track 0 to load on initial mount
+    // This allows track 0 to load on initial mount when playing
     if (lastLoadedIndexRef.current === state.currentIndex && audioRef.current?.src) {
       return;
     }
@@ -295,69 +302,65 @@ export const PlayerProvider = ({ children }) => {
       skipTrackedRef.current = false;
       songStartTimeRef.current = Date.now();
 
-      // Don't auto-play here - let the play/pause effect handle it
-      // This prevents race conditions and duplicate play() calls
+      // If we should be playing, start playback now that track is loaded
+      if (state.isPlaying && audioRef.current) {
+        console.log('[PlayerContext] Auto-playing after track load, readyState:', audioRef.current.readyState);
+
+        // Use a small delay to ensure audio element is ready
+        const attemptPlay = () => {
+          engine.play().catch((error) => {
+            if (error.name === 'NotAllowedError') {
+              console.warn('[PlayerContext] Autoplay blocked after load');
+              dispatchRaw({ type: actions.TOGGLE_PLAY });
+            } else if (error.name === 'NotSupportedError') {
+              console.error('[PlayerContext] Audio format not supported:', error);
+            } else {
+              console.error('[PlayerContext] Playback error after load:', error);
+            }
+          });
+        };
+
+        // If audio is ready, play immediately
+        if (audioRef.current.readyState >= 2) {
+          attemptPlay();
+        } else {
+          // Wait for audio to be ready
+          audioRef.current.addEventListener('canplay', attemptPlay, { once: true });
+        }
+      }
     }).catch((error) => {
       console.error('[PlayerContext] Error loading track:', error);
       lastLoadedIndexRef.current = -1; // Reset on error to allow retry
     });
-  }, [state.currentIndex]); // Only depend on currentIndex, NOT queue
+  }, [state.currentIndex, state.isPlaying]); // Depend on both currentIndex AND isPlaying
 
-  // Control play/pause when isPlaying flag changes OR track changes
+  // Control play/pause when user toggles (but track is already loaded)
   useEffect(() => {
     const engine = engineRef.current;
     const audioElement = audioRef.current;
     if (!engine || !audioElement) return;
 
-    function handlePlayError(error) {
-      console.error('Playback error:', error.name, error.message);
-
-      if (error.name === 'NotAllowedError') {
-        // Autoplay blocked - revert isPlaying state
-        dispatchRaw({ type: actions.TOGGLE_PLAY });
-      } else if (error.name === 'AbortError') {
-        // Play was interrupted - ignore, likely switching tracks
-        console.log('Play aborted, likely track switching');
-      } else {
-        // Other errors - log for debugging
-        console.error('Unexpected playback error:', error);
-      }
+    // Only handle play/pause for current loaded track (not track changes)
+    // Track changes are handled in the load effect above
+    if (!audioElement.src || audioElement.src === window.location.href) {
+      return; // No source loaded yet
     }
 
     if (state.isPlaying) {
-      // Check if audio has a source loaded
-      if (!audioElement.src || audioElement.src === window.location.href) {
-        console.log('[PlayerContext] No audio source loaded yet, waiting...');
-        return;
-      }
-
-      // Check if audio is ready to play (HAVE_CURRENT_DATA = 2 or higher)
-      if (audioElement.readyState >= 2) {
-        // Audio is ready, play immediately
-        console.log('[PlayerContext] Playing immediately, readyState:', audioElement.readyState);
-        engine.play().catch(handlePlayError);
-      } else {
-        // Wait for audio to be ready
-        console.log('[PlayerContext] Waiting for canplay, readyState:', audioElement.readyState);
-        const onCanPlay = () => {
-          console.log('[PlayerContext] canplay fired, attempting play');
-          engine.play().catch(handlePlayError);
-        };
-        const onLoadedData = () => {
-          console.log('[PlayerContext] loadeddata fired, attempting play');
-          engine.play().catch(handlePlayError);
-        };
-        audioElement.addEventListener('canplay', onCanPlay, { once: true });
-        audioElement.addEventListener('loadeddata', onLoadedData, { once: true });
-        return () => {
-          audioElement.removeEventListener('canplay', onCanPlay);
-          audioElement.removeEventListener('loadeddata', onLoadedData);
-        };
-      }
+      // User pressed play on already-loaded track
+      console.log('[PlayerContext] Resuming playback, readyState:', audioElement.readyState);
+      engine.play().catch((error) => {
+        if (error.name === 'NotAllowedError') {
+          console.warn('[PlayerContext] Autoplay blocked');
+          dispatchRaw({ type: actions.TOGGLE_PLAY });
+        }
+      });
     } else {
+      // User pressed pause
+      console.log('[PlayerContext] Pausing playback');
       engine.pause();
     }
-  }, [state.isPlaying, state.currentIndex]); // Include currentIndex to trigger on track change
+  }, [state.isPlaying]); // Only depend on isPlaying, NOT currentIndex
 
   // Handle global PLAY_SONG events via reducer
   useEffect(() => {
