@@ -272,8 +272,14 @@ export const PlayerProvider = ({ children }) => {
     const engine = engineRef.current;
     const item = state.queue[state.currentIndex];
 
-    // Prevent loading if no engine, no item, or already loaded this index
-    if (!engine || !item || lastLoadedIndexRef.current === state.currentIndex) {
+    // Prevent loading if no engine or no item
+    if (!engine || !item) {
+      return;
+    }
+
+    // Only skip loading if we're trying to reload the exact same track at the same index
+    // This allows track 0 to load on initial mount
+    if (lastLoadedIndexRef.current === state.currentIndex && audioRef.current?.src) {
       return;
     }
 
@@ -534,6 +540,8 @@ export const PlayerProvider = ({ children }) => {
         id="audio-player"
         className="sr-only"
         aria-label="Audio player"
+        preload="auto"
+        crossOrigin="anonymous"
       />
     </PlayerContext.Provider>
   );

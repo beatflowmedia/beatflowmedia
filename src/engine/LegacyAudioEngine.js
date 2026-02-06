@@ -46,6 +46,11 @@ export default class LegacyAudioEngine extends CoreEngine {
   }
 
   _setupAudioLoad(src, resolve, reject) {
+    // Pause current playback before loading new track to prevent stuttering
+    this.audio.pause();
+
+    // Store current time in case we need it
+    const wasPlaying = !this.audio.paused;
 
     // Add one-time event listeners
     const handleLoadedMetadata = () => {
@@ -90,17 +95,24 @@ export default class LegacyAudioEngine extends CoreEngine {
     this.audio.addEventListener('canplay', handleCanPlay, { once: true });
 
     // Set source and load
-    this.audio.src = src;
-    this.audio.load();
+    // Only call load() if src has changed to avoid unnecessary buffering reset
+    if (this.audio.src !== src) {
+      this.audio.src = src;
+      this.audio.load();
+    } else {
+      // Same source, just reset to beginning
+      this.audio.currentTime = 0;
+      resolve();
+    }
 
-    // Timeout after 10 seconds
+    // Timeout after 15 seconds (increased from 10 for slower connections)
     setTimeout(() => {
       if (this.audio.readyState < 1) {
-        console.warn('[LegacyAudioEngine] Load timeout - metadata not loaded after 10s');
+        console.warn('[LegacyAudioEngine] Load timeout - metadata not loaded after 15s');
         cleanup();
         reject(new Error('Audio loading timeout'));
       }
-    }, 10000);
+    }, 15000);
   }
 
   play() {
