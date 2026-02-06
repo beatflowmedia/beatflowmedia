@@ -1,7 +1,5 @@
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import StudioNavBar from '../../components/studio/StudioNavBar';
-import StudioFooter from '../../components/studio/StudioFooter';
 import StudioHero from '../../components/studio/StudioHero';
 import ServicesGrid from '../../components/studio/ServicesGrid';
 import FeaturedSamples from '../../components/studio/FeaturedSamples';
@@ -87,8 +85,6 @@ export default function StudioHome() {
         <meta name="keywords" content="sonic branding, audio branding, music production, tiktok music, instagram music, youtube music, custom audio, royalty-free music" />
       </Helmet>
       <div className="min-h-screen bg-gray-900 text-white">
-        <StudioNavBar />
-
         {/* Hero Section */}
         <StudioHero />
 
@@ -176,8 +172,6 @@ export default function StudioHome() {
             </Link>
           </div>
         </section>
-
-        <StudioFooter />
       </div>
     </>
   );

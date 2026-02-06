@@ -1,7 +1,5 @@
 import { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import StudioNavBar from '../../components/studio/StudioNavBar';
-import StudioFooter from '../../components/studio/StudioFooter';
 import SampleCard from '../../components/studio/SampleCard';
 import UseCaseFilter from '../../components/studio/UseCaseFilter';
 import MoodFilter from '../../components/studio/MoodFilter';
@@ -309,8 +307,6 @@ export default function StudioSamples() {
         <meta name="keywords" content="audio samples, music samples, background music samples, cafe music samples, boutique music, fitness music, sample library" />
       </Helmet>
       <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-        <StudioNavBar />
-
         <main className="container mx-auto px-6 py-12 flex-grow">
           {/* Header */}
           <div className="mb-12">
@@ -370,8 +366,6 @@ export default function StudioSamples() {
             </div>
           )}
         </main>
-
-        <StudioFooter />
 
         {/* Music Player - Fixed at bottom */}
         {currentSong && (

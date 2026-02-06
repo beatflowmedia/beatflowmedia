@@ -1,6 +1,4 @@
 import { Helmet } from 'react-helmet-async';
-import StudioNavBar from '../../components/studio/StudioNavBar';
-import StudioFooter from '../../components/studio/StudioFooter';
 import ConsultationForm from '../../components/studio/ConsultationForm';
 
 export default function Consultation() {
@@ -16,7 +14,6 @@ export default function Consultation() {
         <meta name="keywords" content="consultation, audio consultation, music production consultation, sonic branding quote, free consultation" />
       </Helmet>
       <div className="min-h-screen bg-gray-900 text-white">
-        <StudioNavBar />
         <main className="container mx-auto px-6 py-12">
           {/* Header Section */}
           <div className="text-center mb-12">
@@ -42,7 +39,6 @@ export default function Consultation() {
             </p>
           </div>
         </main>
-        <StudioFooter />
       </div>
     </>
   );

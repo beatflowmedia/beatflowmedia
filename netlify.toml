@@ -44,7 +44,14 @@
   to   = "/.netlify/functions/create-checkout"
   status = 200
 
-# Studio subdomain redirect
+# Studio subdomain redirect - root
+[[redirects]]
+  from = "https://studio.beatflowmediagroup.com"
+  to = "/studio"
+  status = 200
+  force = true
+
+# Studio subdomain redirect - all paths
 [[redirects]]
   from = "https://studio.beatflowmediagroup.com/*"
   to = "/studio/:splat"
