@@ -4,6 +4,7 @@ import SampleCard from '../../components/studio/SampleCard';
 import UseCaseFilter from '../../components/studio/UseCaseFilter';
 import MoodFilter from '../../components/studio/MoodFilter';
 import MusicPlayer from '../../components/MusicPlayer';
+import LicenseModal from '../../components/studio/LicenseModal';
 import { usePlayerActions } from '../../hooks/usePlayerActions';
 import { getStudioSamples } from '../../services/studioSamplesService';
 
@@ -258,6 +259,8 @@ export default function StudioSamples() {
   const [samples, setSamples] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+  const [selectedSample, setSelectedSample] = useState(null);
 
   const { playSong, currentSong, isPlaying } = usePlayerActions();
 
@@ -316,14 +319,19 @@ export default function StudioSamples() {
   };
 
   const handleLicense = (sample) => {
-    // Navigate to license/contact page or open modal
-    alert(`Licensing "${sample.title}" - This will integrate with your purchase flow`);
+    setSelectedSample(sample);
+    setLicenseModalOpen(true);
   };
 
   const handleGetFullVersion = () => {
     if (currentSong) {
       handleLicense(currentSong);
     }
+  };
+
+  const closeLicenseModal = () => {
+    setLicenseModalOpen(false);
+    setSelectedSample(null);
   };
 
   return (
@@ -424,6 +432,13 @@ export default function StudioSamples() {
             />
           </div>
         )}
+
+        {/* License Modal */}
+        <LicenseModal
+          sample={selectedSample}
+          isOpen={licenseModalOpen}
+          onClose={closeLicenseModal}
+        />
       </div>
     </>
   );

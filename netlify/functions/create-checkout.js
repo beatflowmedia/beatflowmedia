@@ -24,21 +24,28 @@ exports.handler = async (event, context) => {
     const {
       userId,
       itemId,
-      itemType, // 'song', 'album', or 'submission_credits'
+      itemType, // 'song', 'album', 'submission_credits', or 'studio_sample'
       itemName,
       artistName,
       price, // in cents
+      priceId, // Stripe Price ID for fixed products
       userEmail,
       email,
       credits,
       recurring,
-      metadata
+      metadata,
+      sampleId,
+      sampleTitle,
+      licenseType
     } = JSON.parse(event.body);
 
-    console.log('✅ Request data:', { userId, itemId, itemType, price, userEmail });
+    console.log('✅ Request data:', { userId, itemId, itemType, price, priceId, userEmail });
 
-    // Validate required fields
-    if (!userId || !itemId || !itemType) {
+    // Validate required fields - allow priceId OR (userId + itemId + itemType)
+    if (priceId) {
+      // Using Stripe Price ID (for studio samples, subscriptions, etc.)
+      console.log('Using Stripe Price ID:', priceId);
+    } else if (!userId || !itemId || !itemType) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing required fields' })
@@ -48,7 +55,31 @@ exports.handler = async (event, context) => {
     // Determine pricing and mode based on item type
     let checkoutConfig;
 
-    if (itemType === 'artist_membership') {
+    if (priceId) {
+      // Using fixed Stripe Price ID (for studio samples, products, etc.)
+      checkoutConfig = {
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.URL || 'http://localhost:8888'}/purchase/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.URL || 'http://localhost:8888'}/purchase/cancelled`,
+        customer_email: userEmail || email,
+        metadata: {
+          userId: userId || 'guest',
+          itemId: sampleId || itemId,
+          itemType: 'studio_sample',
+          sampleTitle: sampleTitle || itemName,
+          licenseType: licenseType || 'personal',
+          ...metadata
+        },
+        automatic_tax: { enabled: false }
+      };
+    } else if (itemType === 'artist_membership') {
       // Annual artist membership - $25/year for unlimited uploads
       checkoutConfig = {
         payment_method_types: ['card'],
