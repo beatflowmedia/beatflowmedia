@@ -22,7 +22,7 @@ import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
 import PropTypes from 'prop-types';
 const playerAnalytics = new PlayerAnalyticsClass();
 
-const MusicPlayer = ({ onShowRightPanel }) => {
+const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, onGetFullVersion }) => {
   // Get player state and audioRef from context - SINGLE SOURCE OF TRUTH
   const { audioRef } = usePlayer();
   const {
@@ -48,9 +48,25 @@ const MusicPlayer = ({ onShowRightPanel }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
+  const [previewEnded, setPreviewEnded] = useState(false);
 
   // Hybrid resume hook - now uses PlayerContext's audioRef
   usePlaybackResume(audioRef, song, user);
+
+  // Preview mode logic - pause at maxDuration
+  useEffect(() => {
+    if (previewMode && isPlaying && currentTime >= maxDuration) {
+      togglePlay(); // Pause the track
+      setPreviewEnded(true);
+    }
+  }, [previewMode, isPlaying, currentTime, maxDuration, togglePlay]);
+
+  // Reset preview ended state when song changes or seeking
+  useEffect(() => {
+    if (currentTime < maxDuration) {
+      setPreviewEnded(false);
+    }
+  }, [currentTime, maxDuration]);
 
   // Analytics tracking only - playback is handled by PlayerContext
   useEffect(() => {
@@ -130,6 +146,11 @@ const MusicPlayer = ({ onShowRightPanel }) => {
               <div className="leading-tight">
                 <p className="font-bold text-sm">{song.title}</p>
                 <p className="text-xs text-gray-400">{song.artist}</p>
+                {previewMode && (
+                  <span className="inline-block mt-1 text-[10px] bg-yellow-600 text-black px-2 py-0.5 rounded font-semibold">
+                    PREVIEW - {maxDuration}s only
+                  </span>
+                )}
               </div>
             </>
           ) : (
@@ -221,34 +242,46 @@ const MusicPlayer = ({ onShowRightPanel }) => {
 
         {/* RIGHT: Queue, Volume, Mini Player Toggle */}
         <div className="flex items-center justify-end w-1/5 gap-3">
-          <button
-            onClick={() => onShowRightPanel?.({ type: 'queue' })}
-            className="text-gray-400 hover:text-white transition-colors"
-            title="Show queue"
-          >
-            <FaListUl size={14} />
-          </button>
-          <div className="flex items-center gap-2">
-            <button onClick={toggleMute} className="text-gray-400 hover:text-white">
-              {isMuted ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
+          {previewMode && onGetFullVersion ? (
+            <button
+              onClick={onGetFullVersion}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold transition-all transform hover:scale-105"
+              title="Get full version"
+            >
+              Get Full Version
             </button>
-            <input
-              type="range"
-              className="w-16 accent-gray-300 cursor-pointer"
-              min={0}
-              max={1}
-              step="0.01"
-              value={isMuted ? 0 : contextVolume}
-              onChange={handleVolumeChange}
-            />
-          </div>
-          <button
-            onClick={handleOpenMiniPlayer}
-            className="text-gray-400 hover:text-white"
-            title="Open mini player"
-          >
-            <FaClone size={14} />
-          </button>
+          ) : (
+            <>
+              <button
+                onClick={() => onShowRightPanel?.({ type: 'queue' })}
+                className="text-gray-400 hover:text-white transition-colors"
+                title="Show queue"
+              >
+                <FaListUl size={14} />
+              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={toggleMute} className="text-gray-400 hover:text-white">
+                  {isMuted ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
+                </button>
+                <input
+                  type="range"
+                  className="w-16 accent-gray-300 cursor-pointer"
+                  min={0}
+                  max={1}
+                  step="0.01"
+                  value={isMuted ? 0 : contextVolume}
+                  onChange={handleVolumeChange}
+                />
+              </div>
+              <button
+                onClick={handleOpenMiniPlayer}
+                className="text-gray-400 hover:text-white"
+                title="Open mini player"
+              >
+                <FaClone size={14} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -277,7 +310,10 @@ const MusicPlayer = ({ onShowRightPanel }) => {
 };
 
 MusicPlayer.propTypes = {
-  onShowRightPanel: PropTypes.func
+  onShowRightPanel: PropTypes.func,
+  previewMode: PropTypes.bool,
+  maxDuration: PropTypes.number,
+  onGetFullVersion: PropTypes.func
 };
 
 export default MusicPlayer;

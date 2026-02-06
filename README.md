@@ -1,12 +1,15 @@
-# music-license-app
+# BeatFlow Music License App
 
-A project documentation
+A comprehensive music licensing and studio services platform with dual portals for consumers and B2B clients.
 
 ## Features
 
 - 1785 React components
 - 1873 utility functions
 - 205 classes
+- Dual portal architecture (Consumer + Studio)
+- Firebase backend integration
+- Admin dashboard for project management
 
 ## Installation
 
@@ -23,6 +26,94 @@ npm run test  # react-scripts test
 npm run eject  # react-scripts eject
 npm run dev  # netlify dev
 ```
+
+## BeatFlow Studio Portal
+
+The studio portal (`/studio/*` routes, accessible at `studio.beatflowmediagroup.com`) is a B2B service platform for custom sonic branding and professional audio services.
+
+### Studio Routes
+
+- `/studio` - Homepage showcasing services and value proposition
+- `/studio/services` - Services overview with comparison table and FAQ
+- `/studio/audio-kits` - Social Audio Kits (custom sonic identity packs)
+- `/studio/mood-library` - Mood Library browser (ready-to-license collections)
+- `/studio/invisible-services` - Invisible Services (mixing, mastering, ghost production)
+- `/studio/samples` - Sample audio gallery with filtering
+- `/studio/consultation` - Free consultation booking form
+- `/studio/about` - About the studio, team, and process
+
+### Studio Services
+
+#### 1. Social Audio Kits ($250-$600)
+Custom sonic identity packs designed for TikTok, Instagram Reels, YouTube Shorts, and short-form video content. Includes:
+- 3-8 short loops (7-15 seconds)
+- 1-2 ambient beds (30-60 seconds)
+- Royalty-free commercial license
+- Revision rounds
+- Stems and source files
+
+#### 2. Mood Library ($29-$99)
+Curated, ready-to-license audio collections organized by mood and use case:
+- Instant download
+- Non-exclusive licensing
+- Multiple formats (MP3, WAV)
+- Perfect for cafes, boutiques, fitness studios, retail spaces
+
+#### 3. Invisible Services (Custom Pricing)
+Behind-the-scenes production work including:
+- Track finishing and mastering
+- Mixing services
+- Ghost production
+- Audio restoration
+- Arrangement support
+
+### Admin Dashboard
+
+Studio inquiries and projects are managed through the `/admin` dashboard:
+
+#### Studio Inquiries Tab
+- View all consultation form submissions
+- Track inquiry status (pending, in-progress, completed)
+- Respond to client requests
+- Convert inquiries to projects
+
+#### Studio Projects Tab
+- Manage active client projects
+- Track project status and deliverables
+- Upload files and communicate with clients
+- Invoice and payment tracking
+
+### Firestore Collections
+
+#### `studioInquiries`
+Stores consultation form submissions with fields:
+- `name`, `email`, `company`
+- `serviceType` (audio-kits, mood-library, invisible-services)
+- `projectDetails`, `budget`, `timeline`
+- `status` (new, contacted, in-progress, completed)
+- `createdAt`, `updatedAt`
+
+#### `studioProjects`
+Client project tracking with fields:
+- `clientName`, `clientEmail`, `clientCompany`
+- `projectType`, `projectDetails`
+- `status` (discovery, production, revision, delivery, completed)
+- `budget`, `timeline`, `deliverables`
+- `files[]` (uploaded audio, stems, licenses)
+- `createdAt`, `updatedAt`, `completedAt`
+
+### SEO Optimization
+
+All studio pages include comprehensive SEO meta tags:
+- Unique page titles
+- Meta descriptions (150-160 characters)
+- Open Graph tags (og:title, og:description, og:type)
+- Twitter card tags
+- Relevant keywords
+
+### Subdomain Configuration
+
+The studio portal is configured to run on `studio.beatflowmediagroup.com` via Netlify configuration in `netlify.toml`.
 
 ## Components
 

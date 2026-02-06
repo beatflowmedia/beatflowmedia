@@ -44,6 +44,13 @@
   to   = "/.netlify/functions/create-checkout"
   status = 200
 
+# Studio subdomain redirect
+[[redirects]]
+  from = "https://studio.beatflowmediagroup.com/*"
+  to = "/studio/:splat"
+  status = 200
+  force = true
+
 # Fallback for single-page app routing
 [[redirects]]
   from   = "/*"

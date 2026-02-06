@@ -10,9 +10,13 @@ import {
   ArrowBack,
   Block,
   Gavel,
-  Campaign
+  Campaign,
+  Mail,
+  BusinessCenter
 } from "@mui/icons-material";
 import { adminAnalytics } from "../services/adminAnalytics";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 // Lazy load heavy admin components
 const AdminDashboardAnalytics = lazy(() => import("../components/analytics/AdminDashboard"));
@@ -22,11 +26,14 @@ const CuratorApplications = lazy(() => import("../components/admin/CuratorApplic
 const ContentManagement = lazy(() => import("../components/admin/ContentManagement"));
 const AppealsReview = lazy(() => import("../components/admin/AppealsReview"));
 const MarketingDashboard = lazy(() => import("../components/admin/MarketingDashboard"));
+const StudioInquiriesManager = lazy(() => import("../components/admin/StudioInquiriesManager"));
+const StudioProjectsManager = lazy(() => import("../components/admin/StudioProjectsManager"));
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [newInquiriesCount, setNewInquiriesCount] = useState(0);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -41,6 +48,22 @@ export default function AdminDashboard() {
     };
 
     fetchStats();
+  }, []);
+
+  // Listen for new studio inquiries
+  useEffect(() => {
+    const q = query(
+      collection(db, 'studioInquiries'),
+      where('status', '==', 'new')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setNewInquiriesCount(snapshot.size);
+    }, (error) => {
+      console.error('Error listening to studio inquiries:', error);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -148,6 +171,35 @@ export default function AdminDashboard() {
           >
             <Campaign fontSize="small" />
             <span>Marketing Engine</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("studio-inquiries")}
+            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
+              activeTab === "studio-inquiries"
+                ? "bg-green-600 text-white"
+                : "hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            <Mail fontSize="small" />
+            <span>Studio Inquiries</span>
+            {newInquiriesCount > 0 && (
+              <span className="ml-2 bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">
+                {newInquiriesCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("studio-projects")}
+            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
+              activeTab === "studio-projects"
+                ? "bg-green-600 text-white"
+                : "hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            <BusinessCenter fontSize="small" />
+            <span>Studio Projects</span>
           </button>
 
           <Link
@@ -328,6 +380,20 @@ export default function AdminDashboard() {
           {activeTab === "marketing" && (
             <div>
               <MarketingDashboard />
+            </div>
+          )}
+
+          {activeTab === "studio-inquiries" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Studio Inquiries</h2>
+              <StudioInquiriesManager />
+            </div>
+          )}
+
+          {activeTab === "studio-projects" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Studio Projects</h2>
+              <StudioProjectsManager />
             </div>
           )}
         </Suspense>

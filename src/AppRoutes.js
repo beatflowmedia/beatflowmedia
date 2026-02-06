@@ -110,6 +110,17 @@ const SyncLicensing = lazy(() => import("./pages/SyncLicensing"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 
+// Studio pages
+const StudioLayout = lazy(() => import("./pages/studio/StudioLayout"));
+const StudioHome = lazy(() => import("./pages/studio/StudioHome"));
+const StudioServices = lazy(() => import("./pages/studio/StudioServices"));
+const AudioKits = lazy(() => import("./pages/studio/AudioKits"));
+const MoodLibrary = lazy(() => import("./pages/studio/MoodLibrary"));
+const InvisibleServices = lazy(() => import("./pages/studio/InvisibleServices"));
+const StudioSamples = lazy(() => import("./pages/studio/StudioSamples"));
+const Consultation = lazy(() => import("./pages/studio/Consultation"));
+const StudioAbout = lazy(() => import("./pages/studio/StudioAbout"));
+
 // Loading component with skeleton UI
 function LoadingFallback() {
   return (
@@ -287,6 +298,18 @@ export default function AppRoutes() {
         {/* Blog pages */}
         <Route path="blog" element={<Blog />} />
         <Route path="blog/:slug" element={<BlogPost />} />
+
+        {/* Studio portal routes */}
+        <Route path="studio" element={<StudioLayout />}>
+          <Route index element={<StudioHome />} />
+          <Route path="services" element={<StudioServices />} />
+          <Route path="audio-kits" element={<AudioKits />} />
+          <Route path="mood-library" element={<MoodLibrary />} />
+          <Route path="invisible-services" element={<InvisibleServices />} />
+          <Route path="samples" element={<StudioSamples />} />
+          <Route path="consultation" element={<Consultation />} />
+          <Route path="about" element={<StudioAbout />} />
+        </Route>
 
         {/* Catch-all for 404 */}
         <Route path="*" element={<div className="p-6 text-center text-white">404 – Page Not Found</div>} />
