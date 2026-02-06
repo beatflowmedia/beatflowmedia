@@ -295,25 +295,15 @@ export const PlayerProvider = ({ children }) => {
       skipTrackedRef.current = false;
       songStartTimeRef.current = Date.now();
 
-      // If we should be playing, start playback now that track is loaded
-      if (state.isPlaying) {
-        console.log('[PlayerContext] Auto-playing after track load');
-        engine.play().catch((error) => {
-          if (error.name === 'NotAllowedError') {
-            console.warn('[PlayerContext] Autoplay blocked after load');
-            dispatchRaw({ type: actions.TOGGLE_PLAY });
-          } else {
-            console.error('[PlayerContext] Playback error after load:', error);
-          }
-        });
-      }
+      // Don't auto-play here - let the play/pause effect handle it
+      // This prevents race conditions and duplicate play() calls
     }).catch((error) => {
       console.error('[PlayerContext] Error loading track:', error);
       lastLoadedIndexRef.current = -1; // Reset on error to allow retry
     });
   }, [state.currentIndex]); // Only depend on currentIndex, NOT queue
 
-  // Control play/pause when isPlaying flag changes
+  // Control play/pause when isPlaying flag changes OR track changes
   useEffect(() => {
     const engine = engineRef.current;
     const audioElement = audioRef.current;
@@ -335,6 +325,12 @@ export const PlayerProvider = ({ children }) => {
     }
 
     if (state.isPlaying) {
+      // Check if audio has a source loaded
+      if (!audioElement.src || audioElement.src === window.location.href) {
+        console.log('[PlayerContext] No audio source loaded yet, waiting...');
+        return;
+      }
+
       // Check if audio is ready to play (HAVE_CURRENT_DATA = 2 or higher)
       if (audioElement.readyState >= 2) {
         // Audio is ready, play immediately
@@ -347,13 +343,21 @@ export const PlayerProvider = ({ children }) => {
           console.log('[PlayerContext] canplay fired, attempting play');
           engine.play().catch(handlePlayError);
         };
+        const onLoadedData = () => {
+          console.log('[PlayerContext] loadeddata fired, attempting play');
+          engine.play().catch(handlePlayError);
+        };
         audioElement.addEventListener('canplay', onCanPlay, { once: true });
-        return () => audioElement.removeEventListener('canplay', onCanPlay);
+        audioElement.addEventListener('loadeddata', onLoadedData, { once: true });
+        return () => {
+          audioElement.removeEventListener('canplay', onCanPlay);
+          audioElement.removeEventListener('loadeddata', onLoadedData);
+        };
       }
     } else {
       engine.pause();
     }
-  }, [state.isPlaying]); // REVERTED: currentIndex causes infinite loop
+  }, [state.isPlaying, state.currentIndex]); // Include currentIndex to trigger on track change
 
   // Handle global PLAY_SONG events via reducer
   useEffect(() => {
