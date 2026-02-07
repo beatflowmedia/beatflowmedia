@@ -108,7 +108,9 @@ export default function StudioInquiriesManager() {
   const handleReplyEmail = (inquiry) => {
     const subject = encodeURIComponent(`Re: BeatFlow Studio Inquiry - ${inquiry.serviceInterest}`);
     const body = encodeURIComponent(`Hi ${inquiry.name},\n\nThank you for your interest in BeatFlow Studio services.\n\n`);
-    window.open(`mailto:${inquiry.email}?subject=${subject}&body=${body}`, '_blank');
+    // Open Gmail compose window with beatflowmediagroup@gmail.com as the sender
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${inquiry.email}&su=${subject}&body=${body}`;
+    window.open(gmailUrl, '_blank');
   };
 
   const getStatusColor = (status) => {
