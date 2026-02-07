@@ -28,7 +28,7 @@ export default function LicenseModal({ sample, isOpen, onClose }) {
       id: 'commercial',
       name: 'Commercial License',
       price: sample.price * 2,
-      priceId: null, // TODO: Add commercial license price_id
+      priceId: 'price_1SxwDdAEum2hO0KZCcZFzD6p',
       description: 'For business, advertising, monetized content',
       features: [
         'Everything in Personal License',

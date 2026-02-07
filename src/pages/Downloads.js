@@ -87,7 +87,7 @@ export default function Downloads() {
         purchasesSnapshot.docs.map(async (purchaseDoc) => {
           const purchaseData = { id: purchaseDoc.id, ...purchaseDoc.data() };
 
-          // Get item details (song or album)
+          // Get item details based on type
           let itemDetails = null;
           if (purchaseData.itemType === 'song') {
             const songDoc = await getDoc(doc(db, 'songs', purchaseData.itemId));
@@ -110,7 +110,13 @@ export default function Downloads() {
                 ...doc.data()
               }));
             }
+          } else if (purchaseData.itemType === 'studio_sample') {
+            const sampleDoc = await getDoc(doc(db, 'studioSamples', purchaseData.itemId));
+            if (sampleDoc.exists()) {
+              itemDetails = { id: sampleDoc.id, ...sampleDoc.data() };
+            }
           }
+          // For subscriptions and memberships, use the itemName from purchase data
 
           return {
             ...purchaseData,
@@ -254,10 +260,54 @@ export default function Downloads() {
   };
 
   const generateLicenseId = (purchase) => {
-    // Generate a unique license ID based on purchase data
-    const timestamp = purchase.purchasedAt.getTime();
+    // Return the license ID from the purchase record if it exists
+    // Otherwise fallback to generating one (for legacy purchases)
+    if (purchase.licenseId) {
+      return purchase.licenseId;
+    }
+
+    // Legacy fallback for old purchases without license IDs
+    const timestamp = purchase.purchasedAt?.toDate ? purchase.purchasedAt.toDate().getTime() : Date.now();
     const hash = btoa(`${user.uid}-${purchase.itemId}-${timestamp}`).substring(0, 16);
     return `LIC-${hash.toUpperCase()}`;
+  };
+
+  const formatLicenseType = (purchase) => {
+    // For studio samples and items with explicit licenseType
+    if (purchase.licenseType) {
+      return purchase.licenseType.charAt(0).toUpperCase() + purchase.licenseType.slice(1);
+    }
+
+    // For subscriptions and memberships
+    if (purchase.itemType === 'premium_subscription' || purchase.itemType === 'artist_membership') {
+      return 'Subscription';
+    }
+
+    // Default for songs/albums without explicit license type
+    return 'Personal';
+  };
+
+  const getLicenseTypeIcon = (purchase) => {
+    const licenseType = purchase.licenseType || 'personal';
+
+    if (licenseType === 'commercial' || licenseType === 'enterprise') {
+      return <Receipt />;
+    }
+    return <MusicNote />;
+  };
+
+  const getLicenseTypeColor = (purchase) => {
+    const licenseType = purchase.licenseType || 'personal';
+
+    switch (licenseType) {
+      case 'commercial':
+        return '#FF9800'; // Orange for commercial
+      case 'enterprise':
+        return '#9C27B0'; // Purple for enterprise
+      case 'personal':
+      default:
+        return '#1DB954'; // Green for personal
+    }
   };
 
   if (loading) {
@@ -377,11 +427,11 @@ export default function Downloads() {
                   >
                     <TableCell>
                       <Chip
-                        icon={purchase.itemType === 'song' ? <MusicNote /> : <AlbumIcon />}
-                        label={purchase.itemType}
+                        icon={getLicenseTypeIcon(purchase)}
+                        label={formatLicenseType(purchase)}
                         size="small"
                         sx={{
-                          bgcolor: purchase.itemType === 'song' ? '#1DB954' : '#1E88E5',
+                          bgcolor: getLicenseTypeColor(purchase),
                           color: 'white'
                         }}
                       />

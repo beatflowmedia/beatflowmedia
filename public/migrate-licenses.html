@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migrate License IDs - BeatFlow Admin</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: white;
+    }
+    .container {
+      background: #2a2a2a;
+      padding: 30px;
+      border-radius: 10px;
+    }
+    h1 {
+      color: #1DB954;
+    }
+    button {
+      background: #1DB954;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #1ed760;
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      background: #333;
+    }
+    .success {
+      background: #1DB954;
+      color: white;
+    }
+    .error {
+      background: #dc3545;
+      color: white;
+    }
+    .warning {
+      background: #ffc107;
+      color: black;
+    }
+    .log {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 License ID Migration Tool</h1>
+    <p>This tool will add unique license IDs to all existing purchases and download records that don't have one.</p>
+
+    <div class="warning" style="padding: 15px; margin: 20px 0; border-radius: 5px;">
+      <strong>⚠️ Warning:</strong> This will update all purchase records in the database. Make sure you want to proceed.
+    </div>
+
+    <button id="migrateBtn" onclick="runMigration()">
+      🚀 Run Migration
+    </button>
+
+    <div id="status" style="display: none;" class="status">
+      <div id="statusText"></div>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+
+  <script>
+    async function runMigration() {
+      const btn = document.getElementById('migrateBtn');
+      const status = document.getElementById('status');
+      const statusText = document.getElementById('statusText');
+      const log = document.getElementById('log');
+
+      // Disable button
+      btn.disabled = true;
+      btn.textContent = '⏳ Running migration...';
+
+      // Show status
+      status.style.display = 'block';
+      status.className = 'status';
+      statusText.innerHTML = '<strong>🔄 Migration in progress...</strong>';
+      log.innerHTML = 'Connecting to server...\n';
+
+      try {
+        const response = await fetch('/.netlify/functions/migrate-license-ids', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          status.className = 'status success';
+          statusText.innerHTML = '<strong>✅ Migration completed successfully!</strong>';
+
+          log.innerHTML = `
+Migration Summary:
+==================
+
+Purchases:
+  - Total: ${data.purchases.total}
+  - Updated: ${data.purchases.updated}
+  - Skipped: ${data.purchases.skipped}
+
+Downloads:
+  - Total: ${data.downloads.total}
+  - Updated: ${data.downloads.updated}
+  - Skipped: ${data.downloads.skipped}
+
+Updated Records:
+${data.updates.map(u => `  - ${u.itemName} (${u.itemType}) → ${u.licenseId}`).join('\n')}
+          `;
+
+          btn.textContent = '✅ Migration Complete';
+        } else {
+          throw new Error(data.error || 'Migration failed');
+        }
+      } catch (error) {
+        status.className = 'status error';
+        statusText.innerHTML = '<strong>❌ Migration failed!</strong>';
+        log.innerHTML = `Error: ${error.message}\n\n${error.stack || ''}`;
+
+        btn.disabled = false;
+        btn.textContent = '🔄 Retry Migration';
+      }
+    }
+  </script>
+</body>
+</html>

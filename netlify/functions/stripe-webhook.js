@@ -180,6 +180,10 @@ async function handleCheckoutSessionCompleted(session) {
         throw dbError;
       }
 
+      // Generate unique license ID for this purchase
+      const crypto = require('crypto');
+      const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+
       // Record the purchase
       await db.collection('purchases').add({
         userId,
@@ -189,6 +193,7 @@ async function handleCheckoutSessionCompleted(session) {
         price: session.amount_total / 100,
         currency: session.currency,
         status: 'completed',
+        licenseId,
         stripeSessionId: session.id,
         stripeSubscriptionId: session.subscription,
         customerEmail: session.customer_email,
@@ -242,6 +247,10 @@ async function handleCheckoutSessionCompleted(session) {
 
         // Create download record for the user
         if (userId && userId !== 'guest') {
+          // Generate unique license ID
+          const crypto = require('crypto');
+          const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+
           await db.collection('downloads').add({
             userId,
             purchaseId: purchaseRef.id,
@@ -249,10 +258,11 @@ async function handleCheckoutSessionCompleted(session) {
             itemType: 'studio_sample',
             itemName: sampleData.title,
             licenseType: session.metadata.licenseType || 'personal',
+            licenseId,
             downloadedAt: null, // Will be set when user actually downloads
             createdAt: admin.firestore.FieldValue.serverTimestamp()
           });
-          console.log(`✅ Download record created for user ${userId}`);
+          console.log(`✅ Download record created for user ${userId} with license ${licenseId}`);
         }
 
         console.log(`✅ Studio sample license purchase completed for ${itemId}`);
@@ -342,6 +352,10 @@ async function handleCheckoutSessionCompleted(session) {
       }
     }
 
+    // Generate unique license ID for this purchase
+    const crypto = require('crypto');
+    const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+
     // Create purchase record
     console.log('📝 Creating purchase document in Firestore...');
     const purchaseData = {
@@ -353,6 +367,7 @@ async function handleCheckoutSessionCompleted(session) {
       price: session.amount_total / 100, // Convert from cents to dollars
       currency: session.currency,
       status: 'completed',
+      licenseId, // Add license ID to purchase record
       stripeSessionId: session.id,
       stripePaymentIntent: session.payment_intent,
       customerEmail: session.customer_email,
@@ -363,7 +378,7 @@ async function handleCheckoutSessionCompleted(session) {
     console.log('Purchase data:', JSON.stringify(purchaseData, null, 2));
 
     const purchaseRef = await db.collection('purchases').add(purchaseData);
-    console.log(`✅ Purchase document created with ID: ${purchaseRef.id}`);
+    console.log(`✅ Purchase document created with ID: ${purchaseRef.id}, License: ${licenseId}`);
 
     // Update user's purchased items
     const userRef = db.collection('users').doc(userId);

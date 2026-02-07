@@ -68,16 +68,13 @@ export default function SampleCard({ sample, isPlaying, onPlay, onLicense }) {
           ))}
         </div>
 
-        {/* Price and CTA */}
-        <div className="flex items-center justify-between">
-          <div className="text-white font-bold text-base">
-            ${sample.price}
-          </div>
+        {/* CTA */}
+        <div className="flex justify-end">
           <button
             onClick={() => onLicense(sample)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold transition-colors w-full"
           >
-            License
+            Get License
           </button>
         </div>
       </div>
