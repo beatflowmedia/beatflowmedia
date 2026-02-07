@@ -175,6 +175,18 @@ export default function Downloads() {
       } else if (purchase.itemType === 'album') {
         // For albums, show confirmation dialog
         setAlbumDownloadDialog(purchase);
+      } else if (purchase.itemType === 'studio_sample') {
+        // Download studio sample
+        if (purchase.itemDetails?.audioUrl) {
+          const filename = `${purchase.itemDetails.title || 'sample'}.wav`;
+          await downloadFileAsBlob(purchase.itemDetails.audioUrl, filename);
+          toast.success('Download started!');
+        } else {
+          toast.error('Sample file not available');
+        }
+      } else if (purchase.itemType === 'premium_subscription' || purchase.itemType === 'artist_membership') {
+        // Subscriptions don't have downloadable files
+        toast.info('This is a subscription - no download available');
       }
     } catch (error) {
       console.error('Download error:', error);
@@ -494,19 +506,30 @@ export default function Downloads() {
                       </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={downloading === purchase.id ? <CircularProgress size={16} /> : <Download />}
-                        onClick={() => handleDownload(purchase)}
-                        disabled={downloading === purchase.id}
-                        sx={{
-                          bgcolor: '#1DB954',
-                          '&:hover': { bgcolor: '#1ed760' }
-                        }}
-                      >
-                        Download
-                      </Button>
+                      {(purchase.itemType === 'premium_subscription' || purchase.itemType === 'artist_membership') ? (
+                        <Chip
+                          label="Active"
+                          size="small"
+                          sx={{
+                            bgcolor: '#1DB954',
+                            color: 'white'
+                          }}
+                        />
+                      ) : (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={downloading === purchase.id ? <CircularProgress size={16} /> : <Download />}
+                          onClick={() => handleDownload(purchase)}
+                          disabled={downloading === purchase.id}
+                          sx={{
+                            bgcolor: '#1DB954',
+                            '&:hover': { bgcolor: '#1ed760' }
+                          }}
+                        >
+                          Download
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
