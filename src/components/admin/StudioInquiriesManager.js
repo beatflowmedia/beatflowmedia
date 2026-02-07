@@ -107,7 +107,60 @@ export default function StudioInquiriesManager() {
 
   const handleReplyEmail = (inquiry) => {
     const subject = encodeURIComponent(`Re: BeatFlow Studio Inquiry - ${inquiry.serviceInterest}`);
-    const body = encodeURIComponent(`Hi ${inquiry.name},\n\nThank you for your interest in BeatFlow Studio services.\n\n`);
+
+    // Craft custom email body based on service interest
+    let bodyText = `Hi ${inquiry.name},\n\nThank you for reaching out to BeatFlow Studio! `;
+
+    switch (inquiry.serviceInterest) {
+      case 'audio_kits':
+        bodyText += `I'm excited to discuss our Social Audio Kits for your ${inquiry.useCase} business.\n\n`;
+        bodyText += `Our curated audio kits are specifically designed to create the perfect atmosphere for your space. Each kit includes:\n`;
+        bodyText += `• 20-30 professionally curated tracks\n`;
+        bodyText += `• Genre-specific playlists tailored to your business type\n`;
+        bodyText += `• Full commercial licensing included\n`;
+        bodyText += `• Quarterly updates with fresh content\n\n`;
+        bodyText += `Based on your project details, I'd love to schedule a 15-minute call to understand your vision and recommend the perfect audio solution.\n\n`;
+        break;
+
+      case 'mood_library':
+        bodyText += `I'm thrilled to help you explore our Mood Library for your ${inquiry.useCase} needs.\n\n`;
+        bodyText += `Our Mood Library offers:\n`;
+        bodyText += `• 500+ tracks organized by mood and energy level\n`;
+        bodyText += `• Easy-to-use mood filtering (Calm, Energetic, Focus, Creative, etc.)\n`;
+        bodyText += `• Perfect for creating dynamic playlists that match your brand\n`;
+        bodyText += `• Flexible licensing options for commercial use\n\n`;
+        bodyText += `I'd love to set up a demo where I can show you how our mood-based system works and help you create the perfect sonic identity for your brand.\n\n`;
+        break;
+
+      case 'invisible_services':
+        bodyText += `Thank you for your interest in our Invisible Services - the most discreet way to elevate your sonic brand.\n\n`;
+        bodyText += `Our Invisible Services include:\n`;
+        bodyText += `• Custom audio branding and sonic logo design\n`;
+        bodyText += `• Background music curation that enhances without distracting\n`;
+        bodyText += `• Strategic sound design for customer experience\n`;
+        bodyText += `• White-label solutions for agencies and brands\n\n`;
+        bodyText += `For your ${inquiry.useCase} project, I'd like to understand your brand values and customer experience goals. Let's schedule a consultation to explore how we can create an invisible yet impactful audio presence.\n\n`;
+        break;
+
+      default:
+        bodyText += `I received your inquiry about our studio services and would love to discuss how we can help bring your project to life.\n\n`;
+        bodyText += `Let's schedule a consultation to dive deeper into your needs and explore the best solution for your project.\n\n`;
+    }
+
+    // Add closing
+    bodyText += `Next Steps:\n`;
+    bodyText += `• Reply with your availability for a quick call\n`;
+    bodyText += `• Or book directly: [Your Calendly Link]\n`;
+    bodyText += `• Budget: ${inquiry.budget || 'We offer flexible options'}\n`;
+    bodyText += `• Timeline: ${inquiry.timeline || 'Let's discuss'}\n\n`;
+    bodyText += `Looking forward to creating something amazing together!\n\n`;
+    bodyText += `Best regards,\n`;
+    bodyText += `The BeatFlow Studio Team\n`;
+    bodyText += `beatflowmediagroup@gmail.com\n`;
+    bodyText += `https://studio.beatflowmediagroup.com`;
+
+    const body = encodeURIComponent(bodyText);
+
     // Open Gmail compose window with beatflowmediagroup@gmail.com as the sender
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${inquiry.email}&su=${subject}&body=${body}`;
     window.open(gmailUrl, '_blank');
