@@ -113,23 +113,23 @@ export default function StudioInquiriesManager() {
 
     switch (inquiry.serviceInterest) {
       case 'audio_kits':
-        bodyText += `I'm excited to discuss our Social Audio Kits for your ${inquiry.useCase} business.\n\n`;
+        bodyText += `I am excited to discuss our Social Audio Kits for your ${inquiry.useCase} business.\n\n`;
         bodyText += `Our curated audio kits are specifically designed to create the perfect atmosphere for your space. Each kit includes:\n`;
         bodyText += `• 20-30 professionally curated tracks\n`;
         bodyText += `• Genre-specific playlists tailored to your business type\n`;
         bodyText += `• Full commercial licensing included\n`;
         bodyText += `• Quarterly updates with fresh content\n\n`;
-        bodyText += `Based on your project details, I'd love to schedule a 15-minute call to understand your vision and recommend the perfect audio solution.\n\n`;
+        bodyText += `Based on your project details, I would love to schedule a 15-minute call to understand your vision and recommend the perfect audio solution.\n\n`;
         break;
 
       case 'mood_library':
-        bodyText += `I'm thrilled to help you explore our Mood Library for your ${inquiry.useCase} needs.\n\n`;
+        bodyText += `I am thrilled to help you explore our Mood Library for your ${inquiry.useCase} needs.\n\n`;
         bodyText += `Our Mood Library offers:\n`;
         bodyText += `• 500+ tracks organized by mood and energy level\n`;
         bodyText += `• Easy-to-use mood filtering (Calm, Energetic, Focus, Creative, etc.)\n`;
         bodyText += `• Perfect for creating dynamic playlists that match your brand\n`;
         bodyText += `• Flexible licensing options for commercial use\n\n`;
-        bodyText += `I'd love to set up a demo where I can show you how our mood-based system works and help you create the perfect sonic identity for your brand.\n\n`;
+        bodyText += `I would love to set up a demo where I can show you how our mood-based system works and help you create the perfect sonic identity for your brand.\n\n`;
         break;
 
       case 'invisible_services':
@@ -152,7 +152,7 @@ export default function StudioInquiriesManager() {
     bodyText += `• Reply with your availability for a quick call\n`;
     bodyText += `• Or book directly: [Your Calendly Link]\n`;
     bodyText += `• Budget: ${inquiry.budget || 'We offer flexible options'}\n`;
-    bodyText += `• Timeline: ${inquiry.timeline || 'Let's discuss'}\n\n`;
+    bodyText += `• Timeline: ${inquiry.timeline || 'Let us discuss'}\n\n`;
     bodyText += `Looking forward to creating something amazing together!\n\n`;
     bodyText += `Best regards,\n`;
     bodyText += `The BeatFlow Studio Team\n`;
