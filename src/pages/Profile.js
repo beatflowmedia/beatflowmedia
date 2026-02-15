@@ -22,6 +22,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import Modal from '../components/Modal';
+import SubscriptionManager from '../components/SubscriptionManager';
 import {
   Download,
   Settings,
@@ -244,6 +245,29 @@ export default function Profile() {
                 Manage Subscription
               </Button>
             </Box>
+          </Paper>
+        )}
+
+        {/* Subscription Management - Change Plan */}
+        {!loadingSubscription && subscriptionInfo?.active && (
+          <Paper sx={{ p: 4, mb: 4, bgcolor: 'background.paper' }}>
+            <SubscriptionManager
+              currentTier={subscriptionInfo.tier}
+              userId={user.uid}
+              onUpdate={(updatedSubscription) => {
+                setSubscriptionInfo({
+                  active: true,
+                  tier: updatedSubscription.tier,
+                  stripeCustomerId: subscriptionInfo.stripeCustomerId
+                });
+                setModal({
+                  isOpen: true,
+                  title: 'Subscription Updated',
+                  message: `Your subscription has been successfully updated to ${updatedSubscription.tier}!`,
+                  type: 'success'
+                });
+              }}
+            />
           </Paper>
         )}
 

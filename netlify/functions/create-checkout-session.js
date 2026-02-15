@@ -57,9 +57,32 @@ exports.handler = async (event) => {
       cancel_url: `${baseUrl}/explore-premium`,
     };
 
-    // Add customer email and metadata if user info provided
+    // For Stripe Accounts V2 test mode: must create or retrieve customer first
     if (userEmail) {
-      sessionConfig.customer_email = userEmail;
+      console.log('🔍 Looking for existing customer with email:', userEmail);
+
+      // Search for existing customer by email
+      const existingCustomers = await stripe.customers.list({
+        email: userEmail,
+        limit: 1
+      });
+
+      let customer;
+      if (existingCustomers.data.length > 0) {
+        customer = existingCustomers.data[0];
+        console.log('✅ Found existing customer:', customer.id);
+      } else {
+        // Create new customer
+        console.log('➕ Creating new customer for:', userEmail);
+        customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: userId ? { userId } : {}
+        });
+        console.log('✅ Created new customer:', customer.id);
+      }
+
+      // Use customer ID instead of customer_email for Accounts V2 compatibility
+      sessionConfig.customer = customer.id;
     }
 
     if (userId) {

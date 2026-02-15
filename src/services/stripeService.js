@@ -3,6 +3,7 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { db } from '../firebaseConfig';
 import { collection, addDoc, doc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { calculateTrackPricing } from './licenseService';
 
 // Initialize Stripe with your publishable key - lazy load to prevent blocking
 let stripePromise = null;
@@ -141,7 +142,10 @@ class StripeService {
         throw new Error('You cannot purchase your own music');
       }
 
-      const price = songData.price || DEFAULT_SONG_PRICE;
+      const originalPrice = songData.price || DEFAULT_SONG_PRICE;
+
+      // Calculate subscriber discount if applicable
+      const pricing = await calculateTrackPricing(userId, originalPrice);
 
       // Create checkout session via Cloud Function or API
       const response = await fetch('/.netlify/functions/create-checkout', {
@@ -155,12 +159,17 @@ class StripeService {
           itemType: 'song',
           itemName: songData.title || 'Song',
           artistName: songData.artistName || 'Unknown Artist',
-          price: Math.round(price), // Price is already in cents
+          price: Math.round(pricing.discountedPrice), // Use discounted price
+          originalPrice: Math.round(pricing.originalPrice), // Store original for reference
           userEmail,
           metadata: {
             userId,
             songId,
-            itemType: 'song'
+            itemType: 'song',
+            subscriberTier: pricing.tier || 'none',
+            originalPrice: pricing.originalPrice.toString(),
+            discountApplied: pricing.hasDiscount,
+            savings: pricing.savings.toString()
           }
         })
       });
@@ -206,7 +215,10 @@ class StripeService {
         throw new Error('You cannot purchase your own music');
       }
 
-      const price = albumData.price || DEFAULT_ALBUM_PRICE;
+      const originalPrice = albumData.price || DEFAULT_ALBUM_PRICE;
+
+      // Calculate subscriber discount if applicable
+      const pricing = await calculateTrackPricing(userId, originalPrice);
 
       // Create checkout session via Cloud Function or API
       const response = await fetch('/.netlify/functions/create-checkout', {
@@ -220,12 +232,17 @@ class StripeService {
           itemType: 'album',
           itemName: albumData.title || 'Album',
           artistName: albumData.artistName || 'Unknown Artist',
-          price: Math.round(price), // Price is already in cents
+          price: Math.round(pricing.discountedPrice), // Use discounted price
+          originalPrice: Math.round(pricing.originalPrice), // Store original for reference
           userEmail,
           metadata: {
             userId,
             albumId,
-            itemType: 'album'
+            itemType: 'album',
+            subscriberTier: pricing.tier || 'none',
+            originalPrice: pricing.originalPrice.toString(),
+            discountApplied: pricing.hasDiscount,
+            savings: pricing.savings.toString()
           }
         })
       });

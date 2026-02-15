@@ -84,6 +84,14 @@ exports.handler = async (event, context) => {
         await handlePaymentFailed(stripeEvent.data.object);
         break;
 
+      case 'invoice.payment_succeeded':
+        await handleInvoicePaymentSucceeded(stripeEvent.data.object);
+        break;
+
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(stripeEvent.data.object);
+        break;
+
       default:
         console.log(`Unhandled event type: ${stripeEvent.type}`);
     }
@@ -115,16 +123,28 @@ async function handleCheckoutSessionCompleted(session) {
   console.log('💳 Session mode:', session.mode);
   console.log('💰 Amount:', session.amount_total);
 
-  const { userId, itemId, itemType } = session.metadata || {};
+  const { userId, itemId, itemType, paymentType, projectId, trackIds } = session.metadata || {};
 
-  if (!userId || !itemId || !itemType) {
+  // Handle studio project payments
+  if (paymentType === 'studio_project' && projectId) {
+    return await handleStudioProjectPayment(session, projectId);
+  }
+
+  // Validate metadata - bundles use trackIds instead of itemId
+  if (itemType === 'bundle') {
+    if (!userId || !trackIds || !itemType) {
+      console.error('❌ Missing bundle metadata in checkout session');
+      console.error('Session metadata received:', JSON.stringify(session.metadata, null, 2));
+      throw new Error(`Missing required bundle metadata: userId=${userId}, trackIds=${trackIds}, itemType=${itemType}`);
+    }
+  } else if (!userId || !itemId || !itemType) {
     console.error('❌ Missing metadata in checkout session');
     console.error('Session metadata received:', JSON.stringify(session.metadata, null, 2));
     console.error('Full session object keys:', Object.keys(session));
     throw new Error(`Missing required metadata: userId=${userId}, itemId=${itemId}, itemType=${itemType}`);
   }
 
-  console.log(`✅ Processing purchase: userId=${userId}, itemId=${itemId}, itemType=${itemType}`);
+  console.log(`✅ Processing purchase: userId=${userId}, itemId=${itemId || trackIds}, itemType=${itemType}`);
 
   // Calculate expiration date for artist memberships (1 year from now)
   let expirationDate = null;
@@ -224,6 +244,10 @@ async function handleCheckoutSessionCompleted(session) {
           sampleData = sampleDoc.data();
         }
 
+        // Generate unique license ID for this purchase
+        const crypto = require('crypto');
+        const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+
         // Create purchase record
         const purchaseData = {
           userId: userId || 'guest',
@@ -235,6 +259,7 @@ async function handleCheckoutSessionCompleted(session) {
           price: session.amount_total / 100,
           currency: session.currency,
           status: 'completed',
+          licenseId, // Add license ID to purchase record
           stripeSessionId: session.id,
           stripePaymentIntent: session.payment_intent,
           customerEmail: session.customer_email,
@@ -243,13 +268,10 @@ async function handleCheckoutSessionCompleted(session) {
         };
 
         const purchaseRef = await db.collection('purchases').add(purchaseData);
-        console.log(`✅ Purchase record created: ${purchaseRef.id}`);
+        console.log(`✅ Purchase record created: ${purchaseRef.id} with license ${licenseId}`);
 
         // Create download record for the user
         if (userId && userId !== 'guest') {
-          // Generate unique license ID
-          const crypto = require('crypto');
-          const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
 
           await db.collection('downloads').add({
             userId,
@@ -322,6 +344,123 @@ async function handleCheckoutSessionCompleted(session) {
       }
     }
 
+    // Handle bundle purchases (multiple tracks)
+    if (itemType === 'bundle') {
+      console.log(`🎵 Processing bundle purchase with ${session.metadata.itemCount} tracks`);
+
+      try {
+        const trackIds = session.metadata.trackIds.split(',');
+        const crypto = require('crypto');
+
+        console.log(`Creating purchase records for ${trackIds.length} tracks...`);
+
+        // Create a purchase record for each track in the bundle
+        for (const trackId of trackIds) {
+          // Get track details
+          const songDoc = await db.collection('songs').doc(trackId).get();
+          let songData = { title: 'Unknown', artistName: 'Unknown Artist' };
+
+          if (songDoc.exists) {
+            songData = songDoc.data();
+          }
+
+          // Generate unique license ID for this track
+          const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+
+          // Create purchase record for this track
+          const purchaseData = {
+            userId,
+            itemId: trackId,
+            itemType: 'song',
+            itemName: songData.title || songData.name || 'Unknown Track',
+            artistName: songData.artistName || songData.artist || 'Unknown Artist',
+            price: session.amount_total / 100 / trackIds.length, // Split total price evenly
+            currency: session.currency,
+            status: 'completed',
+            licenseId,
+            bundlePurchase: true,
+            bundleSessionId: session.id,
+            stripeSessionId: session.id,
+            stripePaymentIntent: session.payment_intent,
+            customerEmail: session.customer_email,
+            purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+            metadata: {
+              ...session.metadata,
+              bundleTrackId: trackId,
+              bundleDiscount: session.metadata.discount,
+              bundleSubtotal: session.metadata.subtotal,
+              bundleDiscountAmount: session.metadata.discountAmount,
+              bundleTotal: session.metadata.total
+            }
+          };
+
+          const purchaseRef = await db.collection('purchases').add(purchaseData);
+          console.log(`✅ Created purchase record for track ${trackId}: ${purchaseRef.id}, License: ${licenseId}`);
+
+          // Create perpetual license for this bundle track (NEW: Hybrid Model integration)
+          try {
+            const perpetualLicenseId = `lic_perp_${userId}_${trackId}_${Date.now()}`;
+            const subscriberTier = session.metadata.subscriberTier || 'none';
+
+            await db.collection('licenses').doc(perpetualLicenseId).set({
+              licenseId: perpetualLicenseId,
+              userId,
+              trackId: trackId,
+              purchaseId: purchaseRef.id,
+              tier: subscriberTier,
+              licenseType: 'perpetual',
+              status: 'active',
+              purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+              validWhileSubscribed: false,
+              pricePaid: parseInt(session.amount_total / trackIds.length), // Split evenly
+              bundlePurchase: true,
+              bundleSessionId: session.id,
+              note: `Perpetual license via bundle purchase`,
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            console.log(`✅ Created perpetual license ${perpetualLicenseId} for bundle track ${trackId}`);
+          } catch (licenseError) {
+            console.error(`⚠️ Failed to create perpetual license for track ${trackId}:`, licenseError);
+            // Continue with other tracks
+          }
+
+          // Update user's purchased items
+          const userRef = db.collection('users').doc(userId);
+          const userDoc = await userRef.get();
+
+          if (userDoc.exists) {
+            const purchasedItems = userDoc.data().purchasedItems || [];
+
+            if (!purchasedItems.some(item => item.itemId === trackId && item.itemType === 'song')) {
+              await userRef.update({
+                purchasedItems: admin.firestore.FieldValue.arrayUnion({
+                  itemId: trackId,
+                  itemType: 'song',
+                  purchasedAt: new Date().toISOString()
+                })
+              });
+            }
+          } else {
+            await userRef.set({
+              purchasedItems: [{
+                itemId: trackId,
+                itemType: 'song',
+                purchasedAt: new Date().toISOString()
+              }]
+            });
+          }
+        }
+
+        console.log(`✅ Bundle purchase completed: ${trackIds.length} tracks for user ${userId}`);
+        return; // Exit early for bundle purchases
+      } catch (error) {
+        console.error('❌ Error processing bundle purchase:', error);
+        throw error;
+      }
+    }
+
     // Check for duplicate purchase (song/album only)
     console.log('🔍 Checking for existing purchase...');
     const existingPurchase = await db.collection('purchases')
@@ -379,6 +518,40 @@ async function handleCheckoutSessionCompleted(session) {
 
     const purchaseRef = await db.collection('purchases').add(purchaseData);
     console.log(`✅ Purchase document created with ID: ${purchaseRef.id}, License: ${licenseId}`);
+
+    // Create perpetual license for this purchase (NEW: Hybrid Model integration)
+    // These licenses survive subscription cancellation
+    try {
+      const perpetualLicenseId = `lic_perp_${userId}_${itemId}_${Date.now()}`;
+      const subscriberTier = session.metadata.subscriberTier || 'none';
+      const originalPrice = session.metadata.originalPrice ? parseInt(session.metadata.originalPrice) : null;
+      const discountApplied = session.metadata.discountApplied === 'true';
+
+      await db.collection('licenses').doc(perpetualLicenseId).set({
+        licenseId: perpetualLicenseId,
+        userId,
+        trackId: itemId,
+        purchaseId: purchaseRef.id,
+        tier: subscriberTier,
+        licenseType: 'perpetual',
+        status: 'active',
+        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        validWhileSubscribed: false,
+        pricePaid: session.amount_total, // In cents
+        originalPrice: originalPrice,
+        discountApplied: discountApplied,
+        note: discountApplied
+          ? `Perpetual license purchased with ${subscriberTier} subscriber discount`
+          : 'Perpetual license purchased at regular price',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ Created perpetual license ${perpetualLicenseId} for ${itemType} ${itemId}`);
+    } catch (licenseError) {
+      console.error('⚠️ Failed to create perpetual license (purchase still valid):', licenseError);
+      // Don't throw - purchase was recorded successfully
+    }
 
     // Update user's purchased items
     const userRef = db.collection('users').doc(userId);
@@ -478,6 +651,14 @@ async function handleSubscriptionUpdate(subscription) {
         .get();
     }
 
+    // NEW: Also check by stripeCustomerId for Hybrid Model subscriptions
+    if (usersSnapshot.empty) {
+      usersSnapshot = await db.collection('users')
+        .where('stripeCustomerId', '==', subscription.customer)
+        .limit(1)
+        .get();
+    }
+
     if (usersSnapshot.empty) {
       console.log('No user found for subscription:', subscription.id);
       return;
@@ -485,6 +666,37 @@ async function handleSubscriptionUpdate(subscription) {
 
     const userDoc = usersSnapshot.docs[0];
     const userId = userDoc.id;
+
+    // HYBRID MODEL: Restore licenses if subscription reactivated
+    if (subscription.status === 'active') {
+      try {
+        const licensesSnapshot = await db.collection('licenses')
+          .where('userId', '==', userId)
+          .where('subscriptionId', '==', subscription.id)
+          .where('status', '==', 'published-only')
+          .get();
+
+        if (!licensesSnapshot.empty) {
+          const batch = db.batch();
+
+          licensesSnapshot.forEach((doc) => {
+            batch.update(doc.ref, {
+              status: 'active',
+              validWhileSubscribed: true,
+              reactivatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              note: 'Subscription reactivated. Can use in new projects again.'
+            });
+          });
+
+          await batch.commit();
+          console.log(`✓ Reactivated ${licensesSnapshot.size} licenses for user ${userId}`);
+        }
+      } catch (licenseError) {
+        console.error('Error reactivating licenses:', licenseError);
+        // Don't throw - continue with user update
+      }
+    }
 
     // Update artist membership expiration if subscription is active
     if (isArtistSubscription) {
@@ -516,13 +728,17 @@ async function handleSubscriptionUpdate(subscription) {
           isPremium: true,
           premiumActive: true,
           listenerSubscriptionStatus: subscription.status,
-          listenerSubscriptionExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate)
+          listenerSubscriptionExpiresAt: admin.firestore.Timestamp.fromDate(expirationDate),
+          'subscription.status': 'active',
+          'subscription.updatedAt': admin.firestore.FieldValue.serverTimestamp()
         });
 
         console.log(`✅ Updated listener premium for user ${userId}: ${expirationDate.toISOString()}`);
       } else {
         await db.collection('users').doc(userId).update({
-          listenerSubscriptionStatus: subscription.status
+          listenerSubscriptionStatus: subscription.status,
+          'subscription.status': subscription.status,
+          'subscription.updatedAt': admin.firestore.FieldValue.serverTimestamp()
         });
         console.log(`⚠️ Listener subscription status updated to ${subscription.status} for user ${userId}`);
       }
@@ -554,6 +770,14 @@ async function handleSubscriptionCancelled(subscription) {
         .get();
     }
 
+    // NEW: Also check by stripeCustomerId for Hybrid Model subscriptions
+    if (usersSnapshot.empty) {
+      usersSnapshot = await db.collection('users')
+        .where('stripeCustomerId', '==', subscription.customer)
+        .limit(1)
+        .get();
+    }
+
     if (usersSnapshot.empty) {
       console.log('No user found for subscription:', subscription.id);
       return;
@@ -561,6 +785,37 @@ async function handleSubscriptionCancelled(subscription) {
 
     const userDoc = usersSnapshot.docs[0];
     const userId = userDoc.id;
+
+    // HYBRID MODEL: Mark all time-bound licenses as published-only
+    try {
+      const licensesSnapshot = await db.collection('licenses')
+        .where('userId', '==', userId)
+        .where('subscriptionId', '==', subscription.id)
+        .where('licenseType', '==', 'time-bound')
+        .get();
+
+      console.log(`Found ${licensesSnapshot.size} licenses to update for cancelled subscription`);
+
+      if (!licensesSnapshot.empty) {
+        const batch = db.batch();
+
+        licensesSnapshot.forEach((doc) => {
+          batch.update(doc.ref, {
+            status: 'published-only',
+            validWhileSubscribed: false,
+            subscriptionEndedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            note: 'Subscription cancelled. Published projects retain license. Cannot use in new projects.'
+          });
+        });
+
+        await batch.commit();
+        console.log(`✓ Updated ${licensesSnapshot.size} licenses to published-only for user ${userId}`);
+      }
+    } catch (licenseError) {
+      console.error('Error updating licenses on cancellation:', licenseError);
+      // Don't throw - continue with user update
+    }
 
     if (isArtistSubscription) {
       // Deactivate artist membership
@@ -577,7 +832,9 @@ async function handleSubscriptionCancelled(subscription) {
         isPremium: false,
         premiumActive: false,
         listenerSubscriptionStatus: 'cancelled',
-        listenerSubscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp()
+        listenerSubscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        'subscription.status': 'cancelled',
+        'subscription.cancelledAt': admin.firestore.FieldValue.serverTimestamp()
       });
 
       console.log(`❌ Listener premium deactivated for user ${userId}`);
@@ -604,5 +861,196 @@ async function handlePaymentFailed(paymentIntent) {
     });
   } catch (error) {
     console.error('Error recording failed payment:', error);
+  }
+}
+
+/**
+ * Handle successful invoice payment (HYBRID MODEL)
+ * Ensures all licenses for this subscription are active
+ */
+async function handleInvoicePaymentSucceeded(invoice) {
+  console.log('Invoice payment succeeded:', invoice.id, 'for subscription:', invoice.subscription);
+
+  try {
+    const customerId = invoice.customer;
+    const subscriptionId = invoice.subscription;
+
+    if (!subscriptionId) {
+      console.log('No subscription associated with this invoice');
+      return;
+    }
+
+    // Find user by Stripe customer ID
+    const usersSnapshot = await db.collection('users')
+      .where('stripeCustomerId', '==', customerId)
+      .limit(1)
+      .get();
+
+    if (usersSnapshot.empty) {
+      console.log('No user found for customer:', customerId);
+      return;
+    }
+
+    const userId = usersSnapshot.docs[0].id;
+
+    // Ensure all licenses for this subscription are active
+    const licensesSnapshot = await db.collection('licenses')
+      .where('userId', '==', userId)
+      .where('subscriptionId', '==', subscriptionId)
+      .where('licenseType', '==', 'time-bound')
+      .get();
+
+    if (!licensesSnapshot.empty) {
+      const batch = db.batch();
+      let updateCount = 0;
+
+      licensesSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.status !== 'active') {
+          batch.update(doc.ref, {
+            status: 'active',
+            validWhileSubscribed: true,
+            lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          updateCount++;
+        }
+      });
+
+      if (updateCount > 0) {
+        await batch.commit();
+        console.log(`✓ Ensured ${updateCount} licenses are active for user ${userId}`);
+      } else {
+        console.log(`All ${licensesSnapshot.size} licenses already active for user ${userId}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling invoice payment success:', error);
+  }
+}
+
+/**
+ * Handle failed invoice payment (HYBRID MODEL)
+ * Send warning email to user
+ */
+async function handleInvoicePaymentFailed(invoice) {
+  console.log('Invoice payment failed:', invoice.id);
+
+  try {
+    const customerEmail = invoice.customer_email;
+
+    if (customerEmail) {
+      // Use nodemailer to send warning email
+      const nodemailer = require('nodemailer');
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'beatflowmediagroup@gmail.com',
+          pass: process.env.SMTP_PASSWORD || 'eezq fupe ocue ocow'
+        }
+      });
+
+      const mailOptions = {
+        from: 'BeatFlow Media <beatflowmediagroup@gmail.com>',
+        to: customerEmail,
+        subject: 'Payment Issue - Action Needed to Keep Your BeatFlow Active',
+        html: `
+          <h2>Payment Issue Detected</h2>
+          <p>We tried to process your payment for your BeatFlow subscription, but it didn't go through.</p>
+
+          <h3>What This Means:</h3>
+          <ul>
+            <li>Your subscription is still active (for now)</li>
+            <li>We'll retry payment in 3 days</li>
+            <li>If payment fails again, your subscription will pause</li>
+          </ul>
+
+          <h3>What Happens If Subscription Ends:</h3>
+          <ul>
+            <li>✓ Published content stays licensed (safe)</li>
+            <li>✗ Can't license new projects</li>
+            <li>✗ Can't download new tracks</li>
+          </ul>
+
+          <p><strong>Update your payment method:</strong></p>
+          <p><a href="https://beatflowmedia.com/settings" style="background: #1DB954; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Update Payment Method</a></p>
+
+          <p>Need help? Reply to this email.</p>
+
+          <p>Best,<br>BeatFlow Billing Team</p>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log('Payment failure email sent to:', customerEmail);
+    }
+
+    // Record failed payment
+    await db.collection('failed_payments').add({
+      invoiceId: invoice.id,
+      customerId: invoice.customer,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      errorMessage: invoice.last_payment_error?.message || 'Unknown error',
+      customerEmail: invoice.customer_email
+    });
+
+    console.log('Failed payment recorded');
+  } catch (error) {
+    console.error('Error handling failed invoice payment:', error);
+  }
+}
+
+/**
+ * Handle studio project payment completion
+ */
+async function handleStudioProjectPayment(session, projectId) {
+  console.log(`💼 Processing studio project payment for project ${projectId}`);
+  console.log('Session details:', {
+    id: session.id,
+    amount: session.amount_total,
+    customer_email: session.customer_email
+  });
+
+  try {
+    const projectRef = db.collection('studioProjects').doc(projectId);
+    const projectDoc = await projectRef.get();
+
+    if (!projectDoc.exists) {
+      console.error(`❌ Project ${projectId} not found`);
+      throw new Error(`Project not found: ${projectId}`);
+    }
+
+    // Update project with payment information
+    await projectRef.update({
+      paymentStatus: 'paid',
+      paymentReceived: true,
+      paidAmount: session.amount_total / 100, // Convert from cents
+      stripeSessionId: session.id,
+      stripeCustomerEmail: session.customer_email,
+      paidAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Record the payment in a payments collection
+    await db.collection('studioPayments').add({
+      projectId,
+      amount: session.amount_total / 100,
+      currency: session.currency || 'usd',
+      stripeSessionId: session.id,
+      customerEmail: session.customer_email,
+      projectType: session.metadata.projectType,
+      clientName: session.metadata.clientName,
+      status: 'completed',
+      paidAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log(`✅ Successfully processed payment for project ${projectId}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Error processing project payment:`, error);
+    throw error;
   }
 }

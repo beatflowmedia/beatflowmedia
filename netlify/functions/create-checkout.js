@@ -27,7 +27,8 @@ exports.handler = async (event, context) => {
       itemType, // 'song', 'album', 'submission_credits', or 'studio_sample'
       itemName,
       artistName,
-      price, // in cents
+      price, // in cents (discounted price if subscriber)
+      originalPrice, // Original price before subscriber discount
       priceId, // Stripe Price ID for fixed products
       userEmail,
       email,
@@ -157,6 +158,11 @@ exports.handler = async (event, context) => {
       };
     } else {
       // Regular song/album purchase
+      const hasDiscount = originalPrice && originalPrice > price;
+      const description = hasDiscount
+        ? `${itemType === 'song' ? 'Song' : 'Album'} by ${artistName} (Subscriber discount applied)`
+        : `${itemType === 'song' ? 'Song' : 'Album'} by ${artistName}`;
+
       checkoutConfig = {
         payment_method_types: ['card'],
         line_items: [
@@ -165,14 +171,16 @@ exports.handler = async (event, context) => {
               currency: 'usd',
               product_data: {
                 name: itemName,
-                description: `${itemType === 'song' ? 'Song' : 'Album'} by ${artistName}`,
+                description,
                 metadata: {
                   itemType,
                   itemId,
-                  userId
+                  userId,
+                  originalPrice: originalPrice?.toString() || price.toString(),
+                  discountApplied: hasDiscount.toString()
                 }
               },
-              unit_amount: price, // Price in cents
+              unit_amount: price, // Price in cents (discounted if subscriber)
             },
             quantity: 1,
           },
@@ -185,6 +193,8 @@ exports.handler = async (event, context) => {
           userId,
           itemId,
           itemType,
+          originalPrice: originalPrice?.toString() || price.toString(),
+          discountedPrice: price.toString(),
           ...metadata
         },
         // Enable automatic tax collection if configured

@@ -1,3 +1,13 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+
+# Disallow private/internal pages
+Disallow: /admin
+Disallow: /api/
+Disallow: /downloads
+Disallow: /settings
+Disallow: /profile
+
+# Sitemaps
+Sitemap: https://beatflowmediagroup.com/sitemap.xml
+Sitemap: https://beatflowmediagroup.com/marketing-sitemap.xml
