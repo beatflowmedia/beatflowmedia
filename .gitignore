@@ -77,3 +77,8 @@ netlify.toml
 storybook-static
 
 public/advertisements/
+nul
+netlify/functions/nul
+
+# Firebase Service Account Key (sensitive)
+serviceAccountKey.json
