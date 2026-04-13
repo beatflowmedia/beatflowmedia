@@ -3,7 +3,7 @@
   <head>
     <!-- v2.0 - Updated CSP for tracking pixels -->
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.gstatic.com https://www.googletagmanager.com https://*.firebaseapp.com https://*.firebaseio.com https://apis.google.com https://accounts.google.com https://connect.facebook.net https://analytics.tiktok.com https://pagead2.googlesyndication.com https://*.googleadservices.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob: https://*.googleusercontent.com; media-src 'self' https://firebasestorage.googleapis.com https://*.firebasestorage.app blob: data:; connect-src 'self' ws://localhost:* http://localhost:* https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://api.stripe.com https://*.stripe.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://www.facebook.com https://analytics.tiktok.com https://*.google.com https://*.doubleclick.net https://*.adtrafficquality.google; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.firebaseapp.com https://accounts.google.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://tpc.googlesyndication.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.gstatic.com https://www.googletagmanager.com https://*.firebaseapp.com https://*.firebaseio.com https://apis.google.com https://accounts.google.com https://connect.facebook.net https://analytics.tiktok.com https://pagead2.googlesyndication.com https://*.googleadservices.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob: https://*.googleusercontent.com; media-src 'self' https://storage.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app blob: data:; connect-src 'self' ws://localhost:* http://localhost:* https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://api.stripe.com https://*.stripe.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://accounts.google.com https://www.facebook.com https://analytics.tiktok.com https://*.google.com https://*.doubleclick.net https://*.adtrafficquality.google https://ep1.adtrafficquality.google; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.firebaseapp.com https://accounts.google.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://tpc.googlesyndication.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com;" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
@@ -75,7 +75,8 @@
     <link rel="dns-prefetch" href="https://connect.facebook.net" />
     <link rel="dns-prefetch" href="https://analytics.tiktok.com" />
 
-    <!-- Meta Pixel Code -->
+    <!-- Meta Pixel Code - Disabled until pixel ID is configured -->
+    <!--
     <script>
       !function(f,b,e,v,n,t,s)
       {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -91,9 +92,11 @@
     <noscript><img height="1" width="1" style="display:none"
       src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"
     /></noscript>
+    -->
     <!-- End Meta Pixel Code -->
 
-    <!-- TikTok Pixel Code -->
+    <!-- TikTok Pixel Code - Disabled until pixel ID is configured -->
+    <!--
     <script>
       !function (w, d, t) {
         w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
@@ -101,6 +104,7 @@
         ttq.page();
       }(window, document, 'ttq');
     </script>
+    -->
     <!-- End TikTok Pixel Code -->
 
     <!-- Google AdSense Verification Code -->
