@@ -1,6 +1,7 @@
 // src/components/ContentUploadInterface.js
 // Enhanced content upload interface with drag-and-drop, progress tracking, and metadata forms
 import React, { useState, useRef , useCallback } from "react";
+import { SONG_PRICE, calculateAlbumPrice } from "../utils/pricing";
 import {
   Box,
   Card,
@@ -33,41 +34,107 @@ import {
   AccordionSummary,
   AccordionDetails,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Tooltip,
+  Checkbox
 } from "@mui/material";
 import {
   CloudUpload as UploadIcon,
   Delete as DeleteIcon,
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
-  Info as InfoIcon,
   ExpandMore as ExpandMoreIcon,
-  Help as HelpIcon,
-  Refresh as RefreshIcon,
-  PlayArrow as PlayIcon as PauseIcon
+  Refresh as RefreshIcon
 } from "@mui/icons-material";
 import { useDropzone } from "react-dropzone";
-import { contentIngestionService } from "../services/contentIngestionService";
-import { Tooltip } from '@mui/material/Tooltip';
+import { storage, db, auth } from "../firebaseConfig";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { collection, addDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import Tempo from 'music-tempo';
+
+// Helper function to detect BPM from audio file
+const detectBPM = async (audioFile) => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    // Get audio data from first channel
+    const audioData = audioBuffer.getChannelData(0);
+
+    // Use music-tempo library to detect BPM
+    const tempo = new Tempo(audioData);
+    const bpm = Math.round(tempo.tempo);
+
+    audioContext.close();
+
+    // Return BPM if it's within reasonable range (60-200)
+    return (bpm >= 60 && bpm <= 200) ? bpm : null;
+  } catch (error) {
+    console.error('Error detecting BPM:', error);
+    return null;
+  }
+};
+
+// Genre categories (matching ForArtists.js structure)
+const GENRE_CATEGORIES = {
+  'Pop': { subgenres: ['Adult Contemporary', 'K-Pop', 'J-Pop', 'C-Pop', 'Synth-pop', 'Electropop', 'Hyperpop', 'Indie Pop', 'Pop Rock'] },
+  'Hip-Hop': { subgenres: ['Trap', 'Drill', 'UK Drill', 'Brooklyn Drill', 'Lo-Fi Rap', 'Alternative Rap', 'Old School', 'Boom Bap', 'PluggnB', 'Cloud Rap'] },
+  'Rock': { subgenres: ['Alternative', 'Indie Rock', 'Punk', 'Hard Rock', 'Heavy Metal', 'Post-Punk', 'Grunge', 'Shoegaze', 'Post-Rock'] },
+  'R&B': { subgenres: ['Neo-Soul', 'Contemporary R&B', 'Funk', 'Disco', 'Motown', 'Quiet Storm', 'Alternative R&B'] },
+  'Country': { subgenres: ['Americana', 'Bluegrass', 'Country Pop', 'Honky Tonk', 'Outlaw Country', 'Country Rock'] },
+  'Electronic': { subgenres: ['House', 'Techno', 'Trance', 'Dubstep', 'Drum & Bass', 'EDM', 'Ambient', 'Downtempo', 'Lo-Fi Beats'] },
+  'Latin': { subgenres: ['Reggaeton', 'Salsa', 'Bachata', 'Cumbia', 'Latin Trap', 'Banda', 'Merengue'] },
+  'Afrobeats': { subgenres: ['Afro-fusion', 'Amapiano', 'Highlife', 'Kuduro', 'Afro-house'] },
+  'Reggae': { subgenres: ['Dancehall', 'Dub', 'Ska', 'Rocksteady', 'Roots Reggae'] },
+  'Jazz': { subgenres: ['Swing', 'Bebop', 'Jazz Fusion', 'Smooth Jazz', 'Bossa Nova', 'Nu Jazz'] },
+  'Classical': { subgenres: ['Baroque', 'Romantic', 'Modern Classical', 'Orchestral', 'Chamber Music', 'Opera'] }
+};
+
+const MAIN_GENRES = Object.keys(GENRE_CATEGORIES).sort();
+const getSubgenres = (mainGenre) => GENRE_CATEGORIES[mainGenre]?.subgenres || [];
+
+// Mood options
+const MOOD_OPTIONS = [
+  'Uplifting', 'Chill', 'Energetic', 'Dramatic', 'Dark',
+  'Happy', 'Sad', 'Motivational', 'Relaxing', 'Intense',
+  'Romantic', 'Mysterious', 'Epic', 'Playful', 'Melancholic'
+].sort();
 
 const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
+
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [processingStatus, setProcessingStatus] = useState({});
   const [currentStep, setCurrentStep] = useState(0);
   const [validationErrors, setValidationErrors] = useState({});
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
   const [selectedFileIndex, setSelectedFileIndex] = useState(null);
   const [batchMetadata, setBatchMetadata] = useState({});
   const [enableBatchProcessing, setEnableBatchProcessing] = useState(false);
+  const [collectionCoverFile, setCollectionCoverFile] = useState(null); // Single cover for all tracks
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const fileInputRef = useRef(null);
-  const supportedTypes = contentIngestionService.getSupportedFileTypes();
-  const territorialOptions =
-    contentIngestionService.getTerritorialRightsOptions();
-  const genreOptions = contentIngestionService.getGenreOptions();
+
+  // Supported file types
+  const supportedTypes = {
+    audio: [".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a"],
+    video: [".mp4", ".mov", ".avi", ".mkv", ".webm"]
+  };
+
+  // Territorial rights options
+  const territorialOptions = [
+    { value: "worldwide", label: "Worldwide" },
+    { value: "north_america", label: "North America" },
+    { value: "europe", label: "Europe" },
+    { value: "asia", label: "Asia" },
+    { value: "south_america", label: "South America" },
+    { value: "africa", label: "Africa" },
+    { value: "oceania", label: "Oceania" },
+    { value: "custom", label: "Custom" }
+  ];
 
   const steps = [
     "Select Files",
@@ -81,18 +148,25 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     title: "",
     artist: "",
     album: "",
-    genre: "",
+    albumId: null,
+    mainGenre: "",
+    subGenre: "",
+    additionalSubGenres: [],
+    bpm: "",
+    mood: [],
+    loopable: false,
     releaseDate: "",
     isrc: "",
     territorialRights: "worldwide",
-    label: "",
+    label: "BeatFlow Media Group",
     copyrightOwner: "",
     description: "",
     tags: [],
-    explicitContent: false
+    explicitContent: false,
+    isAlbum: false // Track if this is an album upload
   };
 
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+  const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
     // Handle rejected files
     if (rejectedFiles.length > 0) {
       const errors = {};
@@ -104,14 +178,29 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
       setValidationErrors(errors);
     }
 
-    // Add accepted files
-    const newFiles = acceptedFiles.map((file) => ({
-      file,
-      id: Math.random().toString(36).substr(2, 9),
-      metadata: { ...defaultMetadata },
-      validated: false,
-      uploadId: null,
-      status: "pending"
+    // Add accepted files with BPM detection
+    const newFiles = await Promise.all(acceptedFiles.map(async (file) => {
+      // Extract title from filename (remove extension)
+      const titleFromFilename = file.name.replace(/\.[^/.]+$/, "");
+
+      // Auto-detect BPM for audio files
+      let detectedBPM = null;
+      if (file.type.startsWith('audio/')) {
+        detectedBPM = await detectBPM(file);
+      }
+
+      return {
+        file,
+        id: Math.random().toString(36).substr(2, 9),
+        metadata: {
+          ...defaultMetadata,
+          title: titleFromFilename,  // Auto-populate from filename
+          bpm: detectedBPM || ""     // Auto-populate BPM if detected
+        },
+        validated: false,
+        uploadId: null,
+        status: "pending"
+      };
     }));
 
     setFiles((prev) => [...prev, ...newFiles]);
@@ -120,7 +209,7 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     if (newFiles.length > 0 && currentStep === 0) {
       setCurrentStep(1);
     }
-  }, []);
+  }, [currentStep, defaultMetadata]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -132,13 +221,16 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     multiple: true
   });
 
-  const handleFileSelect = () => {
+  const handleFileSelect = (event) => {
+    event.stopPropagation(); // Prevent dropzone from also handling this click
     fileInputRef.current?.click();
   };
 
   const handleFileInputChange = (event) => {
     const selectedFiles = Array.from(event.target.files);
     onDrop(selectedFiles, []);
+    // Clear the input value to allow selecting the same files again and prevent duplicate triggers
+    event.target.value = '';
   };
 
   const removeFile = (fileId) => {
@@ -165,17 +257,35 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     let allValid = true;
 
     files.forEach((fileData) => {
-      const validation = contentIngestionService.validateContent(
-        fileData.file,
-        fileData.metadata,
-      );
-      if (!validation.valid) {
-        errors[fileData.id] = validation.errors;
-        allValid = false;
+      const fileErrors = [];
+
+      // Validate required metadata
+      if (!fileData.metadata.title || !fileData.metadata.title.trim()) {
+        fileErrors.push("Title is required");
+      }
+      if (!fileData.metadata.artist || !fileData.metadata.artist.trim()) {
+        fileErrors.push("Artist is required");
+      }
+      if (!fileData.metadata.mainGenre) {
+        fileErrors.push("Main Genre is required");
+      }
+      if (!fileData.metadata.subGenre) {
+        fileErrors.push("Sub-Genre is required");
       }
 
-      // Update file validation status
-      fileData.validated = validation.valid;
+      // Validate file size (5GB max)
+      const maxSize = 5 * 1024 * 1024 * 1024;
+      if (fileData.file.size > maxSize) {
+        fileErrors.push("File size exceeds 5GB limit");
+      }
+
+      if (fileErrors.length > 0) {
+        errors[fileData.id] = fileErrors;
+        allValid = false;
+        fileData.validated = false;
+      } else {
+        fileData.validated = true;
+      }
     });
 
     setValidationErrors(errors);
@@ -191,8 +301,73 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     setCurrentStep(2);
 
     try {
+      const user = auth.currentUser;
+      let sharedCoverURL = null;
+      let sharedAlbumId = null;
+
+      // Upload collection cover art first (once for all tracks)
+      if (collectionCoverFile) {
+        setProcessingStatus((prev) => ({ ...prev, 'cover': 'uploading' }));
+        const timestamp = Date.now();
+        const coverFileName = `${timestamp}_collection_cover_${collectionCoverFile.name}`;
+        const coverStorageRef = ref(storage, `admin-uploads/${user.uid}/covers/${coverFileName}`);
+        const coverUploadTask = uploadBytesResumable(coverStorageRef, collectionCoverFile);
+
+        await new Promise((resolve, reject) => {
+          coverUploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              // Progress shown separately for cover
+            },
+            (error) => reject(error),
+            () => resolve()
+          );
+        });
+
+        sharedCoverURL = await getDownloadURL(coverUploadTask.snapshot.ref);
+        setProcessingStatus((prev) => ({ ...prev, 'cover': 'completed' }));
+      }
+
+      // If this is an album upload (batch mode + isAlbum), create ONE album document BEFORE uploading tracks
+      const firstFile = files[0];
+      if (enableBatchProcessing && firstFile?.metadata?.isAlbum && files.length > 0) {
+        const coverURL = sharedCoverURL || '/images/Logo.png';
+
+        const albumData = {
+          title: firstFile.metadata.album || firstFile.metadata.title || 'Untitled Album',
+          artist: firstFile.metadata.artist,
+          cover: coverURL,
+          coverUrl: coverURL,
+          releaseDate: firstFile.metadata.releaseDate || null,
+          mainGenre: firstFile.metadata.mainGenre,
+          subGenre: firstFile.metadata.subGenre,
+          additionalSubGenres: firstFile.metadata.additionalSubGenres || [],
+          bpm: firstFile.metadata.bpm || null,
+          mood: firstFile.metadata.mood || [],
+          loopable: firstFile.metadata.loopable || false,
+          label: firstFile.metadata.label || 'BeatFlow Media Group',
+          copyrightOwner: firstFile.metadata.copyrightOwner || null,
+          description: firstFile.metadata.description || null,
+          uploadedBy: user.uid,
+          uploadedByEmail: user.email,
+          approved: true,
+          isAlbum: true,
+          isVisible: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          trackCount: files.length,
+          totalDuration: 0,
+          price: calculateAlbumPrice(files.length) // Calculate based on track count
+        };
+
+        const albumRef = await addDoc(collection(db, "albums"), albumData);
+        sharedAlbumId = albumRef.id;
+        console.log(`Created album project: ${albumData.title} (ID: ${sharedAlbumId})`);
+      }
+
+      // Upload all audio files with the shared cover URL and album ID
       for (const fileData of files) {
-        await uploadSingleFile(fileData);
+        await uploadSingleFile(fileData, sharedCoverURL, sharedAlbumId);
       }
 
       setCurrentStep(3);
@@ -205,47 +380,107 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     }
   };
 
-  const uploadSingleFile = async (fileData) => {
+  const uploadSingleFile = async (fileData, sharedCoverURL, sharedAlbumId = null) => {
     try {
       // Set up progress tracking
       setUploadProgress((prev) => ({ ...prev, [fileData.id]: 0 }));
       setProcessingStatus((prev) => ({ ...prev, [fileData.id]: "uploading" }));
 
-      // Start upload
-      const result = await contentIngestionService.uploadContent(
-        fileData.file,
-        fileData.metadata,
-      );
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("User must be authenticated to upload");
+      }
 
-      // Update upload complete
+      // Step 1: Create Firestore document first to get song ID
+      const tempSongData = {
+        ...fileData.metadata,
+        fileName: fileData.file.name,
+        fileSize: fileData.file.size,
+        fileType: fileData.file.type,
+        uploadedBy: user.uid,
+        uploadedByEmail: user.email,
+        approved: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        price: SONG_PRICE, // $29.00 in cents (2900)
+        plays: 0,
+        likes: 0,
+        downloads: 0,
+        _uploadStatus: 'pending' // Temporary field during upload
+      };
+
+      // Add album reference if needed
+      if (sharedAlbumId) {
+        tempSongData.albumId = sharedAlbumId;
+        tempSongData.album = fileData.metadata.album || fileData.metadata.title;
+      }
+
+      const docRef = await addDoc(collection(db, "songs"), tempSongData);
+      const songId = docRef.id;
+
+      // Step 2: Upload audio file to standardized location using song ID
+      const fileExtension = fileData.file.name.split('.').pop();
+      const standardPath = `songs/audio/${songId}.${fileExtension}`;
+      const storageRef = ref(storage, standardPath);
+      const uploadTask = uploadBytesResumable(storageRef, fileData.file);
+
+      // Track upload progress
+      await new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress((prev) => ({ ...prev, [fileData.id]: progress }));
+          },
+          (error) => reject(error),
+          () => resolve()
+        );
+      });
+
+      const audioURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+      // Step 3: Update document with audio URL and cover
+      const coverURL = sharedCoverURL || audioURL;
+
+      const updateData = {
+        audioUrl: audioURL, // Standardized field name
+        audioPath: standardPath, // Track storage path
+        coverUrl: coverURL,
+        storagePath: uploadTask.snapshot.ref.fullPath,
+        _uploadStatus: 'completed', // Mark upload complete
+        updatedAt: serverTimestamp()
+      };
+
+      await updateDoc(docRef, updateData);
+
+      // Update status
       setUploadProgress((prev) => ({ ...prev, [fileData.id]: 100 }));
-      setProcessingStatus((prev) => ({ ...prev, [fileData.id]: "processing" }));
+      setProcessingStatus((prev) => ({ ...prev, [fileData.id]: "completed" }));
 
-      // Monitor processing
-      await contentIngestionService.waitForProcessing(
-        result.uploadId,
-        (status) => {
-          setProcessingStatus((prev) => ({
-            ...prev,
-            [fileData.id]: status.status
-          }));
-        },
-      );
-
-      // Update file with result
-      fileData.uploadId = result.uploadId;
+      fileData.uploadId = songId;
       fileData.status = "completed";
     } catch (error) {
+      console.error("Upload failed:", error);
       setProcessingStatus((prev) => ({ ...prev, [fileData.id]: "failed" }));
       fileData.status = "failed";
       throw error;
     }
   };
 
-  const handleMetadataDialog = (fileIndex) => {
+  const handleMetadataDialog = useCallback((fileIndex, event) => {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+
+    // Prevent opening if already open
+    if (metadataDialogOpen) {
+      return;
+    }
+
     setSelectedFileIndex(fileIndex);
     setMetadataDialogOpen(true);
-  };
+  }, [metadataDialogOpen]);
 
   const applyBatchMetadata = () => {
     files.forEach((fileData) => {
@@ -337,15 +572,17 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
               <Button variant="outlined" onClick={handleFileSelect}>
                 Browse Files
               </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="audio/*,video/*"
-                style={{ display: "none" }}
-                onChange={handleFileInputChange}
-              />
             </Paper>
+
+            {/* Hidden file input for Browse button - OUTSIDE dropzone to prevent conflicts */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="audio/*,video/*"
+              style={{ display: "none" }}
+              onChange={handleFileInputChange}
+            />
 
             {/* Supported Formats Info */}
             <Accordion>
@@ -386,7 +623,34 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
               </AccordionDetails>
             </Accordion>
 
-            {/* Selected Files */}
+            {/* Collection Cover Art - Single cover for all tracks */}
+            {files.length > 0 && (
+              <Box mt={3}>
+                <Typography variant="h6" gutterBottom>
+                  Collection Cover Art
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  This cover will be used for all {files.length} track{files.length > 1 ? 's' : ''} in this upload
+                </Typography>
+                <CollectionCoverUploader
+                  coverFile={collectionCoverFile}
+                  onCoverChange={(file) => {
+                    setCollectionCoverFile(file);
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setCoverPreview(reader.result);
+                      reader.readAsDataURL(file);
+                    } else {
+                      setCoverPreview(null);
+                    }
+                  }}
+                  preview={coverPreview}
+                  disabled={uploading}
+                />
+              </Box>
+            )}
+
+            {/* Selected Files List */}
             {files.length > 0 && (
               <Box mt={3}>
                 <Typography variant="h6" gutterBottom>
@@ -416,7 +680,7 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
                       <ListItemSecondaryAction>
                         <Button
                           size="small"
-                          onClick={() => handleMetadataDialog(index)}
+                          onClick={(e) => handleMetadataDialog(index, e)}
                           disabled={uploading}
                         >
                           Edit Metadata
@@ -486,7 +750,6 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
                   metadata={batchMetadata}
                   onChange={setBatchMetadata}
                   territorialOptions={territorialOptions}
-                  genreOptions={genreOptions}
                 />
                 <Button
                   variant="outlined"
@@ -604,19 +867,18 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
       )}
 
       {/* Metadata Dialog */}
-      <MetadataDialog
-        open={metadataDialogOpen}
-        onClose={() => setMetadataDialogOpen(false)}
-        file={selectedFileIndex !== null ? files[selectedFileIndex] : null}
-        onSave={(metadata) => {
-          if (selectedFileIndex !== null) {
+      {metadataDialogOpen && selectedFileIndex !== null && (
+        <MetadataDialog
+          open={metadataDialogOpen}
+          onClose={() => setMetadataDialogOpen(false)}
+          file={files[selectedFileIndex]}
+          onSave={(metadata) => {
             updateFileMetadata(files[selectedFileIndex].id, metadata);
-          }
-          setMetadataDialogOpen(false);
-        }}
-        territorialOptions={territorialOptions}
-        genreOptions={genreOptions}
-      />
+            setMetadataDialogOpen(false);
+          }}
+          territorialOptions={territorialOptions}
+        />
+      )}
     </Box>
   );
 };
@@ -625,8 +887,7 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
 const BatchMetadataForm = ({
   metadata,
   onChange,
-  territorialOptions,
-  genreOptions
+  territorialOptions
 }) => (
   <Grid container spacing={2}>
     <Grid item xs={12} md={6}>
@@ -647,15 +908,36 @@ const BatchMetadataForm = ({
     </Grid>
     <Grid item xs={12} md={6}>
       <FormControl fullWidth>
-        <InputLabel>Genre</InputLabel>
+        <InputLabel>Main Genre</InputLabel>
         <Select
-          value={metadata.genre || ""}
-          onChange={(e) => onChange({ ...metadata, genre: e.target.value })}
-          label="Genre"
+          value={metadata.mainGenre || ""}
+          onChange={(e) => onChange({
+            ...metadata,
+            mainGenre: e.target.value,
+            subGenre: '',
+            additionalSubGenres: []
+          })}
+          label="Main Genre"
         >
-          {genreOptions.map((genre) => (
+          {MAIN_GENRES.map((genre) => (
             <MenuItem key={genre} value={genre}>
               {genre}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Grid>
+    <Grid item xs={12} md={6}>
+      <FormControl fullWidth disabled={!metadata.mainGenre}>
+        <InputLabel>Primary Sub-Genre</InputLabel>
+        <Select
+          value={metadata.subGenre || ""}
+          onChange={(e) => onChange({ ...metadata, subGenre: e.target.value })}
+          label="Primary Sub-Genre"
+        >
+          {metadata.mainGenre && getSubgenres(metadata.mainGenre).map((subgenre) => (
+            <MenuItem key={subgenre} value={subgenre}>
+              {subgenre}
             </MenuItem>
           ))}
         </Select>
@@ -706,8 +988,7 @@ const MetadataDialog = ({
   onClose,
   file,
   onSave,
-  territorialOptions,
-  genreOptions
+  territorialOptions
 }) => {
   const [metadata, setMetadata] = useState({});
 
@@ -728,10 +1009,25 @@ const MetadataDialog = ({
       <DialogTitle>Edit Metadata: {file.file.name}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
+          {/* Is Album Toggle */}
+          <Grid item xs={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={metadata.isAlbum || false}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, isAlbum: e.target.checked })
+                  }
+                />
+              }
+              label="This is an Album"
+            />
+          </Grid>
+
           <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Title *"
+              label={metadata.isAlbum ? "Album Title *" : "Track Title *"}
               value={metadata.title || ""}
               onChange={(e) =>
                 setMetadata({ ...metadata, title: e.target.value })
@@ -753,30 +1049,168 @@ const MetadataDialog = ({
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="Album"
+              label={metadata.isAlbum ? "Album Sub-title" : "Album Name"}
               value={metadata.album || ""}
               onChange={(e) =>
                 setMetadata({ ...metadata, album: e.target.value })
               }
+              helperText={metadata.isAlbum ? "Optional subtitle" : "Leave empty if single"}
             />
           </Grid>
+          {/* Main Genre */}
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
-              <InputLabel>Genre</InputLabel>
+              <InputLabel>Main Genre *</InputLabel>
               <Select
-                value={metadata.genre || ""}
-                onChange={(e) =>
-                  setMetadata({ ...metadata, genre: e.target.value })
-                }
-                label="Genre"
+                value={metadata.mainGenre || ""}
+                onChange={(e) => {
+                  setMetadata({
+                    ...metadata,
+                    mainGenre: e.target.value,
+                    subGenre: '', // Reset sub-genre when main changes
+                    additionalSubGenres: []
+                  });
+                }}
+                label="Main Genre *"
               >
-                {genreOptions.map((genre) => (
+                {MAIN_GENRES.map((genre) => (
                   <MenuItem key={genre} value={genre}>
                     {genre}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
+          </Grid>
+
+          {/* Sub-Genre */}
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth disabled={!metadata.mainGenre}>
+              <InputLabel>Primary Sub-Genre *</InputLabel>
+              <Select
+                value={metadata.subGenre || ""}
+                onChange={(e) =>
+                  setMetadata({ ...metadata, subGenre: e.target.value })
+                }
+                label="Primary Sub-Genre *"
+              >
+                {metadata.mainGenre && getSubgenres(metadata.mainGenre).map((subgenre) => (
+                  <MenuItem key={subgenre} value={subgenre}>
+                    {subgenre}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Additional Sub-Genres */}
+          <Grid item xs={12}>
+            <FormControl fullWidth disabled={!metadata.mainGenre || !metadata.subGenre}>
+              <InputLabel>Additional Sub-Genres (max 3)</InputLabel>
+              <Select
+                multiple
+                value={metadata.additionalSubGenres || []}
+                label="Additional Sub-Genres (max 3)"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 3) {
+                    setMetadata({ ...metadata, additionalSubGenres: value });
+                  }
+                }}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={value} size="small" />
+                    ))}
+                  </Box>
+                )}
+              >
+                {metadata.mainGenre && getSubgenres(metadata.mainGenre)
+                  .filter(subgenre => subgenre !== metadata.subGenre)
+                  .map(subgenre => (
+                    <MenuItem
+                      key={subgenre}
+                      value={subgenre}
+                      disabled={(metadata.additionalSubGenres || []).length >= 3 && !(metadata.additionalSubGenres || []).includes(subgenre)}
+                    >
+                      <Checkbox checked={(metadata.additionalSubGenres || []).indexOf(subgenre) > -1} />
+                      {subgenre}
+                    </MenuItem>
+                  ))}
+              </Select>
+            </FormControl>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+              {(metadata.additionalSubGenres || []).length}/3 additional sub-genres selected
+            </Typography>
+          </Grid>
+
+          {/* BPM */}
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              type="number"
+              label="BPM (Beats Per Minute)"
+              value={metadata.bpm || ""}
+              onChange={(e) =>
+                setMetadata({ ...metadata, bpm: e.target.value })
+              }
+              inputProps={{ min: 60, max: 200 }}
+              helperText="Tempo of the track (60-200 BPM)"
+            />
+          </Grid>
+
+          {/* Loopable */}
+          <Grid item xs={12} md={6}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={metadata.loopable || false}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, loopable: e.target.checked })
+                  }
+                />
+              }
+              label="Loopable (suitable for background music)"
+              sx={{ mt: 2 }}
+            />
+          </Grid>
+
+          {/* Mood Tags */}
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>Mood Tags (select up to 3)</InputLabel>
+              <Select
+                multiple
+                value={metadata.mood || []}
+                label="Mood Tags (select up to 3)"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 3) {
+                    setMetadata({ ...metadata, mood: value });
+                  }
+                }}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={value} size="small" color="primary" />
+                    ))}
+                  </Box>
+                )}
+              >
+                {MOOD_OPTIONS.map((mood) => (
+                  <MenuItem
+                    key={mood}
+                    value={mood}
+                    disabled={(metadata.mood || []).length >= 3 && !(metadata.mood || []).includes(mood)}
+                  >
+                    <Checkbox checked={(metadata.mood || []).indexOf(mood) > -1} />
+                    {mood}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+              {(metadata.mood || []).length}/3 mood tags selected
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField
@@ -879,6 +1313,125 @@ const MetadataDialog = ({
         </Button>
       </DialogActions>
     </Dialog>
+  );
+};
+
+// Collection Cover Art Uploader - Single cover for all tracks
+const CollectionCoverUploader = ({ coverFile, onCoverChange, preview, disabled }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileChange = (file) => {
+    if (file && file.type.startsWith('image/')) {
+      onCoverChange(file);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (!disabled) {
+      const file = e.dataTransfer.files[0];
+      handleFileChange(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleRemove = (e) => {
+    e.stopPropagation();
+    onCoverChange(null);
+  };
+
+  return (
+    <Box
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onClick={() => !disabled && document.getElementById('collection-cover-input').click()}
+      sx={{
+        border: "3px dashed",
+        borderColor: isDragging ? "primary.main" : "grey.400",
+        borderRadius: 2,
+        p: 4,
+        textAlign: "center",
+        cursor: disabled ? "not-allowed" : "pointer",
+        backgroundColor: isDragging ? "action.hover" : "transparent",
+        transition: "all 0.2s",
+        minHeight: '250px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: disabled ? 0.5 : 1,
+        '&:hover': !disabled && {
+          borderColor: "primary.main",
+          backgroundColor: "action.hover"
+        }
+      }}
+    >
+      {preview ? (
+        <Box sx={{ position: 'relative', maxWidth: '300px' }}>
+          <img
+            src={preview}
+            alt="Collection Cover"
+            style={{
+              width: '100%',
+              maxHeight: '250px',
+              objectFit: 'contain',
+              borderRadius: '8px'
+            }}
+          />
+          <IconButton
+            size="medium"
+            onClick={handleRemove}
+            sx={{
+              position: 'absolute',
+              top: -16,
+              right: -16,
+              bgcolor: 'background.paper',
+              boxShadow: 2,
+              '&:hover': { bgcolor: 'error.main', color: 'white' }
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            {coverFile?.name} ({(coverFile?.size / 1024).toFixed(2)} KB)
+          </Typography>
+        </Box>
+      ) : (
+        <Box>
+          <UploadIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+          <Typography variant="h6" gutterBottom>
+            {isDragging ? "Drop cover art here" : "Drag & drop cover art"}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            or click to browse (JPG, PNG, 1000x1000 recommended)
+          </Typography>
+        </Box>
+      )}
+      <input
+        id="collection-cover-input"
+        type="file"
+        hidden
+        accept="image/*"
+        onChange={(e) => handleFileChange(e.target.files[0])}
+        disabled={disabled}
+      />
+    </Box>
   );
 };
 
