@@ -90,7 +90,7 @@ export default async (request, context) => {
       );
 
     return new Response(modifiedPage, {
-      status: response.status,
+      status: 200,
       headers: response.headers
     });
   } catch (error) {
