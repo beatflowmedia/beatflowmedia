@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Static Pages -->
+  <sitemap>
+    <loc>https://beatflowmediagroup.com/sitemap-static.xml</loc>
+    <lastmod>2026-04-12T00:00:00+00:00</lastmod>
+  </sitemap>
+
+  <!-- Dynamic Song Catalog -->
+  <sitemap>
+    <loc>https://beatflowmediagroup.com/sitemap-songs.xml</loc>
+    <lastmod>2026-04-12T00:00:00+00:00</lastmod>
+  </sitemap>
+</sitemapindex>

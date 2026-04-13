@@ -1,6 +1,6 @@
 // src/components/ContentIngestionDashboard.js
 // Admin dashboard for managing content ingestion workflow
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -25,8 +25,7 @@ import {
   Tab,
   Alert,
   CircularProgress,
-  Tooltip,
-  TextField
+  Tooltip
 } from "@mui/material";
 import {
   CloudUpload as UploadIcon,
@@ -45,12 +44,13 @@ import { adminAnalytics } from "../services/adminAnalytics";
 import { db, storage } from "../firebaseConfig";
 import { collection, getDocs, query, orderBy, limit, where, Timestamp } from "firebase/firestore";
 import { ref, listAll, getMetadata } from "firebase/storage";
+import ContentUploadInterface from "./ContentUploadInterface";
 
 const ContentIngestionDashboard = () => {
+
   const [dashboardData, setDashboardData] = useState({
     metrics: {},
     recentUploads: [],
-    processingQueue: [],
     systemHealth: {},
     errorLogs: []
   });
@@ -59,12 +59,9 @@ const ContentIngestionDashboard = () => {
   const [selectedContent, setSelectedContent] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [selectedSubmissionId, setSelectedSubmissionId] = useState(null);
-  const [rejectionFeedback, setRejectionFeedback] = useState('');
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [resultMessage, setResultMessage] = useState({ type: '', message: '' });
+  const [showUploadInterface, setShowUploadInterface] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -117,35 +114,24 @@ const ContentIngestionDashboard = () => {
       setRefreshing(true);
 
       // Fetch data from Firestore instead of API endpoints
-      const [contentStats, uploads, errors, completedCount, processingCount, pendingCount, storageUsage] = await Promise.all([
+      const [contentStats, uploads, errors, publishedCount, storageUsage] = await Promise.all([
         adminAnalytics.getContentStats(),
         fetchRecentUploads(),
         fetchErrorLogs(),
-        // Get accurate counts from Firebase
+        // Get total published songs count from Firebase
         getDocs(query(
-          collection(db, 'artistSubmissions'),
-          where('status', 'in', ['approved', 'published'])
-        )).then(snap => snap.size),
-        getDocs(query(
-          collection(db, 'artistSubmissions'),
-          where('status', '==', 'under_review')
-        )).then(snap => snap.size),
-        getDocs(query(
-          collection(db, 'artistSubmissions'),
-          where('status', '==', 'pending')
+          collection(db, 'songs'),
+          where('approved', '==', true)
         )).then(snap => snap.size),
         calculateStorageUsage()
       ]);
 
-      // Calculate metrics from Firebase counts (not limited sample)
-      const totalSubmissions = contentStats?.totalSubmissions || 0;
-      const successRate = totalSubmissions > 0 ? (completedCount / totalSubmissions) * 100 : 0;
+      // All uploads go live immediately — success rate is based on published count
+      const totalSubmissions = contentStats?.totalSubmissions || uploads.length;
+      const successRate = totalSubmissions > 0 ? (publishedCount / totalSubmissions) * 100 : 0;
 
-      // Calculate average processing time from completed uploads in recent sample
-      const completedUploads = uploads.filter(u =>
-        (u.status === 'completed' || u.status === 'approved' || u.status === 'published') &&
-        u.processingTime
-      );
+      // Calculate average processing time from uploads
+      const completedUploads = uploads.filter(u => u.processingTime);
       const avgProcessingTime = completedUploads.length > 0
         ? completedUploads.reduce((sum, u) => sum + u.processingTime, 0) / completedUploads.length
         : 0;
@@ -154,10 +140,7 @@ const ContentIngestionDashboard = () => {
         metrics: {
           upload_success_rate: { value: successRate },
           processing_time: { average: avgProcessingTime },
-          queue_depth: {
-            upload: pendingCount, // Real count from Firebase
-            processing: processingCount // Real count from Firebase
-          },
+          total_published: publishedCount,
           storage_usage: storageUsage // Real Firebase Storage usage
         },
         systemHealth: {
@@ -171,9 +154,6 @@ const ContentIngestionDashboard = () => {
           timestamp: Date.now()
         },
         recentUploads: uploads,
-        processingQueue: uploads.filter(
-          (u) => u.status !== "completed" && u.status !== "failed",
-        ),
         errorLogs: errors
       });
     } catch (error) {
@@ -183,7 +163,6 @@ const ContentIngestionDashboard = () => {
         metrics: {},
         systemHealth: { status: 'unknown', services: {}, timestamp: Date.now() },
         recentUploads: [],
-        processingQueue: [],
         errorLogs: []
       });
     } finally {
@@ -194,15 +173,14 @@ const ContentIngestionDashboard = () => {
 
   const fetchRecentUploads = async () => {
     try {
-      console.log('📥 Fetching artist submissions...');
+      console.log('📥 Fetching uploaded songs...');
 
-      // Fetch recent artist submissions from Firestore
-      // Try without orderBy first in case index doesn't exist
+      // Fetch recent songs from Firestore (new direct upload flow)
       let snapshot;
       try {
         const q = query(
-          collection(db, 'artistSubmissions'),
-          orderBy('submittedAt', 'desc'),
+          collection(db, 'songs'),
+          orderBy('createdAt', 'desc'),
           limit(50)
         );
         snapshot = await getDocs(q);
@@ -210,35 +188,32 @@ const ContentIngestionDashboard = () => {
         console.warn('⚠️ Index may not exist, fetching without orderBy:', indexError);
         // Fallback: fetch without ordering
         const q = query(
-          collection(db, 'artistSubmissions'),
+          collection(db, 'songs'),
           limit(50)
         );
         snapshot = await getDocs(q);
       }
 
-      console.log(`✅ Found ${snapshot.docs.length} submissions`);
+      console.log(`✅ Found ${snapshot.docs.length} songs`);
 
       const uploads = snapshot.docs.map(doc => {
         const data = doc.data();
-        console.log('📄 Submission:', doc.id, data);
-
-        const trackCount = data.tracks?.length || 0;
-        const albumTitle = data.albumTitle || (trackCount > 0 ? data.tracks[0].title : 'Untitled');
+        console.log('📄 Song:', doc.id, data);
 
         return {
           id: doc.id,
-          filename: `${data.releaseType === 'album' ? 'Album' : 'Single'}: ${albumTitle}`,
+          filename: data.fileName || data.title || 'Untitled',
           artist: data.artist || 'Unknown Artist',
-          title: albumTitle,
-          releaseType: data.releaseType,
-          trackCount,
-          status: data.status || 'pending',
-          progress: data.progress || (data.status === 'published' ? 100 : data.status === 'approved' ? 80 : data.status === 'under_review' ? 50 : 10),
-          uploadedAt: data.submittedAt?.toDate?.() || data.createdAt?.toDate?.() || new Date(),
-          processingTime: data.processingTime || (data.completedAt && data.startedAt
-            ? (data.completedAt.toDate() - data.startedAt.toDate()) / 1000
-            : null),
-          currentStep: data.currentStep || 'upload'
+          title: data.title || 'Untitled',
+          releaseType: data.album ? 'album' : 'single',
+          trackCount: 1,
+          status: 'published',
+          progress: 100,
+          uploadedAt: data.createdAt?.toDate?.() || new Date(),
+          processingTime: data.updatedAt && data.createdAt
+            ? (data.updatedAt.toDate() - data.createdAt.toDate()) / 1000
+            : null,
+          currentStep: 'completed'
         };
       });
 
@@ -349,74 +324,6 @@ const ContentIngestionDashboard = () => {
     return icons[status] || <QueueIcon />;
   };
 
-  const handleApproveClick = (submissionId) => {
-    setSelectedSubmissionId(submissionId);
-    setApproveDialogOpen(true);
-  };
-
-  const handleRejectClick = (submissionId) => {
-    setSelectedSubmissionId(submissionId);
-    setRejectDialogOpen(true);
-  };
-
-  const handleApproveConfirm = async () => {
-    try {
-      setRefreshing(true);
-      setApproveDialogOpen(false);
-      await contentIngestionService.approveSubmission(selectedSubmissionId);
-      await loadDashboardData();
-      setResultMessage({
-        type: 'success',
-        message: 'Submission approved and published successfully! The content is now live on the platform and will appear in New Releases.'
-      });
-      setResultDialogOpen(true);
-    } catch (error) {
-      console.error('Error approving submission:', error);
-      setResultMessage({
-        type: 'error',
-        message: `Failed to approve submission: ${error.message}`
-      });
-      setResultDialogOpen(true);
-    } finally {
-      setRefreshing(false);
-      setSelectedSubmissionId(null);
-    }
-  };
-
-  const handleRejectConfirm = async () => {
-    if (!rejectionFeedback.trim()) {
-      setResultMessage({
-        type: 'error',
-        message: 'Please enter rejection feedback'
-      });
-      setResultDialogOpen(true);
-      return;
-    }
-
-    try {
-      setRefreshing(true);
-      setRejectDialogOpen(false);
-      await contentIngestionService.rejectSubmission(selectedSubmissionId, rejectionFeedback);
-      await loadDashboardData();
-      setResultMessage({
-        type: 'success',
-        message: 'Submission rejected. Artist will be notified with your feedback.'
-      });
-      setResultDialogOpen(true);
-    } catch (error) {
-      console.error('Error rejecting submission:', error);
-      setResultMessage({
-        type: 'error',
-        message: `Failed to reject submission: ${error.message}`
-      });
-      setResultDialogOpen(true);
-    } finally {
-      setRefreshing(false);
-      setSelectedSubmissionId(null);
-      setRejectionFeedback('');
-    }
-  };
-
   if (loading) {
     return (
       <Box
@@ -439,17 +346,36 @@ const ContentIngestionDashboard = () => {
         alignItems="center"
         mb={3}
       >
-        <Typography variant="h4" component="h1">
+        <Typography variant="h4" component="h1" sx={{ color: 'white' }}>
           Content Ingestion Dashboard
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          {refreshing ? "Refreshing..." : "Refresh"}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button
+            variant="contained"
+            startIcon={showUploadInterface ? <ViewIcon /> : <UploadIcon />}
+            onClick={() => setShowUploadInterface(!showUploadInterface)}
+            sx={{
+              bgcolor: '#1DB954',
+              '&:hover': { bgcolor: '#1ed760' },
+              color: 'white',
+              fontWeight: 'bold',
+              minWidth: '150px',
+              visibility: 'visible !important',
+              display: 'flex !important'
+            }}
+          >
+            {showUploadInterface ? 'View Dashboard' : 'Upload Content'}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            sx={{ color: 'white', borderColor: 'white' }}
+          >
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </Button>
+        </Box>
       </Box>
 
       {/* System Health Alert */}
@@ -460,8 +386,11 @@ const ContentIngestionDashboard = () => {
         </Alert>
       )}
 
-      {/* Metrics Cards */}
-      <Grid container spacing={3} mb={3}>
+      {/* Dashboard Content - hidden when upload interface is shown */}
+      {!showUploadInterface && (
+        <>
+          {/* Metrics Cards */}
+          <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent>
@@ -507,14 +436,13 @@ const ContentIngestionDashboard = () => {
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
-                <QueueIcon color="warning" sx={{ mr: 2 }} />
+                <CompleteIcon color="success" sx={{ mr: 2 }} />
                 <Box>
                   <Typography color="textSecondary" gutterBottom>
-                    Queue Depth
+                    Total Published
                   </Typography>
                   <Typography variant="h5">
-                    {(dashboardData.metrics.queue_depth?.upload || 0) +
-                      (dashboardData.metrics.queue_depth?.processing || 0)}
+                    {dashboardData.metrics.total_published || 0}
                   </Typography>
                 </Box>
               </Box>
@@ -554,7 +482,6 @@ const ContentIngestionDashboard = () => {
           onChange={(e, newValue) => setSelectedTab(newValue)}
         >
           <Tab label="Recent Uploads" />
-          <Tab label="Processing Queue" />
           <Tab label="Error Logs" />
           <Tab label="System Health" />
         </Tabs>
@@ -565,8 +492,6 @@ const ContentIngestionDashboard = () => {
         <RecentUploadsTable
           uploads={dashboardData.recentUploads}
           onViewDetails={handleViewDetails}
-          onApprove={handleApproveClick}
-          onReject={handleRejectClick}
           getStatusColor={getStatusColor}
           getStatusIcon={getStatusIcon}
           formatFileSize={formatFileSize}
@@ -574,18 +499,9 @@ const ContentIngestionDashboard = () => {
         />
       )}
 
-      {selectedTab === 1 && (
-        <ProcessingQueueTable
-          queue={dashboardData.processingQueue}
-          onViewDetails={handleViewDetails}
-          getStatusColor={getStatusColor}
-          getStatusIcon={getStatusIcon}
-        />
-      )}
+      {selectedTab === 1 && <ErrorLogsTable errors={dashboardData.errorLogs} />}
 
-      {selectedTab === 2 && <ErrorLogsTable errors={dashboardData.errorLogs} />}
-
-      {selectedTab === 3 && (
+      {selectedTab === 2 && (
         <SystemHealthPanel health={dashboardData.systemHealth} />
       )}
 
@@ -597,114 +513,6 @@ const ContentIngestionDashboard = () => {
         formatDuration={formatDuration}
         getStatusColor={getStatusColor}
       />
-
-      {/* Approve Confirmation Dialog */}
-      <Dialog
-        open={approveDialogOpen}
-        onClose={() => setApproveDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
-          Approve Submission
-        </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#1e1e1e', color: 'white', pt: 3 }}>
-          <Alert severity="success" sx={{ mb: 2 }}>
-            This will publish the submission to the platform and make it visible to all users.
-          </Alert>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to approve this submission and publish it to the platform?
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            The following will be created:
-          </Typography>
-          <Box component="ul" sx={{ mt: 1, pl: 3 }}>
-            <Typography component="li" variant="body2" color="text.secondary">
-              Songs will be added to the songs collection
-            </Typography>
-            <Typography component="li" variant="body2" color="text.secondary">
-              Albums will be created (if applicable)
-            </Typography>
-            <Typography component="li" variant="body2" color="text.secondary">
-              Content will be immediately visible on the platform
-            </Typography>
-          </Box>
-        </DialogContent>
-        <Box sx={{ p: 2, bgcolor: '#1e1e1e', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button
-            onClick={() => setApproveDialogOpen(false)}
-            variant="outlined"
-            sx={{ borderColor: '#555', color: 'white' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleApproveConfirm}
-            variant="contained"
-            color="success"
-            disabled={refreshing}
-          >
-            {refreshing ? 'Publishing...' : 'Approve & Publish'}
-          </Button>
-        </Box>
-      </Dialog>
-
-      {/* Reject Confirmation Dialog */}
-      <Dialog
-        open={rejectDialogOpen}
-        onClose={() => setRejectDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ bgcolor: '#1e1e1e', color: 'white' }}>
-          Reject Submission
-        </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#1e1e1e', color: 'white', pt: 3 }}>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            The artist will be notified of this rejection with your feedback.
-          </Alert>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Please provide detailed feedback to help the artist improve their submission:
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Rejection Feedback"
-            placeholder="e.g., Audio quality issues, metadata incomplete, copyright concerns, etc."
-            value={rejectionFeedback}
-            onChange={(e) => setRejectionFeedback(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: 'white',
-                '& fieldset': { borderColor: '#555' },
-                '&:hover fieldset': { borderColor: '#777' },
-              },
-              '& .MuiInputLabel-root': { color: '#aaa' }
-            }}
-          />
-        </DialogContent>
-        <Box sx={{ p: 2, bgcolor: '#1e1e1e', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button
-            onClick={() => {
-              setRejectDialogOpen(false);
-              setRejectionFeedback('');
-            }}
-            variant="outlined"
-            sx={{ borderColor: '#555', color: 'white' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleRejectConfirm}
-            variant="contained"
-            color="error"
-            disabled={refreshing || !rejectionFeedback.trim()}
-          >
-            {refreshing ? 'Rejecting...' : 'Reject Submission'}
-          </Button>
-        </Box>
-      </Dialog>
 
       {/* Result Dialog (Success/Error) */}
       <Dialog
@@ -731,6 +539,28 @@ const ContentIngestionDashboard = () => {
           </Button>
         </Box>
       </Dialog>
+        </>
+      )}
+
+      {/* Upload Interface - shown inline instead of in dialog to prevent nested dialog issues */}
+      {showUploadInterface && (
+        <Box sx={{ mt: 3 }}>
+          <ContentUploadInterface
+            onUploadComplete={() => {
+              setShowUploadInterface(false);
+              handleRefresh();
+            }}
+            onUploadError={(error) => {
+              console.error('Upload error:', error);
+              setResultMessage({
+                type: 'error',
+                message: `Upload failed: ${error.message}`
+              });
+              setResultDialogOpen(true);
+            }}
+          />
+        </Box>
+      )}
     </Box>
   );
 };
@@ -739,8 +569,6 @@ const ContentIngestionDashboard = () => {
 const RecentUploadsTable = ({
   uploads,
   onViewDetails,
-  onApprove,
-  onReject,
   getStatusColor,
   getStatusIcon,
   formatFileSize,
@@ -791,89 +619,11 @@ const RecentUploadsTable = ({
                 : "-"}
             </TableCell>
             <TableCell>
-              <Box display="flex" gap={1}>
-                <Tooltip title="View Details">
-                  <IconButton
-                    onClick={() => onViewDetails(upload.id)}
-                    size="small"
-                  >
-                    <ViewIcon />
-                  </IconButton>
-                </Tooltip>
-                {upload.status === 'pending' && (
-                  <>
-                    <Tooltip title="Approve & Publish">
-                      <IconButton
-                        onClick={() => onApprove(upload.id)}
-                        size="small"
-                        color="success"
-                      >
-                        <CompleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Reject">
-                      <IconButton
-                        onClick={() => onReject(upload.id)}
-                        size="small"
-                        color="error"
-                      >
-                        <ErrorIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                )}
-              </Box>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </TableContainer>
-);
-
-// Processing Queue Table Component
-const ProcessingQueueTable = ({
-  queue,
-  onViewDetails,
-  getStatusColor,
-  getStatusIcon
-}) => (
-  <TableContainer component={Paper}>
-    <Table>
-      <TableHead>
-        <TableRow>
-          <TableCell>Content ID</TableCell>
-          <TableCell>File</TableCell>
-          <TableCell>Current Step</TableCell>
-          <TableCell>Status</TableCell>
-          <TableCell>Started</TableCell>
-          <TableCell>Est. Remaining</TableCell>
-          <TableCell>Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {queue.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>
-              <Typography variant="body2" fontFamily="monospace">
-                {item.id.substring(0, 8)}...
-              </Typography>
-            </TableCell>
-            <TableCell>{item.filename}</TableCell>
-            <TableCell>{item.currentStep}</TableCell>
-            <TableCell>
-              <Chip
-                icon={getStatusIcon(item.status)}
-                label={item.status}
-                color={getStatusColor(item.status)}
-                size="small"
-              />
-            </TableCell>
-            <TableCell>{item.startedAt?.toLocaleTimeString()}</TableCell>
-            <TableCell>{item.estimatedTimeRemaining || "-"}</TableCell>
-            <TableCell>
               <Tooltip title="View Details">
-                <IconButton onClick={() => onViewDetails(item.id)} size="small">
+                <IconButton
+                  onClick={() => onViewDetails(upload.id)}
+                  size="small"
+                >
                   <ViewIcon />
                 </IconButton>
               </Tooltip>

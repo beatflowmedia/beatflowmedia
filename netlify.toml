@@ -58,6 +58,12 @@
   status = 200
   force = true
 
+# Dynamic songs sitemap
+[[redirects]]
+  from = "/sitemap-songs.xml"
+  to   = "/.netlify/functions/sitemap-songs"
+  status = 200
+
 # Fallback for single-page app routing
 [[redirects]]
   from   = "/*"

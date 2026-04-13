@@ -10,4 +10,3 @@ Disallow: /profile
 
 # Sitemaps
 Sitemap: https://beatflowmediagroup.com/sitemap.xml
-Sitemap: https://beatflowmediagroup.com/marketing-sitemap.xml

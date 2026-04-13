@@ -61,15 +61,30 @@ const SECURITY_CONFIG = {
 // Rate limiting store (in production, use Redis)
 const rateLimitStore = new Map();
 
+// Legitimate search engine crawlers (allow these through)
+const ALLOWED_CRAWLERS = [
+  /Googlebot/i,
+  /Bingbot/i,
+  /Slurp/i,          // Yahoo
+  /DuckDuckBot/i,
+  /Baiduspider/i,
+  /YandexBot/i,
+  /facebot/i,        // Facebook
+  /Twitterbot/i,
+  /LinkedInBot/i,
+  /Applebot/i,
+  /PinterestBot/i,
+];
+
 // Blocked IPs and suspicious patterns
 const securityBlacklist = {
   ips: new Set(),
   userAgents: new Set(),
   patterns: [
-    /bot/i,
-    /crawler/i,
-    /spider/i,
-    /scraper/i
+    /scraper/i,
+    /harvest/i,
+    /fetch/i,
+    /extract/i
   ]
 };
 
@@ -199,11 +214,15 @@ async function performBasicSecurityChecks(event, securityContext) {
     return { passed: false, statusCode: 403, message: 'Access denied' };
   }
 
-  // Check user agent patterns
-  for (const pattern of securityBlacklist.patterns) {
-    if (pattern.test(securityContext.userAgent)) {
-      await addToBlacklist('userAgent', securityContext.userAgent);
-      return { passed: false, statusCode: 403, message: 'Access denied' };
+  // Allow legitimate search engine crawlers through
+  const isAllowedCrawler = ALLOWED_CRAWLERS.some(pattern => pattern.test(securityContext.userAgent));
+  if (!isAllowedCrawler) {
+    // Check user agent patterns (only block non-crawler bots)
+    for (const pattern of securityBlacklist.patterns) {
+      if (pattern.test(securityContext.userAgent)) {
+        await addToBlacklist('userAgent', securityContext.userAgent);
+        return { passed: false, statusCode: 403, message: 'Access denied' };
+      }
     }
   }
 
