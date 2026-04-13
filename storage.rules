@@ -1,9 +1,11 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Admin access - allow admins to list and manage all storage
+    // Admin access - allow platform admins to list and manage all storage
     match /{allPaths=**} {
-      allow list: if request.auth != null && request.auth.token.admin == true;
+      allow list: if request.auth != null &&
+                     (request.auth.token.email == 'perriceconsulting@gmail.com' ||
+                      request.auth.token.email == 'percyricemusic@gmail.com');
     }
 
     // Admin content uploads - for content ingestion dashboard

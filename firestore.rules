@@ -84,7 +84,7 @@ service cloud.firestore {
       allow create: if request.auth.uid != null;
       allow update: if request.auth.uid == resource.data.artistId ||
                         request.auth.uid == resource.data.uploadedBy ||
-                        request.auth.token.admin == true ||
+                        isPlatformAdmin() ||
                         // Allow authenticated users to update rating/review fields
                         (request.auth.uid != null &&
                          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['averageRating', 'reviewCount']));
