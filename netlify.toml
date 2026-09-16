@@ -6,8 +6,28 @@
 [build.environment]
   NODE_VERSION = "20"
   CI = "false"
-  # Disable secrets scanning - all secrets have been moved to environment variables
-  SECRETS_SCAN_ENABLED = "false"
+
+  # Was "false", justified as "all secrets have been moved to environment
+  # variables". That was not true: serviceAccountKey.json was committed in
+  # 2a183b9 and sat in a PUBLIC repo from 2025-05-26 until 2026-09. With this
+  # off, nothing was ever going to say so.
+  SECRETS_SCAN_ENABLED = "true"
+
+  # Turning the scanner on without this fails the build on a true statement
+  # that is not a problem: CRA inlines every REACT_APP_* value into the JS
+  # bundle, which is the whole point of the prefix. These are public by design
+  # - a Firebase web apiKey identifies a project and authorises nothing, a
+  # Stripe PUBLISHABLE key is meant to ship to the browser, and price IDs are
+  # not secret.
+  #
+  # Anything NOT on this list that shows up in build output is a real finding.
+  # That is the trade: name the known-public values once, so the scanner's
+  # remaining output means something.
+  SECRETS_SCAN_OMIT_KEYS = "REACT_APP_FIREBASE_API_KEY,REACT_APP_FIREBASE_APP_ID,REACT_APP_FIREBASE_AUTH_DOMAIN,REACT_APP_FIREBASE_MEASUREMENT_ID,REACT_APP_FIREBASE_MESSAGING_SENDER_ID,REACT_APP_FIREBASE_PROJECT_ID,REACT_APP_FIREBASE_STORAGE_BUCKET,REACT_APP_STRIPE_PUBLISHABLE_KEY,REACT_APP_STRIPE_STUDENT_PRICE_ID,REACT_APP_STRIPE_CREATOR_PRICE_ID,REACT_APP_STRIPE_PRO_PRICE_ID,REACT_APP_STRIPE_AGENCY_PRICE_ID,REACT_APP_SITE_URL,REACT_APP_ANALYTICS_ID"
+
+[dev]
+  port = 3005
+  targetPort = 3006
 
 # Edge Functions for dynamic Open Graph tags
 [[edge_functions]]
