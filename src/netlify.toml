@@ -6,7 +6,7 @@
 
 [build.environment]
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_fWUbRcRbb0b0ZBPFZRnF8Bhj"
-  STRIPE_SECRET_KEY                  = "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"
+  STRIPE_SECRET_KEY                  = "sk_live_REPLACED_SEE_NETLIFY_ENV_VARS"
   NEXT_PUBLIC_APP_URL                = "https://beatflowmedia.netlify.app"
   APP_URL                            = "https://beatflowmedia.netlify.app"
 
