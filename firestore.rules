@@ -12,7 +12,14 @@ service cloud.firestore {
     match /songs/{songId} {
       allow read: if true;
       allow list: if true; // Allow collection queries
-      allow create: if request.auth != null;
+      // Publishing is an admin act, not an authenticated one.
+      //
+      // This was `request.auth != null`. Combined with ContentUploadInterface.js
+      // setting `approved: true` client-side and `allow read: if true` below,
+      // any account that could sign in with Google could write a published song
+      // straight into the public catalogue without touching the admin UI. The
+      // admin dashboard was never the gate; this rule is.
+      allow create: if isPlatformAdmin();
       allow update: if request.auth != null &&
                       (request.auth.uid == resource.data.uploadedBy ||
                        isPlatformAdmin());
@@ -81,7 +88,9 @@ service cloud.firestore {
     match /albums/{albumId} {
       allow read: if true;
       allow list: if true; // Allow collection queries
-      allow create: if request.auth.uid != null;
+      // Same gate as /songs above, and for the same reason: a release appearing
+      // in the public catalogue is a publishing decision.
+      allow create: if isPlatformAdmin();
       allow update: if request.auth.uid == resource.data.artistId ||
                         request.auth.uid == resource.data.uploadedBy ||
                         isPlatformAdmin() ||

@@ -1,16 +1,25 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // The same allowlist firestore.rules uses, named once instead of inlined.
+    // It was spelled out below and nowhere else, so every other rule in this
+    // file fell back to "any authenticated user" for want of a way to say this.
+    function isPlatformAdmin() {
+      return request.auth != null &&
+             (request.auth.token.email == 'perriceconsulting@gmail.com' ||
+              request.auth.token.email == 'percyricemusic@gmail.com');
+    }
+
     // Admin access - allow platform admins to list and manage all storage
     match /{allPaths=**} {
-      allow list: if request.auth != null &&
-                     (request.auth.token.email == 'perriceconsulting@gmail.com' ||
-                      request.auth.token.email == 'percyricemusic@gmail.com');
+      allow list: if isPlatformAdmin();
     }
 
     // Admin content uploads - for content ingestion dashboard
     match /admin-uploads/{allPaths=**} {
-      allow read, write: if request.auth != null; // Temporarily allow any authenticated user
+      // Was `request.auth != null`, commented "Temporarily allow any
+      // authenticated user". The path is named admin-uploads; it should mean it.
+      allow read, write: if isPlatformAdmin();
     }
 
     // Allow authenticated users to upload application resumes
@@ -98,16 +107,20 @@ service firebase.storage {
         && request.resource.size < 10 * 1024 * 1024; // 10MB limit for application materials
     }
 
-    // Songs - published track covers and audio (admin-managed via Content Management)
+    /* Songs - published track covers and audio.
+       The comment already said "admin-managed via Content Management" while the
+       rule allowed any authenticated write. This is the object store behind the
+       PUBLISHED catalogue: a write here replaces what a paying customer
+       downloads. Reads are unchanged — covers public, audio authenticated. */
     match /songs/covers/{allPaths=**} {
       allow read: if true; // Song covers are public
-      allow write: if request.auth != null
+      allow write: if isPlatformAdmin()
         && request.resource.size < 10 * 1024 * 1024; // 10MB limit for covers
     }
 
     match /songs/audio/{allPaths=**} {
       allow read: if request.auth != null; // Authenticated users can stream
-      allow write: if request.auth != null
+      allow write: if isPlatformAdmin()
         && request.resource.size < 500 * 1024 * 1024; // 500MB limit for high-quality audio
     }
 
