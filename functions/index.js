@@ -1,7 +1,22 @@
 const {onDocumentUpdated, onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onCall} = require('firebase-functions/v2/https');
+const {setGlobalOptions} = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+
+// Cap how far these can scale.
+//
+// The project moved to Blaze on 2026-09-17, so invocations bill with no ceiling.
+// A Cloud Billing budget is an ALERT, not a cap -- it emails you, it does not stop
+// anything -- so until a budget -> Pub/Sub -> disable-billing killswitch exists,
+// this cap IS the spend control.
+//
+// 10 is chosen against measured load, not taste: this catalogue serves 138 songs
+// and these functions fire on document writes and signed-URL requests, not on page
+// views. Ten concurrent instances is far above anything observed and still bounds a
+// runaway loop to something survivable. Raise it when traffic justifies it, with the
+// number that justified it written down here.
+setGlobalOptions({maxInstances: 10});
 
 admin.initializeApp();
 
