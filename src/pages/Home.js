@@ -48,6 +48,8 @@ import firebaseCache from "../utils/firebaseCache";
 import { stripeService } from "../services/stripeService";
 import { useNavigate } from "react-router-dom";
 import OptimizedImage from "../components/OptimizedImage";
+import { artworkUrl } from '../utils/artwork';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 // Lazy load heavy components for better initial page load
 const TrendingSongs = lazy(() => import("../components/TrendingSongs"));
@@ -718,9 +720,9 @@ function Home() {
                     }}
                   >
                     <OptimizedImage
-                      src={album.coverUrl}
+                      src={artworkUrl(album)}
                       alt={album.title}
-                      fallback="/default-album.jpg"
+                      fallback={PLACEHOLDER_IMAGE}
                       sx={{
                         width: '100%',
                         height: 'auto',
@@ -856,7 +858,7 @@ function Home() {
                 >
                   <CardMedia
                     component="img"
-                    image={artist.imageUrl || '/default-artist.jpg'}
+                    image={artworkUrl(artist)}
                     alt={artist.name}
                     loading="lazy"
                     sx={{
@@ -975,7 +977,7 @@ function Home() {
                 <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
                   <CardMedia
                     component="img"
-                    image={song.coverUrl || song.cover || '/default-song-cover.jpg'}
+                    image={artworkUrl(song)}
                     alt={song.title}
                     loading="lazy"
                     sx={{
@@ -1227,10 +1229,10 @@ function Home() {
                   onClick={() => handlePlaySong(activity)}
                 >
                   <OptimizedImage
-                    src={activity.coverUrl}
+                    src={artworkUrl(activity)}
                     alt={activity.title}
                     height={80}
-                    fallback="/default-song-cover.jpg"
+                    fallback={PLACEHOLDER_IMAGE}
                   />
                   <CardContent sx={{ p: 1 }}>
                     <Typography
