@@ -124,6 +124,23 @@ service firebase.storage {
         && request.resource.size < 500 * 1024 * 1024; // 500MB limit for high-quality audio
     }
 
+    /* Previews: 30 seconds of each record, public on purpose.
+
+       This is the shop window. A licensing catalogue cannot sell what nobody can
+       hear, and requiring a sign-in to hear thirty seconds loses the supervisor
+       who was deciding whether to bother. Read is open for the same reason a
+       cover is open.
+
+       The master is NOT here and must not be. It stays in R2, which the station
+       serves publicly because clock-synced playback needs unauthenticated range
+       requests - and it is never written into a `songs` document, because
+       firestore.rules has `allow read: if true` on that collection. */
+    match /songs/previews/{allPaths=**} {
+      allow read: if true;
+      allow write: if isPlatformAdmin()
+        && request.resource.size < 5 * 1024 * 1024; // a 30s preview is ~0.5MB
+    }
+
     // Deny all other storage access
     match /{allPaths=**} {
       allow read, write: if false;
