@@ -21,6 +21,7 @@ import { usePlaybackResume } from "../utils/usePlaybackResume";
 import MiniPlayerPortal from "./MiniPlayerPortal";
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
 import PropTypes from 'prop-types';
+import { artworkUrl } from '../utils/artwork';
 const playerAnalytics = new PlayerAnalyticsClass();
 
 const MusicPlayer = ({ onShowRightPanel, previewMode = true, maxDuration = 30, onGetFullVersion }) => {
@@ -135,7 +136,7 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = true, maxDuration = 30, o
           {song ? (
             <>
               <img
-                src={song.coverUrl || song.cover || getPlaceholderImage(50, 50)}
+                src={artworkUrl(song, { width: 50, height: 50 })}
                 alt="cover"
                 className="w-12 h-12 object-cover rounded mr-3"
               />

@@ -20,6 +20,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { toast } from "react-hot-toast";
 import classNames from "classnames";
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * Enhanced QueuePanel - A comprehensive queue management component
@@ -307,11 +308,7 @@ const QueuePanel = memo(({ visible, onClose, className = "" }) => {
                     )}
                   >
                     <img
-                      src={
-                        currentTrack.cover ||
-                        currentTrack.coverUrl ||
-                        getPlaceholderImage(64, 64, "♪")
-                      }
+                      src={artworkUrl(currentTrack, { width: 64, height: 64, label: "♪" })}
                       alt={`${currentTrack.title} cover`}
                       className="w-16 h-16 mr-4 rounded-lg object-cover shadow-md"
                       onError={(e) => {
@@ -416,11 +413,7 @@ const QueuePanel = memo(({ visible, onClose, className = "" }) => {
 
                                   {/* Album Art */}
                                   <img
-                                    src={
-                                      item.cover ||
-                                      item.coverUrl ||
-                                      getPlaceholderImage(40, 40, "♪")
-                                    }
+                                    src={artworkUrl(item, { width: 40, height: 40, label: "♪" })}
                                     alt={`${item.title} cover`}
                                     className="w-10 h-10 mr-3 rounded object-cover shadow-sm"
                                     onError={(e) => {

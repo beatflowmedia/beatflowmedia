@@ -21,6 +21,7 @@ import { useLikes } from '../context/LikesContext';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * DiscoverWeekly - Algorithmic music recommendations
@@ -267,7 +268,7 @@ function DiscoverWeekly() {
           <Box sx={{ position: 'relative', paddingTop: '100%' }}>
             <Box
               component="img"
-              src={track.coverUrl || track.cover || '/images/Logo.png'}
+              src={artworkUrl(track)}
               alt={track.title}
               sx={{
                 position: 'absolute',

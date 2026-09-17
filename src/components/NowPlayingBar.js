@@ -20,6 +20,7 @@ import { usePlayer } from "../context/PlayerContext";
 import PlayerProgress from "./PlayerProgress";
 import { toast } from "react-hot-toast";
 import classNames from "classnames";
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * NowPlayingBar - A comprehensive mini player with controls and track info
@@ -246,11 +247,7 @@ const NowPlayingBar = memo(
         {/* Track Info */}
         <div className="flex items-center space-x-3 flex-1 min-w-0">
           <img
-            src={
-              currentTrack.coverUrl ||
-              currentTrack.cover ||
-              getPlaceholderImage(56, 56, '♪')
-            }
+            src={artworkUrl(currentTrack, { width: 56, height: 56, label: '♪' })}
             alt={`${currentTrack.title} cover`}
             width="56"
             height="56"

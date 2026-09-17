@@ -18,7 +18,7 @@ import { toast } from 'react-toastify';
 import { getArtistImageUrl } from '../hooks/useArtistImage';
 import SongPlayCount from '../components/SongPlayCount';
 import { SONG_PRICE, formatPrice } from '../utils/pricing';
-import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
+import { artworkUrl } from '../utils/artwork';
 
 export default function ArtistSimple() {
   console.log('[ArtistSimple] Component mounted/rendered');
@@ -235,7 +235,7 @@ export default function ArtistSimple() {
       setArtist({
         name: artistName,
         // Use cover from first song if available
-        imageUrl: artistSongs[0]?.coverUrl || artistSongs[0]?.cover || PLACEHOLDER_IMAGE
+        imageUrl: artworkUrl(artistSongs[0])
       });
       // Clear any error that might have been set too early
       setError(null);
@@ -502,7 +502,7 @@ export default function ArtistSimple() {
                   </Typography>
                   <Box sx={{ position: 'relative', width: 40, height: 40 }}>
                     <img
-                      src={song.coverUrl || song.cover || '/images/Logo.png'}
+                      src={artworkUrl(song)}
                       alt={song.title}
                       style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }}
                     />

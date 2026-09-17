@@ -65,6 +65,7 @@ import Fade from '@mui/material/Fade';
 import { useNavigate } from 'react-router-dom';
 import { stripeService } from '../services/stripeService';
 import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
+import { artworkUrl } from '../utils/artwork';
 
 const SEARCH_CATEGORIES = [
   { label: "All", value: "all", icon: <SearchIcon /> },
@@ -838,7 +839,7 @@ function Search() {
                       >
                         <Box sx={{ position: "relative" }}>
                           <OptimizedImage
-                            src={item.coverUrl || item.imageUrl || item.cover}
+                            src={artworkUrl(item)}
                             alt={item.title || item.name}
                             height={200}
                             fallback={PLACEHOLDER_IMAGE}

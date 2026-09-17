@@ -12,6 +12,7 @@ import { FaPlus, FaHeart, FaListUl, FaUserAlt, FaCompactDisc, FaShare, FaDesktop
 import { MdRemove } from 'react-icons/md';
 import { showSuccessToast, showErrorToast } from '../utils/Toast';
 import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
+import { artworkUrl } from '../utils/artwork';
 
 const RightPanel = ({ visible, content, onClose }) => {
   // content: { type: "artist"|"playlist"|"queue", info: {...}, artistId?: string, artistName?: string }
@@ -275,7 +276,7 @@ const RightPanel = ({ visible, content, onClose }) => {
             <div className="flex items-center gap-3 p-3 rounded bg-gray-800">
               <div className="relative w-14 h-14 flex-shrink-0">
                 <img
-                  src={currentSong.coverUrl || currentSong.cover || PLACEHOLDER_IMAGE}
+                  src={artworkUrl(currentSong)}
                   alt={currentSong.title}
                   className="w-full h-full object-cover rounded"
                 />
@@ -324,7 +325,7 @@ const RightPanel = ({ visible, content, onClose }) => {
                   >
                     <div className="w-10 h-10 flex-shrink-0">
                       <img
-                        src={song.coverUrl || song.cover || PLACEHOLDER_IMAGE}
+                        src={artworkUrl(song)}
                         alt={song.title}
                         className="w-full h-full object-cover rounded"
                       />
@@ -806,7 +807,7 @@ const RightPanel = ({ visible, content, onClose }) => {
                         >
                           <div className="relative w-12 h-12 flex-shrink-0">
                             <img
-                              src={song.coverUrl || song.cover || PLACEHOLDER_IMAGE}
+                              src={artworkUrl(song)}
                               alt={song.title}
                               className="w-full h-full object-cover rounded"
                             />
@@ -883,7 +884,7 @@ const RightPanel = ({ visible, content, onClose }) => {
                 className="flex items-center text-gray-200 py-1 border-b border-gray-800 last:border-none"
               >
                 <img
-                  src={song?.coverUrl || song?.cover || PLACEHOLDER_IMAGE}
+                  src={artworkUrl(song)}
                   alt={song?.title || 'Song'}
                   className="w-10 h-10 mr-2 rounded object-cover"
                 />

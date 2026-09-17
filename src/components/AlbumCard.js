@@ -5,7 +5,7 @@ import { Card, CardContent, CardMedia, Typography, Box } from '@mui/material';
 import { QueueMusic } from '@mui/icons-material';
 import PurchaseButton from './PurchaseButton';
 import { calculateAlbumPrice } from '../utils/pricing';
-import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * AlbumCard - Reusable component for displaying album information with purchase option
@@ -41,7 +41,7 @@ export default function AlbumCard({ album, showPurchaseButton = true }) {
       <CardMedia
         component="img"
         height="180"
-        image={album.coverUrl || PLACEHOLDER_IMAGE}
+        image={artworkUrl(album)}
         alt={album.title}
         sx={{ objectFit: 'cover', cursor: 'pointer' }}
         onClick={handleNavigateToAlbum}

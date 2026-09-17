@@ -21,7 +21,7 @@ import {
   Tooltip
 } from '@mui/material';
 import { FaRobot, FaFire } from 'react-icons/fa';
-import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
+import { artworkUrl } from '../utils/artwork';
 
 function RecommendedPlaylists({ limit = 6 }) {
   const { user } = useAuth();
@@ -171,7 +171,7 @@ function RecommendedPlaylists({ limit = 6 }) {
               <CardMedia
                 component="img"
                 height="180"
-                image={playlist.coverUrl || playlist.imageUrl || PLACEHOLDER_IMAGE}
+                image={artworkUrl(playlist)}
                 alt={playlist.name}
                 sx={{ objectFit: 'cover' }}
               />

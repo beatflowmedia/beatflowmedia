@@ -20,6 +20,7 @@ import classNames from "classnames";
 import { useNavigate } from "react-router-dom";
 import { stripeService } from "../services/stripeService";
 import { SONG_PRICE, formatPrice } from "../utils/pricing";
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * TrackRow - A comprehensive track listing component with play button, metadata, and actions
@@ -292,11 +293,7 @@ const TrackRow = memo(
         {/* Album Art */}
         <div className="w-12 h-12 mr-3 flex-shrink-0">
           <img
-            src={
-              track.cover ||
-              track.coverUrl ||
-              getPlaceholderImage(48, 48, "♪")
-            }
+            src={artworkUrl(track, { width: 48, height: 48, label: "♪" })}
             alt={`${track.title} cover`}
             width="48"
             height="48"

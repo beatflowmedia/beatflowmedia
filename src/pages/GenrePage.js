@@ -9,7 +9,7 @@ import PlayArrow from '@mui/icons-material/PlayArrow';
 import Footer from '../components/Footer';
 import PlayingIndicator from '../components/PlayingIndicator';
 import { usePlaySong } from '../hooks/usePlaySong';
-import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
+import { artworkUrl } from '../utils/artwork';
 
 export default function GenrePage() {
   const { genre } = useParams();
@@ -115,7 +115,7 @@ export default function GenrePage() {
         <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
           <CardMedia
             component="img"
-            image={song.coverUrl || song.cover || PLACEHOLDER_IMAGE}
+            image={artworkUrl(song)}
             alt={song.title}
             sx={{
               cursor: 'pointer',

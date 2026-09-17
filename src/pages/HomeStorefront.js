@@ -9,6 +9,7 @@ import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestor
 import OptimizedImage from "../components/OptimizedImage";
 import { stripeService } from "../services/stripeService";
 import { useNavigate } from "react-router-dom";
+import { artworkUrl } from '../utils/artwork';
 
 function HomeStorefront({ hideHeader = false, filter = null }) {
   const { user } = useAuth();
@@ -192,7 +193,7 @@ function HomeStorefront({ hideHeader = false, filter = null }) {
                 {/* Track Cover Art */}
                 <Box sx={{ position: 'relative', paddingTop: '100%' }}>
                   <OptimizedImage
-                    src={track.coverUrl || track.cover || track.albumCover}
+                    src={artworkUrl(track)}
                     alt={track.title || 'Track cover'}
                     fallback="/images/Logo.png"
                     sx={{
