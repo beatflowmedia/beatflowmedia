@@ -19,6 +19,7 @@ Stripe. Dev server on `:3005` (`npm run dev`).
 | Local image assets | `public/` | `npm run verify:assets` |
 | Album cover field name | **NEEDS OWNER** — `cover` and `coverUrl` both in use | none yet |
 | Song / album pricing | `src/utils/pricing.js` (**CommonJS**, so the station can `require` it) | `npx jest src/utils/pricing.test.js` |
+| Content Security Policy | `config/csp.js` | `npm run verify:csp` |
 | Master object key + delivery contract | `netlify/functions/lib/masters.js` | `npm run test:functions` |
 | "may this user have this item" | `netlify/functions/lib/entitlement.js` | - |
 | Catalogue records (albums/songs) | **`C:/Users/percy/RadioStation/radio/releases.json`** — the station seeds BFMG one-way over ISRC; see its `catalog.js` | `node catalog.js diff` |
@@ -73,6 +74,28 @@ Env required by `download-master`: `R2_MASTERS_ENDPOINT`, `R2_MASTERS_BUCKET`,
 `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`. The token needs **GetObject only** —
 BFMG reads masters, it never writes them. Absent config returns 503 rather than
 presigning with `undefined` and yielding a 403 the buyer meets after paying.
+
+## App Check — registered, NOT enforced
+
+reCAPTCHA Enterprise ("Fraud Defense"), score-based, registered 2026-09-17.
+Verified issuing real tokens: `exchangeRecaptchaEnterpriseToken` returns 200, on
+localhost, so **no debug token is needed**.
+
+`CreateAssessment Requests per day` is capped at **300** in Cloud quotas. That is a
+HARD cap — requests past it are refused — unlike a billing budget, which only
+alerts. 10,000 free assessments/month ÷ 30 ≈ 333/day, so 300 is arithmetically
+inside the free tier rather than probably inside it.
+
+**Enforcement is OFF and must stay off until the station moves.** The station reads
+this catalogue over unauthenticated REST by design — its `catalog.js` says "diff and
+pull work from anywhere with no secret on disk". Enforcement rejects tokenless
+requests, so it breaks the station's reads while leaving its service-account push
+working: a partial failure, which is the most confusing shape available. Sequence:
+register (done) → run unenforced and read the verified/unverified split → station
+switches to authenticated reads → enforce per service.
+
+Cap at 300 must be resized before enforcing. Today a refused assessment is harmless
+because nothing is enforced; after enforcement it means a real visitor is blocked.
 
 ## Billing — Blaze, as of 2026-09-17
 
@@ -352,6 +375,33 @@ task; `entitlement.js` reads `purchases` because every path writes it.
 **Open, needs the station:** the private bucket does not exist yet and no WAV has been
 pushed. `_originals` holds **126** WAVs against **134** ISRC-bearing songs, so 8
 records have no lossless master and cannot offer a download at any price.
+
+### 2026-09-17 — four copies of the CSP, one of them winning silently
+
+App Check initialised correctly and then did nothing at all: the browser refused
+`https://www.google.com/recaptcha/enterprise.js`, so no attestation ever ran.
+
+The policy existed in **four** unreferenced copies — `public/_headers`, the
+`<meta>` in `public/index.html`, `craco.config.js` devServer headers, and a dead
+`src/config/securityConfig.js`. A browser enforces the **intersection** of every
+policy present, so patching two of three changed nothing observable: the served
+HTML demonstrably allowed reCAPTCHA while craco's header quietly cancelled it.
+
+That is what makes this the worst duplication in the repo. A wrong copy of most
+things fails loudly. A wrong copy of a CSP fails **closed and silent** — the
+request simply never happens.
+
+`config/csp.js` is now the single source; craco requires it; the two static copies
+reconcile via `npm run verify:csp`, which reports per-directive drift. Generated
+from the live policy rather than retyping 1,900 characters of security header.
+
+The reconciler immediately earned itself: the meta tag had drifted on five
+directives, carrying `*.stripe.com` and `accounts.google.com` that no other copy
+had (so never actually permitted) while omitting `child-src`, youtube, vimeo and
+`data:` fonts that `_headers` intended (so silently cancelled).
+
+**Deletion candidate:** `src/config/securityConfig.js` — 564 lines, 13 sections,
+**zero importers**, containing a fourth CSP. It reads as authoritative and is not.
 
 **Ratchet:** function-delivery assertions — **baseline 10**. Up only.
 
