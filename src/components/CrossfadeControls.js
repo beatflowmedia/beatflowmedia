@@ -17,7 +17,6 @@ import {
   IconButton
 } from "@mui/material";
 import {
-import { PlayArrow } from '@mui/icons-material/PlayArrow';
   PlayArrow,
   Stop,
   Settings,

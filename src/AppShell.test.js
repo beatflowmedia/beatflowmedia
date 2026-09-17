@@ -17,8 +17,8 @@ const Providers = ({ children }) => (
 
 describe("AppShell global shortcuts", () => {
   it("toggles queue panel visibility when Q is pressed", () => {
-    const { container } = render(<AppShell />, { wrapper: Providers });
-    const main = container.querySelector("main");
+    const { getByRole } = render(<AppShell />, { wrapper: Providers });
+    const main = getByRole("main");
     // Initially, queue panel is closed => no margin class
     expect(main).not.toHaveClass("mr-96");
     // Press Q

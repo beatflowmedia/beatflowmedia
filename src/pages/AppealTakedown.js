@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Box, Card, TextField, Button, Typography, Alert, FormControl, InputLabel, Select, MenuItem, CircularProgress, Paper, IconButton, Chip, LinearProgress } from '@mui/material';
@@ -7,7 +7,6 @@ import { collection, addDoc, doc, getDoc, query, where, getDocs } from 'firebase
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebaseConfig';
 import { toast } from 'react-toastify';
-import { getAppealGuidance } from '../agents/ContentModerationAgent';
 
 export default function AppealTakedown() {
   const [searchParams] = useSearchParams();
@@ -23,8 +22,6 @@ export default function AppealTakedown() {
   const [appealReason, setAppealReason] = useState('');
   const [evidence, setEvidence] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
-  const [showGuidance, setShowGuidance] = useState(true);
-  const [guidance, setGuidance] = useState(null);
   const [existingAppeal, setExistingAppeal] = useState(null);
 
   // File upload state
@@ -35,10 +32,6 @@ export default function AppealTakedown() {
 
   // URL links state
   const [evidenceUrls, setEvidenceUrls] = useState(['']);
-
-  // Confirmation dialog state
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingSubmitData, setPendingSubmitData] = useState(null);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   const ALLOWED_FILE_TYPES = [
@@ -63,19 +56,7 @@ export default function AppealTakedown() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (authChecking) return; // Don't check until auth has initialized
-
-    if (!user) {
-      // User is not logged in - stay on page but show login prompt
-      setLoading(false);
-      return;
-    }
-
-    loadContent();
-  }, [user, authChecking, songId, albumId]);
-
-  const loadContent = async () => {
+  const loadContent = useCallback(async () => {
     try {
       if (songId) {
         const songDoc = await getDoc(doc(db, 'songs', songId));
@@ -116,7 +97,19 @@ export default function AppealTakedown() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, songId, albumId]);
+
+  useEffect(() => {
+    if (authChecking) return; // Don't check until auth has initialized
+
+    if (!user) {
+      // User is not logged in - stay on page but show login prompt
+      setLoading(false);
+      return;
+    }
+
+    loadContent();
+  }, [user, authChecking, loadContent]);
 
   // File upload handlers
   const handleFileSelect = async (files) => {

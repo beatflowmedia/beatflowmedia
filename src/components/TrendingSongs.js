@@ -8,6 +8,7 @@ import { useLikes } from '../context/LikesContext';
 import PlayingIndicator from './PlayingIndicator';
 import SongPlayCount from './SongPlayCount';
 import SongLikeCount from './SongLikeCount';
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * Component to display trending songs
@@ -95,7 +96,7 @@ export default function TrendingSongs({ limit = 10, daysBack = 7 }) {
                   }}
                 >
                   <img
-                    src={song.cover || '/images/default-cover.jpg'}
+                    src={artworkUrl(song)}
                     alt={song.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />

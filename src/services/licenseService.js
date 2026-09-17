@@ -10,10 +10,9 @@ import {
   query,
   where,
   updateDoc,
-  serverTimestamp,
-  Timestamp
+  serverTimestamp
 } from 'firebase/firestore';
-import { getDiscountRate, calculateDiscountedPrice, getSubscriberPricingInfo } from '../data/discountTiers';
+import { getDiscountRate, calculateDiscountedPrice } from '../data/discountTiers';
 
 /**
  * License Service
@@ -280,8 +279,6 @@ export const handleSubscriptionCancellation = async (userId, subscriptionId) => 
 
     // Update each license
     const updatePromises = snapshot.docs.map(async (licenseDoc) => {
-      const license = licenseDoc.data();
-
       await updateDoc(doc(db, 'licenses', licenseDoc.id), {
         status: 'published-only', // Can't use in new projects
         validWhileSubscribed: false,
@@ -535,7 +532,7 @@ export const calculateTrackPricing = async (userId, originalPrice) => {
   };
 };
 
-export default {
+const licenseService = {
   createDownloadLicense,
   registerPublishedProject,
   validateLicense,
@@ -547,3 +544,5 @@ export default {
   getSubscriberDiscount,
   calculateTrackPricing
 };
+
+export default licenseService;

@@ -5,6 +5,7 @@
 // ------------------------------------------------------
 import React from "react";
 import PlayButton from "./PlayButton";
+import { artworkUrl } from '../utils/artwork';
 
 const ArtistItem = ({ song, isPlaying, currentSong, onPlay }) => {
   const isCurrentPlaying = isPlaying && currentSong?.id === song.id;
@@ -16,7 +17,7 @@ const ArtistItem = ({ song, isPlaying, currentSong, onPlay }) => {
     >
       <div className="flex items-center space-x-4">
         <img
-          src={song.cover}
+          src={artworkUrl(song)}
           alt={song.title}
           className="w-12 h-12 rounded-md object-cover"
         />

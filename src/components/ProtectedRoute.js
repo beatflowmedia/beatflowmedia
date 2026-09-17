@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../hooks/useModal";
 import { isPlatformAdmin } from "../utils/adminCheck";

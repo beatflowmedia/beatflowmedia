@@ -2,12 +2,13 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import classNames from "classnames";
-import { FaSearch, FaDownload, FaBell, FaCrown, FaUser, FaCog, FaSignOutAlt, FaBars, FaTimes, FaCompass } from "react-icons/fa";
+import { FaSearch, FaDownload, FaBell, FaCrown, FaUser, FaCog, FaSignOutAlt, FaTimes, FaCompass } from "react-icons/fa";
 import { MdLibraryMusic } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
 import { useSubscription } from "../hooks/useSubscription";
 import { useModal } from "../hooks/useModal";
 import PropTypes from 'prop-types';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 // Shared responsive styles using DRY principle
 const styles = {
@@ -201,9 +202,9 @@ const NavBar = ({
             />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search tracks, artists, moods..."
               onChange={(e) => onSearchChange(e.target.value)}
-              aria-label="Search for songs, artists, or albums"
+              aria-label="Search for music to license"
               className="w-full rounded-full bg-bf-card text-bf-text placeholder-bf-subtext outline-none focus:ring-2 focus:ring-bf-green transition"
               style={styles.searchInput}
             />
@@ -216,31 +217,16 @@ const NavBar = ({
 
       {/* RIGHT: Actions */}
       <div className="flex items-center" style={styles.gapSmall}>
-        {/* Browse button - hidden on mobile */}
+        {/* Downloads/Licensed Tracks button - hidden on mobile */}
         <button
           type="button"
-          onClick={() => navigate('/browse')}
-          aria-label="Browse music"
+          onClick={() => navigate('/downloads')}
+          aria-label="My Licensed Tracks"
           className="hidden md:flex rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition"
-          title="Browse"
+          title="My Licensed Tracks"
           style={styles.iconButton}
         >
-          <MdLibraryMusic
-            className="text-bf-subtext hover:text-bf-text"
-            style={styles.iconMedium}
-          />
-        </button>
-
-        {/* Discover Weekly button - hidden on mobile */}
-        <button
-          type="button"
-          onClick={() => navigate('/discover-weekly')}
-          aria-label="Discover Weekly"
-          className="hidden md:flex rounded hover:bg-bf-card focus:outline-none focus:ring-2 focus:ring-bf-green transition"
-          title="Discover Weekly"
-          style={styles.iconButton}
-        >
-          <FaCompass
+          <FaDownload
             className="text-bf-subtext hover:text-bf-text"
             style={styles.iconMedium}
           />
@@ -292,7 +278,7 @@ const NavBar = ({
               }}
             >
               <img
-                src={user.photoURL || '/default-avatar.png'}
+                src={user.photoURL || PLACEHOLDER_IMAGE}
                 alt={user.displayName || 'User'}
                 className="rounded-full"
                 style={styles.avatar}
@@ -432,7 +418,7 @@ const NavBar = ({
             <div className="px-4 py-3 mb-2 bg-gray-800 border-y border-gray-700">
               <div className="flex items-center" style={styles.gapMedium}>
                 <img
-                  src={user.photoURL || '/default-avatar.png'}
+                  src={user.photoURL || PLACEHOLDER_IMAGE}
                   alt={user.displayName || 'User'}
                   className="rounded-full"
                   style={{ width: '48px', height: '48px' }}

@@ -43,14 +43,12 @@ const fetchPayoutSummary = async (userId) => {
 const PayoutDashboard = ({ userId, stripeAccountId }) => {
   const [payoutData, setPayoutData] = useState(null);
   const [summary, setSummary] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchPayoutData(stripeAccountId).then(setPayoutData);
     fetchPayoutSummary(userId).then(setSummary);
   }, [userId, stripeAccountId]);
 
-  if (error) return <div className="text-red-600">Error: {error.message}</div>;
   if (!payoutData || !summary) return <div className="text-white">Loading payout data...</div>;
 
   return (

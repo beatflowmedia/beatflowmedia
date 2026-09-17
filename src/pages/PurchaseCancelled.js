@@ -73,7 +73,7 @@ export default function PurchaseCancelled() {
               variant="contained"
               size="large"
               startIcon={<Refresh />}
-              onClick={() => navigate('/artist-pricing')}
+              onClick={() => navigate('/explore-premium')}
               sx={{
                 bgcolor: '#1DB954',
                 color: 'white',

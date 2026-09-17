@@ -30,7 +30,8 @@ import {
   Analytics as AnalyticsIcon,
   Campaign as MarketingIcon,
   PersonOutline as PersonalizationIcon,
-  Cookie as CookieIcon as DownloadIcon,
+  Cookie as CookieIcon,
+  Download as DownloadIcon,
   Delete as DeleteIcon
 } from "@mui/icons-material";
 import { PrivacyManager } from "../../services/analytics/PrivacyManager";

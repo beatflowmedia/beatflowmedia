@@ -22,11 +22,7 @@ import {
 import { useEnhancedPlayer } from "../context/EnhancedPlayerContext";
 import AdvancedAudioControls from "./AdvancedAudioControls";
 import PlaybackControls from "./PlaybackControls";
-import { SkipNext } from '@mui/icons-material/SkipNext';
-import { SkipPrevious } from '@mui/icons-material/SkipPrevious';
-import { VolumeUp } from '@mui/icons-material/VolumeUp';
-import { Pause } from '@mui/icons-material/Pause';
-import { PlayArrow } from '@mui/icons-material/PlayArrow';
+import { SkipNext, SkipPrevious, VolumeUp, Pause, Close } from '@mui/icons-material';
 
 /**
  * EnhancedAudioPlayer - Complete audio player with production-grade features

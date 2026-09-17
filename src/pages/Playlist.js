@@ -43,6 +43,7 @@ import QueueMusic from '@mui/icons-material/QueueMusic';
 import Shuffle from '@mui/icons-material/Shuffle';
 import MusicNote from '@mui/icons-material/MusicNote';
 import ShoppingCart from '@mui/icons-material/ShoppingCart';
+import { SONG_PRICE } from '../utils/pricing';
 import Search from '@mui/icons-material/Search';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
@@ -115,7 +116,6 @@ function Playlist() {
 
   // Modal states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [, setCollaboratorDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Menu states
@@ -310,7 +310,7 @@ function Playlist() {
     if (playlist) {
       trackPlaylistView(playlist);
     }
-  }, [playlist]);
+  }, [playlist, navigate]);
 
   // Load play counts from songMetrics collection when tracks change
   useEffect(() => {
@@ -1054,7 +1054,7 @@ function Playlist() {
                       <PurchaseButton
                         itemId={track.id}
                         itemType="song"
-                        price={track.price || 199}
+                        price={track.price || SONG_PRICE}
                         compact={true}
                         artistId={track.artistId}
                         uploadedBy={track.uploadedBy}

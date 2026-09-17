@@ -1,29 +1,31 @@
 // src/pages/SongPage.js
-import { getPlaceholderImage } from "../utils/placeholders";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import PlayButton from "../components/PlayButton";
 import LikeButton from "../components/LikeButton";
 import PurchaseButton from "../components/PurchaseButton";
-import FanCaptureModal from "../components/FanCaptureModal";
 import { useAuth } from "../context/AuthContext";
 import { useLikes } from '../context/LikesContext';
 import { usePlayer } from "../context/PlayerContext";
+import { usePlayerActions } from "../hooks/usePlayerActions";
 import { db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { generateSongMetaTags } from "../utils/metaTagsHelper";
 import { generateSongSchema, schemaToScriptTag } from "../utils/schemaMarkup";
 import { trackSongView } from "../services/conversionTracking";
+import { SONG_PRICE } from "../utils/pricing";
+import { artworkUrl } from '../utils/artwork';
+import { getPlaceholderImage } from '../utils/placeholders';
 
 function SongPage() {
   const { id } = useParams();
   const { user, signInWithGoogle } = useAuth();
   const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
   const { dispatch, actions } = usePlayer();
+  const { currentSong, isPlaying } = usePlayerActions();
   const [song, setSong] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [fanCaptureOpen, setFanCaptureOpen] = useState(false);
 
   // 1) Fetch song from Firebase
   useEffect(() => {
@@ -34,9 +36,7 @@ function SongPage() {
         if (songDoc.exists()) {
           const songData = { id: songDoc.id, ...songDoc.data() };
           setSong(songData);
-          // Queue the song and attempt auto-play
-          // Note: Browser autoplay policies may block this without user interaction
-          dispatch({ type: actions.PLAY_SONG, payload: songData });
+          // Note: playback starts only when the user clicks play (no forced autoplay).
         } else {
           setSong(null);
         }
@@ -95,9 +95,14 @@ function SongPage() {
   };
 
   const isLiked = checkIsLiked(song?.id);
+  const isThisPlaying = isPlaying && currentSong?.id === song.id;
 
   const handlePlay = () => {
-    dispatch({ type: actions.PLAY_SONG, payload: song });
+    if (isThisPlaying) {
+      dispatch({ type: actions.TOGGLE_PLAY });
+    } else {
+      dispatch({ type: actions.PLAY_SONG, payload: song });
+    }
   };
 
   // Generate SEO meta tags and Schema.org markup
@@ -128,7 +133,7 @@ function SongPage() {
 
       <div className="flex items-center space-x-4 mb-6">
         <PlayButton
-          isPlaying={false}
+          isPlaying={isThisPlaying}
           onClick={handlePlay}
           size={32}
         />
@@ -141,27 +146,19 @@ function SongPage() {
         <PurchaseButton
           itemId={id}
           itemType="song"
-          price={song.price || 0.99}
+          price={song.price || SONG_PRICE}
           artistId={song.artistId}
           uploadedBy={song.uploadedBy}
         />
 
-        {user && (
-          <button
-            onClick={() => setFanCaptureOpen(true)}
-            className="px-4 py-2 border border-green-500 text-green-500 rounded-md hover:bg-green-500 hover:bg-opacity-10 transition"
-          >
-            Get Exclusive Content
-          </button>
-        )}
       </div>
 
       <div className="mt-6">
         <img
-          src={song.cover || getPlaceholderImage(300, 300)}
+          src={artworkUrl(song)}
           alt={song.title}
-          className="rounded-lg max-w-full"
-          onError={(e) => { e.target.src = getPlaceholderImage(300, 300); }}
+          className="rounded-lg w-full max-w-[280px] aspect-square object-cover"
+          onError={(e) => { e.target.onerror = null; e.target.src = getPlaceholderImage(300, 300); }}
         />
       </div>
 
@@ -174,18 +171,6 @@ function SongPage() {
       </div>
     </div>
 
-    {/* Fan Capture Modal - 2026 Hybrid Strategy: Direct-to-Fan Retention */}
-    <FanCaptureModal
-      open={fanCaptureOpen}
-      onClose={() => setFanCaptureOpen(false)}
-      artist={{
-        id: song.artistId || song.uploadedBy,
-        name: song.artist || song.artistName,
-        photoURL: song.artistPhotoURL || song.cover
-      }}
-      incentiveType="exclusiveTrack"
-      incentiveContent={`Subscribe to get exclusive content from ${song.artist || 'this artist'}, including unreleased tracks and early access to new music`}
-    />
     </>
   );
 }

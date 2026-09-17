@@ -82,3 +82,16 @@ netlify/functions/nul
 
 # Firebase Service Account Key (sensitive)
 serviceAccountKey.json
+
+# Local HTTPS dev certificates (mkcert). Never commit a private key --
+# netlify.toml [dev] points here, and each developer generates their own:
+#   mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
+.certs/
+*.pem
+
+# Build output under any name. `build/` alone missed these: build_devbak is an
+# old manual copy, and build.stale-* is what a rename leaves behind. Generated
+# output must never become 400 untracked files competing for review attention.
+build_devbak/
+build.stale-*/
+build.*/

@@ -1,14 +1,15 @@
-/* Modern Grid Layout for Music Streaming App */
-/* Inspired by Spotify's layout architecture */
+/* Modern Grid Layout for Music Licensing Marketplace */
+/* Optimized for browsing and licensing tracks */
 
 .appContainer {
   display: grid;
   grid-template-areas:
-    "navbar navbar navbar"
-    "sidebar main rightpanel"
-    "player player player";
-  grid-template-columns: var(--sidebar-width, 288px) 1fr var(--rightpanel-width, 0);
-  grid-template-rows: var(--navbar-height, 64px) 1fr var(--player-height, 90px);
+    "navbar navbar"
+    "categorynav categorynav"
+    "main rightpanel"
+    "player player";
+  grid-template-columns: 1fr var(--rightpanel-width, 0);
+  grid-template-rows: var(--navbar-height, 64px) var(--categorynav-height, 48px) 1fr var(--player-height, 90px);
   height: 100vh;
   width: 100vw;
   overflow: hidden;
@@ -22,11 +23,6 @@
   --rightpanel-width: 384px;
 }
 
-/* Sidebar collapsed state */
-.appContainer.sidebarCollapsed {
-  --sidebar-width: 72px;
-}
-
 /* Grid Areas */
 .navbar {
   grid-area: navbar;
@@ -37,13 +33,13 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.sidebar {
-  grid-area: sidebar;
-  overflow-y: auto;
-  overflow-x: hidden;
+.categoryNav {
+  grid-area: categorynav;
+  position: sticky;
+  top: var(--navbar-height, 64px);
+  z-index: 45;
   background-color: #000;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .main {
@@ -81,23 +77,11 @@
 
 /* Tablet (768px - 1023px) */
 @media (max-width: 1023px) {
-  .appContainer {
-    grid-template-columns: var(--sidebar-width, 240px) 1fr;
-    grid-template-areas:
-      "navbar navbar"
-      "sidebar main"
-      "player player";
-  }
-
-  .appContainer.sidebarCollapsed {
-    --sidebar-width: 0;
-  }
-
   /* Right panel becomes overlay */
   .rightPanel {
     position: fixed;
     right: 0;
-    top: var(--navbar-height, 64px);
+    top: calc(var(--navbar-height, 64px) + var(--categorynav-height, 48px));
     bottom: var(--player-height, 90px);
     width: 384px;
     max-width: 90vw;
@@ -109,37 +93,19 @@
 /* Mobile (< 768px) */
 @media (max-width: 767px) {
   .appContainer {
-    grid-template-columns: 1fr;
     grid-template-areas:
       "navbar"
+      "categorynav"
       "main"
       "player";
-    --sidebar-width: 0;
-  }
-
-  /* Sidebar becomes full-screen overlay */
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: var(--navbar-height, 64px);
-    bottom: var(--player-height, 90px);
-    width: 100vw;
-    max-width: 320px;
-    z-index: 45;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.5);
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
+    grid-template-columns: 1fr;
   }
 
   /* Right panel becomes full-screen overlay */
   .rightPanel {
     position: fixed;
     right: 0;
-    top: var(--navbar-height, 64px);
+    top: calc(var(--navbar-height, 64px) + var(--categorynav-height, 48px));
     bottom: var(--player-height, 90px);
     width: 100vw;
     max-width: 100vw;
@@ -155,7 +121,6 @@
 /* Accessibility - Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .appContainer,
-  .sidebar,
   .rightPanel {
     transition: none;
   }

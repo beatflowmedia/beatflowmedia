@@ -137,7 +137,7 @@ export const getSubscriberPricingInfo = (originalPrice, tier) => {
   };
 };
 
-export default {
+const discountTiersModule = {
   DISCOUNT_RATES,
   getDiscountRate,
   calculateDiscountedPrice,
@@ -147,3 +147,5 @@ export default {
   hasSubscriberDiscount,
   getSubscriberPricingInfo
 };
+
+export default discountTiersModule;

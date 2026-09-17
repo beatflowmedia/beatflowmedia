@@ -26,13 +26,67 @@
   SECRETS_SCAN_OMIT_KEYS = "REACT_APP_FIREBASE_API_KEY,REACT_APP_FIREBASE_APP_ID,REACT_APP_FIREBASE_AUTH_DOMAIN,REACT_APP_FIREBASE_MEASUREMENT_ID,REACT_APP_FIREBASE_MESSAGING_SENDER_ID,REACT_APP_FIREBASE_PROJECT_ID,REACT_APP_FIREBASE_STORAGE_BUCKET,REACT_APP_STRIPE_PUBLISHABLE_KEY,REACT_APP_STRIPE_STUDENT_PRICE_ID,REACT_APP_STRIPE_CREATOR_PRICE_ID,REACT_APP_STRIPE_PRO_PRICE_ID,REACT_APP_STRIPE_AGENCY_PRICE_ID,REACT_APP_SITE_URL,REACT_APP_ANALYTICS_ID"
 
 [dev]
-  port = 3005
+  # Serve on 8888. This used to be 3005, which collided with the `dev` script's own
+  # PORT=3005 -- Netlify wanted the same port as the app it was proxying.
+  port = 8888
   targetPort = 3006
+
+  # Name the script explicitly. Auto-detection picks `npm run dev` (PORT=3005), which
+  # never opens targetPort 3006, so Netlify waits for a port nothing is serving and
+  # dies with "Timed out waiting for port '3006' to be open". `start` is PORT=3006.
+  command = "npm start"
+
+  # Local HTTPS. Netlify Dev accepts a certificate only from this file -- there are
+  # no --cert/--key flags -- so it has to live here rather than on the command line.
+  #
+  # The files are gitignored and machine-specific: a private key must never be
+  # committed, and this repo has SECRETS_SCAN_ENABLED = "true" which would fail the
+  # build if one were. Generate your own once with mkcert:
+  #
+  #   mkcert -install
+  #   mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
+  #
+  # Without those files `netlify dev` will refuse to start. That is the trade for
+  # a trusted https://localhost; delete this block to go back to plain http.
+  [dev.https]
+    certFile = ".certs/localhost.pem"
+    keyFile = ".certs/localhost-key.pem"
 
 # Edge Functions for dynamic Open Graph tags
 [[edge_functions]]
   function = "og-tags"
   path = "/*"
+  # og-tags only rewrites <head> on HTML documents; running it on assets is pure
+  # overhead and actively harmful. On the pass-through path it hands back a response
+  # whose content-encoding header no longer matches its body, which the browser
+  # reports as ERR_CONTENT_DECODING_FAILED -- that is what broke favicon.ico.
+  excludedPath = [
+    "/static/*",
+    "/images/*",
+    "/advertisements/*",
+    "/artistImages/*",
+    "/music/*",
+    "/videos/*",
+    "/community/*",
+    "/*.js",
+    "/*.css",
+    "/*.map",
+    "/*.json",
+    "/*.ico",
+    "/*.png",
+    "/*.jpg",
+    "/*.jpeg",
+    "/*.webp",
+    "/*.svg",
+    "/*.gif",
+    "/*.woff",
+    "/*.woff2",
+    "/*.txt",
+    "/*.xml",
+    "/*.mp3",
+    "/*.wav",
+    "/*.mp4"
+  ]
 
 # Proxy all /player/queue requests to the player-queue Netlify Function
 [[redirects]]

@@ -1,11 +1,15 @@
 /**
- * Artist Campaign Manager - AI Smart Playlist Placement
+ * Artist Campaign Manager - FREE AI Smart Playlist Placement
  *
- * Phase 1: Preview of AI placement system
- * Shows AI-powered playlist matching (no payment required)
+ * Subscription Model: Free AI-powered playlist matching for all artists
+ * No payment required - automatic genre-based placement
+ *
+ * NOTE: This is NOT a pay-for-placement system.
+ * Curators do not receive payment for playlist inclusion.
+ * AI automatically matches tracks to appropriate playlists based on genre compatibility.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { recommendationService } from '../services/recommendationService';
 import { db } from '../firebaseConfig';
@@ -42,11 +46,7 @@ export default function ArtistCampaignManager() {
   const [analyzing, setAnalyzing] = useState(false);
   const [matchedPlaylists, setMatchedPlaylists] = useState([]);
 
-  useEffect(() => {
-    loadUserTracks();
-  }, [user]);
-
-  const loadUserTracks = async () => {
+  const loadUserTracks = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -58,7 +58,11 @@ export default function ArtistCampaignManager() {
       console.error('Error loading tracks:', error);
     }
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadUserTracks();
+  }, [loadUserTracks]);
 
   const handleAnalyzeTrack = async () => {
     if (!selectedTrack) {
@@ -123,8 +127,9 @@ export default function ArtistCampaignManager() {
 
       {/* Info Alert */}
       <Alert severity="info" sx={{ mb: 3, bgcolor: '#0a0a0a', color: '#fff' }}>
-        <strong>AI-Powered Playlist Matching:</strong> Our AI analyzes your tracks and finds the best-fit playlists on the platform.
-        No payment required - this is automatic placement based on genre compatibility!
+        <strong>FREE AI-Powered Playlist Matching:</strong> Our AI automatically analyzes your uploaded tracks and recommends
+        the best-fit playlists based on genre, mood, and style. Completely free - included with your BeatFlow account.
+        No payment to curators required.
       </Alert>
 
       {/* Empty State */}

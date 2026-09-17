@@ -27,18 +27,21 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Divider
+  Divider,
+  Avatar
 } from "@mui/material";
 import {
-  PlayArrow as PlayIcon as SkipIcon as VolumeIcon,
+  PlayArrow as PlayIcon,
+  SkipNext as SkipIcon,
+  VolumeUp as VolumeIcon,
   HighQuality as QualityIcon,
   Timer as TimerIcon,
   TrendingUp as TrendingUpIcon,
   Album as AlbumIcon,
-  Person as ArtistIcon as GlobalIcon
+  Person as ArtistIcon,
+  Public as GlobalIcon
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { Avatar } from '@mui/material/Avatar';
 
 // Chart component for playback trends
 const PlaybackChart = ({ data, metric, title }) => {

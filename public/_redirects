@@ -5,5 +5,13 @@
 /api/stripe-webhook  /.netlify/functions/stripe-webhook  200
 /api/create-checkout  /.netlify/functions/create-checkout  200
 
+# Bundler output lives in webpack's memory during `netlify dev`, not on disk.
+# Netlify checks the filesystem before proxying, does not find /static/js/bundle.js,
+# and lets the SPA fallback below swallow it -- the browser then gets index.html with
+# a text/html content-type where it expected JavaScript, refuses to execute it, and
+# renders a blank page. This passthrough keeps asset paths off the fallback.
+# Harmless in production, where these files really are on disk.
+/static/*  /static/:splat  200
+
 # SPA fallback - must be last
 /*  /index.html  200

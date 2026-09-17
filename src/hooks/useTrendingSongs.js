@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 /**
  * Enrich songs with album cover URLs
@@ -26,7 +27,7 @@ const enrichSongsWithAlbumCovers = async (songs) => {
     // Add coverUrl to each song from its album
     return songs.map(song => ({
       ...song,
-      cover: song.cover || albums[song.albumId]?.coverUrl || albums[song.albumId]?.cover || '/images/default-cover.jpg'
+      cover: song.cover || albums[song.albumId]?.coverUrl || albums[song.albumId]?.cover || PLACEHOLDER_IMAGE
     }));
   } catch (error) {
     console.error('Error enriching songs with album covers:', error);

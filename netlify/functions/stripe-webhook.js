@@ -125,6 +125,15 @@ async function handleCheckoutSessionCompleted(session) {
 
   const { userId, itemId, itemType, paymentType, projectId, trackIds } = session.metadata || {};
 
+  // Idempotency: Stripe can deliver a webhook more than once. If a purchase for this
+  // checkout session already exists, skip to avoid double-fulfillment / duplicate records.
+  const alreadyFulfilled = await db.collection('purchases')
+    .where('stripeSessionId', '==', session.id).limit(1).get();
+  if (!alreadyFulfilled.empty) {
+    console.log(`⏭️ Session ${session.id} already fulfilled — skipping duplicate webhook.`);
+    return;
+  }
+
   // Handle studio project payments
   if (paymentType === 'studio_project' && projectId) {
     return await handleStudioProjectPayment(session, projectId);

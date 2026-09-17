@@ -6,23 +6,32 @@ import { Button, CircularProgress, Chip } from '@mui/material';
 import { ShoppingCart, Download } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useModal } from '../hooks/useModal';
-import { stripeService, DEFAULT_SONG_PRICE, DEFAULT_ALBUM_PRICE } from '../services/stripeService';
+import { stripeService } from '../services/stripeService';
+import { SONG_PRICE, calculateAlbumPrice, formatPrice } from '../utils/pricing';
+import PurchaseOptionsDialog from './PurchaseOptionsDialog';
 
-const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact = false, artistId, uploadedBy }) => {
+// A song row shows one number and opens the alternatives on tap. An album button
+// has no meaningful alternative to offer, so it still goes straight to checkout.
+const PurchaseButton = ({
+  itemId,
+  itemType,
+  price,
+  onPurchaseComplete,
+  compact = false,
+  track = null,
+  withOptions = true
+}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showAlert } = useModal();
   const [loading, setLoading] = useState(false);
   const [purchased, setPurchased] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
-  const displayPrice = price || (itemType === 'song' ? DEFAULT_SONG_PRICE : DEFAULT_ALBUM_PRICE);
+  const offersOptions = withOptions && itemType === 'song' && !!track;
 
-  // Check if current user is the artist/uploader
-  const isOwnContent = user && (
-    (artistId && user.uid === artistId) ||
-    (uploadedBy && user.uid === uploadedBy)
-  );
+  const displayPrice = price || (itemType === 'song' ? SONG_PRICE : calculateAlbumPrice(10));
 
   useEffect(() => {
 
@@ -71,25 +80,29 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
     }
   };
 
+  // Tapping the price opens the chooser when there is a choice to make. Checkout
+  // itself stays in one place below, so every route to Stripe is the same route.
   const handlePurchase = async () => {
-    if (!user) {
-      await showAlert('Sign In Required', 'Please sign in to purchase music', 'info');
+    if (offersOptions) {
+      setOptionsOpen(true);
       return;
     }
+    await startCheckout(itemType, itemId);
+  };
 
-    // Prevent artists from purchasing their own content
-    if (isOwnContent) {
-      await showAlert('Cannot Purchase', 'You cannot purchase your own music', 'warning');
+  const startCheckout = async (type, id) => {
+    if (!user) {
+      await showAlert('Sign In Required', 'Please sign in to purchase music', 'info');
       return;
     }
 
     try {
       setLoading(true);
 
-      if (itemType === 'song') {
-        await stripeService.createSongCheckout(user.uid, itemId, user.email);
-      } else if (itemType === 'album') {
-        await stripeService.createAlbumCheckout(user.uid, itemId, user.email);
+      if (type === 'song') {
+        await stripeService.createSongCheckout(user.uid, id, user.email);
+      } else if (type === 'album') {
+        await stripeService.createAlbumCheckout(user.uid, id, user.email);
       }
 
       // User will be redirected to Stripe checkout
@@ -110,41 +123,6 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
       <Button disabled variant="outlined" size={compact ? "small" : "medium"}>
         <CircularProgress size={16} sx={{ mr: compact ? 0.5 : 1 }} />
         {!compact && 'Checking...'}
-      </Button>
-    );
-  }
-
-  // If user is the artist, show "Your Content" message
-  if (isOwnContent) {
-    if (compact) {
-      return (
-        <Chip
-          label="Your Content"
-          size="small"
-          sx={{
-            bgcolor: 'grey.700',
-            color: 'grey.400',
-            cursor: 'default'
-          }}
-        />
-      );
-    }
-
-    return (
-      <Button
-        variant="outlined"
-        disabled
-        sx={{
-          borderColor: 'grey.700',
-          color: 'grey.400',
-          cursor: 'default',
-          '&.Mui-disabled': {
-            borderColor: 'grey.700',
-            color: 'grey.400'
-          }
-        }}
-      >
-        Your Content
       </Button>
     );
   }
@@ -180,17 +158,39 @@ const PurchaseButton = ({ itemId, itemType, price, onPurchaseComplete, compact =
   }
 
   return (
-    <Button
-      variant={compact ? "outlined" : "contained"}
-      color="primary"
-      size={compact ? "small" : "medium"}
-      startIcon={loading ? <CircularProgress size={16} /> : <ShoppingCart />}
-      onClick={handlePurchase}
-      disabled={loading || !user}
-      sx={compact ? { minWidth: '90px', fontSize: '0.75rem' } : {}}
-    >
-      {loading ? 'Processing...' : (compact ? `$${(displayPrice / 100).toFixed(2)}` : `Buy for $${(displayPrice / 100).toFixed(2)}`)}
-    </Button>
+    <>
+      <Button
+        variant={compact ? "outlined" : "contained"}
+        color="primary"
+        size={compact ? "small" : "medium"}
+        startIcon={loading ? <CircularProgress size={16} /> : <ShoppingCart />}
+        onClick={handlePurchase}
+        // A signed-out visitor can still open the chooser -- seeing what a track
+        // costs and what else is on offer is the reason to sign in. Sign-in is
+        // prompted when they actually choose. Without options there is nothing to
+        // show, so the button stays disabled as before.
+        disabled={loading || (!user && !offersOptions)}
+        aria-haspopup={offersOptions ? 'dialog' : undefined}
+        sx={compact
+          // 44px is the fat-finger minimum (WCAG 2.5.5). `size="small"` renders
+          // about 30px, which looks fine with a mouse and misses on a phone.
+          ? { minWidth: '90px', minHeight: 44, fontSize: '0.75rem' }
+          : { minHeight: 44 }}
+      >
+        {loading
+          ? 'Processing...'
+          : (compact ? formatPrice(displayPrice) : `License for ${formatPrice(displayPrice)}`)}
+      </Button>
+
+      {offersOptions && (
+        <PurchaseOptionsDialog
+          open={optionsOpen}
+          onClose={() => setOptionsOpen(false)}
+          track={{ ...track, id: track.id || itemId, price: displayPrice }}
+          onSelect={(option) => startCheckout(option.type, option.itemId)}
+        />
+      )}
+    </>
   );
 };
 

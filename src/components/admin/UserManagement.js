@@ -53,11 +53,13 @@ import {
   Warning,
   CheckCircle,
   Cancel,
-  Upload
+  Upload,
+  Download,
+  Search
 } from "@mui/icons-material";
 import { DataGrid } from "@mui/x-data-grid";
 import { useAuth } from "../../context/AuthContext";
-import { Avatar } from '@mui/material/Avatar';
+import { Avatar } from '@mui/material';
 import { Tooltip } from '@mui/material/Tooltip';
 
 const UserManagement = () => {

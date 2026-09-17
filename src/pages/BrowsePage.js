@@ -70,10 +70,10 @@ export default function BrowsePage() {
       url: "/discover"
     },
     {
-      label: "Student",
+      label: "Student Plan",
       color: "bg-green-700",
       image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&h=711&fit=crop",
-      url: "/student"
+      url: "/explore-premium"
     },
     {
       label: "Dance/Electronic",

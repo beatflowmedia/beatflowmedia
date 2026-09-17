@@ -6,17 +6,14 @@ import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { Box, Typography, Grid, Card, CardMedia, CardContent, CircularProgress, IconButton } from '@mui/material';
 import PlayArrow from '@mui/icons-material/PlayArrow';
-import { usePlayer } from '../context/PlayerContext';
-import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
 import PlayingIndicator from '../components/PlayingIndicator';
 import { usePlaySong } from '../hooks/usePlaySong';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 export default function GenrePage() {
   const { genre } = useParams();
   const navigate = useNavigate();
-  const { dispatch, actions } = usePlayer();
-  const { user } = useAuth();
   const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
 
   const [popularSongs, setPopularSongs] = useState([]);
@@ -118,7 +115,7 @@ export default function GenrePage() {
         <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
           <CardMedia
             component="img"
-            image={song.coverUrl || song.cover || '/default-song-cover.jpg'}
+            image={song.coverUrl || song.cover || PLACEHOLDER_IMAGE}
             alt={song.title}
             sx={{
               cursor: 'pointer',

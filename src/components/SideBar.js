@@ -4,6 +4,7 @@ import SidebarListItem from "./SidebarListItem";
 import NewPlaylistModal from "./NewPlaylistModal";
 import { FaPlus, FaSearch, FaList, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import PropTypes from 'prop-types';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 const FILTERS = [
   { label: "Playlists", value: "playlist" },
@@ -29,7 +30,7 @@ function buildSidebarItems(musicData, playlists, filter, search) {
 
   const playlistItems = playlists.map((p) => ({
     ...p,
-    cover: p.imageUrl || p.cover || "/playlist-default.jpg",
+    cover: p.imageUrl || p.cover || PLACEHOLDER_IMAGE,
     type: "playlist",
     id: p.id
   }));

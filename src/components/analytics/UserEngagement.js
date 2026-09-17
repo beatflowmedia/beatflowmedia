@@ -35,7 +35,9 @@ import {
   People as PeopleIcon,
   PersonAdd as PersonAddIcon,
   ExitToApp as ExitIcon,
-  Favorite as FavoriteIcon as PlaylistIcon as SearchIcon,
+  Favorite as FavoriteIcon,
+  PlaylistPlay as PlaylistIcon,
+  Search as SearchIcon,
   Share as ShareIcon,
   TrendingUp as TrendingUpIcon,
   Schedule as ScheduleIcon,
@@ -43,7 +45,7 @@ import {
   ThumbUp as ThumbUpIcon
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { Avatar } from '@mui/material/Avatar';
+import { Avatar } from '@mui/material';
 
 // User cohort analysis component
 const CohortAnalysis = ({ data }) => {

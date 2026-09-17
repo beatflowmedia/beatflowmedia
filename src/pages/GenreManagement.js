@@ -1,6 +1,6 @@
 // src/pages/artist/GenreManagement.js
 // Genre and Category management for artists
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Box, Container, Typography, Card, CardContent, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Chip, IconButton, Alert, Tabs, Tab, List, ListItem, ListItemText, ListItemSecondaryAction } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
 import { db } from '../firebaseConfig';
@@ -19,19 +19,16 @@ function TabPanel({ children, value, index }) {
 
 export default function GenreManagement() {
   const { user } = useAuth();
-  const { showConfirm, showAlert } = useModal();
+  const { showConfirm } = useModal();
   const [activeTab, setActiveTab] = useState(0);
 
   // Genres state
-  const [genres, setGenres] = useState([]);
   const [customGenres, setCustomGenres] = useState([]);
 
   // Categories state
-  const [categories, setCategories] = useState([]);
   const [customCategories, setCustomCategories] = useState([]);
 
   // Moods/Tags state
-  const [moods, setMoods] = useState([]);
   const [customMoods, setCustomMoods] = useState([]);
 
   // Dialog states

@@ -1,4 +1,3 @@
-import { getPlaceholderImage } from "../utils/placeholders";
 import { useEffect, useState } from "react";
 import { FaTrash } from "react-icons/fa";
 import {
@@ -6,6 +5,7 @@ import {
   removeSongFromPlaylist
 } from "../utils/PlaylistHelper";
 import { toast } from "react-toastify";
+import { artworkUrl } from '../utils/artwork';
 
 export default function PlaylistView({ playlistId, onSongSelect }) {
   const [playlist, setPlaylist] = useState(null);
@@ -30,7 +30,7 @@ export default function PlaylistView({ playlistId, onSongSelect }) {
       {/* Playlist Header */}
       <div className="relative w-full h-64 bg-gradient-to-b from-gray-700 to-black rounded-lg overflow-hidden">
         <img
-          src={playlist.cover || "/default-playlist-cover.jpg"}
+          src={artworkUrl(playlist)}
           alt={playlist.name}
           className="absolute w-full h-full object-cover opacity-50"
         />
@@ -61,7 +61,7 @@ export default function PlaylistView({ playlistId, onSongSelect }) {
                 }}
               >
                 <img
-                  src={song.cover || getPlaceholderImage(50, 50)}
+                  src={artworkUrl(song, { width: 50, height: 50 })}
                   alt="Album Cover"
                   className="w-14 h-14 rounded-md"
                 />

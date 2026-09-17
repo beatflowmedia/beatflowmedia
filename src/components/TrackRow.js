@@ -19,6 +19,7 @@ import { toast } from "react-hot-toast";
 import classNames from "classnames";
 import { useNavigate } from "react-router-dom";
 import { stripeService } from "../services/stripeService";
+import { SONG_PRICE, formatPrice } from "../utils/pricing";
 
 /**
  * TrackRow - A comprehensive track listing component with play button, metadata, and actions
@@ -437,7 +438,7 @@ const TrackRow = memo(
                 ) : (
                   <>
                     <FaShoppingCart className="mr-2 text-green-500" size={14} />
-                    Purchase ($1.99)
+                    License ({formatPrice(track.price || SONG_PRICE)})
                   </>
                 )}
               </button>

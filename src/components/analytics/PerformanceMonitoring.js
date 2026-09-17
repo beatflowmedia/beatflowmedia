@@ -28,11 +28,11 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  Avatar,
+  Tooltip
 } from "@mui/material";
 import {
-import { Avatar } from '@mui/material/Avatar';
-import { Tooltip } from '@mui/material/Tooltip';
   Speed as SpeedIcon,
   Memory as MemoryIcon,
   Storage as StorageIcon,

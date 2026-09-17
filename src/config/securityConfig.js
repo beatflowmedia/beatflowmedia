@@ -259,7 +259,7 @@ export const SECURITY_CONFIG = {
       ],
       "font-src": ["'self'", "https://fonts.gstatic.com"],
       "object-src": ["'none'"],
-      "media-src": ["'self'", "https://cdn.beatflowmediagroup.com"],
+      "media-src": ["'self'", "https://storage.googleapis.com", "https://firebasestorage.googleapis.com", "https://*.firebasestorage.app", "https://cdn.beatflowmediagroup.com", "blob:", "data:"],
       "frame-src": ["'none'"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"]

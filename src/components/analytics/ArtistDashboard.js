@@ -37,15 +37,17 @@ import {
   AttachMoney as MoneyIcon,
   PlayArrow as PlayIcon,
   Favorite as FavoriteIcon,
-  Share as ShareIcon as GlobalIcon,
-  Star as StarIcon as DownloadIcon,
+  Share as ShareIcon,
+  Public as GlobalIcon,
+  Star as StarIcon,
+  Download as DownloadIcon,
   Album as AlbumIcon,
   Person as PersonIcon,
   Schedule as ScheduleIcon,
   Assessment as AssessmentIcon
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { Avatar } from '@mui/material/Avatar';
+import { Avatar } from '@mui/material';
 
 // Artist performance overview
 const ArtistPerformanceOverview = ({ data }) => {

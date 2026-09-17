@@ -34,7 +34,6 @@ import {
   Home,
   Receipt,
   MusicNote,
-  Album as AlbumIcon,
   Info
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
@@ -341,7 +340,7 @@ export default function Downloads() {
         <Box sx={{ mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-              My Downloads
+              Licensed Tracks
             </Typography>
             <Button
               variant="outlined"
@@ -349,11 +348,11 @@ export default function Downloads() {
               onClick={() => navigate('/')}
               sx={{ color: 'white', borderColor: 'grey.600' }}
             >
-              Home
+              Browse More
             </Button>
           </Box>
           <Typography variant="body1" color="grey.400">
-            Access all your purchased music and download licenses
+            Download your licensed music and view license certificates
           </Typography>
         </Box>
 
@@ -368,9 +367,9 @@ export default function Downloads() {
           <Card sx={{ bgcolor: '#1a1a1a', flex: 1 }}>
             <CardContent>
               <Typography variant="body2" color="grey.400" gutterBottom>
-                Total Purchases
+                Total Licenses
               </Typography>
-              <Typography variant="h4" sx={{ color: 'white' }}>
+              <Typography variant="h4" sx={{ color: '#1DB954' }}>
                 {purchases.length}
               </Typography>
             </CardContent>
@@ -378,9 +377,9 @@ export default function Downloads() {
           <Card sx={{ bgcolor: '#1a1a1a', flex: 1 }}>
             <CardContent>
               <Typography variant="body2" color="grey.400" gutterBottom>
-                Songs Owned
+                Licensed Tracks
               </Typography>
-              <Typography variant="h4" sx={{ color: 'white' }}>
+              <Typography variant="h4" sx={{ color: '#1DB954' }}>
                 {purchases.filter(p => p.itemType === 'song').length}
               </Typography>
             </CardContent>
@@ -388,9 +387,9 @@ export default function Downloads() {
           <Card sx={{ bgcolor: '#1a1a1a', flex: 1 }}>
             <CardContent>
               <Typography variant="body2" color="grey.400" gutterBottom>
-                Albums Owned
+                Licensed Albums
               </Typography>
-              <Typography variant="h4" sx={{ color: 'white' }}>
+              <Typography variant="h4" sx={{ color: '#1DB954' }}>
                 {purchases.filter(p => p.itemType === 'album').length}
               </Typography>
             </CardContent>

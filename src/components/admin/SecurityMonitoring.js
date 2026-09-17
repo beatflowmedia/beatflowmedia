@@ -61,15 +61,13 @@ import {
   TabletMac,
   DesktopMac,
   PlayArrow,
+  Pause,
   Stop,
   Settings,
   Share
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
-import { CircularProgress } from '@mui/material/CircularProgress';
-import { Pause } from '@mui/icons-material/Pause';
-import { PlayArrow } from '@mui/icons-material/PlayArrow';
-import { Tooltip } from '@mui/material/Tooltip';
+import { CircularProgress, Tooltip } from '@mui/material';
 
 const SecurityMonitoring = () => {
   const { user } = useAuth();

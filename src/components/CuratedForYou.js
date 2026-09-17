@@ -9,6 +9,7 @@ import { usePlaySong } from '../hooks/usePlaySong';
 import PlayingIndicator from './PlayingIndicator';
 import SongPlayCount from './SongPlayCount';
 import SongLikeCount from './SongLikeCount';
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * Curated content for the listener based on their preferences and listening history
@@ -334,7 +335,7 @@ export default function CuratedForYou() {
                     <Box sx={{ position: 'relative', paddingTop: '100%' }}>
                       <CardMedia
                         component="img"
-                        image={song.cover || '/images/default-cover.jpg'}
+                        image={artworkUrl(song)}
                         alt={song.title}
                         sx={{
                           position: 'absolute',

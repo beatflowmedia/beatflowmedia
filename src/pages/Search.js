@@ -7,6 +7,7 @@ import {
   CardContent,
 } from '@mui/material';
 import OptimizedImage from '../components/OptimizedImage';
+import { SONG_PRICE, formatPrice } from '../utils/pricing';
 import {
   TextField,
   Tabs,
@@ -63,6 +64,7 @@ import Pause from '@mui/icons-material/Pause';
 import Fade from '@mui/material/Fade';
 import { useNavigate } from 'react-router-dom';
 import { stripeService } from '../services/stripeService';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 const SEARCH_CATEGORIES = [
   { label: "All", value: "all", icon: <SearchIcon /> },
@@ -839,7 +841,7 @@ function Search() {
                             src={item.coverUrl || item.imageUrl || item.cover}
                             alt={item.title || item.name}
                             height={200}
-                            fallback="/default-cover.jpg"
+                            fallback={PLACEHOLDER_IMAGE}
                             sx={{ cursor: "pointer" }}
                           />
 
@@ -1069,7 +1071,7 @@ function Search() {
               <ListItemIcon>
                 <ShoppingCart sx={{ color: "#1DB954" }} />
               </ListItemIcon>
-              <ListItemText>Purchase ($0.99)</ListItemText>
+              <ListItemText>License ({formatPrice(selectedItem?.price || SONG_PRICE)})</ListItemText>
             </MenuItem>
           </>
         )}

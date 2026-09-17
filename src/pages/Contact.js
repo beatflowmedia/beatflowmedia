@@ -67,11 +67,6 @@ export default function Contact() {
                 Creators
               </a>
             </li>
-            <li>
-              <a href="/investors" className="text-white hover:underline">
-                Investors
-              </a>
-            </li>
           </ul>
         </div>
 

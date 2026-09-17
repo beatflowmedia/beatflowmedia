@@ -16,6 +16,13 @@ import { cleanupPlaylistDuplicates } from "./utils/cleanupPlaylistDuplicates"; /
 import { initializePlatformStats } from "./utils/initializePlatformStats"; // Platform stats initialization
 import { cleanupDuplicateCollections } from "./utils/cleanupDuplicateCollections"; // Duplicate collections cleanup
 import { migrateArtistImages } from "./utils/migrateArtistImages"; // Artist image migration
+import { fixAlbumCovers } from "./utils/fixAlbumCovers"; // Fix missing album covers
+import { createMissingAlbums } from "./utils/createMissingAlbums"; // Create albums from orphaned songs
+import { diagnoseSongStorage } from "./utils/diagnoseSongStorage"; // Diagnose storage/Firestore alignment
+import { standardizeFirebaseStorage, auditStorageStructure, migrateFirestoreDocuments } from "./utils/standardizeFirebaseStorage"; // Standardize Firebase
+import { migrateAllSongs, migrateSong } from "./utils/migrateStorageBrowser"; // Browser-based storage migration
+import { auditFirestoreCollections, purgeFirestoreCollections, auditFirebaseStorage, purgeFirebaseStorage, purgeAllFirebase } from "./utils/purgeFirebase"; // Firebase cleanup
+import { minimalCleanup, deleteDuplicates, deleteUnimplemented } from "./utils/minimalCleanup"; // Minimal recommended cleanup
 
 export default function App() {
   // Attach utility functions to window on component mount
@@ -24,10 +31,33 @@ export default function App() {
     window.initializePlatformStats = initializePlatformStats;
     window.cleanupDuplicateCollections = cleanupDuplicateCollections;
     window.migrateArtistImages = migrateArtistImages;
+    window.fixAlbumCovers = fixAlbumCovers;
+    window.createMissingAlbums = createMissingAlbums;
+    window.diagnoseSongStorage = diagnoseSongStorage;
+    window.standardizeFirebaseStorage = standardizeFirebaseStorage;
+    window.auditStorageStructure = auditStorageStructure;
+    window.migrateFirestoreDocuments = migrateFirestoreDocuments;
+    window.migrateAllSongs = migrateAllSongs;
+    window.migrateSong = migrateSong;
+    window.auditFirestoreCollections = auditFirestoreCollections;
+    window.purgeFirestoreCollections = purgeFirestoreCollections;
+    window.auditFirebaseStorage = auditFirebaseStorage;
+    window.purgeFirebaseStorage = purgeFirebaseStorage;
+    window.purgeAllFirebase = purgeAllFirebase;
+    window.minimalCleanup = minimalCleanup;
+    window.deleteDuplicates = deleteDuplicates;
+    window.deleteUnimplemented = deleteUnimplemented;
     console.log('✅ cleanupPlaylistDuplicates() is available in console');
     console.log('✅ initializePlatformStats() is available in console');
     console.log('✅ cleanupDuplicateCollections() is available in console');
     console.log('✅ migrateArtistImages() is available in console');
+    console.log('✅ fixAlbumCovers() is available in console');
+    console.log('✅ createMissingAlbums() is available in console');
+    console.log('✅ diagnoseSongStorage() is available in console - Run to check storage/DB sync');
+    console.log('✅ standardizeFirebaseStorage() is available in console - STANDARDIZE STORAGE');
+    console.log('✅ migrateAllSongs() is available in console - MIGRATE FILES (browser-based)');
+    console.log('✅ purgeAllFirebase() is available in console - 🗑️  PURGE UNUSED DATA');
+    console.log('✅ minimalCleanup() is available in console - ⭐ RECOMMENDED CLEANUP');
   }, []);
 
   return (

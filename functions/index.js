@@ -64,6 +64,11 @@ exports.getSignedAudioUrl = onCall(async (request) => {
   try {
     const userId = request.auth.uid;
 
+    // Check if user is admin
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    const isAdmin = userData && (userData.isAdmin === true || userData.role === 'admin');
+
     // Get song data from Firestore
     const songDoc = await admin.firestore().collection('songs').doc(songId).get();
 
@@ -72,10 +77,20 @@ exports.getSignedAudioUrl = onCall(async (request) => {
     }
 
     songData = songDoc.data();
-    const audioUrl = songData.audioUrl || songData.streamUrl;
+    const audioUrl = songData.audioUrl || songData.streamUrl || songData.url || songData.src;
 
     if (!audioUrl) {
       throw new Error('Audio URL not found for this song.');
+    }
+
+    // Admins can use direct URLs (already authenticated with Storage)
+    if (isAdmin) {
+      console.log(`Admin access - returning direct URL for user ${userId} on song ${songId}`);
+      return {
+        signedUrl: audioUrl,
+        expiresAt: Date.now() + 60 * 60 * 1000,
+        isDirect: true
+      };
     }
 
     // Spotify-style model: Authenticated users can stream
@@ -144,10 +159,17 @@ exports.getSignedAudioUrl = onCall(async (request) => {
 
 // Helper function to check if user has purchased a song
 async function checkSongPurchase(userId, songId) {
+  // Queries itemId, NOT songId. Every purchase writer in
+  // netlify/functions/stripe-webhook.js writes { userId, itemId, itemType, status },
+  // and nothing anywhere writes songId -- so the previous query matched no document
+  // ever written and this function could only return false. It was invisible because
+  // the one caller uses the result for a log line and grants streaming regardless.
+  // The authoritative reader for entitlement is
+  // netlify/functions/lib/entitlement.js; this stays for the streaming log only.
   const purchaseDoc = await admin.firestore()
     .collection('purchases')
     .where('userId', '==', userId)
-    .where('songId', '==', songId)
+    .where('itemId', '==', songId)
     .where('status', '==', 'completed')
     .limit(1)
     .get();
@@ -283,13 +305,14 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
     `;
 
     // Send takedown notification to artist
-    await sendEmail(
-      userEmail,
-      `⚠️ Content Takedown Notice: ${after.title || 'Your Song'} - BeatFlow Media`,
-      takedownEmailHtml
-    );
+    // DISABLED: No longer sending takedown emails
+    // await sendEmail(
+    //   userEmail,
+    //   `⚠️ Content Takedown Notice: ${after.title || 'Your Song'} - BeatFlow Media`,
+    //   takedownEmailHtml
+    // );
 
-    console.log('Content takedown email sent to:', userEmail, 'for song:', after.title);
+    console.log('Song unpublished (email disabled):', after.title, 'for user:', userEmail);
     return null;
   } catch (error) {
     console.error('Error sending content takedown email:', error);
@@ -422,13 +445,14 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
       </div>
     `;
 
-    await sendEmail(
-      userEmail,
-      `⚠️ Content Takedown Notice: ${after.title || 'Your Album'} - BeatFlow Media`,
-      takedownEmailHtml
-    );
+    // DISABLED: No longer sending takedown emails
+    // await sendEmail(
+    //   userEmail,
+    //   `⚠️ Content Takedown Notice: ${after.title || 'Your Album'} - BeatFlow Media`,
+    //   takedownEmailHtml
+    // );
 
-    console.log('Album takedown email sent to:', userEmail, 'for album:', after.title);
+    console.log('Album unpublished (email disabled):', after.title, 'for user:', userEmail);
     return null;
   } catch (error) {
     console.error('Error sending album takedown email:', error);

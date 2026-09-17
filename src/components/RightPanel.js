@@ -5,13 +5,13 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlayerActions } from '../hooks/usePlayerActions';
-import useFollowArtist from '../hooks/useFollowArtist';
 import { useAuth } from '../context/AuthContext';
 import { useModal } from '../hooks/useModal';
 import { PlayArrow } from '@mui/icons-material';
 import { FaPlus, FaHeart, FaListUl, FaUserAlt, FaCompactDisc, FaShare, FaDesktop, FaBan, FaBroadcastTower, FaFile, FaSearch, FaThumbtack } from 'react-icons/fa';
 import { MdRemove } from 'react-icons/md';
 import { showSuccessToast, showErrorToast } from '../utils/Toast';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 const RightPanel = ({ visible, content, onClose }) => {
   // content: { type: "artist"|"playlist"|"queue", info: {...}, artistId?: string, artistName?: string }
@@ -27,13 +27,12 @@ const RightPanel = ({ visible, content, onClose }) => {
   const [userPlaylists, setUserPlaylists] = useState([]);
   const [loadedPlaylistSongs, setLoadedPlaylistSongs] = useState([]);
 
-  // Player and follow hooks
+  // Player hooks
   const { dispatch, actions, state } = usePlayer();
   const { clearQueue } = usePlayerActions();
   const { user } = useAuth();
   const { showConfirm } = useModal();
   const artistName = content?.artistName || content?.info?.name;
-  const { isFollowing, toggleFollow } = useFollowArtist(artistName);
 
   // Reset view mode when content type changes
   useEffect(() => {
@@ -209,63 +208,6 @@ const RightPanel = ({ visible, content, onClose }) => {
     fetchArtistSongs();
   }, [visible, content, artistName]);
 
-  // Handle play artist with smart queue (artist songs + similar genre)
-  const handlePlayArtist = async () => {
-    if (artistSongs.length === 0) return;
-
-    try {
-      // Start with artist's songs
-      let fullQueue = [...artistSongs];
-
-      // Get genre from artist data or first song
-      const artistGenre = artistData?.genre || artistSongs[0]?.genre || artistSongs[0]?.category;
-      if (artistGenre) {
-        // Get other artists in the same genre
-        const similarQuery = query(
-          collection(db, 'songs'),
-          where('genre', '==', artistGenre),
-          where('artistName', '!=', artistName),
-          limit(20) // Get 20 songs from similar artists
-        );
-
-        try {
-          const similarSnapshot = await getDocs(similarQuery);
-          const similarSongs = similarSnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(song => song.isVisible !== false);
-
-          // Shuffle similar songs for variety
-          const shuffledSimilar = similarSongs.sort(() => Math.random() - 0.5);
-          fullQueue = [...fullQueue, ...shuffledSimilar];
-        } catch (err) {
-          console.log('Could not fetch similar artists, continuing with artist songs only', err);
-        }
-      }
-
-      // Set the full queue and start playing
-      dispatch({
-        type: actions.SET_QUEUE,
-        payload: {
-          queue: fullQueue,
-          currentIndex: 0
-        }
-      });
-
-      dispatch({ type: actions.TOGGLE_PLAY });
-    } catch (error) {
-      console.error('Error building queue:', error);
-      // Fallback: just play artist songs
-      dispatch({
-        type: actions.SET_QUEUE,
-        payload: {
-          queue: artistSongs,
-          currentIndex: 0
-        }
-      });
-      dispatch({ type: actions.TOGGLE_PLAY });
-    }
-  };
-
   // Get next songs in queue for preview
   const getNextInQueue = () => {
     const { queue, currentIndex } = state;
@@ -333,7 +275,7 @@ const RightPanel = ({ visible, content, onClose }) => {
             <div className="flex items-center gap-3 p-3 rounded bg-gray-800">
               <div className="relative w-14 h-14 flex-shrink-0">
                 <img
-                  src={currentSong.coverUrl || currentSong.cover || '/images/default-cover.jpg'}
+                  src={currentSong.coverUrl || currentSong.cover || PLACEHOLDER_IMAGE}
                   alt={currentSong.title}
                   className="w-full h-full object-cover rounded"
                 />
@@ -382,7 +324,7 @@ const RightPanel = ({ visible, content, onClose }) => {
                   >
                     <div className="w-10 h-10 flex-shrink-0">
                       <img
-                        src={song.coverUrl || song.cover || '/images/default-cover.jpg'}
+                        src={song.coverUrl || song.cover || PLACEHOLDER_IMAGE}
                         alt={song.title}
                         className="w-full h-full object-cover rounded"
                       />
@@ -510,7 +452,6 @@ const RightPanel = ({ visible, content, onClose }) => {
                 icon: <FaUserAlt />,
                 label: "Go to artist",
                 onClick: () => {
-                  const artist = queueMenuSong.song?.artistName || queueMenuSong.artistName || queueMenuSong.artist;
                   setQueueMenuAnchor(null);
                   setQueueMenuSong(null);
                   // TODO: Navigate to artist page
@@ -584,7 +525,6 @@ const RightPanel = ({ visible, content, onClose }) => {
       name,
       cover,
       profileImage,
-      bannerImage,
       monthlyListeners,
       bio,
       biography,
@@ -599,7 +539,7 @@ const RightPanel = ({ visible, content, onClose }) => {
 
     // Use Firestore fields if available
     const displayName = name;
-    const displayCover = profileImage || cover || "/artistImages/default.jpg";
+    const displayCover = profileImage || cover || PLACEHOLDER_IMAGE;
     const displayBio = bio || biography;
     const displayTours = tourDates.length > 0 ? tourDates : onTour;
 
@@ -866,7 +806,7 @@ const RightPanel = ({ visible, content, onClose }) => {
                         >
                           <div className="relative w-12 h-12 flex-shrink-0">
                             <img
-                              src={song.coverUrl || song.cover || '/images/default-cover.jpg'}
+                              src={song.coverUrl || song.cover || PLACEHOLDER_IMAGE}
                               alt={song.title}
                               className="w-full h-full object-cover rounded"
                             />
@@ -899,19 +839,6 @@ const RightPanel = ({ visible, content, onClose }) => {
               );
             })()}
 
-            {/* Actions */}
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={toggleFollow}
-                className={`px-4 py-2 rounded transition ${
-                  isFollowing
-                    ? 'bg-gray-800 text-white border border-gray-600 hover:bg-gray-700'
-                    : 'bg-transparent text-white border border-white hover:bg-white hover:text-black'
-                }`}
-              >
-                {isFollowing ? 'Following' : 'Follow'}
-              </button>
-            </div>
           </>
         )}
       </div>
@@ -936,7 +863,7 @@ const RightPanel = ({ visible, content, onClose }) => {
         </div>
         <div className="flex flex-col items-center mb-4">
           <img
-            src={cover || "/playlist-default.jpg"}
+            src={cover || PLACEHOLDER_IMAGE}
             alt={name}
             className="w-40 h-40 rounded-lg object-cover shadow"
           />
@@ -956,7 +883,7 @@ const RightPanel = ({ visible, content, onClose }) => {
                 className="flex items-center text-gray-200 py-1 border-b border-gray-800 last:border-none"
               >
                 <img
-                  src={song?.coverUrl || song?.cover || '/images/default-cover.jpg'}
+                  src={song?.coverUrl || song?.cover || PLACEHOLDER_IMAGE}
                   alt={song?.title || 'Song'}
                   className="w-10 h-10 mr-2 rounded object-cover"
                 />
@@ -983,3 +910,4 @@ RightPanel.propTypes = {
 };
 
 export default RightPanel;
+

@@ -47,7 +47,7 @@ export default function BlogPost() {
             excerpt: 'Discover how three independent artists turned their passion into a full-time income using BeatFlow\'s distribution and revenue tools.',
             keywords: ['independent artist income', 'music revenue', 'artist success stories'],
             author: 'BeatFlow Team',
-            authorImage: '/images/beatflow-logo.png',
+            authorImage: '/images/Logo.png',
             featuredImage: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1200&h=600&fit=crop',
             content: `
             <p>In the evolving music industry landscape, independent artists are finding unprecedented success on platforms that prioritize fair compensation and direct fan relationships. <a href="/">BeatFlowMediaGroup</a> has emerged as a game-changer for artists seeking to monetize their craft without sacrificing creative control.</p>
@@ -60,8 +60,8 @@ export default function BlogPost() {
             <p><strong>Her Strategy:</strong></p>
             <ul>
               <li>Consistent weekly releases to maintain algorithmic momentum</li>
-              <li>Engagement with <a href="/become-curator">curator community</a> for playlist placements</li>
-              <li><a href="/artist-pricing">Artist Membership</a> for enhanced analytics and promotion tools</li>
+              <li>Engagement with <a href="/curator-application">curator community</a> for playlist placements</li>
+              <li><a href="/explore-premium">Artist Membership</a> for enhanced analytics and promotion tools</li>
               <li>Direct fan communication through BeatFlow's artist profile features</li>
             </ul>
 
@@ -87,7 +87,7 @@ export default function BlogPost() {
             <ul>
               <li>High-quality production values</li>
               <li>Consistent release schedule (one single every 3 weeks)</li>
-              <li>Active participation in <a href="/become-curator">BeatFlow's curator recommendation program</a></li>
+              <li>Active participation in <a href="/curator-application">BeatFlow's curator recommendation program</a></li>
               <li>Fan playlist creation encouraging listener curation</li>
             </ul>
 
@@ -126,7 +126,7 @@ export default function BlogPost() {
               <li>Establish consistent release schedule (weekly or bi-weekly)</li>
               <li>Analyze your analytics to identify top-performing tracks</li>
               <li>Collaborate with other BeatFlow artists for cross-promotion</li>
-              <li>Invest in <a href="/artist-pricing">artist membership</a> for advanced promotion tools</li>
+              <li>Invest in <a href="/explore-premium">artist membership</a> for advanced promotion tools</li>
             </ul>
 
             <h3>Month 5-6: Revenue Optimization</h3>
@@ -150,10 +150,10 @@ export default function BlogPost() {
 
             <p><strong>Next Steps:</strong></p>
             <ol>
-              <li><a href="/artist-pricing">Sign up for BeatFlow Artist Account</a></li>
-              <li>Review <a href="/artist-pricing">membership plan</a> and join to start uploading</li>
+              <li><a href="/explore-premium">Sign up for BeatFlow Artist Account</a></li>
+              <li>Review <a href="/explore-premium">membership plan</a> and join to start uploading</li>
               <li>Upload your first tracks with optimized metadata</li>
-              <li>Connect with the <a href="/become-curator">curator community</a></li>
+              <li>Connect with the <a href="/curator-application">curator community</a></li>
               <li>Track your progress and adjust your strategy</li>
             </ol>
 
@@ -181,7 +181,7 @@ export default function BlogPost() {
             excerpt: 'Learn proven strategies to grow your playlist following and increase earnings through strategic curation and engagement.',
             keywords: ['playlist curation', 'curator earnings', 'playlist revenue', 'music curation'],
             author: 'BeatFlow Team',
-            authorImage: '/images/beatflow-logo.png',
+            authorImage: '/images/Logo.png',
             featuredImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&h=600&fit=crop',
             content: `
             <p>The curator economy is booming, and playlist curators on <a href="/">BeatFlowMediaGroup</a> are earning substantial income by connecting listeners with great music. If you're looking to maximize your playlist revenue in 2026, these seven proven strategies will help you grow your following and increase earnings.</p>
@@ -225,7 +225,7 @@ export default function BlogPost() {
               <li>First sentence should hook the reader immediately</li>
               <li>Include relevant keywords naturally</li>
               <li>Explain the playlist's purpose and ideal listening context</li>
-              <li>Add your <a href="/become-curator">curator credentials</a> to build trust</li>
+              <li>Add your <a href="/curator-application">curator credentials</a> to build trust</li>
               <li>Update seasonally or for trending events</li>
             </ul>
 
@@ -265,7 +265,7 @@ export default function BlogPost() {
               <li><strong>Artist partnerships:</strong> Feature emerging artists who actively promote placements</li>
               <li><strong>Playlist families:</strong> Build multiple playlists that reference each other</li>
               <li><strong>Social media:</strong> Share playlists on Instagram, TikTok, Twitter with curator tags</li>
-              <li><strong>BeatFlow community:</strong> Participate in <a href="/curator-earnings">curator forums and events</a></li>
+              <li><strong>BeatFlow community:</strong> Participate in <a href="/curator-application">curator forums and events</a></li>
             </ul>
 
             <blockquote>
@@ -421,8 +421,8 @@ export default function BlogPost() {
 
             <p><strong>Next Steps:</strong></p>
             <ol>
-              <li><a href="/become-curator">Apply to become a BeatFlow curator</a> if you're not already one</li>
-              <li>Review <a href="/curator-earnings">curator earnings potential</a> for your tier</li>
+              <li><a href="/curator-application">Apply to become a BeatFlow curator</a> if you're not already one</li>
+              <li>Review <a href="/curator-application">curator application process</a> for your tier</li>
               <li>Set up your <a href="/curator-portal">curator dashboard</a></li>
               <li>Join the curator community and start networking</li>
               <li>Implement your 30-day action plan today</li>
@@ -452,7 +452,7 @@ export default function BlogPost() {
             excerpt: 'Everything independent artists and labels need to know about modern music distribution, monetization, and maximizing reach.',
             keywords: ['music distribution', 'digital distribution', 'streaming platforms', 'music monetization'],
             author: 'BeatFlow Team',
-            authorImage: '/images/beatflow-logo.png',
+            authorImage: '/images/Logo.png',
             featuredImage: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&h=600&fit=crop',
             content: `
             <p>Music distribution has evolved dramatically in the digital age. What once required major label deals and physical manufacturing can now be accomplished from your bedroom. However, navigating the landscape of digital distribution platforms, monetization strategies, and audience building requires knowledge and strategy.</p>
@@ -517,10 +517,10 @@ export default function BlogPost() {
             <ul>
               <li>Direct connection with engaged listeners</li>
               <li>Higher revenue share (70% vs. typical 30-50%)</li>
-              <li>Built-in discovery through <a href="/become-curator">curator network</a></li>
+              <li>Built-in discovery through <a href="/curator-application">curator network</a></li>
               <li>Transparent analytics and revenue tracking</li>
               <li>Artist profile and fan engagement tools</li>
-              <li>Single <a href="/artist-pricing">annual membership</a> covers unlimited uploads</li>
+              <li>Single <a href="/explore-premium">annual membership</a> covers unlimited uploads</li>
             </ul>
 
             <p><strong>Cons:</strong></p>
@@ -587,7 +587,7 @@ export default function BlogPost() {
             <p>When uploading to <a href="/for-artists">BeatFlow</a>:</p>
 
             <ol>
-              <li>Create your <a href="/artist-pricing">artist account</a> and complete profile</li>
+              <li>Create your <a href="/explore-premium">artist account</a> and complete profile</li>
               <li>Upload high-quality audio files with complete metadata</li>
               <li>Add compelling artist bio and professional photos</li>
               <li>Tag tracks accurately by genre, mood, and characteristics</li>
@@ -610,7 +610,7 @@ export default function BlogPost() {
             <p><strong>Week 3-4: Drive Pre-Saves and Engagement</strong></p>
             <ul>
               <li>Set up pre-save campaigns on major platforms</li>
-              <li>Reach out to <a href="/become-curator">BeatFlow curators</a> for playlist consideration</li>
+              <li>Reach out to <a href="/curator-application">BeatFlow curators</a> for playlist consideration</li>
               <li>Contact music blogs and playlist curators</li>
               <li>Prepare press release and send to relevant outlets</li>
               <li>Create content calendar for release week</li>
@@ -672,7 +672,7 @@ export default function BlogPost() {
             <p><strong>3. Playlist Placements</strong></p>
             <ul>
               <li>Editorial playlists drive significant streaming spikes</li>
-              <li><a href="/become-curator">BeatFlow curator placements</a> offer targeted exposure</li>
+              <li><a href="/curator-application">BeatFlow curator placements</a> offer targeted exposure</li>
               <li>User-generated playlists provide long-tail discovery</li>
             </ul>
 
@@ -820,7 +820,7 @@ export default function BlogPost() {
 
             <p><strong>Distribution Setup</strong></p>
             <ul>
-              <li>☐ Create <a href="/artist-pricing">BeatFlow artist account</a></li>
+              <li>☐ Create <a href="/explore-premium">BeatFlow artist account</a></li>
               <li>☐ Set up aggregator accounts (if using)</li>
               <li>☐ Configure direct-to-fan channels (Bandcamp, website)</li>
               <li>☐ Verify all platform profiles are complete</li>
@@ -831,7 +831,7 @@ export default function BlogPost() {
               <li>☐ Announce release date across all channels</li>
               <li>☐ Create teaser content and behind-the-scenes material</li>
               <li>☐ Set up pre-save campaigns</li>
-              <li>☐ Pitch to <a href="/become-curator">curators and playlists</a></li>
+              <li>☐ Pitch to <a href="/curator-application">curators and playlists</a></li>
               <li>☐ Contact press and blogs</li>
               <li>☐ Design social media content calendar</li>
             </ul>
@@ -872,11 +872,11 @@ export default function BlogPost() {
 
             <p><strong>Ready to distribute your music?</strong></p>
             <ol>
-              <li><a href="/artist-pricing">Join BeatFlow as an artist</a> for fair-pay distribution</li>
+              <li><a href="/explore-premium">Join BeatFlow as an artist</a> for fair-pay distribution</li>
               <li>Review this guide and create your distribution checklist</li>
               <li>Prepare your music and metadata professionally</li>
               <li>Execute your release strategy with patience and consistency</li>
-              <li>Engage with the <a href="/become-curator">BeatFlow community</a> for support</li>
+              <li>Engage with the <a href="/curator-application">BeatFlow community</a> for support</li>
             </ol>
 
             <p>Start building your distribution strategy today on <a href="/">BeatFlow</a>.</p>
@@ -903,7 +903,7 @@ export default function BlogPost() {
             excerpt: 'Introducing our completely redesigned analytics dashboard with real-time insights and revenue tracking.',
             keywords: ['analytics dashboard', 'artist analytics', 'streaming insights', 'revenue tracking'],
             author: 'BeatFlow Team',
-            authorImage: '/images/beatflow-logo.png',
+            authorImage: '/images/Logo.png',
             featuredImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop',
             content: `
             <p>We're excited to announce the launch of BeatFlow's completely redesigned analytics dashboard for artists. This major platform update provides real-time insights, comprehensive revenue tracking, and powerful data visualization tools to help you make informed decisions about your music career.</p>
@@ -981,7 +981,7 @@ export default function BlogPost() {
             </ul>
 
             <h3>Playlist Impact Analysis</h3>
-            <p>For artists featured in <a href="/become-curator">curator playlists</a>, the new dashboard shows:</p>
+            <p>For artists featured in <a href="/curator-application">curator playlists</a>, the new dashboard shows:</p>
 
             <ul>
               <li>Which playlists are driving the most streams</li>
@@ -1077,7 +1077,7 @@ export default function BlogPost() {
               <li>Export any data set as CSV for your own analysis</li>
             </ol>
 
-            <p>If you're not yet a BeatFlow artist, <a href="/artist-pricing">join today</a> to get access to these powerful analytics tools.</p>
+            <p>If you're not yet a BeatFlow artist, <a href="/explore-premium">join today</a> to get access to these powerful analytics tools.</p>
 
             <h2>Making Data-Driven Decisions</h2>
 
@@ -1103,7 +1103,7 @@ export default function BlogPost() {
             <ul>
               <li>Understand which tracks generate the most income</li>
               <li>Identify seasonal patterns to plan strategic releases</li>
-              <li>See which <a href="/become-curator">curator placements</a> are worth the investment</li>
+              <li>See which <a href="/curator-application">curator placements</a> are worth the investment</li>
               <li>Track revenue trends to forecast future earnings</li>
             </ul>
 
@@ -1208,13 +1208,13 @@ export default function BlogPost() {
 
             <p><strong>For new artists:</strong></p>
             <ol>
-              <li><a href="/artist-pricing">Join BeatFlow</a> with our $25/year artist membership</li>
+              <li><a href="/explore-premium">Join BeatFlow</a> with our $25/year artist membership</li>
               <li>Upload your music and complete your profile</li>
               <li>Once your tracks are approved, access your analytics dashboard</li>
               <li>Start tracking your growth from day one</li>
             </ol>
 
-            <p>The new analytics dashboard is available to all BeatFlow artists at no additional cost—it's included with your <a href="/artist-pricing">artist membership</a>.</p>
+            <p>The new analytics dashboard is available to all BeatFlow artists at no additional cost—it's included with your <a href="/explore-premium">artist membership</a>.</p>
 
             <h2>Supporting Resources</h2>
 
@@ -1259,7 +1259,7 @@ export default function BlogPost() {
             excerpt: 'Master social media marketing to grow your fanbase, increase streams, and build a sustainable music career.',
             keywords: ['social media marketing', 'music marketing', 'artist promotion', 'fanbase growth'],
             author: 'BeatFlow Team',
-            authorImage: '/images/beatflow-logo.png',
+            authorImage: '/images/Logo.png',
             featuredImage: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1200&h=600&fit=crop',
             content: `
             <p>Social media has become the most powerful tool for independent musicians to build their fanbase, promote releases, and connect directly with listeners. But with algorithms constantly changing and platforms evolving, how do you cut through the noise and actually grow your audience?</p>
@@ -1425,7 +1425,7 @@ export default function BlogPost() {
 
             <p><strong>Conversion Tracking:</strong></p>
             <ul>
-              <li>Link clicks to your <a href="/artist-pricing">BeatFlow profile</a></li>
+              <li>Link clicks to your <a href="/explore-premium">BeatFlow profile</a></li>
               <li>Traffic from social to streaming platforms</li>
               <li>Email list sign-ups from social campaigns</li>
               <li>Merch sales attributed to social posts</li>
@@ -1473,7 +1473,7 @@ export default function BlogPost() {
             <ul>
               <li>Look for artists with similar (not identical) follower counts</li>
               <li>Find musicians in your genre but different sub-niches</li>
-              <li>Connect through <a href="/become-curator">BeatFlow's curator community</a></li>
+              <li>Connect through <a href="/curator-application">BeatFlow's curator community</a></li>
               <li>Reach out authentically—compliment their work first</li>
             </ul>
 
@@ -1679,7 +1679,7 @@ export default function BlogPost() {
               <li><strong>Follower growth rate:</strong> % increase month over month</li>
               <li><strong>Engagement rate:</strong> (Likes + comments + saves + shares) / followers</li>
               <li><strong>Profile visits:</strong> How many people check out your full profile</li>
-              <li><strong>Link clicks:</strong> Traffic to your <a href="/artist-pricing">BeatFlow</a>, streaming, or website</li>
+              <li><strong>Link clicks:</strong> Traffic to your <a href="/explore-premium">BeatFlow</a>, streaming, or website</li>
               <li><strong>Stream correlation:</strong> Did social campaigns increase streams?</li>
               <li><strong>Email sign-ups:</strong> Are you converting social followers to owned audience?</li>
               <li><strong>Revenue attribution:</strong> Sales/streams directly from social campaigns</li>
@@ -1755,7 +1755,7 @@ export default function BlogPost() {
             <ul>
               <li>Link your BeatFlow profile in all social media bios</li>
               <li>Share BeatFlow streaming milestones on social platforms</li>
-              <li>Create content around <a href="/become-curator">curator placements</a> you receive</li>
+              <li>Create content around <a href="/curator-application">curator placements</a> you receive</li>
               <li>Highlight fan support and engagement from BeatFlow listeners</li>
               <li>Use social media to drive pre-saves for BeatFlow releases</li>
               <li>Share your <a href="/artist-portal">analytics dashboard</a> wins (tactfully)</li>
@@ -1773,7 +1773,7 @@ export default function BlogPost() {
               <li>Remember that social media is a tool to support your music, not replace it</li>
             </ul>
 
-            <p>Start implementing these 10 strategies today, and you'll see measurable growth in your fanbase, engagement, and ultimately, your <a href="/artist-pricing">streaming numbers</a> and music career.</p>
+            <p>Start implementing these 10 strategies today, and you'll see measurable growth in your fanbase, engagement, and ultimately, your <a href="/explore-premium">streaming numbers</a> and music career.</p>
 
             <p>Your next superfan is scrolling right now—give them a reason to stop and listen.</p>
 
@@ -1799,7 +1799,7 @@ export default function BlogPost() {
             excerpt: 'Independent artists are reshaping the music industry. Discover why more musicians are choosing to stay independent and how platforms like BeatFlow are making it possible.',
             keywords: ['independent music', 'music industry', 'independent artists', 'music business'],
             author: 'BeatFlow Team',
-            authorImage: '/images/beatflow-logo.png',
+            authorImage: '/images/Logo.png',
             featuredImage: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop',
             content: `
             <p>The music industry is experiencing a seismic shift. For the first time in history, independent artists are not just surviving—they're thriving. In 2026, more musicians are choosing to remain independent than ever before, and the data tells a compelling story about why.</p>
@@ -1871,7 +1871,7 @@ export default function BlogPost() {
             <ul>
               <li><strong>With major label:</strong> ~$600-800/month after label cut and recoupment</li>
               <li><strong>Independent on traditional platforms:</strong> ~$3,000-4,000/month</li>
-              <li><strong>Independent on <a href="/artist-pricing">BeatFlow</a>:</strong> ~$5,000-7,000/month (70% revenue share)</li>
+              <li><strong>Independent on <a href="/explore-premium">BeatFlow</a>:</strong> ~$5,000-7,000/month (70% revenue share)</li>
             </ul>
 
             <h3>3. Direct Fan Relationships</h3>
@@ -2107,7 +2107,7 @@ export default function BlogPost() {
             <p><strong>Solutions:</strong></p>
             <ul>
               <li>Build your own relationships directly</li>
-              <li>Use <a href="/become-curator">curator networks</a> like BeatFlow's</li>
+              <li>Use <a href="/curator-application">curator networks</a> like BeatFlow's</li>
               <li>Leverage social media for press coverage</li>
               <li>Focus on owned audience vs. gatekeepers</li>
               <li>Hire publicist for specific campaigns (cheaper than label deal)</li>
@@ -2203,7 +2203,7 @@ export default function BlogPost() {
             <ul>
               <li>Set up home recording space</li>
               <li>Create social media presence on key platforms</li>
-              <li>Join <a href="/artist-pricing">BeatFlow</a> and other distribution platforms</li>
+              <li>Join <a href="/explore-premium">BeatFlow</a> and other distribution platforms</li>
               <li>Start building email list</li>
               <li>Record first 3-5 tracks</li>
             </ul>
@@ -2212,7 +2212,7 @@ export default function BlogPost() {
             <ul>
               <li>Release first single on all platforms</li>
               <li>Create content plan for social media</li>
-              <li>Pitch to <a href="/become-curator">playlists and curators</a></li>
+              <li>Pitch to <a href="/curator-application">playlists and curators</a></li>
               <li>Engage with early listeners</li>
               <li>Analyze initial data and feedback</li>
             </ul>
@@ -2238,7 +2238,7 @@ export default function BlogPost() {
 
             <p><strong>Distribution:</strong></p>
             <ul>
-              <li><a href="/artist-pricing">BeatFlow Artist Membership</a> ($25/year)</li>
+              <li><a href="/explore-premium">BeatFlow Artist Membership</a> ($25/year)</li>
               <li>DistroKid or TuneCore for major DSPs</li>
               <li>Bandcamp for direct sales</li>
             </ul>
@@ -2308,7 +2308,7 @@ export default function BlogPost() {
 
             <p><strong>Start your independent journey today:</strong></p>
             <ol>
-              <li><a href="/artist-pricing">Join BeatFlow as an artist</a> for fair-pay distribution</li>
+              <li><a href="/explore-premium">Join BeatFlow as an artist</a> for fair-pay distribution</li>
               <li>Set up your home studio with affordable equipment</li>
               <li>Create and release consistently</li>
               <li>Build your audience through <a href="/blog/social-media-marketing-musicians">social media</a> and email</li>
