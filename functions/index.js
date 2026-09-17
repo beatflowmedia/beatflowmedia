@@ -20,6 +20,9 @@ setGlobalOptions({maxInstances: 10});
 
 admin.initializeApp();
 
+// The only hard stop on Blaze spend. Disarmed unless BILLING_KILLSWITCH_ARMED=true.
+exports.billingKillswitch = require('./billingKillswitch').billingKillswitch;
+
 // Helper function to send email (lazy-load nodemailer to avoid timeout)
 async function sendEmail(to, subject, html) {
   // Lazy-load heavy dependencies
