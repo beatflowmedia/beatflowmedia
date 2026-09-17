@@ -60,6 +60,7 @@
     "lint": "eslint . --ext .js,.jsx --fix",
     "typecheck": "tsc --noEmit",
     "verify:assets": "node scripts/verify-assets.js",
+    "verify:csp": "node scripts/verify-csp.js",
     "test:functions": "jest netlify/functions/",
     "test:integration": "jest --testPathPattern=integration",
     "test:e2e": "cypress run",
@@ -99,7 +100,8 @@
     "agents:moderate:strict": "node agents/cli.js moderate review --strict",
     "agents:notify": "node agents/cli.js notify send",
     "prepare": "husky install",
-    "husky:install": "sh .husky/install.sh"
+    "husky:install": "sh .husky/install.sh",
+    "verify:all": "npm run verify:assets && npm run verify:csp"
   },
   "browserslist": {
     "production": [
