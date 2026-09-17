@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import {
   getFirestore,
   collection,
@@ -62,9 +62,27 @@ if (appCheckSiteKey) {
     window.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
   }
 
+  /* Which attestation provider.
+   *
+   * Defaults to Enterprise (Firebase calls it "Fraud Defense") because the console
+   * now marks reCAPTCHA Classic as deprecated -- building on it means rebuilding
+   * when Google removes it. Enterprise includes 10,000 free assessments a month,
+   * and App Check spends roughly one assessment per token lifetime rather than one
+   * per request, so at this traffic it is expected to cost nothing.
+   *
+   * The two are not interchangeable at the console either: Classic wants its SECRET
+   * key pasted into Firebase, Enterprise wants only the site key and assesses
+   * server-side via the linked Cloud project. Set this to 'v3' only if the app was
+   * registered with Classic.
+   */
+  const useClassic = (process.env.REACT_APP_APPCHECK_PROVIDER || '').toLowerCase() === 'v3';
+  const provider = useClassic
+    ? new ReCaptchaV3Provider(appCheckSiteKey)
+    : new ReCaptchaEnterpriseProvider(appCheckSiteKey);
+
   try {
     initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(appCheckSiteKey),
+      provider,
       isTokenAutoRefreshEnabled: true
     });
   } catch (error) {
@@ -92,4 +110,5 @@ export {
   storage,
   functions,
 };
+
 
