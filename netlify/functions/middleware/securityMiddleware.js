@@ -14,49 +14,16 @@ const admin = require('firebase-admin');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
-// Security configuration
-const SECURITY_CONFIG = {
-  rateLimiting: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100,
-    skipSuccessfulRequests: false,
-    skipFailedRequests: false
-  },
-  cors: {
-    allowedOrigins: [
-      'https://beatflowmediagroup.com',
-      'https://www.beatflowmediagroup.com',
-      'https://admin.beatflowmediagroup.com'
-    ],
-    allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-API-Key'],
-    credentials: true,
-    maxAge: 86400 // 24 hours
-  },
-  contentSecurityPolicy: {
-    directives: {
-      'default-src': ["'self'"],
-      'script-src': ["'self'", "'unsafe-inline'"],
-      'style-src': ["'self'", "'unsafe-inline'"],
-      'img-src': ["'self'", 'data:', 'https:'],
-      'connect-src': ["'self'", 'https://api.beatflowmediagroup.com'],
-      'font-src': ["'self'"],
-      'object-src': ["'none'"],
-      'media-src': ["'self'"],
-      'frame-src': ["'none'"]
-    }
-  },
-  headers: {
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'X-XSS-Protection': '1; mode=block',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'Pragma': 'no-cache'
-  }
-};
+// Security configuration.
+//
+// Single source: config/security.js. These numbers previously lived inline here
+// AND in two dead files (src/config/securityConfig.js, src/middleware/
+// securityMiddleware.js) that both declared DIFFERENT limits -- 1000/15min global
+// and 10/15min auth, against the 100 and 20 actually enforced here. Reading either
+// file to learn the limits gave the wrong answer.
+//
+// Values are unchanged by this wiring; they just have a name now.
+const SECURITY_CONFIG = require('../../../config/security');
 
 // Rate limiting store (in production, use Redis)
 const rateLimitStore = new Map();
