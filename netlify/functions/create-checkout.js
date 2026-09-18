@@ -16,7 +16,13 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-const DEFAULT_SONG_PRICE = 2900; // cents — mirrors utils/pricing SONG_PRICE
+// Require the canonical price rather than mirroring it. src/utils/pricing.js is
+// CommonJS precisely so non-bundler consumers can read it, and "mirrors" is how a
+// copy drifts: this constant said 2900 while pricing.js said 199 on main.
+//
+// Only a FALLBACK. resolveServerPrice prefers item.price from Firestore, so the
+// authoritative number for a seeded record is whatever the catalogue holds.
+const { SONG_PRICE: DEFAULT_SONG_PRICE } = require('../../src/utils/pricing');
 const DISCOUNT_RATES = { none: 0, student: 0.20, creator: 0.30, pro: 0.40, agency: 0.50 };
 
 /* A record is not licensable unless we can actually deliver the master.

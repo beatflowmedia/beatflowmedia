@@ -18,7 +18,7 @@
 /**
  * Standard song license price in cents.
  */
-const SONG_PRICE = 2900; // $29.00
+const SONG_PRICE = 199; // $1.99
 
 /**
  * Album discount multiplier (25% off the sum of its tracks).

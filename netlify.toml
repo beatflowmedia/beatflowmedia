@@ -118,18 +118,34 @@
   to   = "/.netlify/functions/create-checkout"
   status = 200
 
-# Studio subdomain redirect - root
+# Studio subdomain: RETIRED.
+#
+# These used to rewrite (status 200) the subdomain onto /studio. The business-model
+# cleanup deleted the 21 files under src/pages/studio and removed path="studio"
+# from AppRoutes.js, so that rewrite now serves a route that does not exist -- every
+# request to the subdomain would fall through the SPA catch-all to a blank page, for
+# every path, because force = true.
+#
+# 301 to the apex rather than any of the alternatives:
+#   - a 200 rewrite would serve the whole app under a second hostname with no
+#     purpose, which is duplicate content across two domains
+#   - removing these blocks leaves the subdomain's behaviour to Netlify's default
+#   - restoring the studio pages would contradict the documented cleanup
+#
+# A 301 consolidates whatever link equity the subdomain has onto the main domain and
+# tells crawlers it is gone. Reversible by editing this file; no DNS change.
+#
+# The :splat is deliberately dropped: those paths do not exist to redirect TO.
 [[redirects]]
   from = "https://studio.beatflowmediagroup.com"
-  to = "/studio"
-  status = 200
+  to = "/"
+  status = 301
   force = true
 
-# Studio subdomain redirect - all paths
 [[redirects]]
   from = "https://studio.beatflowmediagroup.com/*"
-  to = "/studio/:splat"
-  status = 200
+  to = "/"
+  status = 301
   force = true
 
 # Dynamic songs sitemap

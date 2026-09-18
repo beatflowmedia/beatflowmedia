@@ -8,17 +8,17 @@ const { SONG_PRICE, ALBUM_DISCOUNT, calculateAlbumPrice, formatPrice } = require
 
 describe('pricing constants', () => {
   test('are the values the station and the checkout both depend on', () => {
-    expect(SONG_PRICE).toBe(2900);
+    expect(SONG_PRICE).toBe(199);
     expect(ALBUM_DISCOUNT).toBe(0.75);
   });
 });
 
 describe('calculateAlbumPrice', () => {
   test('matches every example in its own JSDoc', () => {
-    expect(calculateAlbumPrice(1)).toBe(2199);
-    expect(calculateAlbumPrice(5)).toBe(10899);
-    expect(calculateAlbumPrice(10)).toBe(21799);
-    expect(calculateAlbumPrice(12)).toBe(26199);
+    expect(calculateAlbumPrice(1)).toBe(199);
+    expect(calculateAlbumPrice(5)).toBe(799);
+    expect(calculateAlbumPrice(10)).toBe(1499);
+    expect(calculateAlbumPrice(12)).toBe(1799);
   });
 
   test('always ends in 99', () => {
@@ -28,11 +28,11 @@ describe('calculateAlbumPrice', () => {
   });
 
   test('adds the .99 when the discounted base lands on an exact dollar', () => {
-    // 12 * 2900 * 0.75 = 26100 exactly. The rule prices UP to 26199, it does not
-    // shave down to 26099. Changing this reprices every album, so it is asserted
+    // 12 * 199 * 0.75 = 1791. The rule prices UP to 1799, it does not
+    // shave down to 1699. Changing this reprices every album, so it is asserted
     // rather than left to be rediscovered.
-    expect(12 * SONG_PRICE * ALBUM_DISCOUNT).toBe(26100);
-    expect(calculateAlbumPrice(12)).toBe(26199);
+    expect(12 * SONG_PRICE * ALBUM_DISCOUNT).toBe(1791);
+    expect(calculateAlbumPrice(12)).toBe(1799);
   });
 
   test('is cheaper per track than buying the tracks separately', () => {

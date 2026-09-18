@@ -5,6 +5,66 @@
 /api/stripe-webhook  /.netlify/functions/stripe-webhook  200
 /api/create-checkout  /.netlify/functions/create-checkout  200
 
+# ---------------------------------------------------------------------------
+# Routes removed by the business-model cleanup (103 routes -> 58).
+#
+# 301 rather than 404: the project SEO standard requires a removed URL to
+# redirect to its closest live equivalent. /investors is in sitemap.xml, so
+# without this it becomes a "Not found (404)" against a URL Google was told to
+# fetch -- a crawl-budget leak.
+#
+# Targets are the closest SURVIVING route, not the homepage: a redirect that does
+# not move the reader to the next relevant thing is noise to them and dilution to
+# the silo. Every target was checked against AppRoutes.js.
+# ---------------------------------------------------------------------------
+/ad-formats                          /about-ads              301
+/ad-signup                           /about-ads              301
+/ads                                 /about-ads              301
+/advertisements                      /about-ads              301
+/advertising                         /about-ads              301
+/resources/ad-specs                  /about-ads              301
+/resources/creative-best-practices   /about-ads              301
+/creative-lab                        /about-ads              301
+/creative-quote                      /contact                301
+/invisible-services                  /about-ads              301
+/for-artists                         /about                  301
+/artist-portal                       /about                  301
+/artist-profile                      /about                  301
+/artist/dashboard                    /about                  301
+/artist-pricing                      /explore-premium        301
+/get-started                         /                       301
+/become-curator                      /about                  301
+/curator-application                 /about                  301
+/curator-earnings                    /about                  301
+/curator-inbox                       /                       301
+/curator-portal                      /about                  301
+/investors                           /about                  301
+/investor-deck                       /about                  301
+/investor-portal                     /about                  301
+/nda                                 /legal                  301
+/goals                               /about                  301
+/individual                          /explore-premium        301
+/duo                                 /explore-premium        301
+/family                              /explore-premium        301
+/student                             /explore-premium        301
+/samples                             /browse                 301
+/audio-kits                          /browse                 301
+/mood-library                        /browse                 301
+/resources/help-center               /support                301
+/resources/analytics-help-center     /support                301
+/resources/partners                  /about                  301
+/news-inspiration                    /blog                   301
+/wrapped2024                         /for-the-record         301
+/resources/wrapped-2024              /for-the-record         301
+/services                            /contact                301
+/consultation                        /contact                301
+/vendors                             /contact                301
+/vendor-application                  /contact                301
+/agents-dashboard                    /                       301
+/campaign-wizard                     /                       301
+/podcaster/dashboard                 /                       301
+/link/:slug                          /marketing/landing/:slug 301
+
 # Bundler output lives in webpack's memory during `netlify dev`, not on disk.
 # Netlify checks the filesystem before proxying, does not find /static/js/bundle.js,
 # and lets the SPA fallback below swallow it -- the browser then gets index.html with
