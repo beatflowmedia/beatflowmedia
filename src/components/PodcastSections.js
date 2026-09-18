@@ -3,6 +3,7 @@ import { Box, Typography, Card, CardContent, CardMedia, IconButton, CircularProg
 import { PlayArrow, Favorite, FavoriteBorder, Bookmark, BookmarkBorder } from '@mui/icons-material';
 import { usePodcastSections } from '../hooks/usePodcastSections';
 import { useAuth } from '../context/AuthContext';
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * Component to display podcast sections
@@ -110,7 +111,7 @@ export default function PodcastSections() {
                 <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
                   <CardMedia
                     component="img"
-                    image={episode.cover || episode.showCover || '/images/default-podcast-cover.jpg'}
+                    image={artworkUrl(episode)}
                     alt={episode.title}
                     sx={{
                       position: 'absolute',

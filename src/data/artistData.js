@@ -1,7 +1,8 @@
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 // src/data/artistData.js
 export const artistData = {
   name: "Lalah Hathaway",
-  cover: "/artistImages/LalahHathaway.jpg",
+  cover: PLACEHOLDER_IMAGE,
   monthlyListeners: 5501001,
   biography:
     "Since making her debut, Lalah Hathaway has consistently held the top spot on contemporary jazz charts...",
@@ -25,6 +26,6 @@ export const artistData = {
   nextInQueue: {
     title: "Forever, For Always, For Love",
     artist: "Lalah Hathaway",
-    cover: "/images/NextInQueueCover.jpg"
+    cover: PLACEHOLDER_IMAGE
   }
 };

@@ -2,6 +2,107 @@
 // Create Stripe checkout session for song/album purchases
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const admin = require('firebase-admin');
+
+// Firebase Admin — needed to read AUTHORITATIVE prices/subscriptions from Firestore.
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    })
+  });
+}
+const db = admin.firestore();
+
+// Require the canonical price rather than mirroring it. src/utils/pricing.js is
+// CommonJS precisely so non-bundler consumers can read it, and "mirrors" is how a
+// copy drifts: this constant said 2900 while pricing.js said 199 on main.
+//
+// Only a FALLBACK. resolveServerPrice prefers item.price from Firestore, so the
+// authoritative number for a seeded record is whatever the catalogue holds.
+const { SONG_PRICE: DEFAULT_SONG_PRICE } = require('../../src/utils/pricing');
+const DISCOUNT_RATES = { none: 0, student: 0.20, creator: 0.30, pro: 0.40, agency: 0.50 };
+
+/* A record is not licensable unless we can actually deliver the master.
+ *
+ * The station seeds this catalogue and, to make 134 otherwise-silent records
+ * playable, points `audioUrl` at a 30-second preview in Cloud Storage. It marks
+ * those `previewOnly: true`. Selling one takes real money for a clip.
+ *
+ * Albums need this derived rather than read: `albums` documents carry no
+ * previewOnly field, and the album is the EXPENSIVE path ($195-$413 against $29
+ * for a song), so a song-only check leaves the larger exposure open. One extra
+ * query on the payment path is the right trade for that.
+ *
+ * This is a delivery check, not a pricing one, so it lives beside the price
+ * resolution rather than inside it: the price is correct either way, the product
+ * is what is missing.
+ */
+async function assertDeliverable(itemType, itemId, item) {
+  const refuse = () => {
+    const e = new Error(
+      'This release is preview-only and cannot be licensed yet. ' +
+      'Full-length masters are not available for purchase on this title.'
+    );
+    e.statusCode = 409;
+    throw e;
+  };
+
+  if (itemType !== 'album') {
+    if (item.previewOnly === true) refuse();
+    return;
+  }
+
+  const tracks = await db.collection('songs').where('albumId', '==', itemId).get();
+  // An album with no tracks is not a deliverable product either.
+  if (tracks.empty) refuse();
+  if (tracks.docs.some(d => d.data().previewOnly === true)) refuse();
+}
+
+// Resolve the authoritative price from Firestore — NEVER trust a client price.
+// Reads the item's real price + the user's active subscription tier and applies
+// the same discount math as src/data/discountTiers.js. Returns cents to charge.
+async function resolveServerPrice(itemType, itemId, userId) {
+  const coll = itemType === 'album' ? 'albums' : 'songs';
+  const snap = await db.collection(coll).doc(itemId).get();
+  if (!snap.exists) {
+    // 400 (not 404): Netlify's redirect engine treats a function 404 as "unhandled"
+    // and falls through to the SPA catch-all, so 404 never reaches the client.
+    const e = new Error(`${itemType} not found`); e.statusCode = 400; throw e;
+  }
+  const item = snap.data();
+
+  // Artists can't buy their own content.
+  const artistUserId = item.artistId || item.uploadedBy;
+  if (artistUserId && userId && userId === artistUserId) {
+    const e = new Error('You cannot purchase your own music'); e.statusCode = 403; throw e;
+  }
+
+  // Refuse before a Stripe session exists — a charge for an undeliverable
+  // product is worse than a failed checkout.
+  await assertDeliverable(itemType, itemId, item);
+
+  const basePrice = Number.isFinite(item.price) ? item.price : DEFAULT_SONG_PRICE;
+
+  // Active subscriber discount (users/{userId}.subscription).
+  let tier = 'none';
+  if (userId) {
+    try {
+      const userSnap = await db.collection('users').doc(userId).get();
+      const sub = userSnap.exists ? userSnap.data().subscription : null;
+      const notExpired = !sub?.currentPeriodEnd || sub.currentPeriodEnd.toDate() > new Date();
+      if (sub && sub.status === 'active' && notExpired && sub.tier) {
+        tier = String(sub.tier).toLowerCase();
+      }
+    } catch (_) { /* no user/sub -> no discount */ }
+  }
+  const rate = DISCOUNT_RATES[tier] || 0;
+  const discountedPrice = basePrice - Math.round(basePrice * rate);
+
+  return { basePrice, discountedPrice, tier, itemName: item.title, artistName: item.artistName || item.artist };
+}
 
 exports.handler = async (event, context) => {
   console.log('🔔 create-checkout function invoked');
@@ -41,6 +142,19 @@ exports.handler = async (event, context) => {
     } = JSON.parse(event.body);
 
     console.log('✅ Request data:', { userId, itemId, itemType, price, priceId, userEmail });
+
+    // Auth (defense-in-depth): if a Firebase ID token is sent, verify it and treat the
+    // verified uid as authoritative. Falls back to the body userId when absent (non-breaking).
+    let effectiveUserId = userId;
+    const authHeader = event.headers.authorization || event.headers.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+        effectiveUserId = decoded.uid;
+      } catch (e) {
+        console.warn('⚠️ ID token verification failed:', e.message);
+      }
+    }
 
     // Validate required fields - allow priceId OR (userId + itemId + itemType)
     if (priceId) {
@@ -96,7 +210,7 @@ exports.handler = async (event, context) => {
                   userId
                 }
               },
-              unit_amount: price || 2500, // $25 in cents
+              unit_amount: 2500, // $25/year — fixed server-side (ignore client price)
               recurring: { interval: 'year' }
             },
             quantity: 1,
@@ -157,11 +271,15 @@ exports.handler = async (event, context) => {
         automatic_tax: { enabled: false }
       };
     } else {
-      // Regular song/album purchase
-      const hasDiscount = originalPrice && originalPrice > price;
+      // Regular song/album purchase — price is computed SERVER-SIDE from Firestore.
+      // The client-supplied `price` is intentionally ignored (never trust it).
+      const resolved = await resolveServerPrice(itemType, itemId, effectiveUserId);
+      const hasDiscount = resolved.discountedPrice < resolved.basePrice;
+      const name = resolved.itemName || itemName || (itemType === 'song' ? 'Song' : 'Album');
+      const artist = resolved.artistName || artistName || 'Unknown Artist';
       const description = hasDiscount
-        ? `${itemType === 'song' ? 'Song' : 'Album'} by ${artistName} (Subscriber discount applied)`
-        : `${itemType === 'song' ? 'Song' : 'Album'} by ${artistName}`;
+        ? `${itemType === 'song' ? 'Song' : 'Album'} by ${artist} (Subscriber discount applied)`
+        : `${itemType === 'song' ? 'Song' : 'Album'} by ${artist}`;
 
       checkoutConfig = {
         payment_method_types: ['card'],
@@ -170,17 +288,17 @@ exports.handler = async (event, context) => {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: itemName,
+                name,
                 description,
                 metadata: {
                   itemType,
                   itemId,
-                  userId,
-                  originalPrice: originalPrice?.toString() || price.toString(),
+                  userId: effectiveUserId,
+                  originalPrice: resolved.basePrice.toString(),
                   discountApplied: hasDiscount.toString()
                 }
               },
-              unit_amount: price, // Price in cents (discounted if subscriber)
+              unit_amount: resolved.discountedPrice, // server-authoritative price (cents)
             },
             quantity: 1,
           },
@@ -190,14 +308,14 @@ exports.handler = async (event, context) => {
         cancel_url: `${process.env.URL || 'http://localhost:8888'}/purchase/cancelled`,
         customer_email: userEmail,
         metadata: {
-          userId,
+          ...metadata,               // client extras first...
+          userId: effectiveUserId,   // ...authoritative fields win (webhook trusts these)
           itemId,
           itemType,
-          originalPrice: originalPrice?.toString() || price.toString(),
-          discountedPrice: price.toString(),
-          ...metadata
+          originalPrice: resolved.basePrice.toString(),
+          discountedPrice: resolved.discountedPrice.toString(),
+          subscriberTier: resolved.tier
         },
-        // Enable automatic tax collection if configured
         automatic_tax: { enabled: false }
       };
     }
@@ -228,7 +346,7 @@ exports.handler = async (event, context) => {
       statusCode: error.statusCode
     });
     return {
-      statusCode: 500,
+      statusCode: error.statusCode || 500,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'

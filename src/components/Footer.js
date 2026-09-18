@@ -31,28 +31,8 @@ export default function Footer() {
             <h4 className="text-bf-text font-semibold mb-2">Communities</h4>
             <ul className="space-y-1">
               <li>
-                <a href="/artist-pricing" className="hover:text-bf-text">
-                  Artists
-                </a>
-              </li>
-              <li>
                 <a href="/community" className="hover:text-bf-text">
                   Community
-                </a>
-              </li>
-              <li>
-                <a href="/advertising" className="hover:text-bf-text">
-                  Advertising
-                </a>
-              </li>
-              <li>
-                <a href="/investors" className="hover:text-bf-text">
-                  Investors
-                </a>
-              </li>
-              <li>
-                <a href="/vendors" className="hover:text-bf-text">
-                  Vendors
                 </a>
               </li>
             </ul>
@@ -75,34 +55,29 @@ export default function Footer() {
                   Sync Licensing
                 </a>
               </li>
-              <li>
-                <a href="/become-curator" className="hover:text-bf-text">
-                  Become a Curator
-                </a>
-              </li>
             </ul>
           </div>
           <div>
             <h4 className="text-bf-text font-semibold mb-2">BeatFlow Plans</h4>
             <ul className="space-y-1">
               <li>
-                <a href="/individual" className="hover:text-bf-text">
-                  Beat Solo
+                <a href="/explore-premium" className="hover:text-bf-text">
+                  Student ($9.99/mo)
                 </a>
               </li>
               <li>
-                <a href="/student" className="hover:text-bf-text">
-                  Beat Campus
+                <a href="/explore-premium" className="hover:text-bf-text">
+                  Creator ($24/mo)
                 </a>
               </li>
               <li>
-                <a href="/duo" className="hover:text-bf-text">
-                  Beat Duo
+                <a href="/explore-premium" className="hover:text-bf-text">
+                  Pro ($49/mo)
                 </a>
               </li>
               <li>
-                <a href="/family" className="hover:text-bf-text">
-                  Beat Household
+                <a href="/explore-premium" className="hover:text-bf-text">
+                  Agency ($149/mo)
                 </a>
               </li>
             </ul>

@@ -1,6 +1,6 @@
 // src/pages/ForTheRecord.js
 // News hub powered by the blog system - "For the Record" news and insights
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Footer from "../components/Footer";
@@ -25,9 +25,25 @@ export default function ForTheRecord() {
     "Insights"
   ];
 
+  const loadPosts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const fetchedPosts = await marketingService.getAllPosts();
+      setPosts(fetchedPosts);
+
+      // Set featured post (first post with isFeatured flag, or just first post)
+      const featured = fetchedPosts.find(p => p.isFeatured) || fetchedPosts[0];
+      setFeaturedPost(featured);
+    } catch (error) {
+      console.error('Error loading posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadPosts();
-  }, []);
+  }, [loadPosts]);
 
   useEffect(() => {
     // Filter posts by category
@@ -37,45 +53,6 @@ export default function ForTheRecord() {
       setFilteredPosts(posts.filter(post => post.category === selectedCategory));
     }
   }, [selectedCategory, posts]);
-
-  const loadPosts = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch published blog posts from Firestore
-      const publishedPosts = await marketingService.getBlogPosts({
-        status: 'published',
-        limit: 20
-      });
-
-      if (publishedPosts.length > 0) {
-        // Set the most recent/viewed post as featured
-        const featured = publishedPosts.reduce((prev, current) =>
-          (prev.views || 0) > (current.views || 0) ? prev : current
-        );
-        setFeaturedPost(featured);
-
-        // Set remaining posts
-        setPosts(publishedPosts.filter(p => p.id !== featured.id));
-        setFilteredPosts(publishedPosts.filter(p => p.id !== featured.id));
-      } else {
-        // Fallback to mock data if no posts in database
-        const mockPosts = getMockPosts();
-        setFeaturedPost(mockPosts[0]);
-        setPosts(mockPosts.slice(1));
-        setFilteredPosts(mockPosts.slice(1));
-      }
-    } catch (error) {
-      console.error('Error loading blog posts:', error);
-      // Fallback to mock data on error
-      const mockPosts = getMockPosts();
-      setFeaturedPost(mockPosts[0]);
-      setPosts(mockPosts.slice(1));
-      setFilteredPosts(mockPosts.slice(1));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getMockPosts = () => [
     {

@@ -10,6 +10,7 @@ import { usePlaylistManager } from '../hooks/usePlaylistManager';
 import PlayingIndicator from './PlayingIndicator';
 import SongPlayCount from './SongPlayCount';
 import SongLikeCount from './SongLikeCount';
+import { artworkUrl } from '../utils/artwork';
 
 // Memoized song card to prevent unnecessary re-renders
 const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFavorite }) => {
@@ -79,7 +80,7 @@ const SongCard = React.memo(({ song, isPlaying, onPlay, onToggleLike, onToggleFa
       <Box sx={{ position: 'relative', paddingTop: '100%' }}>
         <CardMedia
           component="img"
-          image={song.cover || '/images/default-cover.jpg'}
+          image={artworkUrl(song)}
           alt={song.title}
           sx={{
             position: 'absolute',

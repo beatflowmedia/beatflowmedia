@@ -332,7 +332,7 @@ export const PlayerProvider = ({ children }) => {
       console.error('[PlayerContext] Error loading track:', error);
       lastLoadedIndexRef.current = -1; // Reset on error to allow retry
     });
-  }, [state.currentIndex, state.isPlaying]); // Depend on both currentIndex AND isPlaying
+  }, [state.currentIndex, state.isPlaying, state.queue]); // Depend on both currentIndex AND isPlaying
 
   // Control play/pause when user toggles (but track is already loaded)
   useEffect(() => {

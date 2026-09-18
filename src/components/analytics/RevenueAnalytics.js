@@ -38,14 +38,15 @@ import {
   AccountBalance as BankIcon,
   CreditCard as CardIcon,
   Receipt as ReceiptIcon,
-  PieChart as PieChartIcon as DownloadIcon,
+  PieChart as PieChartIcon,
+  Download as DownloadIcon,
   Gavel as LegalIcon,
-  Security as SecurityIcon as GlobalIcon,
+  Security as SecurityIcon,
+  Public as GlobalIcon,
   Star as StarIcon
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import { Avatar } from '@mui/material/Avatar';
-import { Tooltip } from '@mui/material/Tooltip';
+import { Avatar, Tooltip } from '@mui/material';
 
 // Revenue overview component
 const RevenueOverview = ({ data, userRole }) => {

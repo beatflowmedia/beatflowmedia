@@ -89,9 +89,22 @@ export default async (request, context) => {
         `<title>${meta.title}</title>`
       );
 
+    // response.text() above DECOMPRESSED the body, so the upstream
+    // content-encoding and content-length no longer describe what we are about to
+    // send. Reusing them unchanged tells the browser to brotli-decode plain HTML,
+    // which fails as ERR_CONTENT_DECODING_FAILED and renders a blank page. Netlify
+    // normalises this in production, which is why it only ever showed up locally --
+    // a correctness bug that happened to be masked by the platform.
+    const headers = new Headers(response.headers);
+    headers.delete('content-encoding');
+    headers.delete('content-length');
+
     return new Response(modifiedPage, {
-      status: 200,
-      headers: response.headers
+      // Preserve the upstream status rather than asserting 200: returning 200 for a
+      // 404 is a soft-404, which search engines treat as a quality problem.
+      status: response.status,
+      statusText: response.statusText,
+      headers
     });
   } catch (error) {
     // If anything fails, pass through the original response unmodified

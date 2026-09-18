@@ -1,5 +1,6 @@
 // src/components/MusicPlayer.js
 import { useEffect, useState } from "react";
+import { useMatch } from "react-router-dom";
 import { getPlaceholderImage } from "../utils/placeholders";
 import {
   FaRandom,
@@ -20,9 +21,10 @@ import { usePlaybackResume } from "../utils/usePlaybackResume";
 import MiniPlayerPortal from "./MiniPlayerPortal";
 import PlayerAnalyticsClass from '../services/analytics/PlayerAnalytics';
 import PropTypes from 'prop-types';
+import { artworkUrl } from '../utils/artwork';
 const playerAnalytics = new PlayerAnalyticsClass();
 
-const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, onGetFullVersion }) => {
+const MusicPlayer = ({ onShowRightPanel, previewMode = true, maxDuration = 30, onGetFullVersion }) => {
   // Get player state and audioRef from context - SINGLE SOURCE OF TRUTH
   const { audioRef } = usePlayer();
   const {
@@ -43,12 +45,15 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
   } = usePlayerActions();
 
   const { user } = useAuth();
+  // Semantic intent: is the user already viewing this track's own license page?
+  // If so, the player-bar "License Track" CTA is redundant (it links to the page we're on).
+  const songRouteMatch = useMatch("/song/:id");
+  const isOnThisSongPage = !!song && songRouteMatch?.params.id === song.id;
 
   // Local state for UI only (mute toggle and mini player)
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
-  const [previewEnded, setPreviewEnded] = useState(false);
 
   // Hybrid resume hook - now uses PlayerContext's audioRef
   usePlaybackResume(audioRef, song, user);
@@ -57,16 +62,8 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
   useEffect(() => {
     if (previewMode && isPlaying && currentTime >= maxDuration) {
       togglePlay(); // Pause the track
-      setPreviewEnded(true);
     }
   }, [previewMode, isPlaying, currentTime, maxDuration, togglePlay]);
-
-  // Reset preview ended state when song changes or seeking
-  useEffect(() => {
-    if (currentTime < maxDuration) {
-      setPreviewEnded(false);
-    }
-  }, [currentTime, maxDuration]);
 
   // Analytics tracking only - playback is handled by PlayerContext
   useEffect(() => {
@@ -139,7 +136,7 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
           {song ? (
             <>
               <img
-                src={song.coverUrl || song.cover || getPlaceholderImage(50, 50)}
+                src={artworkUrl(song, { width: 50, height: 50 })}
                 alt="cover"
                 className="w-12 h-12 object-cover rounded mr-3"
               />
@@ -147,8 +144,8 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
                 <p className="font-bold text-sm">{song.title}</p>
                 <p className="text-xs text-gray-400">{song.artist}</p>
                 {previewMode && (
-                  <span className="inline-block mt-1 text-[10px] bg-yellow-600 text-black px-2 py-0.5 rounded font-semibold">
-                    PREVIEW - {maxDuration}s only
+                  <span className="inline-block mt-1 text-[10px] bg-[#1DB954] text-white px-2 py-0.5 rounded font-semibold">
+                    {maxDuration}s PREVIEW
                   </span>
                 )}
               </div>
@@ -171,20 +168,24 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
         {/* CENTER: Playback Controls + Seek */}
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="flex items-center gap-4 mb-1">
-            <button
-              onClick={toggleShuffle}
-              className={`transition-colors ${shuffleOn ? "text-green-500" : "text-gray-400 hover:text-white"}`}
-              title={shuffleOn ? "Disable shuffle" : "Enable shuffle"}
-            >
-              <FaRandom size={16} />
-            </button>
-            <button
-              onClick={skipPrevious}
-              className="text-gray-400 hover:text-white"
-              title="Previous"
-            >
-              <FaStepBackward size={18} />
-            </button>
+            {!previewMode && (
+              <button
+                onClick={toggleShuffle}
+                className={`transition-colors ${shuffleOn ? "text-green-500" : "text-gray-400 hover:text-white"}`}
+                title={shuffleOn ? "Disable shuffle" : "Enable shuffle"}
+              >
+                <FaRandom size={16} />
+              </button>
+            )}
+            {!previewMode && (
+              <button
+                onClick={skipPrevious}
+                className="text-gray-400 hover:text-white"
+                title="Previous"
+              >
+                <FaStepBackward size={18} />
+              </button>
+            )}
             <button
               onClick={togglePlay}
               className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center hover:scale-105 transition"
@@ -192,37 +193,41 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
             >
               {isPlaying ? <FaPause size={14} /> : <FaPlay size={14} />}
             </button>
-            <button
-              onClick={skipNext}
-              className="text-gray-400 hover:text-white"
-              title="Next"
-            >
-              <FaStepForward size={18} />
-            </button>
-            <button
-              onClick={cycleRepeat}
-              className={`relative transition-colors ${
-                repeatMode !== "OFF" ? "text-green-500" : "text-gray-400 hover:text-white"
-              }`}
-              title={
-                repeatMode === "ONE"
-                  ? "Repeat One"
-                  : repeatMode === "ALL"
-                  ? "Repeat All"
-                  : "Repeat Off"
-              }
-            >
-              {repeatMode === "ONE" ? (
-                <div className="relative inline-flex items-center justify-center">
+            {!previewMode && (
+              <button
+                onClick={skipNext}
+                className="text-gray-400 hover:text-white"
+                title="Next"
+              >
+                <FaStepForward size={18} />
+              </button>
+            )}
+            {!previewMode && (
+              <button
+                onClick={cycleRepeat}
+                className={`relative transition-colors ${
+                  repeatMode !== "OFF" ? "text-green-500" : "text-gray-400 hover:text-white"
+                }`}
+                title={
+                  repeatMode === "ONE"
+                    ? "Repeat One"
+                    : repeatMode === "ALL"
+                    ? "Repeat All"
+                    : "Repeat Off"
+                }
+              >
+                {repeatMode === "ONE" ? (
+                  <div className="relative inline-flex items-center justify-center">
+                    <FaRedoAlt size={16} />
+                    <span className="absolute text-[10px] font-bold" style={{ marginTop: '1px' }}>
+                      1
+                    </span>
+                  </div>
+                ) : (
                   <FaRedoAlt size={16} />
-                  <span className="absolute text-[10px] font-bold" style={{ marginTop: '1px' }}>
-                    1
-                  </span>
-                </div>
-              ) : (
-                <FaRedoAlt size={16} />
-              )}
-            </button>
+                )}
+              </button>
+            )}
           </div>
           {/* Seek Bar Row */}
           <div className="flex items-center gap-2 w-full px-4">
@@ -231,34 +236,38 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
               type="range"
               className="flex-1 accent-gray-300 h-1 cursor-pointer"
               min={0}
-              max={duration || 0}
+              max={previewMode ? Math.min(maxDuration, duration || 0) : (duration || 0)}
               step="0.01"
               value={currentTime}
               onChange={handleSeek}
             />
-            <span className="text-xs text-gray-400">{formatTime(duration)}</span>
+            <span className="text-xs text-gray-400">
+              {previewMode ? formatTime(Math.min(maxDuration, duration || 0)) : formatTime(duration)}
+            </span>
           </div>
         </div>
 
-        {/* RIGHT: Queue, Volume, Mini Player Toggle */}
+        {/* RIGHT: License Button or Volume Controls */}
         <div className="flex items-center justify-end w-1/5 gap-3">
-          {previewMode && onGetFullVersion ? (
+          {previewMode && song && !isOnThisSongPage ? (
             <button
-              onClick={onGetFullVersion}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold transition-all transform hover:scale-105"
-              title="Get full version"
+              onClick={onGetFullVersion || (() => window.location.href = `/song/${song.id}`)}
+              className="bg-[#1DB954] hover:bg-[#1ed760] text-white px-5 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg"
+              title="License this track"
             >
-              Get Full Version
+              License Track
             </button>
           ) : (
             <>
-              <button
-                onClick={() => onShowRightPanel?.({ type: 'queue' })}
-                className="text-gray-400 hover:text-white transition-colors"
-                title="Show queue"
-              >
-                <FaListUl size={14} />
-              </button>
+              {!previewMode && (
+                <button
+                  onClick={() => onShowRightPanel?.({ type: 'queue' })}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Show queue"
+                >
+                  <FaListUl size={14} />
+                </button>
+              )}
               <div className="flex items-center gap-2">
                 <button onClick={toggleMute} className="text-gray-400 hover:text-white">
                   {isMuted ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
@@ -273,13 +282,15 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = false, maxDuration = 15, 
                   onChange={handleVolumeChange}
                 />
               </div>
-              <button
-                onClick={handleOpenMiniPlayer}
-                className="text-gray-400 hover:text-white"
-                title="Open mini player"
-              >
-                <FaClone size={14} />
-              </button>
+              {!previewMode && (
+                <button
+                  onClick={handleOpenMiniPlayer}
+                  className="text-gray-400 hover:text-white"
+                  title="Open mini player"
+                >
+                  <FaClone size={14} />
+                </button>
+              )}
             </>
           )}
         </div>

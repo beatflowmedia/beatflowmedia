@@ -40,6 +40,8 @@ import PurchaseButton from '../components/PurchaseButton';
 import TrackRowCard from '../components/TrackRowCard';
 import { stripeService } from '../services/stripeService';
 import { getSongMetrics, getBatchPlayCounts } from '../services/engagementMetrics';
+import { calculateAlbumPrice, SONG_PRICE, formatPrice } from '../utils/pricing';
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 // Lazy load dialogs to reduce initial bundle size
 const Dialog = lazy(() => import('@mui/material/Dialog'));
@@ -106,7 +108,6 @@ function Album() {
     async function loadAlbum() {
       setLoading(true);
       setError(null);
-      let reviewsTimeout = null;
 
       try {
         console.log('Loading album with ID:', albumId);
@@ -591,7 +592,7 @@ function Album() {
               alt={album?.title}
               width={300}
               height={300}
-              fallback="/default-album-cover.jpg"
+              fallback={PLACEHOLDER_IMAGE}
               priority={true}
               sx={{ objectFit: 'contain', width: '100%', height: '100%' }}
             />
@@ -804,7 +805,7 @@ function Album() {
               <PurchaseButton
                 itemId={albumId}
                 itemType="album"
-                price={album?.price || 1499}
+                price={album?.price || calculateAlbumPrice(album?.trackCount || 10)}
                 artistId={album?.artistId}
                 uploadedBy={album?.uploadedBy}
               />
@@ -1064,7 +1065,7 @@ function Album() {
           <ListItemIcon>
             <ShoppingCart sx={{ color: '#1DB954' }} />
           </ListItemIcon>
-          <ListItemText>Purchase ($1.99)</ListItemText>
+          <ListItemText>License ({formatPrice(selectedTrack?.price || SONG_PRICE)})</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -1151,7 +1152,7 @@ function Album() {
                 alt={album?.title}
                 width={200}
                 height={200}
-                fallback="/default-album-cover.jpg"
+                fallback={PLACEHOLDER_IMAGE}
                 sx={{ borderRadius: 2 }}
               />
             </Box>

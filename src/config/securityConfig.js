@@ -1,8 +1,36 @@
 /**
  * Security Configuration
  *
- * Centralized security configuration for BeatflowMedia application
- * Implements enterprise-grade security standards and best practices
+ * WHAT IN THIS FILE IS REAL
+ *
+ * Most of it is not. This file has ZERO importers and governs nothing. It
+ * describes MFA with WebAuthn, device fingerprinting, password rotation and
+ * progressive lockout, none of which exist in this codebase -- authentication is
+ * Firebase Auth with Google sign-in. Read as a specification of the system it
+ * would be nice to have, it is useful. Read as a description of the system that
+ * runs, it is wrong, and it reads authoritative enough to be believed.
+ *
+ * Two sections were actively misleading and have been removed rather than
+ * corrected, because a second copy of a live value is worse than no copy:
+ *
+ *   rateLimiting          declared 1000/15min global and 10/15min auth. The
+ *                         values actually enforced are 100 and 20. Canonical:
+ *                         config/security.js, required by
+ *                         netlify/functions/middleware/securityMiddleware.js
+ *
+ *   contentSecurityPolicy was a fifth copy of the CSP. A browser enforces the
+ *                         INTERSECTION of every policy present, so a stale copy
+ *                         blocks requests while the others look correct -- that
+ *                         is how App Check silently failed for three rounds of
+ *                         debugging. Canonical: config/csp.js, reconciled by
+ *                         `npm run verify:csp`.
+ *
+ * This file cannot import either canonical: CRA's ModuleScopePlugin forbids src/
+ * importing from outside src/, and craco.config.js does not disable it. Hence
+ * pointers rather than re-exports.
+ *
+ * Everything below is a ROADMAP. Implement a section, then delete it from here and
+ * put the values where the code that uses them can read them.
  */
 
 // Environment-based configuration
@@ -183,90 +211,13 @@ export const SECURITY_CONFIG = {
   },
 
   // Rate Limiting Configuration
-  rateLimiting: {
-    // Global rate limits
-    global: {
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      maxRequests: 1000,
-      skipSuccessfulRequests: false,
-      skipFailedRequests: false
-    },
-
-    // Endpoint-specific limits
-    endpoints: {
-      "/api/auth/login": {
-        windowMs: 15 * 60 * 1000,
-        maxRequests: 10
-      },
-      "/api/auth/register": {
-        windowMs: 60 * 60 * 1000,
-        maxRequests: 5
-      },
-      "/api/auth/playback-token": {
-        windowMs: 60 * 60 * 1000,
-        maxRequests: 500
-      },
-      "/api/content/search": {
-        windowMs: 60 * 1000,
-        maxRequests: 100
-      }
-    },
-
-    // User tier based limits
-    tierLimits: {
-      free: {
-        windowMs: 60 * 60 * 1000,
-        maxRequests: 100
-      },
-      premium: {
-        windowMs: 60 * 60 * 1000,
-        maxRequests: 500
-      },
-      artist: {
-        windowMs: 60 * 60 * 1000,
-        maxRequests: 1000
-      }
-    }
-  },
+  // rateLimiting: REMOVED. It disagreed with what is enforced (declared 1000 and
+  // 10; enforced 100 and 20). Canonical: config/security.js.
 
   // Content Security Policy
-  contentSecurityPolicy: {
-    directives: {
-      "default-src": ["'self'"],
-      "script-src": [
-        "'self'",
-        "'unsafe-inline'", // Required for React
-        "https://www.googletagmanager.com",
-        "https://www.google-analytics.com",
-      ],
-      "style-src": [
-        "'self'",
-        "'unsafe-inline'", // Required for emotion/styled-components
-        "https://fonts.googleapis.com",
-      ],
-      "img-src": [
-        "'self'",
-        "data:",
-        "https:",
-        "https://firebasestorage.googleapis.com",
-      ],
-      "connect-src": [
-        "'self'",
-        "https://api.beatflowmediagroup.com",
-        "wss://api.beatflowmediagroup.com",
-        "https://identitytoolkit.googleapis.com",
-        "https://firestore.googleapis.com",
-      ],
-      "font-src": ["'self'", "https://fonts.gstatic.com"],
-      "object-src": ["'none'"],
-      "media-src": ["'self'", "https://cdn.beatflowmediagroup.com"],
-      "frame-src": ["'none'"],
-      "base-uri": ["'self'"],
-      "form-action": ["'self'"]
-    },
-    reportOnly: isDevelopment,
-    reportUri: "/api/security/csp-report"
-  },
+  // contentSecurityPolicy: REMOVED. It was a fifth copy, and a browser enforces
+  // the intersection of every policy present, so a stale copy fails CLOSED and
+  // silent. Canonical: config/csp.js. Reconciler: npm run verify:csp.
 
   // CORS Configuration
   cors: {

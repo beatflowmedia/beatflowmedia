@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Cloud Function</title>
+</head>
+<body>
+  <h1>Testing getSignedAudioUrl Cloud Function</h1>
+  <button id="testBtn">Test Function</button>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoXc1YonnH1uW3P4OlAO6eAi911DdyHgs",
+      authDomain: "beatflowmedia.firebaseapp.com",
+      projectId: "beatflowmedia",
+      storageBucket: "beatflowmedia.firebasestorage.app",
+      messagingSenderId: "770153949772",
+      appId: "1:770153949772:web:0034a30777827ae7dce2e9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const functions = getFunctions(app);
+
+    const output = document.getElementById('output');
+
+    document.getElementById('testBtn').addEventListener('click', async () => {
+      try {
+        output.textContent = 'Testing...\n\n';
+
+        // You need to be signed in - update with your email/password
+        const email = prompt('Enter your email:');
+        const password = prompt('Enter your password:');
+
+        output.textContent += 'Signing in...\n';
+        await signInWithEmailAndPassword(auth, email, password);
+        output.textContent += 'Signed in as: ' + auth.currentUser.email + '\n\n';
+
+        // Test with first song ID from debug output
+        const songId = '46DB1osFMkmX2ETj34St'; // "The World Is Still Here"
+
+        output.textContent += 'Calling getSignedAudioUrl for song: ' + songId + '\n';
+        const getSignedUrl = httpsCallable(functions, 'getSignedAudioUrl');
+        const result = await getSignedUrl({ songId });
+
+        output.textContent += '\n✅ SUCCESS!\n\n';
+        output.textContent += 'Response:\n' + JSON.stringify(result.data, null, 2);
+
+        if (result.data.signedUrl) {
+          output.textContent += '\n\nAudio URL (first 200 chars):\n' + result.data.signedUrl.substring(0, 200);
+        }
+      } catch (error) {
+        output.textContent += '\n❌ ERROR!\n\n';
+        output.textContent += 'Error: ' + error.message + '\n';
+        output.textContent += 'Code: ' + error.code + '\n';
+        output.textContent += 'Details: ' + JSON.stringify(error, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>

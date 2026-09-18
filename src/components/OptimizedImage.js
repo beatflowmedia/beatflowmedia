@@ -17,13 +17,11 @@ export default function OptimizedImage({
   sx = {}
 }) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
 
   useEffect(() => {
     // Reset state when src changes
     setLoading(true);
-    setError(false);
 
     if (!src) {
       setImageSrc(fallback);
@@ -55,7 +53,6 @@ export default function OptimizedImage({
 
       fallbackImg.onerror = () => {
         setImageSrc(fallback);
-        setError(true);
         setLoading(false);
       };
     };
@@ -125,12 +122,11 @@ export default function OptimizedImage({
           src={imageSrc || src || fallback}
           alt={alt}
           loading={priority ? 'eager' : 'lazy'}
-          fetchpriority={priority ? 'high' : 'auto'}
+          fetchPriority={priority ? 'high' : 'auto'}
           width={typeof width === 'number' ? width : undefined}
           height={typeof height === 'number' ? height : undefined}
           onLoad={() => setLoading(false)}
           onError={() => {
-            setError(true);
             setLoading(false);
           }}
           style={{

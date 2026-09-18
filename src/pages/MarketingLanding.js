@@ -17,23 +17,7 @@ export default function MarketingLanding() {
       try {
         setLoading(true);
 
-        // Check for slug-based redirects first
-        const redirectMap = {
-          'for-curators': '/become-curator',
-          'for-artists': '/for-artists',
-          'for-listeners': '/individual',
-          'for-advertisers': '/advertising',
-          'for-investors': '/investors',
-          'for-vendors': '/vendors'
-        };
-
-        if (redirectMap[slug]) {
-          setRedirect(redirectMap[slug]);
-          setLoading(false);
-          return;
-        }
-
-        // Try to fetch from Firestore if no redirect match
+        // Fetch from Firestore
         const docRef = doc(db, 'landingPages', slug);
         const docSnap = await getDoc(docRef);
 

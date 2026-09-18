@@ -29,23 +29,25 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Badge
+  Badge,
+  Avatar,
+  Tooltip
 } from "@mui/material";
 import {
-import { Avatar } from '@mui/material/Avatar';
-import { Tooltip } from '@mui/material/Tooltip';
   Security as SecurityIcon,
   Warning as WarningIcon,
   Error as ErrorIcon,
   CheckCircle as CheckIcon,
-  Shield as ShieldIcon as LockIcon,
+  Shield as ShieldIcon,
+  Lock as LockIcon,
   Visibility as VisibilityIcon,
   Block as BlockIcon,
   Gavel as LegalIcon,
   Fingerprint as FingerprintIcon,
   VpnKey as KeyIcon,
   Assessment as AssessmentIcon,
-  Refresh as RefreshIcon as DownloadIcon
+  Refresh as RefreshIcon,
+  Download as DownloadIcon
 } from "@mui/icons-material";
 
 // Security metric card

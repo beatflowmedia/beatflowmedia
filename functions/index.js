@@ -1,9 +1,27 @@
 const {onDocumentUpdated, onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onCall} = require('firebase-functions/v2/https');
+const {setGlobalOptions} = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 
+// Cap how far these can scale.
+//
+// The project moved to Blaze on 2026-09-17, so invocations bill with no ceiling.
+// A Cloud Billing budget is an ALERT, not a cap -- it emails you, it does not stop
+// anything -- so until a budget -> Pub/Sub -> disable-billing killswitch exists,
+// this cap IS the spend control.
+//
+// 10 is chosen against measured load, not taste: this catalogue serves 138 songs
+// and these functions fire on document writes and signed-URL requests, not on page
+// views. Ten concurrent instances is far above anything observed and still bounds a
+// runaway loop to something survivable. Raise it when traffic justifies it, with the
+// number that justified it written down here.
+setGlobalOptions({maxInstances: 10});
+
 admin.initializeApp();
+
+// The only hard stop on Blaze spend. Disarmed unless BILLING_KILLSWITCH_ARMED=true.
+exports.billingKillswitch = require('./billingKillswitch').billingKillswitch;
 
 // Helper function to send email (lazy-load nodemailer to avoid timeout)
 async function sendEmail(to, subject, html) {
@@ -64,6 +82,11 @@ exports.getSignedAudioUrl = onCall(async (request) => {
   try {
     const userId = request.auth.uid;
 
+    // Check if user is admin
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    const isAdmin = userData && (userData.isAdmin === true || userData.role === 'admin');
+
     // Get song data from Firestore
     const songDoc = await admin.firestore().collection('songs').doc(songId).get();
 
@@ -72,10 +95,20 @@ exports.getSignedAudioUrl = onCall(async (request) => {
     }
 
     songData = songDoc.data();
-    const audioUrl = songData.audioUrl || songData.streamUrl;
+    const audioUrl = songData.audioUrl || songData.streamUrl || songData.url || songData.src;
 
     if (!audioUrl) {
       throw new Error('Audio URL not found for this song.');
+    }
+
+    // Admins can use direct URLs (already authenticated with Storage)
+    if (isAdmin) {
+      console.log(`Admin access - returning direct URL for user ${userId} on song ${songId}`);
+      return {
+        signedUrl: audioUrl,
+        expiresAt: Date.now() + 60 * 60 * 1000,
+        isDirect: true
+      };
     }
 
     // Spotify-style model: Authenticated users can stream
@@ -144,10 +177,17 @@ exports.getSignedAudioUrl = onCall(async (request) => {
 
 // Helper function to check if user has purchased a song
 async function checkSongPurchase(userId, songId) {
+  // Queries itemId, NOT songId. Every purchase writer in
+  // netlify/functions/stripe-webhook.js writes { userId, itemId, itemType, status },
+  // and nothing anywhere writes songId -- so the previous query matched no document
+  // ever written and this function could only return false. It was invisible because
+  // the one caller uses the result for a log line and grants streaming regardless.
+  // The authoritative reader for entitlement is
+  // netlify/functions/lib/entitlement.js; this stays for the streaming log only.
   const purchaseDoc = await admin.firestore()
     .collection('purchases')
     .where('userId', '==', userId)
-    .where('songId', '==', songId)
+    .where('itemId', '==', songId)
     .where('status', '==', 'completed')
     .limit(1)
     .get();
@@ -283,13 +323,14 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
     `;
 
     // Send takedown notification to artist
-    await sendEmail(
-      userEmail,
-      `⚠️ Content Takedown Notice: ${after.title || 'Your Song'} - BeatFlow Media`,
-      takedownEmailHtml
-    );
+    // DISABLED: No longer sending takedown emails
+    // await sendEmail(
+    //   userEmail,
+    //   `⚠️ Content Takedown Notice: ${after.title || 'Your Song'} - BeatFlow Media`,
+    //   takedownEmailHtml
+    // );
 
-    console.log('Content takedown email sent to:', userEmail, 'for song:', after.title);
+    console.log('Song unpublished (email disabled):', after.title, 'for user:', userEmail);
     return null;
   } catch (error) {
     console.error('Error sending content takedown email:', error);
@@ -422,13 +463,14 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
       </div>
     `;
 
-    await sendEmail(
-      userEmail,
-      `⚠️ Content Takedown Notice: ${after.title || 'Your Album'} - BeatFlow Media`,
-      takedownEmailHtml
-    );
+    // DISABLED: No longer sending takedown emails
+    // await sendEmail(
+    //   userEmail,
+    //   `⚠️ Content Takedown Notice: ${after.title || 'Your Album'} - BeatFlow Media`,
+    //   takedownEmailHtml
+    // );
 
-    console.log('Album takedown email sent to:', userEmail, 'for album:', after.title);
+    console.log('Album unpublished (email disabled):', after.title, 'for user:', userEmail);
     return null;
   } catch (error) {
     console.error('Error sending album takedown email:', error);

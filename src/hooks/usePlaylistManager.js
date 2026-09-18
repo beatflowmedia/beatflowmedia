@@ -231,15 +231,13 @@ export function usePlaylistManager() {
     const publicSnap = await getDoc(publicRef);
 
     // Determine which collection the playlist is currently in
-    let currentRef, currentSnap, playlistData;
+    let currentRef, playlistData;
 
     if (privateSnap.exists()) {
       currentRef = privateRef;
-      currentSnap = privateSnap;
       playlistData = privateSnap.data();
     } else if (publicSnap.exists()) {
       currentRef = publicRef;
-      currentSnap = publicSnap;
       playlistData = publicSnap.data();
     } else {
       throw new Error("Playlist not found");

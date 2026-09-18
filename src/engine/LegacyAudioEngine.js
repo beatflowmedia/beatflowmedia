@@ -36,9 +36,10 @@ export default class LegacyAudioEngine extends CoreEngine {
       }
     }
 
-    // Fallback: Use direct URL from track data
-    const src = track.audioUrl || track.streamUrl || `/music/${track.fileName}`;
+    // Fallback: Use direct URL from track data  (check all possible field names)
+    const src = track.url || track.audioUrl || track.src || track.streamUrl || `/music/${track.fileName}`;
     console.log('[LegacyAudioEngine] Loading audio from direct URL:', src);
+    console.log('[LegacyAudioEngine] Track data:', { url: track.url, audioUrl: track.audioUrl, src: track.src, streamUrl: track.streamUrl });
 
     return new Promise((resolve, reject) => {
       this._setupAudioLoad(src, resolve, reject);

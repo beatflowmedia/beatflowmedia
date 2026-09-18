@@ -53,7 +53,8 @@ import {
   LineElement,
   BarElement,
   ArcElement,
-  Title as ChartTooltip,
+  Title,
+  Tooltip,
   Legend,
   Filler
 } from "chart.js";
@@ -68,9 +69,9 @@ ChartJS.register(
   BarElement,
   ArcElement,
   Title,
-  ChartTooltip,
+  Tooltip,
   Legend,
-  Filler,
+  Filler
 );
 
 const PerformanceMonitor = () => {

@@ -1,3 +1,6 @@
+const { toPolicyString } = require('./config/csp');
+const cspPolicy = toPolicyString();
+
 // craco.config.js
 // Custom webpack configuration to suppress third-party source map warnings
 // while keeping source maps for our own code
@@ -5,7 +8,9 @@
 module.exports = {
   devServer: {
     headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://apis.google.com https://connect.facebook.net https://analytics.tiktok.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' https://firebasestorage.googleapis.com https://*.firebasestorage.app blob: data:; connect-src 'self' ws://localhost:* http://localhost:* https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google-analytics.com https://api.stripe.com https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss://firestore.googleapis.com wss://*.firebaseio.com https://www.facebook.com https://analytics.tiktok.com; frame-src 'self' https://www.youtube.com https://player.vimeo.com https://js.stripe.com https://hooks.stripe.com https://accounts.google.com https://*.firebaseapp.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
+      // Single source: config/csp.js. Do not inline a policy here again --
+      // a copy that drifts blocks requests while the other copies look correct.
+      'Content-Security-Policy': cspPolicy
     }
   },
   webpack: {

@@ -90,7 +90,7 @@ export const generateSongSchema = (song) => {
     } : undefined,
     genre: song.genre || undefined,
     datePublished: song.releaseDate || song.createdAt || undefined,
-    image: song.coverUrl || song.cover || `${SITE_URL}/images/default-cover.jpg`,
+    image: song.coverUrl || song.cover || `${SITE_URL}/images/beatflow-share.png`,
     audio: song.url ? {
       '@type': 'AudioObject',
       contentUrl: song.url,
@@ -126,7 +126,7 @@ export const generateArtistSchema = (artistName, artistData = {}) => {
     name: artistName,
     url: `${SITE_URL}/artist/${encodeURIComponent(artistName)}`,
     description: artistData.bio || `Discover music by ${artistName} on BeatFlow Media`,
-    image: artistData.image || artistData.profileImage || `${SITE_URL}/images/default-artist.jpg`,
+    image: artistData.image || artistData.profileImage || `${SITE_URL}/images/beatflow-share.png`,
     genre: artistData.genres?.join(', ') || artistData.genre || undefined,
     foundingDate: artistData.foundingDate || undefined,
     sameAs: artistData.socialLinks || undefined, // Array of social media URLs
@@ -185,7 +185,7 @@ export const generateAlbumSchema = (album) => {
     name: album.title || 'Untitled Album',
     url: `${SITE_URL}/album/${album.id}`,
     description: album.description || `Listen to the album "${album.title || 'Untitled'}" by ${album.artist || 'Unknown Artist'}`,
-    image: album.coverUrl || album.cover || `${SITE_URL}/images/default-album.jpg`,
+    image: album.coverUrl || album.cover || `${SITE_URL}/images/beatflow-share.png`,
     byArtist: {
       '@type': 'MusicGroup',
       name: album.artist || 'Unknown Artist',

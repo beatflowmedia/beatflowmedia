@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * DiscoverWeeklyPreview - Home page preview of algorithmic recommendations
@@ -167,7 +168,7 @@ function DiscoverWeeklyPreview() {
                 <Box sx={{ position: 'relative', paddingTop: '100%' }}>
                   <Box
                     component="img"
-                    src={track.coverUrl || track.cover || '/images/Logo.png'}
+                    src={artworkUrl(track)}
                     alt={track.title}
                     sx={{
                       position: 'absolute',

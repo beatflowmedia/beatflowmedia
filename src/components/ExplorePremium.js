@@ -6,58 +6,64 @@ import Footer from "./Footer";
 
 const plans = [
   {
-    title: "Beat Solo",
-    price: "$11.99 / month after",
+    title: "Student",
+    price: "$9.99/month",
     details: [
-      "1 Premium account",
-      "Support independent artists",
-      "Ad-free listening",
-      "Cancel anytime",
+      "Commercial licensing included",
+      "Unlimited downloads",
+      "YouTube, TikTok, Instagram",
+      "Podcast licensing",
+      "Requires .edu email",
     ],
-    label: "Try free for 1 month",
-    note: "Free for 1 month, then $11.99/month after.",
-    tag: "Free for 1 month",
-    priceId: "price_1RPFZuAEum2hO0KZ6R9hDDBS"
+    label: "Get Student Plan",
+    note: "Educational discount with commercial licensing. Requires verification.",
+    tag: "🎓 Student Deal",
+    priceId: process.env.REACT_APP_STRIPE_STUDENT_PRICE_ID || "price_1RPG6sAEum2hO0KZGTDZIqOr"
   },
   {
-    title: "Beat Campus",
-    price: "$9.99 / month after",
+    title: "Creator",
+    price: "$24/month",
     details: [
-      "1 verified student account",
-      "Student discount",
-      "Same benefits as Beat Solo",
+      "Unlimited downloads",
+      "Published content licensed perpetually",
+      "YouTube, TikTok, Instagram, Podcast",
+      "Cancel anytime, keep your licenses",
+      "Commercial use included",
     ],
-    label: "Try free for 1 month",
-    note: "Free for 1 month, then $9.99/month after.",
-    tag: "Student Deal",
-    priceId: "price_1RPG6sAEum2hO0KZGTDZIqOr"
+    label: "Get Creator Plan",
+    note: "Perfect for content creators. Keep licenses forever after publishing.",
+    tag: "⭐ Most Popular",
+    priceId: process.env.REACT_APP_STRIPE_CREATOR_PRICE_ID || "price_1RPFZuAEum2hO0KZ6R9hDDBS"
   },
   {
-    title: "Beat Duo",
-    price: "$16.99 / month after",
+    title: "Pro",
+    price: "$49/month",
     details: [
-      "2 Premium accounts",
-      "For couples under one roof",
-      "Support artists together",
+      "Everything in Creator, plus:",
+      "Film & TV distribution rights",
+      "Client work & agency projects",
+      "Broadcast rights",
+      "Priority support",
     ],
-    label: "Get Beat Duo",
-    note: "For couples who reside at the same address.",
-    tag: "Free for 1 month",
-    priceId: "price_1RPGGGAEum2hO0KZbsLLd4x1"
+    label: "Get Pro Plan",
+    note: "For professional video producers and agencies working with clients.",
+    tag: "Professional",
+    priceId: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || "price_1RPGGGAEum2hO0KZbsLLd4x1"
   },
   {
-    title: "Beat Household",
-    price: "$18.00 / month",
+    title: "Agency",
+    price: "$149/month",
     details: [
-      "Up to 6 Premium accounts",
-      "Family-friendly content controls",
-      "Access to BeatFlow Kids",
-      "Plan manager controls",
+      "Everything in Pro, plus:",
+      "3 team member accounts",
+      "Unlimited client projects",
+      "White-label options",
+      "Dedicated account manager",
     ],
-    label: "Get Beat Household",
-    note: "For families who reside at the same address.",
-    tag: "Popular",
-    priceId: "price_1RPGOLAEum2hO0KZ7tHXcspp"
+    label: "Get Agency Plan",
+    note: "For agencies and teams managing multiple client projects.",
+    tag: "Enterprise",
+    priceId: process.env.REACT_APP_STRIPE_AGENCY_PRICE_ID || "price_1RPGOLAEum2hO0KZ7tHXcspp"
   },
 ];
 
@@ -71,22 +77,22 @@ export default function ExplorePremium() {
       {/* Hero */}
       <section className="bg-bf-card py-16 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-5xl font-bold mb-2">Listen without limits.</h1>
+          <h1 className="text-5xl font-bold mb-2">License Music for Your Content.</h1>
           <p className="text-base sm:text-lg text-bf-subtext mb-8">
-            Try 1 month free. Cancel anytime.
+            Unlimited downloads. Keep licenses forever. Support independent artists.
           </p>
           <div className="flex gap-4 max-w-lg mx-auto">
             <StripeButton
-              priceId={plans[0].priceId}
+              priceId={plans[1].priceId}
               className="flex-1 bg-bf-green text-white font-semibold py-3 rounded-full hover:opacity-90 transition text-center"
             >
-              Get started
+              Get Creator Plan
             </StripeButton>
             <button
               onClick={scrollToPlans}
               className="flex-1 border border-bf-green text-bf-green font-semibold py-3 rounded-full hover:bg-bf-green hover:text-white transition text-center"
             >
-              View plans
+              View all plans
             </button>
           </div>
         </div>
@@ -108,11 +114,10 @@ export default function ExplorePremium() {
         className="py-12 px-4 sm:px-6 lg:px-8 text-center"
       >
         <h2 className="text-3xl font-bold mb-4">
-          Affordable plans for any situation
+          Simple, Transparent Pricing
         </h2>
         <p className="text-bf-subtext mb-8 max-w-2xl mx-auto">
-          Choose a Premium plan and listen to ad-free music on all your devices.
-          Pay in various ways. Cancel anytime.
+          Choose the plan that fits your needs. Download unlimited music, get perpetual licenses, and support independent artists. Cancel anytime.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {plans.map((plan) => (
@@ -153,31 +158,32 @@ export default function ExplorePremium() {
       {/* Comparison */}
       <section className="py-12 px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-center mb-6">
-          Experience the difference
+          Why Choose BeatFlow Premium?
         </h2>
         <p className="text-center text-bf-subtext mb-8">
-          Go Premium and enjoy full control of your listening. Cancel anytime.
+          Get licensed music for your content. Download unlimited tracks and keep your licenses forever. Cancel anytime.
         </p>
         <div className="max-w-4xl mx-auto bg-bf-card rounded-lg overflow-x-auto">
           <table className="w-full min-w-[600px] text-left">
             <thead className="border-b border-bf-page">
               <tr>
-                <th className="p-4 text-sm text-bf-subtext">What you get</th>
+                <th className="p-4 text-sm text-bf-subtext">Feature</th>
                 <th className="p-4 text-sm text-bf-subtext text-center">
                   Free
                 </th>
                 <th className="p-4 text-sm text-bf-subtext text-center">
-                  Premium
+                  Subscription
                 </th>
               </tr>
             </thead>
             <tbody>
               {[
-                "Ad-free music listening",
-                "Download songs",
-                "High-quality audio",
-                "Listen with fewer ads",
-                "Organize listening space",
+                "Download tracks for your content",
+                "Commercial licensing",
+                "YouTube, TikTok, Instagram use",
+                "Perpetual licenses (keep forever)",
+                "Ad-free listening",
+                "High-quality audio downloads",
               ].map((feat, i) => (
                 <tr key={i} className="border-b border-bf-page">
                   <td className="p-4">{feat}</td>

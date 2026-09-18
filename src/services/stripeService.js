@@ -1,9 +1,21 @@
 // src/services/stripeService.js
 // Stripe payment integration service
 import { loadStripe } from '@stripe/stripe-js';
-import { db } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 import { collection, addDoc, doc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { calculateTrackPricing } from './licenseService';
+import { SONG_PRICE, calculateAlbumPrice } from '../utils/pricing';
+
+// Build checkout request headers including the caller's Firebase ID token, which
+// create-checkout verifies server-side to derive the authoritative user.
+async function checkoutHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  try {
+    const token = await auth.currentUser?.getIdToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  } catch (_) { /* unauthenticated -> no token, server falls back to body userId */ }
+  return headers;
+}
 
 // Initialize Stripe with your publishable key - lazy load to prevent blocking
 let stripePromise = null;
@@ -19,10 +31,6 @@ const getStripePromise = () => {
   }
   return stripePromise;
 };
-
-// Default prices (in cents - Stripe format)
-const DEFAULT_SONG_PRICE = 199;  // $1.99
-const DEFAULT_ALBUM_PRICE = 1499; // $14.99
 
 class StripeService {
   /**
@@ -142,7 +150,7 @@ class StripeService {
         throw new Error('You cannot purchase your own music');
       }
 
-      const originalPrice = songData.price || DEFAULT_SONG_PRICE;
+      const originalPrice = songData.price || SONG_PRICE;
 
       // Calculate subscriber discount if applicable
       const pricing = await calculateTrackPricing(userId, originalPrice);
@@ -150,9 +158,7 @@ class StripeService {
       // Create checkout session via Cloud Function or API
       const response = await fetch('/.netlify/functions/create-checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: await checkoutHeaders(),
         body: JSON.stringify({
           userId,
           itemId: songId,
@@ -215,7 +221,7 @@ class StripeService {
         throw new Error('You cannot purchase your own music');
       }
 
-      const originalPrice = albumData.price || DEFAULT_ALBUM_PRICE;
+      const originalPrice = albumData.price || calculateAlbumPrice(albumData.trackCount || 10);
 
       // Calculate subscriber discount if applicable
       const pricing = await calculateTrackPricing(userId, originalPrice);
@@ -223,9 +229,7 @@ class StripeService {
       // Create checkout session via Cloud Function or API
       const response = await fetch('/.netlify/functions/create-checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: await checkoutHeaders(),
         body: JSON.stringify({
           userId,
           itemId: albumId,
@@ -311,10 +315,28 @@ class StripeService {
 
       const songData = songDoc.data();
 
+      // Determine which URL to use for download
+      // Priority: downloadUrl (full track) > audioUrl (might be sample) > fileUrl (legacy)
+      const downloadUrl = songData.downloadUrl || songData.fullTrackUrl || songData.audioUrl || songData.fileUrl;
+
+      if (!downloadUrl) {
+        throw new Error('Download URL not available for this song');
+      }
+
+      console.log('[stripeService] Download link generated:', {
+        songId,
+        title: songData.title,
+        downloadUrl,
+        hasDownloadUrl: !!songData.downloadUrl,
+        hasFullTrackUrl: !!songData.fullTrackUrl,
+        hasAudioUrl: !!songData.audioUrl,
+        hasFileUrl: !!songData.fileUrl
+      });
+
       // Return the download URL (this could be a Cloud Storage signed URL)
       // For now, return the file URL directly
       return {
-        url: songData.fileUrl || songData.audioUrl,
+        url: downloadUrl,
         filename: `${songData.title}.mp3`,
         expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes
       };
@@ -342,4 +364,5 @@ class StripeService {
 }
 
 export const stripeService = new StripeService();
-export { DEFAULT_SONG_PRICE, DEFAULT_ALBUM_PRICE };
+// Export service instance
+export default stripeService;

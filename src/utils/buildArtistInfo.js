@@ -1,3 +1,4 @@
+import { artworkUrl } from './artwork';
 // src/utils/buildArtistInfo.js
 // ------------------------------------------------------
 // Given an artist name and an array of songs, this helper
@@ -22,7 +23,7 @@ export const buildArtistInfo = (artistName, allSongs) => {
   // Pull fields from the first matching song
   return {
     name: primarySong.artist,
-    cover: primarySong.cover || "/images/default-artist.jpg",
+    cover: artworkUrl(primarySong),
     // Use monthlyListeners if you have it in your JSON, otherwise fallback
     monthlyListeners: "Unknown",
 

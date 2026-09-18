@@ -23,45 +23,108 @@ class InvestmentStrategyAgent extends AgentBase {
     super('InvestmentStrategy', config);
 
     // Business model assumptions based on BeatFlow's platform
+    // UPDATED: February 2026 - Aligned with current subscription model
     this.businessModel = {
       // Revenue streams
       revenueStreams: {
         premiumSubscriptions: {
           enabled: true,
+          description: 'Music licensing subscription platform for content creators',
           tiers: {
-            student: { price: 4.99, projectedUsers: [500, 2000, 5000, 12000, 25000] },
-            individual: { price: 9.99, projectedUsers: [1000, 5000, 15000, 40000, 80000] },
-            duo: { price: 12.99, projectedUsers: [200, 800, 2500, 6000, 12000] },
-            family: { price: 14.99, projectedUsers: [300, 1200, 4000, 10000, 20000] }
-          }
+            student: {
+              price: 9.99,
+              features: ['Commercial licensing', '.edu email required', 'Unlimited downloads'],
+              projectedUsers: [500, 2000, 5000, 12000, 25000]
+            },
+            creator: {
+              price: 24.00,
+              features: ['Perpetual licenses', 'Unlimited downloads', 'YouTube/TikTok/Instagram', 'Podcast licensing'],
+              projectedUsers: [1000, 5000, 15000, 40000, 80000]
+            },
+            pro: {
+              price: 49.00,
+              features: ['Film/TV distribution', 'Client work', 'Broadcast rights', 'Priority support'],
+              projectedUsers: [200, 800, 2500, 6000, 12000]
+            },
+            agency: {
+              price: 149.00,
+              features: ['3 team seats', 'Unlimited client projects', 'White-label options', 'Dedicated manager'],
+              projectedUsers: [100, 400, 1200, 3000, 6000]
+            }
+          },
+          averageRevenuePerUser: 28.50, // Blended ARPU across tiers
+          targetConversion: 0.05 // 5% free-to-paid conversion rate
         },
         artistMemberships: {
-          enabled: true,
-          annualFee: 150.00,
+          enabled: false,
+          annualFee: 0.00,
+          note: 'Artists upload for FREE and earn revenue share from streams. No membership fees.',
           projectedArtists: [100, 500, 1500, 4000, 8000]
         },
-        songSales: {
+        perpetualLicenses: {
           enabled: true,
-          avgPrice: 1.99,
-          platformShare: 0.30, // 30% platform, 70% artist
-          projectedSalesPerMonth: [500, 2000, 6000, 15000, 30000]
+          description: 'One-time purchases for perpetual track/album licenses with subscriber discounts',
+          pricing: {
+            baseTrackPrice: 1.99,
+            albumFormula: 'trackCount × $1.99 × 0.75, rounded to .99',
+            albumDiscount: 0.25
+          },
+          subscriberDiscounts: {
+            student: 0.20,  // 20% off
+            creator: 0.30,  // 30% off
+            pro: 0.40,      // 40% off
+            agency: 0.50    // 50% off
+          },
+          avgTransactionValue: 6.50, // Mix of discounted tracks + albums
+          projectedMonthlyPurchases: [100, 500, 1500, 4000, 8000], // Growing with subscriber base
+          platformRevenue: 1.00, // 100% - we keep full price, artists already paid via subscription
+          note: 'Subscribers can purchase perpetual licenses at discounted rates. Revenue is 100% platform (artists paid from subscription pool).'
+        },
+        studioSampleLicensing: {
+          enabled: true,
+          description: 'Professional production samples with tiered licensing',
+          tiers: {
+            personal: { priceMultiplier: 1, avgPrice: 29.00 },
+            commercial: { priceMultiplier: 2, avgPrice: 58.00, popular: true },
+            enterprise: { avgPrice: 299.00 }
+          },
+          avgTransactionValue: 65.00, // Weighted toward commercial tier
+          projectedMonthlySales: [20, 100, 300, 750, 1500],
+          platformRevenue: 1.00, // 100% platform revenue (separate from catalog)
+          note: 'Premium production samples with commercial licensing'
+        },
+        songSales: {
+          enabled: false,
+          note: 'DEPRECATED - Replaced by perpetual license purchases in hybrid model',
+          avgPrice: 0,
+          platformShare: 0,
+          projectedSalesPerMonth: [0, 0, 0, 0, 0]
         },
         albumSales: {
-          enabled: true,
-          avgPrice: 14.99,
-          platformShare: 0.30,
-          projectedSalesPerMonth: [100, 400, 1200, 3000, 6000]
+          enabled: false,
+          note: 'DEPRECATED - Replaced by perpetual license purchases in hybrid model',
+          avgPrice: 0,
+          platformShare: 0,
+          projectedSalesPerMonth: [0, 0, 0, 0, 0]
         },
         syncLicensing: {
-          enabled: true,
-          avgDealSize: 500,
-          platformCommission: 0.20, // 20% commission on licensing deals
-          projectedDealsPerMonth: [5, 15, 40, 100, 200]
+          enabled: false,
+          note: 'May be added in future as separate B2B revenue stream',
+          avgDealSize: 0,
+          platformCommission: 0,
+          projectedDealsPerMonth: [0, 0, 0, 0, 0]
         },
         advertising: {
           enabled: true,
+          description: 'Display and audio ads for free tier users',
           revenuePerFreeUser: 0.50, // Per month
           projectedFreeUsers: [5000, 20000, 60000, 150000, 300000]
+        },
+        artistRevenueShare: {
+          enabled: true,
+          description: 'Revenue paid to artists from subscription pool',
+          estimatedPayoutRate: 0.70, // 70% of subscription revenue distributed to artists based on streams
+          note: 'This is a cost, not revenue - artists earn from platform revenue share'
         }
       },
 
@@ -231,7 +294,9 @@ class InvestmentStrategyAgent extends AgentBase {
         revenue: {
           subscriptions: Math.round(subscriptionRevenue),
           artistMemberships: Math.round(artistMembershipRevenue),
-          sales: Math.round(salesRevenue),
+          perpetualLicenses: Math.round(salesRevenue * 0.75), // ~75% from perpetual licenses
+          studioSamples: Math.round(salesRevenue * 0.25), // ~25% from studio samples
+          sales: Math.round(salesRevenue), // Total of perpetual + studio
           syncLicensing: Math.round(syncLicensingRevenue),
           advertising: Math.round(advertisingRevenue),
           total: Math.round(totalRevenue)
@@ -292,19 +357,23 @@ class InvestmentStrategyAgent extends AgentBase {
   }
 
   /**
-   * Calculate sales revenue (songs + albums)
+   * Calculate sales revenue (perpetual licenses + studio samples)
    */
   calculateSalesRevenue(yearIndex) {
-    const songSales = this.businessModel.revenueStreams.songSales;
-    const albumSales = this.businessModel.revenueStreams.albumSales;
+    // Perpetual License Revenue
+    const perpetualLicenses = this.businessModel.revenueStreams.perpetualLicenses;
+    const perpetualPurchasesPerMonth = perpetualLicenses.projectedMonthlyPurchases[yearIndex];
+    const perpetualAvgValue = perpetualLicenses.avgTransactionValue;
+    const perpetualAnnualRevenue = perpetualPurchasesPerMonth * perpetualAvgValue * 12;
 
-    const songRevenue = songSales.projectedSalesPerMonth[yearIndex] * songSales.avgPrice * 12;
-    const albumRevenue = albumSales.projectedSalesPerMonth[yearIndex] * albumSales.avgPrice * 12;
+    // Studio Sample Licensing Revenue
+    const studioSamples = this.businessModel.revenueStreams.studioSampleLicensing;
+    const studioSalesPerMonth = studioSamples.projectedMonthlySales[yearIndex];
+    const studioAvgValue = studioSamples.avgTransactionValue;
+    const studioAnnualRevenue = studioSalesPerMonth * studioAvgValue * 12;
 
-    const totalSales = songRevenue + albumRevenue;
-
-    // Platform keeps 30% after Stripe fees
-    return totalSales * songSales.platformShare;
+    // Total sales revenue (100% to platform - artists paid from subscription pool)
+    return perpetualAnnualRevenue + studioAnnualRevenue;
   }
 
   /**
@@ -1046,10 +1115,14 @@ class InvestmentStrategyAgent extends AgentBase {
           platform: 'Live and operational',
           technology: 'React, Firebase, Stripe, Netlify',
           features: [
-            'Premium subscription tiers (Student, Individual, Duo, Family)',
-            'Artist membership program ($150/year)',
-            'Direct song and album sales',
-            'Stripe Connect artist payouts (70% revenue share)',
+            'Hybrid licensing model (time-bound + perpetual)',
+            'Premium subscription tiers (Student: $9.99, Creator: $24, Pro: $49, Agency: $149)',
+            'Perpetual license purchases with subscriber discounts (20-50% off)',
+            'Time-bound licenses (published content stays licensed forever)',
+            'Artist revenue share (70% from subscription pool)',
+            'FREE artist uploads (no membership fees)',
+            'Studio sample licensing (Personal/Commercial/Enterprise)',
+            'Stripe Connect artist payouts',
             'Multi-writer royalty splits',
             'Content moderation and takedown system',
             'Analytics and reporting'

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Card, CardContent, CircularProgress, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { PlayArrow, Pause, Favorite, FavoriteBorder, MoreVert, QueueMusic, PlaylistAdd, Share, ShoppingCart } from '@mui/icons-material';
@@ -13,14 +13,12 @@ import ShareButton from '../utils/ShareButton';
 import PlayingIndicator from '../components/PlayingIndicator';
 import PurchaseButton from '../components/PurchaseButton';
 import AlbumCard from '../components/AlbumCard';
-import useFollowArtist from '../hooks/useFollowArtist';
 import { stripeService } from '../services/stripeService';
 import { toast } from 'react-toastify';
 import { getArtistImageUrl } from '../hooks/useArtistImage';
 import SongPlayCount from '../components/SongPlayCount';
-import { useArtistFollowers } from '../hooks/useArtistFollowers';
-import FanCaptureModal from '../components/FanCaptureModal';
-import { fanCaptureService } from '../services/fanCaptureService';
+import { SONG_PRICE, formatPrice } from '../utils/pricing';
+import { artworkUrl } from '../utils/artwork';
 
 export default function ArtistSimple() {
   console.log('[ArtistSimple] Component mounted/rendered');
@@ -42,61 +40,6 @@ export default function ArtistSimple() {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
   const [purchasedSongIds, setPurchasedSongIds] = useState(new Set());
-  const [fanCaptureOpen, setFanCaptureOpen] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [checkingSubscription, setCheckingSubscription] = useState(false);
-  const [processingSubscription, setProcessingSubscription] = useState(false);
-
-  // Race condition protection for Get Updates button
-  const subscribeProcessingRef = useRef(false);
-
-  // Use follow artist hook
-  const { isFollowing, toggleFollow } = useFollowArtist(artist?.name);
-
-  // Use real-time follower count from artistMetrics collection
-  const followerCount = useArtistFollowers(artist?.name);
-
-  // Debug: Log artist name being used for following
-  useEffect(() => {
-    if (artist?.name) {
-      console.log('🎯 Artist name used for following:', artist.name);
-    }
-  }, [artist?.name]);
-
-  // Check subscription status
-  useEffect(() => {
-    let cancelled = false;
-
-    const checkSubscription = async () => {
-      if (!user || !artist?.name) {
-        setIsSubscribed(false);
-        return;
-      }
-
-      setCheckingSubscription(true);
-      try {
-        const subscribed = await fanCaptureService.isSubscribed(user.uid, artist.name);
-        if (!cancelled) {
-          setIsSubscribed(subscribed);
-        }
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-        if (!cancelled) {
-          setIsSubscribed(false);
-        }
-      } finally {
-        if (!cancelled) {
-          setCheckingSubscription(false);
-        }
-      }
-    };
-
-    checkSubscription();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, artist?.name]);
 
   // Load user's purchases
   useEffect(() => {
@@ -292,7 +235,7 @@ export default function ArtistSimple() {
       setArtist({
         name: artistName,
         // Use cover from first song if available
-        imageUrl: artistSongs[0]?.coverUrl || artistSongs[0]?.cover || '/default-artist.jpg'
+        imageUrl: artworkUrl(artistSongs[0])
       });
       // Clear any error that might have been set too early
       setError(null);
@@ -375,64 +318,6 @@ export default function ArtistSimple() {
       }
     } catch (error) {
       console.error('Error toggling like:', error);
-    }
-  };
-
-  const handleGetUpdates = async () => {
-    // Race condition guard - prevent duplicate submissions
-    if (subscribeProcessingRef.current) {
-      console.log('⚠️ Subscribe/unsubscribe already processing, ignoring duplicate click');
-      return;
-    }
-
-    if (!user) {
-      // Not authenticated - show info modal first, then fan capture modal
-      // For now, just open the fan capture modal which has the info
-      setFanCaptureOpen(true);
-      return;
-    }
-
-    // User is authenticated - toggle subscription
-    subscribeProcessingRef.current = true;
-    setProcessingSubscription(true);
-
-    try {
-      let result;
-
-      if (isSubscribed) {
-        // Unsubscribe
-        result = await fanCaptureService.unsubscribe(user.uid, artist?.name);
-        if (result.success) {
-          toast.success(result.message);
-          setIsSubscribed(false); // Update subscription state
-        } else {
-          toast.error(result.message);
-        }
-      } else {
-        // Subscribe
-        result = await fanCaptureService.subscribeToArtist({
-          userId: user.uid,
-          email: user.email,
-          artistId: artist?.id,
-          artistName: artist?.name,
-          source: 'artist_page',
-          incentiveType: 'newsletter',
-          incentiveContent: `Get exclusive updates, early access to new releases, and behind-the-scenes content from ${artist?.name}`
-        });
-
-        if (result.success) {
-          toast.success(result.message);
-          setIsSubscribed(true); // Update subscription state
-        } else {
-          toast.error(result.message);
-        }
-      }
-    } catch (error) {
-      console.error('Error toggling subscription:', error);
-      toast.error('Failed to update subscription. Please try again.');
-    } finally {
-      subscribeProcessingRef.current = false;
-      setProcessingSubscription(false);
     }
   };
 
@@ -519,22 +404,14 @@ export default function ArtistSimple() {
             {artist.name}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
-            {/* Show real follower count from Firestore */}
-            <Typography variant="body1" sx={{ color: 'grey.400' }}>
-              {followerCount.toLocaleString()} {followerCount === 1 ? 'follower' : 'followers'}
-            </Typography>
-
-            {/* Calculate and show total plays from all songs */}
+            {/* Total plays across all songs */}
             {(() => {
               const totalPlays = artistSongs.reduce((sum, song) => sum + (song.playCount || 0), 0);
               if (totalPlays > 0) {
                 return (
-                  <>
-                    <Typography variant="body1" sx={{ color: 'grey.600' }}>•</Typography>
-                    <Typography variant="body1" sx={{ color: 'grey.400' }}>
-                      {totalPlays.toLocaleString()} total plays
-                    </Typography>
-                  </>
+                  <Typography variant="body1" sx={{ color: 'grey.400' }}>
+                    {totalPlays.toLocaleString()} total plays
+                  </Typography>
                 );
               }
               return null;
@@ -544,59 +421,6 @@ export default function ArtistSimple() {
             <Typography variant="body2" sx={{ color: 'grey.500' }}>
               {artistSongs.length} {artistSongs.length === 1 ? 'song' : 'songs'}
             </Typography>
-            <Button
-              variant={isSubscribed ? "contained" : "outlined"}
-              size="small"
-              onClick={handleGetUpdates}
-              disabled={checkingSubscription || processingSubscription}
-              sx={{
-                borderColor: isSubscribed ? 'transparent' : '#1DB954',
-                bgcolor: isSubscribed ? 'rgba(29, 185, 84, 0.2)' : 'transparent',
-                color: isSubscribed ? '#1ed760' : '#1DB954',
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 3,
-                borderRadius: '20px',
-                '&:hover': {
-                  bgcolor: isSubscribed ? 'rgba(239, 68, 68, 0.1)' : 'rgba(29, 185, 84, 0.1)',
-                  borderColor: isSubscribed ? 'transparent' : '#1ed760',
-                  color: isSubscribed ? '#ef4444' : '#1DB954'
-                },
-                '&:disabled': {
-                  borderColor: '#1DB954',
-                  color: '#1DB954',
-                  opacity: 0.6
-                }
-              }}
-            >
-              {checkingSubscription ? 'Checking...' : processingSubscription ? (isSubscribed ? 'Unsubscribing...' : 'Subscribing...') : (isSubscribed ? '✓ Subscribed' : 'Get Updates')}
-            </Button>
-            {user && (
-              <Button
-                variant={isFollowing ? "outlined" : "contained"}
-                size="small"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleFollow();
-                }}
-                sx={{
-                  bgcolor: isFollowing ? 'transparent' : '#1DB954',
-                  borderColor: '#1DB954',
-                  color: isFollowing ? '#1DB954' : 'white',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                  borderRadius: '20px',
-                  '&:hover': {
-                    bgcolor: isFollowing ? 'rgba(29, 185, 84, 0.1)' : '#1ed760',
-                    borderColor: '#1ed760'
-                  }
-                }}
-              >
-                {isFollowing ? 'Following' : 'Follow'}
-              </Button>
-            )}
           </Box>
         </Box>
       </Box>
@@ -678,7 +502,7 @@ export default function ArtistSimple() {
                   </Typography>
                   <Box sx={{ position: 'relative', width: 40, height: 40 }}>
                     <img
-                      src={song.coverUrl || song.cover || '/images/Logo.png'}
+                      src={artworkUrl(song)}
                       alt={song.title}
                       style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }}
                     />
@@ -715,7 +539,7 @@ export default function ArtistSimple() {
                     <PurchaseButton
                       itemId={song.id}
                       itemType="song"
-                      price={song.price || 199}
+                      price={song.price || SONG_PRICE}
                       compact={true}
                       artistId={song.artistId}
                       uploadedBy={song.uploadedBy}
@@ -820,24 +644,10 @@ export default function ArtistSimple() {
             <ListItemIcon>
               <ShoppingCart sx={{ color: '#1DB954' }} />
             </ListItemIcon>
-            <ListItemText>Purchase ($1.99)</ListItemText>
+            <ListItemText>License ({formatPrice(selectedSong?.price || SONG_PRICE)})</ListItemText>
           </MenuItem>
         ) : null}
       </Menu>
-
-      {/* Fan Capture Modal */}
-      <FanCaptureModal
-        open={fanCaptureOpen}
-        onClose={() => setFanCaptureOpen(false)}
-        onSuccess={() => setIsSubscribed(true)}
-        artist={{
-          id: artist?.id,
-          name: artist?.name,
-          photoURL: artist?.imageUrl
-        }}
-        incentiveType="newsletter"
-        incentiveContent={`Get exclusive updates, early access to new releases, and behind-the-scenes content from ${artist?.name || 'this artist'}`}
-      />
     </Box>
     </Box>
   );

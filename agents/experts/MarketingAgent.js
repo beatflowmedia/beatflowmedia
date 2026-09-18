@@ -58,7 +58,79 @@ class MarketingAgent extends AgentBase {
     this.brandAssets = {
       name: 'BeatFlow',
       tagline: 'Music By Independent Artists',
-      plans: ['Beat Solo', 'Beat Campus', 'Beat Duo', 'Beat Household'],
+
+      // Subscription Plans (Time-bound licensing while active)
+      plans: [
+        { tier: 'student', name: 'Student', price: 9.99, billing: 'monthly', features: ['Commercial licensing', '.edu email required', 'Unlimited downloads'] },
+        { tier: 'creator', name: 'Creator', price: 24.00, billing: 'monthly', features: ['Published content licensed perpetually', 'Unlimited downloads', 'All platforms'] },
+        { tier: 'pro', name: 'Pro', price: 49.00, billing: 'monthly', features: ['Broadcast rights', 'Film/TV distribution', 'Client work coverage', 'Priority support'] },
+        { tier: 'agency', name: 'Agency', price: 149.00, billing: 'monthly', features: ['3 team seats', 'Unlimited client projects', 'White-label options'] }
+      ],
+
+      // Perpetual License Pricing (One-time purchases)
+      perpetualLicenses: {
+        tracks: {
+          basePrice: 1.99,
+          description: 'Per-track perpetual license',
+          subscriberDiscounts: {
+            student: { rate: 0.20, price: 1.59, label: '20% off' },
+            creator: { rate: 0.30, price: 1.39, label: '30% off' },
+            pro: { rate: 0.40, price: 1.19, label: '40% off' },
+            agency: { rate: 0.50, price: 0.99, label: '50% off' }
+          }
+        },
+        albums: {
+          formula: 'trackCount × $1.99 × 0.75, rounded to .99',
+          description: 'Album bundles get 25% off track pricing',
+          examples: [
+            { tracks: 5, price: 7.99 },
+            { tracks: 10, price: 14.99 },
+            { tracks: 12, price: 17.99 }
+          ],
+          subscriberDiscounts: 'Same discount rates apply (20-50% based on tier)'
+        }
+      },
+
+      // Studio Sample Licensing (Professional production assets)
+      studioLicensing: {
+        personal: {
+          priceMultiplier: 1,
+          description: 'For personal projects, social media, non-commercial use'
+        },
+        commercial: {
+          priceMultiplier: 2,
+          description: 'For business, advertising, monetized content',
+          popular: true
+        },
+        enterprise: {
+          price: 'Custom',
+          description: 'For agencies, broadcasters, large-scale campaigns'
+        }
+      },
+
+      // Hybrid Model Explanation
+      licensingModel: {
+        type: 'Hybrid Time-bound + Perpetual',
+        subscriptionBenefits: [
+          'Unlimited downloads while subscribed',
+          'Time-bound licenses for downloaded content',
+          'Published content stays licensed forever',
+          'Discounts on perpetual license purchases'
+        ],
+        perpetualBenefits: [
+          'Own the license forever',
+          'Use in unlimited projects',
+          'No subscription required',
+          'Subscriber discounts available (20-50% off)'
+        ],
+        artistModel: {
+          uploadFee: 0,
+          description: 'Artists upload FREE - no membership fees',
+          revenueShare: 0.70,
+          note: '70% of subscription revenue distributed to artists based on streams'
+        }
+      },
+
       colors: {
         primary: '#1DB954',
         secondary: '#191414',
@@ -116,92 +188,114 @@ class MarketingAgent extends AgentBase {
   }
 
   /**
+   * Get real platform statistics from Firestore
+   * TODO: Implement actual queries to get live data
+   */
+  async getRealStats() {
+    // TODO: Query Firestore for actual stats
+    // Example implementation:
+    // const artistsSnapshot = await db.collection('users').where('role', '==', 'artist').get();
+    // const songsSnapshot = await db.collection('songs').get();
+    // const totalStreams = await this.calculateTotalStreams();
+
+    return {
+      totalArtists: 0, // TODO: Replace with actual count
+      totalSongs: 0,   // TODO: Replace with actual count
+      totalStreams: 0, // TODO: Replace with actual count
+      totalPayout: 0,  // TODO: Replace with actual sum from payouts collection
+      activeListeners: 0, // TODO: Replace with actual count
+      totalCurators: 0    // TODO: Replace with actual count
+    };
+  }
+
+  /**
    * Generate hero section with conversion-focused copy
+   * NOTE: Stats are placeholders - use getRealStats() for production
    */
   generateHeroSection(segment) {
     const heroTemplates = {
       artists: {
         headline: 'Turn Your Music Into Income',
-        subhead: 'Upload your tracks, reach real listeners, and earn revenue from every stream. Join 10,000+ independent artists building their careers on BeatFlow.',
+        subhead: 'Upload your tracks, reach real listeners, and earn revenue from every stream. Join independent artists building their careers on BeatFlow.',
         cta: 'Start Earning Today',
         ctaSecondary: 'See Artist Pricing',
         bgImage: `/images/marketing/landing-pages/${segment}/hero-bg.webp`,
         stats: [
-          { value: '$2.5M', label: 'Paid to Artists' },
-          { value: '10,000+', label: 'Active Artists' },
-          { value: '5M+', label: 'Monthly Streams' }
+          { value: 'REAL_STATS_NEEDED', label: 'Paid to Artists', dataKey: 'totalPayout' },
+          { value: 'REAL_STATS_NEEDED', label: 'Active Artists', dataKey: 'totalArtists' },
+          { value: 'REAL_STATS_NEEDED', label: 'Monthly Streams', dataKey: 'totalStreams' }
         ]
       },
       listeners: {
         headline: 'Discover Music That Moves You',
-        subhead: 'Find your next favorite artist from thousands of independent musicians. Stream ad-free, support creators directly, and build your perfect playlist.',
+        subhead: 'Find your next favorite artist from independent musicians. Stream ad-free, support creators directly, and build your perfect playlist.',
         cta: 'Start Listening Free',
         ctaSecondary: 'Explore Premium Plans',
         bgImage: `/images/marketing/landing-pages/${segment}/hero-bg.webp`,
         stats: [
-          { value: '50,000+', label: 'Indie Tracks' },
-          { value: '100+', label: 'Genres' },
-          { value: 'Ad-Free', label: 'Listening' }
+          { value: 'REAL_STATS_NEEDED', label: 'Indie Tracks', dataKey: 'totalSongs' },
+          { value: '100+', label: 'Genres' }, // This is reasonable to hardcode
+          { value: 'Ad-Free', label: 'Listening' } // Feature, not a stat
         ]
       },
       curators: {
-        headline: 'Build Playlists. Earn Money.',
-        subhead: 'Turn your music taste into passive income. Curate playlists, grow your following, and earn revenue share from every stream. Top curators make $5K/month.',
+        headline: 'Curate Playlists. Build Your Brand.',
+        subhead: 'Create curated playlists and build your following on BeatFlow. Free playlist tools with analytics to grow your audience.',
         cta: 'Become a Curator',
-        ctaSecondary: 'See Curator Earnings',
+        ctaSecondary: 'Learn More',
         bgImage: `/images/marketing/landing-pages/${segment}/hero-bg.webp`,
         stats: [
-          { value: '$500K', label: 'Paid to Curators' },
-          { value: '1,000+', label: 'Active Curators' },
-          { value: '$5K', label: 'Top Monthly Earnings' }
+          { value: 'REAL_STATS_NEEDED', label: 'Platform Curators', dataKey: 'totalCurators' },
+          { value: 'REAL_STATS_NEEDED', label: 'Curated Playlists', dataKey: 'totalPlaylists' },
+          { value: 'Free', label: 'Curator Tools' } // Feature, not a stat
         ]
       },
       advertisers: {
         headline: 'Reach Engaged Music Lovers',
-        subhead: 'Advertise to a highly engaged audience of music fans. Target by genre, mood, and listening behavior. See real ROI with our performance dashboard.',
+        subhead: 'Advertise to a highly engaged audience of music fans. Target by genre, mood, and listening behavior.',
         cta: 'Start Advertising',
         ctaSecondary: 'View Ad Formats',
         bgImage: `/images/marketing/landing-pages/${segment}/hero-bg.webp`,
         stats: [
-          { value: '2M+', label: 'Monthly Listeners' },
-          { value: '85%', label: 'Engagement Rate' },
-          { value: '3x', label: 'Industry Avg ROI' }
+          { value: 'REAL_STATS_NEEDED', label: 'Monthly Listeners', dataKey: 'activeListeners' },
+          { value: 'REAL_STATS_NEEDED', label: 'Avg. Engagement Rate', dataKey: 'engagementRate' },
+          { value: 'Multiple', label: 'Ad Formats' } // Feature, not stat
         ]
       },
       investors: {
         headline: 'Invest in the Future of Music',
-        subhead: 'Be part of the indie music revolution. BeatFlow is disrupting traditional music distribution with artist-first economics and transparent revenue sharing.',
+        subhead: 'Be part of the indie music revolution. BeatFlow is building an artist-first music platform with transparent revenue sharing.',
         cta: 'Review Investment Deck',
         ctaSecondary: 'Contact Investor Relations',
         bgImage: `/images/marketing/landing-pages/${segment}/hero-bg.webp`,
         stats: [
-          { value: '250%', label: 'YoY Growth' },
-          { value: '$5M', label: 'Annual Revenue' },
-          { value: '50K', label: 'Platform Users' }
+          { value: 'REAL_STATS_NEEDED', label: 'Platform Growth', dataKey: 'growthRate' },
+          { value: 'REAL_STATS_NEEDED', label: 'Annual Revenue', dataKey: 'annualRevenue' },
+          { value: 'REAL_STATS_NEEDED', label: 'Platform Users', dataKey: 'totalUsers' }
         ]
       },
       vendors: {
         headline: 'Partner with BeatFlow',
-        subhead: 'Integrate your services with a rapidly growing music platform. Access our API, white-label solutions, and partnership opportunities.',
+        subhead: 'Integrate your services with a growing music platform. Access our API and partnership opportunities.',
         cta: 'Explore Partnerships',
         ctaSecondary: 'View API Docs',
         bgImage: `/images/marketing/landing-pages/${segment}/hero-bg.webp`,
         stats: [
-          { value: '15+', label: 'Active Partners' },
-          { value: '99.9%', label: 'API Uptime' },
-          { value: '24/7', label: 'Partner Support' }
+          { value: 'REAL_STATS_NEEDED', label: 'Active Partners', dataKey: 'partnerCount' },
+          { value: 'REAL_STATS_NEEDED', label: 'API Uptime', dataKey: 'apiUptime' },
+          { value: '24/7', label: 'Partner Support' } // Feature, not stat
         ]
       },
       labels: {
         headline: 'Distribute Your Catalog. Keep Control.',
-        subhead: 'Digital distribution for labels that care about artist relationships. Transparent royalties, flexible agreements, and powerful analytics.',
+        subhead: 'Digital distribution for labels that care about artist relationships. Transparent royalties and powerful analytics.',
         cta: 'Get Started',
-        ctaSecondary: 'View Distribution Plans',
+        ctaSecondary: 'Learn More',
         bgImage: `/images/marketing/landing-pages/${segment}/hero-bg.webp`,
         stats: [
-          { value: '50+', label: 'Partner Labels' },
-          { value: '10,000+', label: 'Distributed Tracks' },
-          { value: '100%', label: 'Transparent Royalties' }
+          { value: 'REAL_STATS_NEEDED', label: 'Partner Labels', dataKey: 'labelCount' },
+          { value: 'REAL_STATS_NEEDED', label: 'Distributed Tracks', dataKey: 'totalSongs' },
+          { value: '100%', label: 'Transparent Royalties' } // Feature, not stat
         ]
       }
     };
@@ -210,50 +304,39 @@ class MarketingAgent extends AgentBase {
   }
 
   /**
-   * Generate success story section with real data
+   * Generate success story section
+   * NOTE: Replace with real user testimonials from database
+   * TODO: Query Firestore testimonials collection for verified success stories
    */
   generateSuccessStorySection(segment) {
     const successStories = {
       artists: {
-        title: 'Artists Are Thriving on BeatFlow',
+        title: 'Artists Building on BeatFlow',
         stories: [
           {
-            name: 'Sarah Martinez',
-            role: 'Indie Pop Artist',
-            quote: 'I made $15,000 in my first quarter on BeatFlow. The platform actually pays artists fairly.',
-            stats: { streams: '500K', earnings: '$15K', followers: '12K' },
-            image: '/images/marketing/success-stories/artist-sarah.webp'
-          },
-          {
-            name: 'DJ Cosmic',
-            role: 'Electronic Producer',
-            quote: 'BeatFlow's analytics helped me understand my audience. Now I release music that fans actually want.',
-            stats: { streams: '1.2M', earnings: '$32K', followers: '25K' },
-            image: '/images/marketing/success-stories/artist-cosmic.webp'
+            note: 'TODO: Replace with real artist testimonials from Firestore',
+            placeholder: 'Query users collection for artists with verified success stories',
+            requiredFields: ['name', 'role', 'quote', 'stats', 'image', 'verified: true']
           }
         ]
       },
       curators: {
-        title: 'Curators Building Passive Income',
+        title: 'Curators Growing Their Playlists',
         stories: [
           {
-            name: 'Marcus Chen',
-            role: 'Hip-Hop Curator',
-            quote: 'I built a 100K follower playlist in 6 months. Now I earn $5,000/month just from curation.',
-            stats: { playlists: 5, followers: '100K', monthlyEarnings: '$5K' },
-            image: '/images/marketing/success-stories/curator-marcus.webp'
+            note: 'TODO: Replace with real curator testimonials from Firestore',
+            placeholder: 'Query users collection for curators with verified playlists',
+            requiredFields: ['name', 'role', 'quote', 'playlistStats', 'image', 'verified: true']
           }
         ]
       },
       listeners: {
-        title: 'Listeners Discovering Their Next Favorite',
+        title: 'Listeners Discovering New Music',
         stories: [
           {
-            name: 'Emily Rodriguez',
-            role: 'Music Enthusiast',
-            quote: 'I've discovered 50+ amazing artists I've never heard before. BeatFlow's algorithm actually works.',
-            stats: { discoveries: 50, playlists: 15, hoursListened: '500+' },
-            image: '/images/marketing/success-stories/listener-emily.webp'
+            note: 'TODO: Replace with real listener testimonials from Firestore',
+            placeholder: 'Query users collection for listeners with opt-in testimonials',
+            requiredFields: ['name', 'quote', 'stats', 'image', 'consentGiven: true']
           }
         ]
       }
@@ -261,7 +344,8 @@ class MarketingAgent extends AgentBase {
 
     return {
       type: 'success-story',
-      ...successStories[segment]
+      ...successStories[segment],
+      warning: 'DO NOT USE FAKE TESTIMONIALS - Must be real, verified users who consented to marketing use'
     };
   }
 
@@ -299,70 +383,127 @@ class MarketingAgent extends AgentBase {
 
   /**
    * Generate social proof section
+   * NOTE: Stats must be pulled from real Firestore data
    */
   generateSocialProofSection(segment) {
     return {
       type: 'social-proof',
       stats: [
-        { value: '50,000+', label: 'Platform Users' },
-        { value: '10,000+', label: 'Active Artists' },
-        { value: '5M+', label: 'Monthly Streams' },
-        { value: '$2.5M', label: 'Paid Out' }
+        { value: 'REAL_STATS_NEEDED', label: 'Platform Users', dataKey: 'totalUsers' },
+        { value: 'REAL_STATS_NEEDED', label: 'Active Artists', dataKey: 'totalArtists' },
+        { value: 'REAL_STATS_NEEDED', label: 'Monthly Streams', dataKey: 'totalStreams' },
+        { value: 'REAL_STATS_NEEDED', label: 'Paid Out', dataKey: 'totalPayout' }
       ],
       testimonials: [
         {
-          quote: 'BeatFlow changed my music career. I'm finally making a living from my art.',
-          author: 'Independent Artist'
-        },
-        {
-          quote: 'The best platform for discovering real, authentic music.',
-          author: 'Premium Subscriber'
+          note: 'TODO: Pull from Firestore testimonials collection',
+          warning: 'Must have user consent for public display',
+          requiredFields: ['quote', 'author', 'verified', 'consentGiven']
         }
-      ]
+      ],
+      implementation: 'Call getRealStats() method to populate these values'
     };
   }
 
   /**
    * Generate FOMO section
+   * NOTE: Only use real scarcity/urgency, never fake
    */
   generateFOMOSection(segment) {
     const fomoTemplates = {
       artists: {
-        title: 'Join 1,247 Artists Who Signed Up This Week',
-        urgency: 'Limited spots available for new artists this month',
-        badge: 'Early Bird Pricing Ends in 3 Days',
-        liveCounter: true
+        title: 'Join Independent Artists Building on BeatFlow',
+        urgency: null, // TODO: Only add urgency if there's a real promotion
+        badge: null,   // TODO: Only add badge if there's an actual limited offer
+        liveCounter: false,
+        note: 'WARNING: Do not fabricate scarcity. Only show FOMO elements for real promotions.'
       },
       curators: {
-        title: 'Only 50 Curator Spots Left This Month',
-        urgency: 'First 100 curators get lifetime Pro features',
-        badge: 'Limited Time Offer',
-        liveCounter: true
+        title: 'Start Curating Playlists Today',
+        urgency: null,
+        badge: null,
+        liveCounter: false,
+        note: 'WARNING: No fake "limited spots" - curator signups are always open'
       },
       listeners: {
-        title: '10,000+ Music Lovers Already Discovered Their Sound',
-        urgency: 'Premium pricing increases next month',
-        badge: 'Lock In Today's Price',
-        liveCounter: false
+        title: 'Discover Your Next Favorite Artist',
+        urgency: null,
+        badge: null,
+        liveCounter: false,
+        note: 'WARNING: Only mention price increases if actually planned and approved'
       }
     };
 
     return {
       type: 'fomo',
-      ...fomoTemplates[segment]
+      ...fomoTemplates[segment],
+      ethicsNote: 'FOMO tactics must be based on real scarcity, not fabricated urgency'
     };
   }
 
   /**
-   * Generate pricing section
+   * Generate pricing section with hybrid model details
    */
   generatePricingSection(segment) {
-    // This will reference existing pricing pages
+    // Reference actual pricing pages in the app
+    const pricingLinks = {
+      artists: {
+        link: '/for-artists',
+        highlight: 'Upload FREE - Earn 70% revenue share',
+        model: 'hybrid',
+        details: {
+          uploadFee: '$0',
+          revenueShare: '70%',
+          perpetualLicenses: 'Optional - subscribers get 20-50% off track purchases'
+        },
+        note: 'Artists upload for free, earn revenue from streams. No membership fees.'
+      },
+      curators: {
+        link: '/become-curator',
+        highlight: 'Free Curator Tools - Build Your Brand',
+        note: 'Free curator tools - no payment required'
+      },
+      listeners: {
+        link: '/explore-premium',
+        highlight: 'Student: $9.99/mo | Creator: $24/mo | Pro: $49/mo | Agency: $149/mo',
+        model: 'hybrid',
+        details: {
+          subscriptionBenefits: [
+            'Unlimited downloads while subscribed',
+            'Time-bound licenses (published content stays licensed)',
+            'Subscriber discounts: 20-50% off perpetual licenses'
+          ],
+          perpetualLicenses: [
+            'Tracks: $1.99 base (or discounted)',
+            'Albums: 25% off track pricing',
+            'Own forever - use in unlimited projects'
+          ]
+        },
+        note: 'Hybrid model: Subscribe for access + buy perpetual licenses at discounted rates'
+      },
+      advertisers: {
+        link: '/advertising',
+        highlight: 'Reach engaged music lovers with targeted ads'
+      },
+      investors: {
+        link: '/investor-deck',
+        highlight: 'Hybrid subscription + perpetual license revenue model'
+      },
+      vendors: {
+        link: '/vendors',
+        highlight: null
+      },
+      labels: {
+        link: '/for-artists', // Labels use same distribution system
+        highlight: 'FREE distribution - 70% revenue share',
+        note: 'Labels distribute through same free upload system as independent artists'
+      }
+    };
+
     return {
       type: 'pricing',
       title: 'Simple, Transparent Pricing',
-      link: segment === 'artists' ? '/artist-pricing' : segment === 'curators' ? '/become-curator' : '/explore-premium',
-      highlight: segment === 'artists' ? 'Artist membership: $25/year' : null
+      ...(pricingLinks[segment] || pricingLinks.listeners)
     };
   }
 
@@ -372,18 +513,19 @@ class MarketingAgent extends AgentBase {
   generateCTASection(segment) {
     const ctaTemplates = {
       artists: {
-        headline: 'Ready to Start Earning From Your Music?',
-        subhead: 'Join thousands of artists building sustainable music careers on BeatFlow.',
-        primaryCTA: 'Get Started Now',
-        secondaryCTA: 'Talk to an Artist Success Manager',
-        link: '/artist-pricing'
+        headline: 'Ready to Share Your Music?',
+        subhead: 'Join independent artists on BeatFlow. Upload for free, reach real listeners.',
+        primaryCTA: 'Get Started',
+        secondaryCTA: 'Learn More',
+        link: '/for-artists'
       },
       curators: {
-        headline: 'Turn Your Music Taste Into Income',
-        subhead: 'Start curating playlists and earn revenue share today.',
+        headline: 'Start Curating Playlists',
+        subhead: 'Build your brand as a music curator with free playlist tools.',
         primaryCTA: 'Become a Curator',
-        secondaryCTA: 'Learn More About Earnings',
-        link: '/become-curator'
+        secondaryCTA: 'Learn More',
+        link: '/become-curator',
+        note: 'Free curator model - no payment required'
       },
       listeners: {
         headline: 'Start Your Free Trial Today',

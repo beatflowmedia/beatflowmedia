@@ -2,6 +2,7 @@
 // Enhanced content upload interface with drag-and-drop, progress tracking, and metadata forms
 import React, { useState, useRef , useCallback } from "react";
 import { SONG_PRICE, calculateAlbumPrice } from "../utils/pricing";
+import { PLATFORM_OPTIONS } from "../config/browseCategories";
 import {
   Box,
   Card,
@@ -101,6 +102,34 @@ const MOOD_OPTIONS = [
   'Romantic', 'Mysterious', 'Epic', 'Playful', 'Melancholic'
 ].sort();
 
+// PLATFORM_OPTIONS is imported from config/browseCategories (shared source of truth).
+
+// Default metadata template. Module scope = stable reference, so it doesn't
+// re-create each render (which was churning the onDrop useCallback deps), and
+// MetadataDialog can spread it to guarantee every controlled field has a value.
+const defaultMetadata = {
+  title: "",
+  artist: "",
+  album: "",
+  albumId: null,
+  mainGenre: "",
+  subGenre: "",
+  additionalSubGenres: [],
+  bpm: "",
+  mood: [],
+  platforms: [],
+  loopable: false,
+  releaseDate: "",
+  isrc: "",
+  territorialRights: "worldwide",
+  label: "BeatFlow Media Group",
+  copyrightOwner: "",
+  description: "",
+  tags: [],
+  explicitContent: false,
+  isAlbum: false // Track if this is an album upload
+};
+
 const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
 
   const [files, setFiles] = useState([]);
@@ -143,28 +172,7 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     "Complete",
   ];
 
-  // Default metadata template
-  const defaultMetadata = {
-    title: "",
-    artist: "",
-    album: "",
-    albumId: null,
-    mainGenre: "",
-    subGenre: "",
-    additionalSubGenres: [],
-    bpm: "",
-    mood: [],
-    loopable: false,
-    releaseDate: "",
-    isrc: "",
-    territorialRights: "worldwide",
-    label: "BeatFlow Media Group",
-    copyrightOwner: "",
-    description: "",
-    tags: [],
-    explicitContent: false,
-    isAlbum: false // Track if this is an album upload
-  };
+  // defaultMetadata is defined at module scope (above) for a stable reference.
 
   const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
     // Handle rejected files
@@ -209,7 +217,7 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
     if (newFiles.length > 0 && currentStep === 0) {
       setCurrentStep(1);
     }
-  }, [currentStep, defaultMetadata]);
+  }, [currentStep]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -394,6 +402,12 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
       // Step 1: Create Firestore document first to get song ID
       const tempSongData = {
         ...fileData.metadata,
+        // Precautionary: Firestore hard-rejects `undefined`. defaultMetadata already
+        // initializes these as [], so this guards the write boundary against future
+        // code paths that might build metadata without the defaults.
+        mood: fileData.metadata.mood || [],
+        platforms: fileData.metadata.platforms || [],
+        additionalSubGenres: fileData.metadata.additionalSubGenres || [],
         fileName: fileData.file.name,
         fileSize: fileData.file.size,
         fileType: fileData.file.type,
@@ -597,10 +611,10 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
                     <Typography variant="subtitle2" gutterBottom>
                       Audio
                     </Typography>
-                    {supportedTypes.audio.map((type) => (
+                    {supportedTypes.audio.map((ext) => (
                       <Chip
-                        key={type.type}
-                        label={type.description}
+                        key={ext}
+                        label={ext.replace('.', '').toUpperCase()}
                         size="small"
                         sx={{ mr: 1, mb: 1 }}
                       />
@@ -610,10 +624,10 @@ const ContentUploadInterface = ({ onUploadComplete, onUploadError }) => {
                     <Typography variant="subtitle2" gutterBottom>
                       Video
                     </Typography>
-                    {supportedTypes.video.map((type) => (
+                    {supportedTypes.video.map((ext) => (
                       <Chip
-                        key={type.type}
-                        label={type.description}
+                        key={ext}
+                        label={ext.replace('.', '').toUpperCase()}
                         size="small"
                         sx={{ mr: 1, mb: 1 }}
                       />
@@ -979,6 +993,36 @@ const BatchMetadataForm = ({
         }
       />
     </Grid>
+    <Grid item xs={12}>
+      <FormControl fullWidth>
+        <InputLabel>Optimized For Platforms</InputLabel>
+        <Select
+          multiple
+          value={metadata.platforms || []}
+          label="Optimized For Platforms"
+          onChange={(e) => onChange({ ...metadata, platforms: e.target.value })}
+          renderValue={(selected) => (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {selected.map((value) => (
+                <Chip
+                  key={value}
+                  label={PLATFORM_OPTIONS.find((p) => p.value === value)?.label || value}
+                  size="small"
+                  color="primary"
+                />
+              ))}
+            </Box>
+          )}
+        >
+          {PLATFORM_OPTIONS.map((platform) => (
+            <MenuItem key={platform.value} value={platform.value}>
+              <Checkbox checked={(metadata.platforms || []).indexOf(platform.value) > -1} />
+              {platform.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Grid>
   </Grid>
 );
 
@@ -990,11 +1034,13 @@ const MetadataDialog = ({
   onSave,
   territorialOptions
 }) => {
-  const [metadata, setMetadata] = useState({});
+  const [metadata, setMetadata] = useState(defaultMetadata);
 
   React.useEffect(() => {
     if (file) {
-      setMetadata(file.metadata);
+      // Spread defaults first so every controlled field always has a value,
+      // even if a file's metadata object is ever partial.
+      setMetadata({ ...defaultMetadata, ...file.metadata });
     }
   }, [file]);
 
@@ -1212,6 +1258,42 @@ const MetadataDialog = ({
               {(metadata.mood || []).length}/3 mood tags selected
             </Typography>
           </Grid>
+
+          {/* Platform Optimization — powers the "By Platform" browse pages */}
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>Optimized For Platforms</InputLabel>
+              <Select
+                multiple
+                value={metadata.platforms || []}
+                label="Optimized For Platforms"
+                onChange={(e) => setMetadata({ ...metadata, platforms: e.target.value })}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip
+                        key={value}
+                        label={PLATFORM_OPTIONS.find((p) => p.value === value)?.label || value}
+                        size="small"
+                        color="primary"
+                      />
+                    ))}
+                  </Box>
+                )}
+              >
+                {PLATFORM_OPTIONS.map((platform) => (
+                  <MenuItem key={platform.value} value={platform.value}>
+                    <Checkbox checked={(metadata.platforms || []).indexOf(platform.value) > -1} />
+                    {platform.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+              Tags this track for TikTok / Instagram / YouTube browse pages
+            </Typography>
+          </Grid>
+
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth

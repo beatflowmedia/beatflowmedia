@@ -5,10 +5,8 @@ import {
   BarChart,
   Security,
   CloudUpload,
-  PlaylistPlay,
   Work,
   ArrowBack,
-  Block,
   Gavel,
   Campaign,
   Mail,
@@ -21,9 +19,7 @@ import { db } from "../firebaseConfig";
 // Lazy load heavy admin components
 const AdminDashboardAnalytics = lazy(() => import("../components/analytics/AdminDashboard"));
 const SecurityDashboard = lazy(() => import("../components/admin/SecurityDashboard"));
-const ContentIngestionDashboard = lazy(() => import("../components/ContentIngestionDashboard"));
-const CuratorApplications = lazy(() => import("../components/admin/CuratorApplications"));
-const ContentManagement = lazy(() => import("../components/admin/ContentManagement"));
+const ContentHub = lazy(() => import("../components/admin/ContentHub"));
 const AppealsReview = lazy(() => import("../components/admin/AppealsReview"));
 const MarketingDashboard = lazy(() => import("../components/admin/MarketingDashboard"));
 const StudioInquiriesManager = lazy(() => import("../components/admin/StudioInquiriesManager"));
@@ -114,39 +110,15 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab("content")}
+            onClick={() => setActiveTab("contentHub")}
             className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
-              activeTab === "content"
+              activeTab === "contentHub"
                 ? "bg-green-600 text-white"
                 : "hover:bg-gray-700 text-gray-300"
             }`}
           >
             <CloudUpload fontSize="small" />
-            <span>Content Ingestion</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("curators")}
-            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
-              activeTab === "curators"
-                ? "bg-green-600 text-white"
-                : "hover:bg-gray-700 text-gray-300"
-            }`}
-          >
-            <PlaylistPlay fontSize="small" />
-            <span>Curator Applications</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("contentManagement")}
-            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
-              activeTab === "contentManagement"
-                ? "bg-green-600 text-white"
-                : "hover:bg-gray-700 text-gray-300"
-            }`}
-          >
-            <Block fontSize="small" />
-            <span>Content Takedown</span>
+            <span>Content Hub</span>
           </button>
 
           <button
@@ -240,11 +212,11 @@ export default function AdminDashboard() {
               </div>
 
               <div className="bg-gray-800 p-6 rounded-lg">
-                <div className="text-gray-400 text-sm mb-2">Active Songs</div>
+                <div className="text-gray-400 text-sm mb-2">Available Tracks</div>
                 <div className="text-3xl font-bold text-blue-400">
                   {loading ? '...' : (stats?.totalSongs || 0).toLocaleString()}
                 </div>
-                <div className="text-xs text-gray-500 mt-2">In library</div>
+                <div className="text-xs text-gray-500 mt-2">Available for licensing</div>
               </div>
 
               <div className="bg-gray-800 p-6 rounded-lg">
@@ -285,11 +257,11 @@ export default function AdminDashboard() {
                 </button>
 
                 <button
-                  onClick={() => setActiveTab("content")}
+                  onClick={() => setActiveTab("contentHub")}
                   className="p-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition"
                 >
-                  <div className="font-semibold mb-1">Manage Content</div>
-                  <div className="text-sm text-gray-400">Upload & organize media</div>
+                  <div className="font-semibold mb-1">Content Hub</div>
+                  <div className="text-sm text-gray-400">Upload & manage catalog tracks</div>
                 </button>
 
                 <Link
@@ -304,19 +276,11 @@ export default function AdminDashboard() {
                   to="/admin/panel"
                   className="p-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition"
                 >
-                  <div className="font-semibold mb-1">Music Panel</div>
-                  <div className="text-sm text-gray-400">Manage music library</div>
+                  <div className="font-semibold mb-1">Track Library</div>
+                  <div className="text-sm text-gray-400">Manage licensable content</div>
                 </Link>
 
-                <Link
-                  to="/curator-inbox"
-                  className="p-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition"
-                >
-                  <div className="font-semibold mb-1">Curator Inbox</div>
-                  <div className="text-sm text-gray-400">Review submissions</div>
-                </Link>
-
-                <button
+<button
                   onClick={() => setActiveTab("marketing")}
                   className="p-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition"
                 >
@@ -350,25 +314,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {activeTab === "content" && (
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Content Ingestion</h2>
-              <ContentIngestionDashboard />
-            </div>
-          )}
-
-          {activeTab === "curators" && (
-            <div>
-              <CuratorApplications />
-            </div>
-          )}
-
-          {activeTab === "contentManagement" && (
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Content Takedown & Management</h2>
-              <ContentManagement />
-            </div>
-          )}
+          {activeTab === "contentHub" && <ContentHub />}
 
           {activeTab === "appeals" && (
             <div>

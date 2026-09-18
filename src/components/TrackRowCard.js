@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material';
 import PurchaseButton from './PurchaseButton';
 import { useSongPlays } from '../hooks/useSongPlays';
+import { SONG_PRICE } from '../utils/pricing';
 
 /**
  * Reusable track row component for displaying songs in album and artist pages
@@ -116,7 +117,8 @@ export default function TrackRowCard({
             <PurchaseButton
               itemId={track.id}
               itemType="song"
-              price={track.price || 199}
+              price={track.price || SONG_PRICE}
+              track={track}
               compact={true}
               artistId={track.artistId}
               uploadedBy={track.uploadedBy}

@@ -36,7 +36,7 @@ import {
 import { useModal } from '../../hooks/useModal';
 
 export default function LandingPageManager() {
-  const { showConfirm, showAlert } = useModal();
+  const { showConfirm } = useModal();
   const [pages, setPages] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState(null);

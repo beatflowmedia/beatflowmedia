@@ -3,6 +3,7 @@ import { getPlaceholderImage } from "../utils/placeholders";
 import React from "react";
 import PlayButton from "../components/PlayButton";
 import SongOptionsMenu from "../components/SongOptionsMenu";
+import { artworkUrl } from '../utils/artwork';
 
 // Helper function to format seconds to mm:ss
 function formatDuration(seconds) {
@@ -39,7 +40,7 @@ const SongRow = ({
       {/* Title & Artist */}
       <div className="flex items-center space-x-3">
         <img
-          src={song.cover || "data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50"%3E%3Crect width="50" height="50" fill="%23333"/%3E%3C/svg%3E"}
+          src={artworkUrl(song, { width: 50, height: 50 })}
           alt="cover"
           className="w-10 h-10 rounded"
           width="40"

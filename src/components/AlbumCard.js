@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardMedia, Typography, Box } from '@mui/material';
 import { QueueMusic } from '@mui/icons-material';
 import PurchaseButton from './PurchaseButton';
+import { calculateAlbumPrice } from '../utils/pricing';
+import { artworkUrl } from '../utils/artwork';
 
 /**
  * AlbumCard - Reusable component for displaying album information with purchase option
@@ -39,7 +41,7 @@ export default function AlbumCard({ album, showPurchaseButton = true }) {
       <CardMedia
         component="img"
         height="180"
-        image={album.coverUrl || '/default-album.jpg'}
+        image={artworkUrl(album)}
         alt={album.title}
         sx={{ objectFit: 'cover', cursor: 'pointer' }}
         onClick={handleNavigateToAlbum}
@@ -75,7 +77,7 @@ export default function AlbumCard({ album, showPurchaseButton = true }) {
           <PurchaseButton
             itemId={album.id}
             itemType="album"
-            price={album.price || 999}
+            price={album.price || calculateAlbumPrice(album.trackCount || 10)}
             compact={false}
           />
         )}

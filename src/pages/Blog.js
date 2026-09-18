@@ -348,7 +348,7 @@ export default function Blog() {
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               Join thousands of independent artists earning sustainable income on BeatFlow
             </Typography>
-            <Link to="/artist-pricing" style={{ textDecoration: 'none' }}>
+            <Link to="/explore-premium" style={{ textDecoration: 'none' }}>
               <Chip
                 label="Get Started Today"
                 clickable

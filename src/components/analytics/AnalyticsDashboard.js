@@ -28,7 +28,8 @@ import {
   Security as SecurityIcon,
   Speed as SpeedIcon,
   Refresh as RefreshIcon,
-  Settings as SettingsIcon as DownloadIcon,
+  Settings as SettingsIcon,
+  Download as DownloadIcon,
   Timeline as TimelineIcon
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";

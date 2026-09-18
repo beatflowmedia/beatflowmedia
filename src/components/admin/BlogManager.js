@@ -41,7 +41,7 @@ import {
 import { useModal } from '../../hooks/useModal';
 
 export default function BlogManager() {
-  const { showConfirm, showAlert } = useModal();
+  const { showConfirm } = useModal();
   const [posts, setPosts] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);

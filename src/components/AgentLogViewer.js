@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import './AgentLogViewer.css';
 
 const AgentLogViewer = ({ agentId, onClose }) => {
@@ -8,21 +8,7 @@ const AgentLogViewer = ({ agentId, onClose }) => {
   const [filter, setFilter] = useState('all'); // all, info, warning, error
   const logsEndRef = useRef(null);
 
-  useEffect(() => {
-    fetchLogs();
-
-    // Auto-refresh logs every 5 seconds
-    const interval = setInterval(fetchLogs, 5000);
-    return () => clearInterval(interval);
-  }, [agentId]);
-
-  useEffect(() => {
-    if (autoScroll && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs, autoScroll]);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       // In production, this would fetch from an API endpoint
       // For now, we'll generate mock logs based on recent reports
@@ -33,7 +19,15 @@ const AgentLogViewer = ({ agentId, onClose }) => {
       console.error('Failed to fetch logs:', error);
       setLoading(false);
     }
-  };
+  }, [agentId]);
+
+  useEffect(() => {
+    fetchLogs();
+
+    // Auto-refresh logs every 5 seconds
+    const interval = setInterval(fetchLogs, 5000);
+    return () => clearInterval(interval);
+  }, [fetchLogs]);
 
   const generateMockLogs = (agentId) => {
     const now = new Date();

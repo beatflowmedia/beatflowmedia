@@ -1,0 +1,117 @@
+# 301s for routes removed by the business-model cleanup.
+#
+# The cleanup dropped the route table from 103 to 58. Only /studio had a redirect;
+# the other 47 would have become 404s the moment this deployed.
+#
+# Per the project SEO standard: a removed URL should 301 to its closest live
+# equivalent, never simply 404. /investors is in public/sitemap.xml, so without
+# this it shows up in Search Console as "Not found (404)" — a crawl-budget leak
+# against a URL Google has already been told to fetch.
+#
+# 301 (permanent) rather than 302: these pages are not coming back. A 302 tells
+# Google to keep the old URL indexed and keep re-crawling it, which is the
+# opposite of what is wanted.
+#
+# Targets are the closest SURVIVING route, not the homepage. A redirect that does
+# not move the reader to the next relevant thing is noise to them and dilution to
+# the silo — dumping 47 URLs on / would be a worse signal than the 404s.
+#
+# INSERT THESE ABOVE the "/static/*" line in public/_redirects. Order matters:
+# Netlify takes the FIRST match, and the SPA catch-all at the bottom matches
+# everything.
+
+# --- Advertising / creative services -> the surviving ads page ---
+/ad-formats                          /about-ads              301
+/ad-signup                           /about-ads              301
+/ads                                 /about-ads              301
+/advertisements                      /about-ads              301
+/advertising                         /about-ads              301
+/resources/ad-specs                  /about-ads              301
+/resources/creative-best-practices   /about-ads              301
+/creative-lab                        /about-ads              301
+/creative-quote                      /contact                301
+/invisible-services                  /about-ads              301
+
+# --- Artist-facing marketing -> about, which still describes the platform ---
+/for-artists                         /about                  301
+/artist-portal                       /about                  301
+/artist-profile                      /about                  301
+/artist/dashboard                    /about                  301
+/artist-pricing                      /explore-premium        301
+/get-started                         /                       301
+
+# --- Curator programme: discontinued per BUSINESS_MODEL_CLEANUP_SUMMARY.md ---
+/become-curator                      /about                  301
+/curator-application                 /about                  301
+/curator-earnings                    /about                  301
+/curator-inbox                       /                       301
+/curator-portal                      /about                  301
+
+# --- Investor material ---
+/investors                           /about                  301
+/investor-deck                       /about                  301
+/investor-portal                     /about                  301
+/nda                                 /legal                  301
+/goals                               /about                  301
+
+# --- Consumer plan pages -> the surviving premium page ---
+/individual                          /explore-premium        301
+/duo                                 /explore-premium        301
+/family                              /explore-premium        301
+/student                             /explore-premium        301
+
+# --- Content / catalogue entry points -> browse ---
+/samples                             /browse                 301
+/audio-kits                          /browse                 301
+/mood-library                        /browse                 301
+
+# --- Help and resources -> support ---
+/resources/help-center               /support                301
+/resources/analytics-help-center     /support                301
+/resources/partners                  /about                  301
+
+# --- Editorial ---
+/news-inspiration                    /blog                   301
+/wrapped2024                         /for-the-record         301
+/resources/wrapped-2024              /for-the-record         301
+
+# --- Sales / partnerships -> contact ---
+/services                            /contact                301
+/consultation                        /contact                301
+/vendors                             /contact                301
+/vendor-application                  /contact                301
+
+# --- Internal dashboards: no public equivalent, send to the app root ---
+/agents-dashboard                    /                       301
+/campaign-wizard                     /                       301
+/podcaster/dashboard                 /                       301
+
+# --- Smart links: the marketing landing route survives and takes a slug ---
+/link/:slug                          /marketing/landing/:slug 301
+
+# ============================================================================
+# NOT A REDIRECT — A DECISION FOR YOU
+# ============================================================================
+#
+# /studio is gone too (21 files under src/pages/studio were deleted), but it is
+# NOT in the list above, because a line in public/_redirects cannot fix it.
+#
+# netlify.toml:123-131 force-redirects an entire SUBDOMAIN at it:
+#
+#   from = "https://studio.beatflowmediagroup.com"    to = "/studio"
+#   from = "https://studio.beatflowmediagroup.com/*"  to = "/studio/:splat"
+#
+# `path="studio"` no longer exists in AppRoutes.js, so after this deploys every
+# request to studio.beatflowmediagroup.com lands on a dead route and falls through
+# the SPA catch-all to a blank page. force = true means it happens even for paths
+# that would otherwise resolve.
+#
+# This is not something to guess at — retiring a subdomain has DNS, SEO and
+# possibly customer-communication consequences that a redirect file cannot see.
+# Three options:
+#
+#   1. Point the subdomain at the main site:  to = "/"           (or /about)
+#   2. Remove the two [[redirects]] blocks and let the subdomain 404 at DNS
+#   3. Restore the studio pages, if retiring the portal was not intended
+#
+# Until one is chosen, the subdomain is broken by this deploy.

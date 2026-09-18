@@ -1,6 +1,7 @@
 // src/components/SearchResultsMain.js
 import React from "react";
 import PlayButton from "./PlayButton";
+import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 export default function SearchResultsMain({
   query = "",
@@ -35,7 +36,7 @@ export default function SearchResultsMain({
       ? {
           artist: topArtistName,
           type: "Artist",
-          cover: "/images/artistPlaceholder.jpg"
+          cover: PLACEHOLDER_IMAGE
         }
       : null;
 
@@ -128,7 +129,7 @@ export default function SearchResultsMain({
                       src={`/artistImages/${artist}.jpg`}
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "/images/artistPlaceholder.jpg";
+                        e.target.src = PLACEHOLDER_IMAGE;
                       }}
                       alt={artist}
                       className="w-32 h-32 object-cover rounded-full mb-2 mx-auto"

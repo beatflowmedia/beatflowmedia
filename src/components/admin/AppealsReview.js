@@ -95,42 +95,6 @@ export default function AppealsReview() {
 
     setAiAnalyzing(true);
     try {
-      // Use Task tool to run Content Moderation Agent
-      const analysisPrompt = `
-You are analyzing a content takedown appeal for BeatFlow Media.
-
-**Content Information:**
-- Type: ${selectedAppeal.contentType}
-- Title: ${selectedAppeal.contentTitle}
-- Artist: ${selectedAppeal.contentArtist}
-
-**Original Takedown:**
-- Reason: ${selectedAppeal.originalTakedownReason}
-
-**Appeal Details:**
-- Appeal Type: ${selectedAppeal.appealType}
-- Artist's Reason: ${selectedAppeal.appealReason}
-- Evidence Provided: ${selectedAppeal.evidence}
-- Additional Info: ${selectedAppeal.additionalInfo || 'None'}
-
-Analyze this appeal and provide your expert recommendation. Consider:
-1. Strength of evidence provided
-2. Validity of the original takedown
-3. Legal/copyright implications
-4. Platform policy alignment
-
-Provide a JSON response with:
-{
-  "recommendation": "APPROVE" | "DENY" | "REQUEST_MORE_INFO" | "ESCALATE",
-  "confidence": "HIGH" | "MEDIUM" | "LOW",
-  "reasoning": "Detailed explanation...",
-  "evidence_strength": "STRONG" | "MODERATE" | "WEAK" | "NONE",
-  "legal_risk": "LOW" | "MEDIUM" | "HIGH",
-  "admin_action": "What admin should do",
-  "artist_response": "What to tell the artist"
-}
-      `;
-
       // Simulate AI analysis (in production, this would call Claude via Task)
       // For now, provide intelligent defaults based on appeal type
       const mockAnalysis = {
