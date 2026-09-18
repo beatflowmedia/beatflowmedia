@@ -10,6 +10,43 @@ missing one.
 React 18 + CRA-via-CRACO + MUI, Firebase (Firestore/Storage/Auth), Netlify Functions,
 Stripe. Dev server on `:3005` (`npm run dev`).
 
+## What this platform sells
+
+Three product lines. Getting these confused cost real time, twice, so they are
+written down rather than inferred from whichever price a page happens to show.
+
+| Line | What the buyer gets | Who buys it | Priced |
+|---|---|---|---|
+| **Single** | one track | listener / creator | `SONG_PRICE` = $1.99 |
+| **Album** | n tracks | listener / creator | trackCount x single, no discount |
+| **Sync licence** | the RIGHT to use music in a project | content creators, restaurants, spas, businesses | **NOT PRICED YET** |
+
+Mood tracks and soundscapes are a further catalogue on the same platform, not a
+separate product line.
+
+**Single and album are the same right at two quantities. A sync licence is a
+different right.** That distinction is the one that keeps getting lost: an album at
+`n x $1.99` and a business sync licence are not points on one scale, and pricing
+them as if they were is how "License for $217.50" appeared on an album page. That
+number was never a decision -- it was `10 x $29.00 x 0.75` from a superseded
+formula, read afterwards as an annual licence.
+
+**Sync is deliberately unpriced here.** `src/components/PurchaseOptionsDialog.js`
+has the structure for a third option and does not invent one.
+
+### Not to be confused with the PRD's numbers
+
+`c:/BeatFlowMedia/docs/PRD.md` prices **sub-brand #1 (somatic)** at $69/track,
+$199/collection, $49/mo or $449/yr practitioner. Those are a DIFFERENT CATALOGUE on
+a different surface, locked 2026-04-21. They do not govern this app, and reading
+them as universal is how a 35x gap looked like a contradiction.
+
+The PRD also puts sync licensing in **sub-brand #2, on its own frontend
+(`sync.bfmg`), launching after #1 validates** (PRD §4.2, §290), and lists the
+existing `SyncLicensing` page under scope creep / half-built (§47). Auth is shared
+across surfaces by design — "Shared backend, independent surfaces" (§84) — so sync
+needs its own storefront, NOT its own login.
+
 ## Single Source — concern → canonical origin
 
 | Concern | Canonical origin | Reconciler |
