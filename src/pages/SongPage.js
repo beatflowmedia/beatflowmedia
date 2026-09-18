@@ -147,6 +147,7 @@ function SongPage() {
           itemId={id}
           itemType="song"
           price={song.price || SONG_PRICE}
+          track={song}
           artistId={song.artistId}
           uploadedBy={song.uploadedBy}
         />

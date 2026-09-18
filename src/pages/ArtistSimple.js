@@ -540,6 +540,7 @@ export default function ArtistSimple() {
                       itemId={song.id}
                       itemType="song"
                       price={song.price || SONG_PRICE}
+                      track={song}
                       compact={true}
                       artistId={song.artistId}
                       uploadedBy={song.uploadedBy}

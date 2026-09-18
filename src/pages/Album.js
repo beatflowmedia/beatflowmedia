@@ -1058,16 +1058,54 @@ function Album() {
 
         <Divider sx={{ bgcolor: 'grey.700' }} />
 
+        {/* The album, at the album price.
+            The row's own button buys the single track; this is the other quantity
+            of the same right. Price comes from the album document, falling back to
+            calculateAlbumPrice(trackCount) so it stays correct for a record that
+            arrives without one. */}
         <MenuItem
-          onClick={() => handlePurchaseTrack(selectedTrack)}
+          onClick={() => {
+            setAnchorEl(null);
+            handlePurchaseAlbum();
+          }}
           sx={{ color: 'white' }}
         >
           <ListItemIcon>
             <ShoppingCart sx={{ color: '#1DB954' }} />
           </ListItemIcon>
-          <ListItemText>License ({formatPrice(selectedTrack?.price || SONG_PRICE)})</ListItemText>
+          <ListItemText>
+            Buy album ({formatPrice(album?.price || calculateAlbumPrice(album?.trackCount || tracks.length || 1))})
+          </ListItemText>
+        </MenuItem>
+
+        {/* Sync licensing, NOT a second buy button.
+            This used to call handlePurchaseTrack with the same track and the same
+            price as the row's own button -- two affordances for one action.
+            A sync licence is a DIFFERENT RIGHT from buying the track: it is the
+            right to use the recording in a project, sold to content creators,
+            restaurants, spas and businesses. It is deliberately priced nowhere in
+            this codebase yet, so this shows no price rather than implying the
+            track price buys it.
+            Percy's call: it requires an approved account. That gate does not exist
+            yet and the account model is undecided, so this routes to the
+            sync-licensing page, which is where the check belongs once there is
+            one. Do not add a price here without a decision behind it. */}
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            navigate('/sync-licensing', {
+              state: { trackId: selectedTrack?.id, trackTitle: selectedTrack?.title, albumId }
+            });
+          }}
+          sx={{ color: 'white' }}
+        >
+          <ListItemIcon>
+            <ShoppingCart sx={{ color: '#1DB954' }} />
+          </ListItemIcon>
+          <ListItemText>License for sync use</ListItemText>
         </MenuItem>
       </Menu>
+
 
       {/* Review Dialog */}
       <Suspense fallback={null}>
@@ -1196,3 +1234,4 @@ function Album() {
 }
 
 export default Album;
+

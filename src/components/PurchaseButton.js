@@ -127,6 +127,36 @@ const PurchaseButton = ({
     );
   }
 
+  /* A preview-only record has no master to deliver, so it has no price to show.
+   *
+   * create-checkout already REFUSES these, and PurchaseOptionsDialog already
+   * explains why. The problem was upstream of both: the button still rendered
+   * "$1.99", so the UI advertised a purchase and only corrected itself after the
+   * click. A control that states a price it will not honour is the same defect as
+   * a fallback image that 404s -- it looks like a working product until it is
+   * exercised.
+   *
+   * Handled here rather than in each surface because every list renders through
+   * this component. 134 of 138 records are in this state, so this is the normal
+   * case, not an edge one.
+   */
+  if (track && track.previewOnly === true) {
+    return (
+      <Chip
+        label="Preview only"
+        size={compact ? 'small' : 'medium'}
+        sx={{
+          bgcolor: 'transparent',
+          border: '1px solid',
+          borderColor: 'grey.700',
+          color: 'grey.400',
+          cursor: 'default',
+          minHeight: compact ? 32 : 44
+        }}
+      />
+    );
+  }
+
   if (purchased) {
     if (compact) {
       return (

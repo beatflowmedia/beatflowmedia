@@ -1055,6 +1055,7 @@ function Playlist() {
                         itemId={track.id}
                         itemType="song"
                         price={track.price || SONG_PRICE}
+                        track={track}
                         compact={true}
                         artistId={track.artistId}
                         uploadedBy={track.uploadedBy}
