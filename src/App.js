@@ -17,6 +17,7 @@ import { initializePlatformStats } from "./utils/initializePlatformStats"; // Pl
 import { cleanupDuplicateCollections } from "./utils/cleanupDuplicateCollections"; // Duplicate collections cleanup
 import { migrateArtistImages } from "./utils/migrateArtistImages"; // Artist image migration
 import { fixAlbumCovers } from "./utils/fixAlbumCovers"; // Fix missing album covers
+import { fixCatalogPrices } from "./utils/fixCatalogPrices"; // Realign Firestore prices with pricing.js
 import { createMissingAlbums } from "./utils/createMissingAlbums"; // Create albums from orphaned songs
 import { diagnoseSongStorage } from "./utils/diagnoseSongStorage"; // Diagnose storage/Firestore alignment
 import { standardizeFirebaseStorage, auditStorageStructure, migrateFirestoreDocuments } from "./utils/standardizeFirebaseStorage"; // Standardize Firebase
@@ -32,6 +33,7 @@ export default function App() {
     window.cleanupDuplicateCollections = cleanupDuplicateCollections;
     window.migrateArtistImages = migrateArtistImages;
     window.fixAlbumCovers = fixAlbumCovers;
+    window.fixCatalogPrices = fixCatalogPrices;
     window.createMissingAlbums = createMissingAlbums;
     window.diagnoseSongStorage = diagnoseSongStorage;
     window.standardizeFirebaseStorage = standardizeFirebaseStorage;
@@ -52,6 +54,7 @@ export default function App() {
     console.log('✅ cleanupDuplicateCollections() is available in console');
     console.log('✅ migrateArtistImages() is available in console');
     console.log('✅ fixAlbumCovers() is available in console');
+    console.log("✅ fixCatalogPrices() is available in console - DRY RUN by default; { apply: true } writes");
     console.log('✅ createMissingAlbums() is available in console');
     console.log('✅ diagnoseSongStorage() is available in console - Run to check storage/DB sync');
     console.log('✅ standardizeFirebaseStorage() is available in console - STANDARDIZE STORAGE');
