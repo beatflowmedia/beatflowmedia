@@ -213,7 +213,10 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
                   price={'from ' + formatPrice(cheapestPlan.price) + '/mo'}
                   onClick={() => {
                     if (onClose) onClose();
-                    navigate('/pricing');
+                    // /pricing has never been routed. The subscription page is
+                    // 'explore-premium' in AppRoutes.js; navigating to /pricing fell
+                    // through the SPA catch-all to a dead route.
+                    navigate('/explore-premium');
                   }}
                 />
               </>
