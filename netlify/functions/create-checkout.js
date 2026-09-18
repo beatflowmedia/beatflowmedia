@@ -136,7 +136,7 @@ exports.handler = async (event, context) => {
   try {
     console.log('📦 Parsing request body...');
     const {
-      userId,
+        userId, // body value: NOT trusted. effectiveUserId below is the verified uid.
       itemId,
       itemType, // 'song', 'album', 'submission_credits', or 'studio_sample'
       itemName,
@@ -156,24 +156,53 @@ exports.handler = async (event, context) => {
 
     console.log('✅ Request data:', { userId, itemId, itemType, price, priceId, userEmail });
 
-    // Auth (defense-in-depth): if a Firebase ID token is sent, verify it and treat the
-    // verified uid as authoritative. Falls back to the body userId when absent (non-breaking).
-    let effectiveUserId = userId;
+    // A purchase REQUIRES a verified identity. No token, or a token that does not
+    // verify, is refused -- neither falls back to the body.
+    //
+    // This previously verified the token only when one was present and otherwise
+    // trusted `userId` from the request body. Worse, a token that FAILED
+    // verification was caught, logged, and then fell through to that same
+    // unverified body value -- so a forged or expired token was treated exactly
+    // like presenting none at all.
+    //
+    // That unverified id is not cosmetic. It selects whose subscription tier is
+    // read for the discount (up to 50% off in resolveServerPrice), and it is
+    // written into the Stripe session metadata that stripe-webhook.js trusts when
+    // it creates the purchase record and grants the entitlement.
+    //
+    // The client has always sent the token -- checkoutHeaders() in
+    // stripeService.js attaches it on every checkout call -- so requiring it
+    // breaks no legitimate path. It closes one that was never meant to be open.
     const authHeader = event.headers.authorization || event.headers.Authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
-        effectiveUserId = decoded.uid;
-      } catch (e) {
-        console.warn('⚠️ ID token verification failed:', e.message);
-      }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('Checkout refused: no Authorization header');
+      return {
+        statusCode: 401,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Sign in to complete a purchase.' })
+      };
+    }
+
+    let effectiveUserId;
+    try {
+      const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+      effectiveUserId = decoded.uid;
+    } catch (e) {
+      console.warn('Checkout refused: ID token did not verify:', e.message);
+      return {
+        statusCode: 401,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Your session has expired. Sign in again.' })
+      };
     }
 
     // Validate required fields - allow priceId OR (userId + itemId + itemType)
     if (priceId) {
       // Using Stripe Price ID (for studio samples, subscriptions, etc.)
       console.log('Using Stripe Price ID:', priceId);
-    } else if (!userId || !itemId || !itemType) {
+    // userId is no longer validated from the body: the request is refused above
+    // unless a token verified, so effectiveUserId always exists by this point.
+    } else if (!itemId || !itemType) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing required fields' })
@@ -198,7 +227,9 @@ exports.handler = async (event, context) => {
         cancel_url: `${process.env.URL || 'http://localhost:8888'}/purchase/cancelled`,
         customer_email: userEmail || email,
         metadata: {
-          userId: userId || 'guest',
+          // No guest fallback: an unauthenticated caller cannot reach this line any
+          // more, so a guest attribution would only ever mask a real verified uid.
+          userId: effectiveUserId,
           itemId: sampleId || itemId,
           itemType: 'studio_sample',
           sampleTitle: sampleTitle || itemName,
@@ -208,6 +239,10 @@ exports.handler = async (event, context) => {
         automatic_tax: { enabled: false }
       };
     } else if (itemType === 'artist_membership') {
+      // NOTE: every branch below writes effectiveUserId, the VERIFIED uid, into
+      // Stripe metadata. stripe-webhook.js trusts that metadata to decide whose
+      // account is credited, so a body-supplied id here would let a caller choose
+      // who receives what they bought.
       // Annual artist membership - $25/year for unlimited uploads
       checkoutConfig = {
         payment_method_types: ['card'],
@@ -220,7 +255,7 @@ exports.handler = async (event, context) => {
                 description: 'Unlimited track uploads for 1 year',
                 metadata: {
                   itemType,
-                  userId
+                  userId: effectiveUserId
                 }
               },
               unit_amount: 2500, // $25/year — fixed server-side (ignore client price)
@@ -234,7 +269,7 @@ exports.handler = async (event, context) => {
         cancel_url: `${process.env.URL || 'http://localhost:8888'}/purchase/cancelled`,
         customer_email: email || userEmail,
         metadata: {
-          userId,
+          userId: effectiveUserId,
           itemType,
           itemId,
           membershipType: 'annual'
@@ -254,7 +289,7 @@ exports.handler = async (event, context) => {
                 metadata: {
                   itemType,
                   itemId,
-                  userId,
+                  userId: effectiveUserId,
                   paymentType: 'escrow'
                 }
               },
@@ -276,7 +311,7 @@ exports.handler = async (event, context) => {
         cancel_url: `${process.env.URL || 'http://localhost:8888'}/artist-profile?submission=cancelled`,
         customer_email: userEmail,
         metadata: {
-          userId,
+          userId: effectiveUserId,
           itemId,
           itemType,
           ...metadata
