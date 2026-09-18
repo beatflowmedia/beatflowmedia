@@ -1,43 +1,45 @@
-// Pins the pricing rule, including the boundary that the JSDoc previously got wrong.
+// Pins the pricing rule.
 //
-// Two of the four documented examples disagreed with the implementation (n=1 said
-// 2900 against an actual 2199; n=12 said 26099 against an actual 26199). A comment
-// cannot be wrong for long if a test asserts the same numbers.
+// Worth having because this file has been wrong before: two of the four JSDoc
+// examples disagreed with the implementation, and the constant disagreed with the
+// business-model document AND with what production charged. A comment can be wrong
+// indefinitely; a test asserting the same numbers cannot.
 
 const { SONG_PRICE, ALBUM_DISCOUNT, calculateAlbumPrice, formatPrice } = require('./pricing');
 
 describe('pricing constants', () => {
   test('are the values the station and the checkout both depend on', () => {
     expect(SONG_PRICE).toBe(199);
-    expect(ALBUM_DISCOUNT).toBe(0.75);
+    // 1, not 0.75. There is no bundle discount. The constant is kept rather than
+    // deleted because the station reads it by name and falls back to its own 0.75
+    // if it is absent, which would silently reintroduce a discount.
+    expect(ALBUM_DISCOUNT).toBe(1);
   });
 });
 
 describe('calculateAlbumPrice', () => {
   test('matches every example in its own JSDoc', () => {
     expect(calculateAlbumPrice(1)).toBe(199);
-    expect(calculateAlbumPrice(5)).toBe(799);
-    expect(calculateAlbumPrice(10)).toBe(1499);
-    expect(calculateAlbumPrice(12)).toBe(1799);
+    expect(calculateAlbumPrice(5)).toBe(995);
+    expect(calculateAlbumPrice(10)).toBe(1990);
+    expect(calculateAlbumPrice(12)).toBe(2388);
   });
 
-  test('always ends in 99', () => {
+  test('an album costs exactly its track count times the single price', () => {
+    // The rule, stated directly. No discount, no .99 rounding: an album is its
+    // tracks. Any future bundle discount is a deliberate change to ALBUM_DISCOUNT
+    // and will fail here first.
     for (let n = 1; n <= 40; n += 1) {
-      expect(calculateAlbumPrice(n) % 100).toBe(99);
+      expect(calculateAlbumPrice(n)).toBe(n * SONG_PRICE);
     }
   });
 
-  test('adds the .99 when the discounted base lands on an exact dollar', () => {
-    // 12 * 199 * 0.75 = 1791. The rule prices UP to 1799, it does not
-    // shave down to 1699. Changing this reprices every album, so it is asserted
-    // rather than left to be rediscovered.
-    expect(12 * SONG_PRICE * ALBUM_DISCOUNT).toBe(1791);
-    expect(calculateAlbumPrice(12)).toBe(1799);
-  });
-
-  test('is cheaper per track than buying the tracks separately', () => {
-    for (const n of [2, 5, 9, 10, 12, 19]) {
-      expect(calculateAlbumPrice(n)).toBeLessThan(n * SONG_PRICE);
+  test('agrees with the formula the station computes independently', () => {
+    // catalog.js does Math.round(n * song * albumDiscount) from these same two
+    // constants. If this ever diverges, the catalogue prices records differently
+    // from what the checkout charges -- which has happened before.
+    for (const n of [1, 5, 9, 10, 11, 12, 19]) {
+      expect(calculateAlbumPrice(n)).toBe(Math.round(n * SONG_PRICE * ALBUM_DISCOUNT));
     }
   });
 
@@ -51,8 +53,8 @@ describe('calculateAlbumPrice', () => {
 
 describe('formatPrice', () => {
   test('renders cents as dollars with two decimals', () => {
-    expect(formatPrice(2900)).toBe('$29.00');
-    expect(formatPrice(21799)).toBe('$217.99');
+    expect(formatPrice(199)).toBe('$1.99');
+    expect(formatPrice(1990)).toBe('$19.90');
     expect(formatPrice(0)).toBe('$0.00');
   });
 });

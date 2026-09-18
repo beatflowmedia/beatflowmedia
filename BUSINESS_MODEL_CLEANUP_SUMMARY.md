@@ -24,7 +24,7 @@ After reviewing conflicting implementations, BeatFlow is **officially a hybrid m
 
 2. **Perpetual Licenses:** One-time purchases
    - Tracks: $1.99 base price
-   - Albums: 25% discount (track count × $1.99 × 0.75)
+   - Albums: track count × $1.99 (no bundle discount — updated 2026-09-18)
    - Subscriber discounts: 20% (Student), 30% (Creator), 40% (Pro), 50% (Agency)
 
 3. **Studio Samples:** Professional production assets
@@ -305,7 +305,7 @@ Benefits: Time-bound licenses, unlimited downloads, published content licensed f
 **Secondary: Perpetual License Sales** 💳
 ```
 Tracks: $1.99 base (with 20-50% subscriber discounts)
-Albums: Track count × $1.99 × 0.75 (25% discount)
+Albums: Track count × $1.99 (no bundle discount — updated 2026-09-18)
 
 Subscriber Discounts:
 - Student: 20% off → $1.59/track
