@@ -22,7 +22,7 @@ const db = admin.firestore();
 //
 // Only a FALLBACK. resolveServerPrice prefers item.price from Firestore, so the
 // authoritative number for a seeded record is whatever the catalogue holds.
-const { SONG_PRICE: DEFAULT_SONG_PRICE } = require('../../src/utils/pricing');
+const { SONG_PRICE: DEFAULT_SONG_PRICE, calculateAlbumPrice } = require('../../src/utils/pricing');
 const DISCOUNT_RATES = { none: 0, student: 0.20, creator: 0.30, pro: 0.40, agency: 0.50 };
 
 /* A record is not licensable unless we can actually deliver the master.
@@ -84,7 +84,20 @@ async function resolveServerPrice(itemType, itemId, userId) {
   // product is worse than a failed checkout.
   await assertDeliverable(itemType, itemId, item);
 
-  const basePrice = Number.isFinite(item.price) ? item.price : DEFAULT_SONG_PRICE;
+  // Fall back to the price this item SHOULD cost, not to the song price.
+  //
+  // This previously fell back to DEFAULT_SONG_PRICE for albums too, so a 12-track
+  // album with no stored price would have sold for the price of one track. Latent
+  // today only because every album happens to carry a price -- and that is exactly
+  // the field we are considering asking the station to stop writing.
+  //
+  // Both branches derive from src/utils/pricing.js, so the fallback tracks the
+  // canonical rule instead of freezing whatever it was when this was written.
+  const fallbackPrice = itemType === 'album'
+    ? calculateAlbumPrice(Number(item.trackCount) || 0)
+    : DEFAULT_SONG_PRICE;
+
+  const basePrice = Number.isFinite(item.price) ? item.price : fallbackPrice;
 
   // Active subscriber discount (users/{userId}.subscription).
   let tier = 'none';
