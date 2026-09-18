@@ -161,6 +161,34 @@ currently prevents it.
 Before any traffic: turn on App Check with enforcement, set `maxInstances`, and build the
 budget → Pub/Sub → disable-billing killswitch.
 
+## The station / BFMG boundary
+
+**The station never sells music.** It may sell advertising space, and even that may
+end up transacted through BFMG. Confirmed by Percy 2026-09-18.
+
+| | Owns |
+|---|---|
+| **RadioStation** | broadcast, programming, the clock, what plays when, the ISRC-keyed record of what exists |
+| **BFMG (here)** | the catalogue as a PRODUCT — price, licence terms, checkout, delivery, entitlement |
+
+The join is the **ISRC**, because it is the only identifier assigned by a standards
+body rather than by either platform.
+
+**Consequence: the station should not write `price`.** It currently does, in
+`songDoc()`, `albumDoc()` and its `REPAIRABLE` list, purely as a side effect of
+seeding. That side effect put $29.00 on 138 records and kept it there after the
+decision had moved to $1.99 — the catalogue disagreeing with the checkout, which
+`catalog.js`'s own comment at line 663 already warns about: *"a price the station
+prints from a constant of its own is a price that silently stops matching."*
+
+It READS `song.price` back for its own surfaces, and that is correct — BFMG as the
+authority, the station as a consumer. Reading is fine; writing is the inversion.
+
+BFMG is ready for this: `create-checkout` now derives a per-type fallback from
+`src/utils/pricing.js` (songs SONG_PRICE, albums calculateAlbumPrice(trackCount)),
+and every UI reader already falls back. A record arriving with no `price` prices
+correctly.
+
 ## Concurrent work — the RadioStation repo writes into this project
 
 `C:/Users/percy/RadioStation/radio` is worked on **in parallel** (session `radiostation-dc`) and
