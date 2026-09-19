@@ -19,7 +19,10 @@ const PurchaseButton = ({
   onPurchaseComplete,
   compact = false,
   track = null,
-  withOptions = true
+  withOptions = true,
+  // For albums: the caller knows whether its tracks are deliverable; a track prop
+  // would be the wrong shape for it. Songs keep using track.previewOnly.
+  previewOnly = false
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -140,7 +143,7 @@ const PurchaseButton = ({
    * this component. 134 of 138 records are in this state, so this is the normal
    * case, not an edge one.
    */
-  if (track && track.previewOnly === true) {
+  if (previewOnly === true || (track && track.previewOnly === true)) {
     return (
       <Chip
         label="Preview only"

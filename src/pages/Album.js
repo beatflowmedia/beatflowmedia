@@ -802,9 +802,13 @@ function Album() {
                 <Share />
               </IconButton>
 
+              {/* An album is only sellable if every track in it is: assertDeliverable
+                  in create-checkout refuses the whole album when ANY song is
+                  preview-only, so a price here would be a button that 409s. */}
               <PurchaseButton
                 itemId={albumId}
                 itemType="album"
+                previewOnly={tracks.length > 0 && tracks.some((t) => t.previewOnly === true)}
                 price={album?.price || calculateAlbumPrice(album?.trackCount || 10)}
                 artistId={album?.artistId}
                 uploadedBy={album?.uploadedBy}
