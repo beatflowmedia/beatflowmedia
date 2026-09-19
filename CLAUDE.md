@@ -10,6 +10,47 @@ missing one.
 React 18 + CRA-via-CRACO + MUI, Firebase (Firestore/Storage/Auth), Netlify Functions,
 Stripe. Dev server on `:3005` (`npm run dev`).
 
+## Upstream rights: everything here depends on Suno's terms
+
+The catalogue is AI-generated. Read 2026-09-19 at https://suno.com/terms. This is
+UPSTREAM of pricing, pools, guards and storefronts: none of it matters if the
+rights to grant are not there.
+
+**Confirm the tier first.** Pro/Premier: *"Suno hereby assigns to you all of its
+right, title and interest in and to any Output"*, and those rights are
+*"perpetual and are not affected by ... the expiry, cancellation, downgrade or
+suspension of your subscription"*. Free/Basic: *"lawful, personal and
+non-commercial purposes"* only — nothing is sellable.
+
+Three clauses that hit this product specifically:
+
+1. **No copyright warranty.** *"Suno makes no representation or warranty to you
+   that any copyright will vest in any Output."* Assigns whatever it owns, while
+   saying it may own nothing. Licences may still be sellable; **exclusivity may not
+   be promisable**, and enforcement against a third party using the same recording
+   is doubtful. Consistent with the PRO rejection noted at PRD line 451.
+
+2. **Remix.** *"Nothing in this paragraph permits commercial use of any Remix."*
+   Probably means Suno's own Remix feature rather than a third party's DJ edit —
+   but it is the exact word the DJ product turns on.
+
+3. **Watermark.** *"You agree not to remove, alter, obscure or circumvent any
+   fingerprint, watermark or metadata Suno appends to an Output."* The plan to cut
+   a separate promo/DJ master to avoid Content ID auto-claims is sound, but the
+   process must not strip that fingerprint. Note the station's
+   `normalize.js --art` already strips embedded metadata from these same files.
+
+**THE UNRESOLVED QUESTION, and it is the business:** an assignment says you own it
+and owners may license; the commercial-use section reads as *personal* commercial
+exploitation, and no clause grants the user a right to sublicense. Selling sync,
+DJ and download licences IS sublicensing to third parties. Those two readings
+differ. Not a question to settle by reading harder — it needs a lawyer, before
+anything is sold.
+
+Also required before selling downloads: commercial use applies only to a
+*"permitted download"* obtained *"through an approved channel"* — stream-ripped or
+otherwise-obtained copies are excluded.
+
 ## What this platform sells
 
 Three product lines. Getting these confused cost real time, twice, so they are

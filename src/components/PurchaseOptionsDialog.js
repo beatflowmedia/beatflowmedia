@@ -22,6 +22,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { SONG_PRICE, calculateAlbumPrice, formatPrice } from '../utils/pricing';
 import { getActivePlans } from '../data/pricingPlans';
+import DownloadLicenseTerms from './DownloadLicenseTerms';
 
 // Fat-finger minimum. An element can look big and still be a small target, so the
 // height is set explicitly rather than inferred from padding.
@@ -222,6 +223,8 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
               </>
             ) : null}
 
+            <DownloadLicenseTerms />
+
             <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Chip
                 size="small"
@@ -246,3 +249,4 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
     </Dialog>
   );
 }
+
