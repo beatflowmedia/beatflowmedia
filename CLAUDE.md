@@ -102,6 +102,9 @@ needs its own storefront, NOT its own login.
 | "may this user have this item" | `netlify/functions/lib/entitlement.js` | - |
 | Catalogue records (albums/songs) | **`C:/Users/percy/RadioStation/radio/releases.json`** — the station seeds BFMG one-way over ISRC; see its `catalog.js` | `node catalog.js diff` |
 | Stripe pricing | `netlify/functions/create-checkout.js` (server-side price lookup) | e2e coverage |
+| Which agreement a person accepted, and its version | `src/utils/agreements.js` (**CommonJS**, `create-checkout` requires it) | `npx jest src/utils/agreements.test.js` |
+| What a stored catalogue price *should* be | `src/utils/catalogPricePlan.js` (`planCatalogPrices`) | `npx jest src/utils/catalogPricePlan.test.js` |
+| Whether a record may be sold (`previewOnly`) | `netlify/functions/lib/master-availability.js` — derived from the master in R2 | `npm run verify:masters` |
 | Everything else | **NEEDS OWNER** | — |
 
 ## Domain landmines — the things that fail *silently*
@@ -512,3 +515,243 @@ had (so never actually permitted) while omitting `child-src`, youtube, vimeo and
 **Ratchet:** function-delivery assertions — **baseline 10**. Up only.
 
 **Ratchet:** missing referenced assets in rendering code — **baseline 18**. Never raise it.
+
+---
+
+## Clickwrap licence acceptance — 2026-09-19
+
+**The gap:** grepping `acceptedTerms|termsAccepted|agreedTo|consent` across
+`create-checkout.js`, `stripe-webhook.js` and the purchase dialog returned nothing.
+Every sale minted a `licenseId` — proof a transaction happened — with no record of
+what the buyer agreed to. A footer link to `/terms` is **browsewrap**, which courts
+routinely refuse to enforce because nobody can show the buyer saw it.
+
+**Why contract and not copyright.** Whether copyright subsists in AI-assisted output
+is unsettled. A contract does not care: it binds the buyer to the restrictions they
+accepted regardless of who owns what. For this catalogue the acceptance record is the
+*primary* enforcement mechanism, not a formality.
+
+**What landed**
+
+- `src/utils/agreements.js` — canonical registry, dated versions
+  (`download-license@2026-09-19`). Holds `CONTRIBUTOR_UPLOAD` and `SYNC_LICENSE` with
+  **null versions on purpose**: null means *cannot be accepted*, so the upload path
+  cannot claim an acceptance no text backs.
+- `src/components/LicenseAcceptance.js` — the one checkbox, unchecked by default,
+  terms summary above it. Used by both dialogs; a second copy would drift, and the
+  drift would be one route selling without a record.
+- `PurchaseOptionsDialog` — flow changed from *tap to buy* to
+  **choose → read → tick → pay**. The terms summary used to sit *below* the button
+  that had already been pressed, which made it decorative.
+- `src/components/LicenseAcceptanceDialog.js` + `src/hooks/useLicensedCheckout.js` —
+  the gate for every other route.
+- `create-checkout.js` — refuses song/album checkout unless `acceptedAgreement` is
+  the **current** version (409, not 400: the client should reload, not retry). Stamps
+  `acceptedAt` from the **server** clock — a client timestamp is a value the buyer
+  controls, and surviving the buyer's dispute is the point.
+- `stripe-webhook.js` — `licenceAcceptanceFields(session)` writes
+  `{acceptedAgreement, acceptedAt}` at all **three** purchase-write sites.
+
+**Six ungated routes to Stripe existed, not one.** `Search`, `Home`, `Playlist`,
+`ArtistSimple` and `TrackRow` each carried their own copy of "sign in, check owned,
+checkout"; `PurchaseButton`'s album branch was a sixth. Patching call sites would
+have left a seventh to be written next month, so the gate lives in
+`useLicensedCheckout` — a page cannot start a checkout without rendering the dialog
+that collects assent, because both come from the same call.
+
+**Nulls are written explicitly, not omitted.** Firestore excludes a document from any
+query mentioning a field it lacks, so an omitted field would hide unaccepted
+purchases from exactly the query that looks for them.
+
+**Deleted:** `Album.js` `handlePurchaseTrack` — eslint-flagged dead code that called
+`createSongCheckout` *without* acceptance. Worse than ordinary dead code: re-wiring it
+would have reintroduced an ungated path that now 409s in a way the buyer cannot act on.
+
+**Ratchet:** routes to Stripe that do not capture acceptance — **baseline 0.**
+Verify with:
+```sh
+grep -rn "await stripeService.create\(Song\|Album\)Checkout" src/ --include=*.js   | grep -v acceptedAgreement
+```
+Must print nothing. It matches on `await stripeService.` so prose mentioning the
+function name does not register as a gap — the first version of this check flagged
+its own explanatory comment.
+
+**Not legal advice.** This makes acceptance *provable*. Whether the clauses hold up in
+New Jersey is a lawyer's question, and `/terms` still does not contain the
+performance / remix / sublicensing text this control says the buyer accepted — that
+gap is now the highest-value legal item open.
+
+### Open, found while doing this
+
+- **`Album.js` "Purchase Now" button has no `onClick`.** The album context menu and
+  the outlined Purchase button both open a dialog whose confirm button is inert, and
+  it shows a hardcoded `'14.99'` fallback that contradicts `pricing.js`. Albums are
+  only actually buyable via the `PurchaseButton` at the top of the page.
+- **The `.env` Firebase service account is rejected by Firestore** (`16
+  UNAUTHENTICATED`) though project and client-email agree. `verifyIdToken` may still
+  work (it verifies against Google's public certs), but **`stripe-webhook`'s Firestore
+  writes would not** — a purchase could be taken and never recorded. Unknown whether
+  Netlify holds the same values; check before trusting a deploy.
+
+---
+
+## Album pricing — floor, cap, and the copies that had to go — 2026-09-19
+
+**Percy's call:** `album = clamp(trackCount x $1.99, $4.99, $11.99)`.
+
+**Why a cap and not a percentage.** Under the old rule an album cost *exactly* its
+tracks, so the saving for buying the album was always **$0** and a buyer had no
+reason to ever pick it — `PurchaseOptionsDialog`'s "Save $X vs buying separately"
+note was unreachable code, since it only renders when `albumSaving > 0`. A percentage
+would have fixed a 10-track album and still left the 19-track release at $22.69,
+about twice the market. A cap fixes both ends and makes the saving *grow* with the
+release: $5.92 at 9 tracks, $25.82 at 19.
+
+- `ALBUM_PRICE_FLOOR = 499` — **chart eligibility**, from the DSP PRD, not margin.
+  Below it a sale still succeeds and simply never reaches Luminate. Binds nothing
+  today (all 12 releases are 9–19 tracks); it exists for the first short release.
+- `ALBUM_PRICE_CAP = 1199` — the iTunes/Bandcamp band.
+
+**Accepted consequence:** at 1–2 tracks the floor makes the "album" cost *more* than
+its tracks ($4.99 vs $1.99/$3.98). Not fixed, because a 1–2 track release is a single
+or an EP and the honest fix is classification, not price. Pinned by a test so it
+cannot widen unnoticed.
+
+**Production library is NOT governed by this.** `calculateBundlePrice(n, discount)`
+prices the `PRODUCTION_MUSIC` pool: floor, **no cap**. The cap is a *consumer*
+ceiling — what a listener pays for an album they will listen to — and a library pack
+is a commercial-use licence whose ceiling is set by Epidemic and Artlist. Capping one
+at $11.99 would underprice it *silently*, since every sale still succeeds. The
+discount is a **required argument with no default**: a default would be a pricing
+decision made by whoever wrote the call.
+
+**Three independent copies of album pricing were found and removed**
+
+1. **`RadioStation/radio/catalog.js`** — regex-**scraped** `SONG_PRICE` and
+   `ALBUM_DISCOUNT` and recomputed `Math.round(n * song * discount)`. A scrape can
+   only recover *constants*, and the rule is now a **clamp**, which no regex can see.
+   Left alone it would have seeded $37.81 for the 19-track album while this repo said
+   $11.99 — and since `create-checkout` charges the **stored** price, the catalogue
+   would have won, silently. Now `require`s `calculateAlbumPrice`; the scrape
+   survives only as a fallback and now clamps too.
+2. **`netlify/functions/approve-submission.js`** — `Math.round(trackCount * 199 * 0.75)`,
+   the only place in the system applying a 25% discount, with a hardcoded single
+   price and neither floor nor cap. This prices **approved artist submissions**, so
+   it is the path that matters most once artists upload their own releases.
+   Its song branch hardcoded `199` as well. Both now derive.
+3. **`src/pages/Album.js`** — the purchase dialog fell back to the literal
+   `'14.99'` and formatted cents by hand. That number matched no album in the
+   catalogue, so the dialog quoted a price the checkout would never charge.
+
+**Also fixed:** `Album.js`'s "Purchase Now" button had **no `onClick` at all**. The
+album context menu and the outlined Purchase button both dead-ended there, so albums
+were only genuinely buyable from the `PurchaseButton` at the top of the page. It now
+goes through `useLicensedCheckout`, the same licence gate as every other route.
+
+### Repairing the stored prices
+
+`create-checkout` reads `item.price` from Firestore and only falls back to the
+constant when absent, so **nothing changes for buyers until the catalogue is
+repaired**. All 12 albums are affected; every change is a price **reduction**
+($266.66 → $143.88 across the catalogue), so the repair cannot overcharge anyone.
+
+Two runners, **one decision**. `src/utils/catalogPricePlan.js` holds
+`planCatalogPrices()`; the runners are I/O around it. A second copy of the repair
+rule, inside the tool built to fix four copies of the pricing rule, would have been
+the same mistake with better intentions.
+
+| runner | needs | verifies writes |
+|---|---|---|
+| `npm run fix:prices` (`scripts/fix-catalog-prices.js`) | a service account | **yes** — re-reads every document |
+| `fixCatalogPrices()` in the browser console | a signed-in platform admin | no |
+
+```sh
+npm run fix:prices                          # dry run, writes nothing
+npm run fix:prices -- --apply               # write it
+npm run fix:prices -- --only=albums         # songs | albums | both
+npm run fix:prices -- --project=beatflowmedia --apply   # assert the target first
+```
+
+Guardrails, because this writes the numbers customers are charged: dry run by
+default, the whole plan prints before any write, `--project` **asserts** the target
+(a key that works proves only that *some* project accepted it), writes are batched
+at 400 and then **read back**, and it exits non-zero on any failure so CI cannot
+call a partial repair green.
+
+**It is currently blocked**, and not by the code: the `.env` service account returns
+`16 UNAUTHENTICATED` although the project and client email agree, which means the key
+was deleted or disabled in the console. The script says so explicitly instead of
+printing a stack trace. Issue a new key and replace `FIREBASE_PRIVATE_KEY` and
+`FIREBASE_CLIENT_EMAIL` **together** — they are a set. The same credentials are what
+`stripe-webhook` writes purchase records with, so this is worth fixing regardless of
+pricing.
+
+**Ratchet:** independent album-price arithmetic outside `pricing.js` — **baseline 0.**
+```sh
+grep -rnE "trackCount \* 199|\* 199 \*|\* SONG_PRICE" src/ netlify/ --include=*.js   | grep -v "utils/pricing"
+```
+Must print nothing but comments. The station is *not* covered by this grep — it lives
+in another repo, and `node catalog.js diff` is what catches a regression there.
+
+---
+
+## `previewOnly` — an inventory flag, not a permission — 2026-09-19
+
+Percy, on an authorised admin account, saw every track on an album badged
+**Preview only**. The account had nothing to do with it.
+
+**What the flag means.** `previewOnly` says *we cannot deliver this*, not *you may
+not buy this*. An admin hits it exactly as an anonymous visitor does. It exists
+because BFMG's purchase path resolves audio as
+`downloadUrl || fullTrackUrl || audioUrl`, and the station deliberately writes the
+master's location **nowhere** — `songs` is world-readable, so a `downloadUrl` field
+holding the R2 address would publish the product for free. Without it, a completed
+checkout hands the buyer the 30-second preview sitting in `audioUrl`. It is
+load-bearing.
+
+**Why the page looks self-contradictory.** It shows `3:08` next to *Preview only*
+because the two fields come from different sources and are both true: `duration` is
+measured off the station's full stream via `playlist.json`; `audioUrl` points at
+`songs/previews/<isrc>.mp3`, a **30-second** clip (`SECONDS = 30` in the station's
+`preview.js`). The recording is 3:08. What is *reachable* is 30 seconds of it.
+
+**Why it is now stale.** `catalog.js:289` sets `previewOnly: true`
+**unconditionally** on every seeded song — never derived per record. Its own comment:
+*"Clearing this flag is the last step of building master resolution, not a tidy-up."*
+Master resolution now exists (`lib/masters.js`, `lib/r2-presign.js`,
+`download-master.js`), so the blanket assertion has outlived its condition.
+
+**`npm run verify:masters`** derives the flag instead of asserting it.
+
+- **It probes, it does not list.** `ListObjectsV2` is the obvious implementation and
+  the wrong one: the masters token is **GetObject-only**, so a list would be denied
+   — and a denied list looks exactly like an empty bucket, which would block the
+  entire catalogue. One presigned **HEAD** per key needs precisely the permission the
+  delivery path already has.
+- **Unknown is not absent.** Only an explicit 404/403 counts as missing; a timeout or
+  5xx is recorded as undetermined and reported. Verified against live endpoints:
+  200 → `true`, 404 → `false`, unreachable → `null`. It also refuses to run if
+  *every* probe is undetermined, because that is connectivity, not an empty bucket.
+- **Both directions.** The urgent one is not the locked catalogue, it is
+  **sellable-but-undeliverable**: a record with no master and no block would take
+  money and deliver 30 seconds. A one-directional "unlock the catalogue" script would
+  never look for it. Blocks are written *before* unlocks, so a half-finished run
+  leaves the catalogue over-cautious rather than over-selling.
+
+**Blocked on R2 credentials only.** `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
+`R2_MASTERS_ENDPOINT`, `R2_MASTERS_BUCKET` are unset; the script says so and refuses
+to guess rather than reporting an empty bucket as "no masters exist".
+
+### PRD collision: the 30-second preview makes chart reporting impossible
+
+PRD 3.2 logs a stream *"only when continuous playback exceeds 30 seconds."* Every
+`audioUrl` is **exactly 30 seconds**, so nothing can ever exceed it: **zero plays
+would be chart-eligible**, forever, and the daily Luminate SFTP file would generate
+successfully containing no qualifying events. Same failure class as the album price
+floor — everything succeeds, nothing counts. The "0 plays" on every row of the
+album page is the same fact from the other end.
+
+Consequence: **download and streaming need different assets.** The 30-second clip can
+stay as the discovery preview, but chart-eligible interactive streaming needs
+full-length authenticated playback — a third asset path alongside the preview and the
+WAV master. Not yet designed.
