@@ -253,9 +253,34 @@ export default function Terms() {
 
               <h3 className="text-xl font-semibold text-white mt-6">Artist Revenue</h3>
               <p>
-                Artists earn 70% of net sales revenue, with BeatFlow Media retaining 30% as a platform fee
-                to cover payment processing, hosting, bandwidth, and platform maintenance. Payouts are processed
-                monthly via Stripe Connect, subject to a minimum threshold of $50.
+                Artists earn <strong>70% of net sales revenue</strong>, with BeatFlow Media retaining 30% as a
+                platform fee covering hosting, bandwidth, catalog administration, and platform maintenance.
+                Payouts are processed monthly via Stripe Connect, subject to a minimum threshold of $50.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">What &ldquo;Net Sales Revenue&rdquo; Means</h3>
+              <p>
+                <strong>Net sales revenue</strong> means the amount charged to the buyer, less payment
+                processing fees, less the statutory mechanical royalty payable on the composition, less any
+                refund or chargeback on that sale. The 70/30 split is applied to that figure.
+              </p>
+              <p className="text-sm text-gray-400">
+                Worked example. A track sold at $1.99: payment processing of $0.36 and a statutory mechanical
+                royalty of $0.131 are deducted, leaving net sales revenue of $1.50. The artist receives $1.05
+                and BeatFlow Media retains $0.45.
+              </p>
+              <p className="text-sm text-gray-400">
+                The statutory mechanical rate is set by the U.S. Copyright Royalty Board and changes annually.
+                The rate applied is the one in force on the date of the sale &mdash; currently 13.1&cent; per
+                track, or 2.52&cent; per minute for recordings over five minutes, whichever is greater. An
+                album owes this once per track.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Statements and Audit</h3>
+              <p>
+                Royalty statements itemize gross revenue and each deduction separately, so that net sales
+                revenue can be checked against the amount charged. You may request supporting records for any
+                statement within twelve months of its issue.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6">Premium Subscriptions</h3>
