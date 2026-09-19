@@ -38,9 +38,9 @@ import { toast } from 'react-toastify';
 import { doc, collection, query, where, onSnapshot, updateDoc, addDoc, serverTimestamp, increment } from 'firebase/firestore';
 import PurchaseButton from '../components/PurchaseButton';
 import TrackRowCard from '../components/TrackRowCard';
-import { stripeService } from '../services/stripeService';
 import { getSongMetrics, getBatchPlayCounts } from '../services/engagementMetrics';
-import { calculateAlbumPrice, SONG_PRICE, formatPrice } from '../utils/pricing';
+import { calculateAlbumPrice, formatPrice } from '../utils/pricing';
+import useLicensedCheckout from '../hooks/useLicensedCheckout';
 import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 
 // Lazy load dialogs to reduce initial bundle size
@@ -50,6 +50,12 @@ const DialogContent = lazy(() => import('@mui/material/DialogContent'));
 const DialogActions = lazy(() => import('@mui/material/DialogActions'));
 
 function Album() {
+  // Every route to Stripe on this page goes through the licence gate.
+  // `licenseDialog` is rendered at the bottom; the trigger is inert without it.
+  const { requestCheckout, licenseDialog } = useLicensedCheckout({
+    onError: (error) => toast.error(`Failed to initiate purchase: ${error.message}`)
+  });
+
   const { id: albumId } = useParams();
   const navigate = useNavigate();
   const { state, dispatch, actions } = usePlayer();
@@ -415,27 +421,13 @@ function Album() {
     }
   }, [user, album, followArtist, unfollowArtist, isArtistFollowed]);
 
-  const handlePurchaseTrack = useCallback(async (track) => {
-    setAnchorEl(null);
-    if (!user) {
-      toast.error('Please sign in to purchase music');
-      return;
-    }
-
-    try {
-      const hasPurchased = await stripeService.hasPurchasedSong(user.uid, track.id);
-      if (hasPurchased) {
-        toast.info('You already own this song! Redirecting to downloads...');
-        navigate('/downloads');
-        return;
-      }
-
-      await stripeService.createSongCheckout(user.uid, track.id, user.email);
-    } catch (error) {
-      console.error('Purchase error:', error);
-      toast.error(`Failed to initiate purchase: ${error.message}`);
-    }
-  }, [user, navigate]);
+  // handlePurchaseTrack was removed here. It had been unreferenced since the sync
+  // menu item stopped calling it (see the comment on that item below), and eslint
+  // flagged it as assigned-but-never-used. It mattered more than ordinary dead code
+  // because it called createSongCheckout WITHOUT a licence acceptance -- so anyone
+  // re-wiring it would have reintroduced an ungated path to Stripe that now fails at
+  // the server with a 409 the buyer cannot act on. Purchases on this page go through
+  // PurchaseButton, which collects acceptance.
 
   const handleSubmitReview = async () => {
     if (!user) {
@@ -1083,8 +1075,9 @@ function Album() {
         </MenuItem>
 
         {/* Sync licensing, NOT a second buy button.
-            This used to call handlePurchaseTrack with the same track and the same
-            price as the row's own button -- two affordances for one action.
+            This used to call the row's own purchase handler, with the same track
+            and the same price as the row's own button -- two affordances for one
+            action.
             A sync licence is a DIFFERENT RIGHT from buying the track: it is the
             right to use the recording in a project, sold to content creators,
             restaurants, spas and businesses. It is deliberately priced nowhere in
@@ -1204,8 +1197,14 @@ function Album() {
             <Typography variant="body2" sx={{ color: 'grey.400', mb: 2 }}>
               by {album?.artist || album?.artistName}
             </Typography>
+            {/* Derived, never typed. This read `'14.99'` as its fallback and
+                formatted cents by hand -- two separate second sources of truth. The
+                literal matched no album in the catalogue (real prices run $11.99
+                under the capped rule, and ran $17.91-$37.81 before it), so this
+                dialog quoted a number the checkout would never charge. Same
+                expression as the context menu above, so they cannot disagree. */}
             <Typography variant="h4" sx={{ color: '#1DB954', fontWeight: 'bold' }}>
-              ${album?.price ? (album.price / 100).toFixed(2) : '14.99'}
+              {formatPrice(album?.price || calculateAlbumPrice(album?.trackCount || tracks.length || 1))}
             </Typography>
           </Box>
 
@@ -1223,9 +1222,24 @@ function Album() {
           <Button onClick={() => setPurchaseDialogOpen(false)} sx={{ color: 'grey.400' }}>
             Cancel
           </Button>
+          {/* This button had no onClick at all. It rendered a price and did
+              nothing, so the album context menu and the outlined Purchase button
+              both led here and dead-ended -- albums were only really buyable from
+              the PurchaseButton at the top of the page. It now goes through the
+              same licence gate as every other route to Stripe. */}
           <Button
             variant="contained"
             startIcon={<ShoppingCart />}
+            onClick={() => {
+              setPurchaseDialogOpen(false);
+              requestCheckout({
+                type: 'album',
+                itemId: albumId,
+                itemName: album?.title,
+                artistName: album?.artistName || album?.artist,
+                price: album?.price || calculateAlbumPrice(album?.trackCount || tracks.length || 1)
+              });
+            }}
             sx={{ bgcolor: '#1DB954', '&:hover': { bgcolor: '#1ed760' }, px: 4 }}
           >
             Purchase Now
@@ -1233,9 +1247,12 @@ function Album() {
         </DialogActions>
         </Dialog>
       </Suspense>
+
+      {licenseDialog}
     </Box>
   );
 }
 
 export default Album;
+
 

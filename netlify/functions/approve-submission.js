@@ -2,6 +2,7 @@
 // Approve artist submission and publish to songs/albums collections
 
 const admin = require('firebase-admin');
+const { SONG_PRICE, calculateAlbumPrice } = require('../../src/utils/pricing');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -70,9 +71,18 @@ exports.handler = async (event, context) => {
     // Create album if it's an album release
     let albumId = null;
     if (submission.releaseType === 'album') {
-      // Calculate album price: trackCount × $1.99 × 0.75 (25% discount)
+      // Derived from the canonical rule, not recomputed. This previously read
+      //     Math.round(trackCount * 199 * 0.75)
+      // which was a THIRD copy of album pricing, and the only one that applied a
+      // 25% discount -- a discount that exists nowhere else in the system. It also
+      // hardcoded the single price, so it silently kept charging the old rate, and
+      // it had neither the chart-eligibility floor nor the market cap.
+      //
+      // This is the path that prices an APPROVED ARTIST SUBMISSION, so it is the
+      // one that will matter most once artists and bands upload their own releases:
+      // a contributor's album would have been priced by a rule nobody maintained.
       const trackCount = submission.tracks.length;
-      const albumPrice = Math.round(trackCount * 199 * 0.75); // Price in cents
+      const albumPrice = calculateAlbumPrice(trackCount); // cents
 
       const albumData = {
         title: submission.albumTitle,
@@ -86,7 +96,7 @@ exports.handler = async (event, context) => {
         description: submission.description || '',
         genre: submission.tracks[0]?.primaryGenre || 'Unknown',
         trackCount: trackCount,
-        price: albumPrice, // Album price with 25% discount
+        price: albumPrice, // canonical: clamp(n x single, floor, cap)
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         uploadedBy: submission.uploadedBy,
         status: 'published',
@@ -139,7 +149,7 @@ exports.handler = async (event, context) => {
         status: 'published',
         playCount: 0,
         likeCount: 0,
-        price: 199 // Default price in cents ($1.99)
+        price: SONG_PRICE // canonical single price, not a literal
       };
 
       const songRef = await db.collection('songs').add(songData);
