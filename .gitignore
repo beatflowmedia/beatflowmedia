@@ -83,6 +83,16 @@ netlify/functions/nul
 # Firebase Service Account Key (sensitive)
 serviceAccountKey.json
 
+# Firebase service-account keys. The console names its download
+# <project>-firebase-adminsdk-<hash>-<digits>.json, which the single exact
+# filename above does NOT match -- so a freshly downloaded key was committable.
+# A key has leaked from this repo before; these patterns are the guard.
+*firebase-adminsdk*.json
+*service-account*.json
+*serviceaccount*.json
+*serviceAccount*.json
+secrets/
+
 # Local HTTPS dev certificates (mkcert). Never commit a private key --
 # netlify.toml [dev] points here, and each developer generates their own:
 #   mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
