@@ -4,6 +4,30 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 
+/**
+ * The contract half of a purchase record: which licence version the buyer accepted,
+ * and when they accepted it.
+ *
+ * Both values were stamped by create-checkout at the moment of the click -- the
+ * version it verified against src/utils/agreements.js, and its own server clock --
+ * and Stripe has held them unchanged since. Nothing here re-derives either one: a
+ * webhook firing minutes later must not decide what someone agreed to.
+ *
+ * NULLS ARE WRITTEN EXPLICITLY, not omitted. Firestore excludes a document from any
+ * query that mentions a field the document lacks, so an omitted field would make
+ * unaccepted purchases invisible to exactly the query that looks for them. An
+ * explicit null is findable, and finding them is the point -- this returns nulls for
+ * the purchase types that have no published agreement yet (studio samples,
+ * submission credits) rather than pretending they were accepted.
+ */
+function licenceAcceptanceFields(session) {
+  const meta = (session && session.metadata) || {};
+  return {
+    acceptedAgreement: meta.acceptedAgreement || null,
+    acceptedAt: meta.acceptedAt || null
+  };
+}
+
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   console.log('Initializing Firebase Admin...');
@@ -268,6 +292,7 @@ async function handleCheckoutSessionCompleted(session) {
           price: session.amount_total / 100,
           currency: session.currency,
           status: 'completed',
+          ...licenceAcceptanceFields(session),
           licenseId, // Add license ID to purchase record
           stripeSessionId: session.id,
           stripePaymentIntent: session.payment_intent,
@@ -386,6 +411,7 @@ async function handleCheckoutSessionCompleted(session) {
             price: session.amount_total / 100 / trackIds.length, // Split total price evenly
             currency: session.currency,
             status: 'completed',
+            ...licenceAcceptanceFields(session),
             licenseId,
             bundlePurchase: true,
             bundleSessionId: session.id,
@@ -515,6 +541,7 @@ async function handleCheckoutSessionCompleted(session) {
       price: session.amount_total / 100, // Convert from cents to dollars
       currency: session.currency,
       status: 'completed',
+      ...licenceAcceptanceFields(session),
       licenseId, // Add license ID to purchase record
       stripeSessionId: session.id,
       stripePaymentIntent: session.payment_intent,

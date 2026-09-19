@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import OptimizedImage from '../components/OptimizedImage';
 import { SONG_PRICE, formatPrice } from '../utils/pricing';
+import useLicensedCheckout from '../hooks/useLicensedCheckout';
 import {
   TextField,
   Tabs,
@@ -99,6 +100,13 @@ const FILTER_OPTIONS = {
 };
 
 function Search() {
+  // Collects the licence acceptance before any checkout. `licenseDialog` is
+  // rendered at the bottom of this component; without it the trigger does nothing,
+  // which is deliberate -- the gate travels with the ability to buy.
+  const { requestCheckout, licenseDialog } = useLicensedCheckout({
+    onError: (error) => toast.error(`Failed to initiate purchase: ${error.message}`)
+  });
+
   const { state, dispatch, actions } = usePlayer();
   const { user } = useAuth();
   const { addLike, removeLike } = useLikes();
@@ -481,7 +489,13 @@ function Search() {
         return;
       }
 
-      await stripeService.createSongCheckout(user.uid, item.id, user.email);
+      requestCheckout({
+        type: 'song',
+        itemId: item.id,
+        itemName: item.title,
+        artistName: item.artistName || item.artist,
+        price: item.price
+      });
     } catch (error) {
       console.error('Purchase error:', error);
       toast.error(`Failed to initiate purchase: ${error.message}`);
@@ -1077,6 +1091,8 @@ function Search() {
           </>
         )}
       </Menu>
+
+      {licenseDialog}
     </Box>
   );
 }

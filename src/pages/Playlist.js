@@ -44,6 +44,7 @@ import Shuffle from '@mui/icons-material/Shuffle';
 import MusicNote from '@mui/icons-material/MusicNote';
 import ShoppingCart from '@mui/icons-material/ShoppingCart';
 import { SONG_PRICE } from '../utils/pricing';
+import useLicensedCheckout from '../hooks/useLicensedCheckout';
 import Search from '@mui/icons-material/Search';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
@@ -79,6 +80,13 @@ const SORT_OPTIONS = [
 ];
 
 function Playlist() {
+  // Collects the licence acceptance before any checkout. `licenseDialog` must be
+  // rendered below or the trigger does nothing -- the gate travels with the ability
+  // to buy, so a page cannot gain one without gaining the other.
+  const { requestCheckout, licenseDialog } = useLicensedCheckout({
+    onError: (error) => toast.error(`Failed to initiate purchase: ${error.message}`)
+  });
+
   const { id: playlistId } = useParams();
   const navigate = useNavigate();
   const { state, dispatch, actions } = usePlayer();
@@ -502,12 +510,18 @@ function Playlist() {
         return;
       }
 
-      await stripeService.createSongCheckout(user.uid, track.id, user.email);
+      requestCheckout({
+        type: 'song',
+        itemId: track.id,
+        itemName: track.title,
+        artistName: track.artistName || track.artist,
+        price: track.price
+      });
     } catch (error) {
       console.error('Purchase error:', error);
       toast.error(`Failed to initiate purchase: ${error.message}`);
     }
-  }, [user, navigate]);
+  }, [user, navigate, requestCheckout]);
 
   const handleEditPlaylist = async () => {
     if (!isOwner || !user?.uid) return;
@@ -1431,6 +1445,8 @@ function Playlist() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {licenseDialog}
       </Box>
     </>
   );

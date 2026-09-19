@@ -134,7 +134,12 @@ class StripeService {
   /**
    * Create a Stripe checkout session for purchasing a song
    */
-  async createSongCheckout(userId, songId, userEmail) {
+  // `acceptedAgreement` is the licence version the buyer ticked, e.g.
+  // "download-license@2026-09-19". create-checkout re-checks it against its own
+  // copy of src/utils/agreements.js and refuses the sale if it is missing or not
+  // current, so this is carried, never defaulted -- a default here would let a
+  // caller that never showed the terms manufacture an acceptance.
+  async createSongCheckout(userId, songId, userEmail, acceptedAgreement) {
     try {
       // Get song details
       const songDoc = await getDoc(doc(db, 'songs', songId));
@@ -163,6 +168,7 @@ class StripeService {
           userId,
           itemId: songId,
           itemType: 'song',
+          acceptedAgreement,
           itemName: songData.title || 'Song',
           artistName: songData.artistName || 'Unknown Artist',
           price: Math.round(pricing.discountedPrice), // Use discounted price
@@ -205,7 +211,8 @@ class StripeService {
   /**
    * Create a Stripe checkout session for purchasing an album
    */
-  async createAlbumCheckout(userId, albumId, userEmail) {
+  // See createSongCheckout: acceptedAgreement is carried, never defaulted.
+  async createAlbumCheckout(userId, albumId, userEmail, acceptedAgreement) {
     try {
       // Get album details
       const albumDoc = await getDoc(doc(db, 'albums', albumId));
@@ -234,6 +241,7 @@ class StripeService {
           userId,
           itemId: albumId,
           itemType: 'album',
+          acceptedAgreement,
           itemName: albumData.title || 'Album',
           artistName: albumData.artistName || 'Unknown Artist',
           price: Math.round(pricing.discountedPrice), // Use discounted price

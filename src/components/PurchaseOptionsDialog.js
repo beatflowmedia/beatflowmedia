@@ -9,6 +9,22 @@
 // sends, so this displays the stored `price` when there is one and only falls back
 // to calculateAlbumPrice() when there is not. Quoting a computed number next to a
 // different stored one is how a storefront advertises one price and charges another.
+//
+// WHY THE OPTIONS NO LONGER BUY IMMEDIATELY
+// They used to: tapping "This track" went straight to Stripe. That made the licence
+// summary below them decorative -- it sat under the button that had already been
+// pressed, which is browsewrap with extra steps. Enforceable acceptance needs the
+// terms shown BEFORE the act that accepts them, so the flow is now
+//
+//     choose an option  ->  read what it grants  ->  tick to accept  ->  pay
+//
+// and the pay button is dead until both a choice and a tick exist. The extra tap is
+// the entire point: it is the thing that turns a published document into a contract.
+// See src/utils/agreements.js for what gets recorded and why.
+//
+// The subscribe row is deliberately OUTSIDE that gate. It navigates to a plan page
+// rather than buying anything here, so gating it behind a download-licence
+// acceptance would ask for assent to terms that do not govern the action.
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -17,25 +33,38 @@ import {
   Button, Divider, Chip, CircularProgress, useMediaQuery
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Close, ShoppingCart, Album as AlbumIcon, AllInclusive, InfoOutlined } from '@mui/icons-material';
+import {
+  Close, ShoppingCart, Album as AlbumIcon, AllInclusive, InfoOutlined,
+  CheckCircle, RadioButtonUnchecked
+} from '@mui/icons-material';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { SONG_PRICE, calculateAlbumPrice, formatPrice } from '../utils/pricing';
+import { currentAgreementVersion, DOWNLOAD_LICENSE } from '../utils/agreements';
 import { getActivePlans } from '../data/pricingPlans';
-import DownloadLicenseTerms from './DownloadLicenseTerms';
+import LicenseAcceptance from './LicenseAcceptance';
 
 // Fat-finger minimum. An element can look big and still be a small target, so the
 // height is set explicitly rather than inferred from padding.
 const TAP_TARGET = 44;
 const OPTION_MIN_HEIGHT = 72;
 
-function Option({ icon, title, caption, price, note, onClick, disabled }) {
+const ACCENT = '#1DB954';
+
+function Option({ icon, title, caption, price, note, onClick, disabled, selected }) {
+  // `selected` is a boolean only for the purchasable options, which behave as a
+  // radio group. The subscribe row passes undefined and stays a plain button, so a
+  // screen reader is not told a navigation link is a selectable choice.
+  const isChoice = typeof selected === 'boolean';
+
   return (
     <Box
       component="button"
       type="button"
       onClick={onClick}
       disabled={disabled}
+      role={isChoice ? 'radio' : undefined}
+      aria-checked={isChoice ? selected : undefined}
       sx={{
         width: '100%',
         minHeight: OPTION_MIN_HEIGHT,
@@ -47,29 +76,34 @@ function Option({ icon, title, caption, price, note, onClick, disabled }) {
         mb: 1,
         textAlign: 'left',
         border: '1px solid',
-        borderColor: 'rgba(255,255,255,0.15)',
+        borderColor: selected ? ACCENT : 'rgba(255,255,255,0.15)',
         borderRadius: 2,
-        bgcolor: 'transparent',
+        bgcolor: selected ? 'rgba(29,185,84,0.10)' : 'transparent',
         color: 'inherit',
         font: 'inherit',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.45 : 1,
         transition: 'background-color 0.2s, border-color 0.2s',
         '&:hover': disabled ? {} : {
-          bgcolor: 'rgba(255,255,255,0.06)',
-          borderColor: '#1DB954'
+          bgcolor: selected ? 'rgba(29,185,84,0.16)' : 'rgba(255,255,255,0.06)',
+          borderColor: ACCENT
         }
       }}
     >
-      <Box sx={{ color: '#1DB954', display: 'flex' }}>{icon}</Box>
+      <Box sx={{ color: ACCENT, display: 'flex' }}>{icon}</Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography sx={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.3 }}>{title}</Typography>
         <Typography sx={{ color: 'grey.400', fontSize: '0.8125rem' }}>{caption}</Typography>
         {note ? (
-          <Typography sx={{ color: '#1DB954', fontSize: '0.75rem', mt: 0.25 }}>{note}</Typography>
+          <Typography sx={{ color: ACCENT, fontSize: '0.75rem', mt: 0.25 }}>{note}</Typography>
         ) : null}
       </Box>
       <Typography sx={{ fontWeight: 700, fontSize: '1rem', whiteSpace: 'nowrap' }}>{price}</Typography>
+      {isChoice ? (
+        <Box sx={{ display: 'flex', color: selected ? ACCENT : 'grey.600' }}>
+          {selected ? <CheckCircle fontSize="small" /> : <RadioButtonUnchecked fontSize="small" />}
+        </Box>
+      ) : null}
     </Box>
   );
 }
@@ -83,8 +117,14 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
 
   const [album, setAlbum] = useState(null);
   const [loadingAlbum, setLoadingAlbum] = useState(false);
+  const [choice, setChoice] = useState(null);
+  const [accepted, setAccepted] = useState(false);
 
   const albumId = track ? track.albumId : null;
+
+  // The terms in force right now, read once per render from the canonical module.
+  // This is the value that travels to the server and onto the purchase record.
+  const agreementVersion = currentAgreementVersion(DOWNLOAD_LICENSE);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,6 +151,17 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
     };
   }, [open, albumId]);
 
+  // Acceptance is per-transaction and is NOT remembered between openings. A tick
+  // that persists across dialogs would record assent the buyer gave once, for a
+  // different purchase -- which is the thing a stored acceptance is supposed to
+  // disprove. Reset on close so every purchase carries its own affirmative act.
+  useEffect(() => {
+    if (!open) {
+      setChoice(null);
+      setAccepted(false);
+    }
+  }, [open]);
+
   if (!track) return null;
 
   const songPrice = track.price || SONG_PRICE;
@@ -127,9 +178,26 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
     .filter((plan) => typeof plan.price === 'number')
     .sort((a, b) => a.price - b.price)[0];
 
-  const choose = (option) => {
+  // No published terms means nothing can be accepted, so nothing can be sold. This
+  // is unreachable while DOWNLOAD_LICENSE has a current version and is here so that
+  // retiring one fails loudly at the checkout rather than selling without assent.
+  const canTransact = !!agreementVersion;
+  const ready = !!choice && accepted && canTransact;
+
+  const confirm = () => {
+    if (!ready) return;
     if (onClose) onClose();
-    if (onSelect) onSelect(option);
+    if (onSelect) {
+      onSelect({
+        type: choice.type,
+        itemId: choice.itemId,
+        price: choice.price,
+        // What the buyer actually ticked. The server re-checks this against its own
+        // copy of agreements.js and refuses anything that is not current, so this is
+        // a claim to be verified rather than a value to be trusted.
+        acceptedAgreement: agreementVersion
+      });
+    }
   };
 
   return (
@@ -179,30 +247,34 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
           </Box>
         ) : (
           <>
-            <Option
-              icon={<ShoppingCart />}
-              title="This track"
-              caption="License this single recording"
-              price={formatPrice(songPrice)}
-              onClick={() => choose({ type: 'song', itemId: track.id, price: songPrice })}
-            />
-
-            {loadingAlbum ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                <CircularProgress size={22} />
-              </Box>
-            ) : null}
-
-            {album && trackCount > 1 ? (
+            <Box role="radiogroup" aria-label="What to license">
               <Option
-                icon={<AlbumIcon />}
-                title={album.title || 'The full album'}
-                caption={'All ' + trackCount + ' tracks'}
-                price={formatPrice(albumPrice)}
-                note={albumSaving > 0 ? 'Save ' + formatPrice(albumSaving) + ' vs buying separately' : null}
-                onClick={() => choose({ type: 'album', itemId: album.id, price: albumPrice })}
+                icon={<ShoppingCart />}
+                title="This track"
+                caption="License this single recording"
+                price={formatPrice(songPrice)}
+                selected={!!choice && choice.type === 'song'}
+                onClick={() => setChoice({ type: 'song', itemId: track.id, price: songPrice })}
               />
-            ) : null}
+
+              {loadingAlbum ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={22} />
+                </Box>
+              ) : null}
+
+              {album && trackCount > 1 ? (
+                <Option
+                  icon={<AlbumIcon />}
+                  title={album.title || 'The full album'}
+                  caption={'All ' + trackCount + ' tracks'}
+                  price={formatPrice(albumPrice)}
+                  note={albumSaving > 0 ? 'Save ' + formatPrice(albumSaving) + ' vs buying separately' : null}
+                  selected={!!choice && choice.type === 'album'}
+                  onClick={() => setChoice({ type: 'album', itemId: album.id, price: albumPrice })}
+                />
+              ) : null}
+            </Box>
 
             {cheapestPlan ? (
               <>
@@ -223,13 +295,41 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
               </>
             ) : null}
 
-            <DownloadLicenseTerms />
+            <LicenseAcceptance accepted={accepted} onChange={setAccepted} />
+
+            <Button
+              onClick={confirm}
+              disabled={!ready}
+              fullWidth
+              variant="contained"
+              sx={{
+                mt: 2,
+                minHeight: TAP_TARGET + 4,
+                fontSize: '1rem',
+                fontWeight: 700,
+                textTransform: 'none',
+                bgcolor: ACCENT,
+                color: '#000',
+                '&:hover': { bgcolor: '#1ed760' },
+                '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.12)', color: 'grey.500' }
+              }}
+            >
+              {choice
+                ? 'Continue to payment — ' + formatPrice(choice.price)
+                : 'Choose an option above'}
+            </Button>
+
+            {choice && !accepted ? (
+              <Typography sx={{ color: 'grey.500', fontSize: '0.75rem', mt: 1, textAlign: 'center' }}>
+                Accept the licence terms to continue.
+              </Typography>
+            ) : null}
 
             <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Chip
                 size="small"
                 label="One-stop clearance"
-                sx={{ bgcolor: 'rgba(29,185,84,0.15)', color: '#1DB954', fontWeight: 700 }}
+                sx={{ bgcolor: 'rgba(29,185,84,0.15)', color: ACCENT, fontWeight: 700 }}
               />
               <Typography sx={{ color: 'grey.500', fontSize: '0.75rem' }}>
                 Recording and composition cleared together.
@@ -249,4 +349,5 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
     </Dialog>
   );
 }
+
 

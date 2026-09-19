@@ -18,8 +18,8 @@ import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import classNames from "classnames";
 import { useNavigate } from "react-router-dom";
-import { stripeService } from "../services/stripeService";
 import { SONG_PRICE, formatPrice } from "../utils/pricing";
+import useLicensedCheckout from "../hooks/useLicensedCheckout";
 import { artworkUrl } from '../utils/artwork';
 
 /**
@@ -162,6 +162,13 @@ const TrackRow = memo(
       [track, dispatch, actions],
     );
 
+    // Collects the licence acceptance before checkout. `licenseDialog` is rendered
+    // at the end of this row; the trigger is inert without it, which is deliberate --
+    // the gate travels with the ability to buy.
+    const { requestCheckout, licenseDialog } = useLicensedCheckout({
+      onError: (error) => toast.error(`Failed to initiate purchase: ${error.message}`)
+    });
+
     // Handle purchase
     const handlePurchase = useCallback(
       async (e) => {
@@ -178,15 +185,15 @@ const TrackRow = memo(
           return;
         }
 
-        try {
-          // Create checkout session
-          await stripeService.createSongCheckout(user.uid, track.id, user.email);
-        } catch (error) {
-          console.error('Purchase error:', error);
-          toast.error(`Failed to initiate purchase: ${error.message}`);
-        }
+        requestCheckout({
+          type: 'song',
+          itemId: track.id,
+          itemName: track.title,
+          artistName: track.artistName || track.artist,
+          price: track.price
+        });
       },
-      [user, track, navigate, isPurchased],
+      [user, track, navigate, isPurchased, requestCheckout],
     );
 
     // Keyboard navigation
@@ -442,6 +449,8 @@ const TrackRow = memo(
             </div>
           </div>
         )}
+
+        {licenseDialog}
       </div>
     );
   },

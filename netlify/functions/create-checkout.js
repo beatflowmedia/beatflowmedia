@@ -23,6 +23,7 @@ const db = admin.firestore();
 // Only a FALLBACK. resolveServerPrice prefers item.price from Firestore, so the
 // authoritative number for a seeded record is whatever the catalogue holds.
 const { SONG_PRICE: DEFAULT_SONG_PRICE, calculateAlbumPrice } = require('../../src/utils/pricing');
+const { isCurrentAgreementVersion, DOWNLOAD_LICENSE, currentAgreementVersion } = require('../../src/utils/agreements');
 const DISCOUNT_RATES = { none: 0, student: 0.20, creator: 0.30, pro: 0.40, agency: 0.50 };
 
 /* A record is not licensable unless we can actually deliver the master.
@@ -151,7 +152,8 @@ exports.handler = async (event, context) => {
       metadata,
       sampleId,
       sampleTitle,
-      licenseType
+      licenseType,
+      acceptedAgreement // licence version the buyer ticked; verified below, never trusted
     } = JSON.parse(event.body);
 
     console.log('✅ Request data:', { userId, itemId, itemType, price, priceId, userEmail });
@@ -195,6 +197,39 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({ error: 'Your session has expired. Sign in again.' })
       };
     }
+
+    // A download sale REQUIRES a recorded acceptance of the licence in force.
+    //
+    // The client sends which version it showed; this refuses anything that is not
+    // the CURRENT one. Accepting a stale-but-known version would record assent to
+    // text the buyer was never shown -- if the terms changed while their tab sat
+    // open, the honest outcome is "reload and read the new terms", not binding them
+    // to whichever version happens to be convenient.
+    //
+    // Scoped to song and album on purpose. Subscriptions, submission credits and
+    // studio samples are governed by agreements that have not been written yet
+    // (see CONTRIBUTOR_UPLOAD and SYNC_LICENSE in src/utils/agreements.js), and
+    // making them accept a DOWNLOAD licence would record the wrong contract --
+    // worse than recording none, because it looks like diligence.
+    const requiresLicenceAcceptance = itemType === 'song' || itemType === 'album';
+    if (requiresLicenceAcceptance) {
+      if (!isCurrentAgreementVersion(acceptedAgreement)) {
+        console.warn('Checkout refused: licence acceptance missing or stale:', acceptedAgreement);
+        return {
+          statusCode: 409,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            error: 'Please review and accept the current licence terms to continue.',
+            currentAgreement: currentAgreementVersion(DOWNLOAD_LICENSE)
+          })
+        };
+      }
+    }
+
+    // Stamped SERVER-SIDE, from the request that carried the acceptance -- which is
+    // the click. A client-supplied timestamp is a value the buyer controls, and the
+    // one thing this record has to survive is the buyer later disputing it.
+    const acceptedAt = new Date().toISOString();
 
     // Validate required fields - allow priceId OR (userId + itemId + itemType)
     if (priceId) {
@@ -360,6 +395,11 @@ exports.handler = async (event, context) => {
           userId: effectiveUserId,   // ...authoritative fields win (webhook trusts these)
           itemId,
           itemType,
+          // The contract half of the record. stripe-webhook copies these onto the
+          // purchase document, so a purchase answers "which terms, accepted when"
+          // without a join to anything that could be edited afterwards.
+          acceptedAgreement,
+          acceptedAt,
           originalPrice: resolved.basePrice.toString(),
           discountedPrice: resolved.discountedPrice.toString(),
           subscriberTier: resolved.tier

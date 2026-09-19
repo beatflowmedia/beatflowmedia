@@ -9,9 +9,12 @@ import { useModal } from '../hooks/useModal';
 import { stripeService } from '../services/stripeService';
 import { SONG_PRICE, calculateAlbumPrice, formatPrice } from '../utils/pricing';
 import PurchaseOptionsDialog from './PurchaseOptionsDialog';
+import LicenseAcceptanceDialog from './LicenseAcceptanceDialog';
 
-// A song row shows one number and opens the alternatives on tap. An album button
-// has no meaningful alternative to offer, so it still goes straight to checkout.
+// A song row shows one number and opens the alternatives on tap. An album button has
+// no meaningful alternative to offer, so it opens the plain acceptance dialog
+// instead -- not checkout. Both routes capture the licence acceptance; there is no
+// longer a path to Stripe that skips it.
 const PurchaseButton = ({
   itemId,
   itemType,
@@ -20,6 +23,11 @@ const PurchaseButton = ({
   compact = false,
   track = null,
   withOptions = true,
+  // Only used to title the acceptance dialog on the album route, where there is no
+  // `track` to read a name from. Optional: the dialog falls back to "This release"
+  // rather than rendering an empty heading.
+  itemName = null,
+  artistName = null,
   // For albums: the caller knows whether its tracks are deliverable; a track prop
   // would be the wrong shape for it. Songs keep using track.previewOnly.
   previewOnly = false
@@ -31,6 +39,7 @@ const PurchaseButton = ({
   const [purchased, setPurchased] = useState(false);
   const [checking, setChecking] = useState(true);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [acceptOpen, setAcceptOpen] = useState(false);
 
   const offersOptions = withOptions && itemType === 'song' && !!track;
 
@@ -90,10 +99,19 @@ const PurchaseButton = ({
       setOptionsOpen(true);
       return;
     }
-    await startCheckout(itemType, itemId);
+    // Everything else -- albums, and any song rendered without a track object --
+    // still has to accept the licence before it can reach Stripe. This used to call
+    // startCheckout directly, which is how the album route sold without ever showing
+    // the terms. There is no longer a path to checkout that skips assent.
+    setAcceptOpen(true);
   };
 
-  const startCheckout = async (type, id) => {
+  // `acceptedAgreement` is the licence version the buyer ticked in the options
+  // dialog. It is passed through rather than looked up here so that the value which
+  // reaches the server is the one attached to the control the buyer actually saw --
+  // re-reading the current version at this point would paper over a terms change
+  // that happened while the dialog was open, recording assent to text nobody read.
+  const startCheckout = async (type, id, acceptedAgreement) => {
     if (!user) {
       await showAlert('Sign In Required', 'Please sign in to purchase music', 'info');
       return;
@@ -103,9 +121,9 @@ const PurchaseButton = ({
       setLoading(true);
 
       if (type === 'song') {
-        await stripeService.createSongCheckout(user.uid, id, user.email);
+        await stripeService.createSongCheckout(user.uid, id, user.email, acceptedAgreement);
       } else if (type === 'album') {
-        await stripeService.createAlbumCheckout(user.uid, id, user.email);
+        await stripeService.createAlbumCheckout(user.uid, id, user.email, acceptedAgreement);
       }
 
       // User will be redirected to Stripe checkout
@@ -220,7 +238,18 @@ const PurchaseButton = ({
           open={optionsOpen}
           onClose={() => setOptionsOpen(false)}
           track={{ ...track, id: track.id || itemId, price: displayPrice }}
-          onSelect={(option) => startCheckout(option.type, option.itemId)}
+          onSelect={(option) => startCheckout(option.type, option.itemId, option.acceptedAgreement)}
+        />
+      )}
+
+      {!offersOptions && (
+        <LicenseAcceptanceDialog
+          open={acceptOpen}
+          onClose={() => setAcceptOpen(false)}
+          itemName={itemName || (track ? track.title : null)}
+          artistName={artistName || (track ? track.artistName || track.artist : null)}
+          price={displayPrice}
+          onConfirm={(acceptedAgreement) => startCheckout(itemType, itemId, acceptedAgreement)}
         />
       )}
     </>

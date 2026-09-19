@@ -18,9 +18,17 @@ import { toast } from 'react-toastify';
 import { getArtistImageUrl } from '../hooks/useArtistImage';
 import SongPlayCount from '../components/SongPlayCount';
 import { SONG_PRICE, formatPrice } from '../utils/pricing';
+import useLicensedCheckout from '../hooks/useLicensedCheckout';
 import { artworkUrl } from '../utils/artwork';
 
 export default function ArtistSimple() {
+  // Collects the licence acceptance before any checkout. `licenseDialog` must be
+  // rendered below or the trigger does nothing -- the gate travels with the ability
+  // to buy, so a page cannot gain one without gaining the other.
+  const { requestCheckout, licenseDialog } = useLicensedCheckout({
+    onError: (error) => toast.error(`Failed to initiate purchase: ${error.message}`)
+  });
+
   console.log('[ArtistSimple] Component mounted/rendered');
 
   const { id: artistId } = useParams(); // Route param is :id, rename to artistId
@@ -292,7 +300,13 @@ export default function ArtistSimple() {
         return;
       }
 
-      await stripeService.createSongCheckout(user.uid, song.id, user.email);
+      requestCheckout({
+        type: 'song',
+        itemId: song.id,
+        itemName: song.title,
+        artistName: song.artistName || song.artist,
+        price: song.price
+      });
     } catch (error) {
       console.error('Purchase error:', error);
       toast.error(`Failed to initiate purchase: ${error.message}`);
@@ -649,6 +663,8 @@ export default function ArtistSimple() {
           </MenuItem>
         ) : null}
       </Menu>
+
+      {licenseDialog}
     </Box>
     </Box>
   );

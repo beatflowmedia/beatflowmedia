@@ -50,6 +50,7 @@ import { useNavigate } from "react-router-dom";
 import OptimizedImage from "../components/OptimizedImage";
 import { artworkUrl } from '../utils/artwork';
 import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
+import useLicensedCheckout from '../hooks/useLicensedCheckout';
 
 // Lazy load heavy components for better initial page load
 const TrendingSongs = lazy(() => import("../components/TrendingSongs"));
@@ -58,6 +59,13 @@ const DiscoverWeeklyPreview = lazy(() => import("../components/DiscoverWeeklyPre
 const Footer = lazy(() => import("../components/Footer"));
 
 function Home() {
+  // Collects the licence acceptance before any checkout. `licenseDialog` must be
+  // rendered below or the trigger does nothing -- the gate travels with the ability
+  // to buy, so a page cannot gain one without gaining the other.
+  const { requestCheckout, licenseDialog } = useLicensedCheckout({
+    onError: (error) => toast.error(`Failed to initiate purchase: ${error.message}`)
+  });
+
   const { dispatch, actions } = usePlayer();
   const { user, followArtist, unfollowArtist, isArtistFollowed } = useAuth();
   const { addLike, removeLike, isLiked: checkIsLiked } = useLikes();
@@ -485,13 +493,20 @@ function Home() {
         return;
       }
 
-      // Create checkout session
-      await stripeService.createSongCheckout(user.uid, song.id, user.email);
+      // Opens the acceptance dialog; the checkout itself runs once the buyer
+      // ticks the box, inside the hook.
+      requestCheckout({
+        type: 'song',
+        itemId: song.id,
+        itemName: song.title,
+        artistName: song.artistName || song.artist,
+        price: song.price
+      });
     } catch (error) {
       console.error('Purchase error:', error);
       toast.error(`Failed to initiate purchase: ${error.message}`);
     }
-  }, [user, navigate, handleMenuClose, purchasedSongIds]);
+  }, [user, navigate, handleMenuClose, purchasedSongIds, requestCheckout]);
 
   // Tab change handler
 
@@ -1272,6 +1287,8 @@ function Home() {
       <Suspense fallback={<Box sx={{ p: 2 }} />}>
         <Footer />
       </Suspense>
+
+      {licenseDialog}
     </Box>
   );
 }
