@@ -1,3 +1,37 @@
+# ---------------------------------------------------------------- secrets
+#
+# This runs FIRST, and before the JS/TS early-exit below, because the file that
+# leaked a live Stripe key was a .toml and a .md -- neither of which the UI/UX
+# check ever looks at.
+#
+# A live sk_live_ key sat in src/netlify.toml on a PUBLIC GitHub repo from
+# 2026-04-13 until it was found on 2026-09-19. Rotation was the fix; this is the
+# guard that stops the next one.
+#
+# It matches 20+ characters of key material, so documentation placeholders
+# (sk_live_YOUR), bare prefixes used as detection patterns in
+# agents/SecurityAuditAgent.js, and the scrubbed _REPLACED_ markers all pass.
+echo "🔑 Scanning staged changes for secrets..."
+
+SECRETS=$(git diff --cached -U0 -- . |
+  grep -E '^\+' |
+  grep -vE '^\+\+\+' |
+  grep -oE '(sk_live_|sk_test_|rk_live_)[A-Za-z0-9]{20,}|-----BEGIN (RSA |EC )?PRIVATE KEY-----' |
+  sort -u || true)
+
+if [ -n "$SECRETS" ]; then
+  echo "❌ REFUSING: staged changes contain what looks like a real secret."
+  echo ""
+  echo "$SECRETS" | cut -c1-14 | sed 's/^/   /' | sed 's/$/…/'
+  echo ""
+  echo "   Remove it and use an environment variable. If the key was ever"
+  echo "   committed or pushed, ROTATE it -- deleting the file does not remove"
+  echo "   it from git history."
+  exit 1
+fi
+
+echo "✅ No secrets in staged changes"
+
 echo "🎨 Running UI/UX pre-commit checks..."
 
 # Get staged files
