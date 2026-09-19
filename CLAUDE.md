@@ -105,6 +105,10 @@ needs its own storefront, NOT its own login.
 | Which agreement a person accepted, and its version | `src/utils/agreements.js` (**CommonJS**, `create-checkout` requires it) | `npx jest src/utils/agreements.test.js` |
 | What a stored catalogue price *should* be | `src/utils/catalogPricePlan.js` (`planCatalogPrices`) | `npx jest src/utils/catalogPricePlan.test.js` |
 | Whether a record may be sold (`previewOnly`) | `netlify/functions/lib/master-availability.js` — derived from the master in R2 | `npm run verify:masters` |
+| Statutory mechanical owed on a download (§115) | `src/utils/mechanicalRoyalty.js` | `npx jest src/utils/complianceModules.test.js` |
+| AI provenance + what may be registered | `src/utils/aiDisclosure.js` | `npx jest src/utils/complianceModules.test.js` |
+| DMCA §512(c) safe-harbour conditions | `src/utils/dmcaSafeHarbor.js` | `npx jest src/utils/complianceModules.test.js` |
+| What "net sales revenue" means | `src/utils/revenueSplit.js` (`netDefinition`) | `npx jest src/utils/revenueSplit.test.js` |
 | Everything else | **NEEDS OWNER** | — |
 
 ## Domain landmines — the things that fail *silently*
@@ -755,3 +759,82 @@ Consequence: **download and streaming need different assets.** The 30-second cli
 stay as the discovery preview, but chart-eligible interactive streaming needs
 full-length authenticated playback — a third asset path alongside the preview and the
 WAV master. Not yet designed.
+
+---
+
+## Statutory obligations, in code — 2026-09-19
+
+Four external legal sources were internalized as canonical modules, on the same
+pattern as `pricing.js`: one origin per concern, tests that pin the numbers, and a
+refusal to assert anything the platform cannot actually evidence.
+
+### `mechanicalRoyalty.js` — 17 U.S.C. §115
+
+Selling a download is a "digital phonorecord delivery" and owes a **compulsory**
+royalty on the **composition**. The platform had no representation of this at all, so
+the true cost of a sale was not knowable from the code.
+
+- Rates held **by year** (2023–2026), because a sale is governed by the rate in force
+  on its date. 2026 = **13.1¢** per work, **2.52¢** per minute over five minutes,
+  whichever is greater, counting a part minute as whole.
+- Arithmetic in **hundredths of a cent as integers** (1310, 252). The rates are
+  fractional cents; floating-point on money owed to a songwriter is how 0.1 + 0.2
+  becomes a royalty dispute.
+- Albums sum **before** rounding — rounding per track then adding misstates a
+  19-track album by real money, which is what a royalty audit looks for.
+- **Refuses to price interactive streaming.** The CRB uses a percentage-of-revenue
+  formula there; extending a per-copy penny rate to a stream is wrong by orders of
+  magnitude.
+- A year past the table is flagged `stale` rather than silently billed.
+
+### `aiDisclosure.js` — Copyright Office AI authorship guidance + Circular 56A
+
+The PRD requires a track-level AI tag for **chart reporting**; the Copyright Office
+requires disclosure and disclaimer for **registration**. Same fact, two duties, one
+module — storing it twice would let a record be reported to Luminate as one thing and
+registered as another, and the second is a false federal filing.
+
+- **Two copyrights, never collapsed.** Human lyrics over AI performance =
+  registrable composition, unregistrable master. `registrationClaim()` answers for
+  each separately, and a performance claimed on a composition application is rejected
+  as the category error it is.
+- An undisclosed record returns **null, never "synthetic"**. Guessing provenance
+  writes a fabricated fact into a field that feeds a federal application.
+- `compilationClaim()` — human selection and sequencing is protectable authorship, so
+  an album of otherwise unregistrable synthetic tracks still carries a **thin**
+  compilation copyright. For this catalogue that may be the only copyright there is.
+
+### `dmcaSafeHarbor.js` — 17 U.S.C. §512(c)
+
+- `DESIGNATED_AGENT` is **all nulls**, and `safeHarborStatus()` reports **not
+  eligible** because of it. Registration is **$6** at dmca.copyright.gov/osp and
+  must be done *before* uploads open, not after the first notice.
+- Repeat-infringer strikes **age out** of a rolling window — a policy that never
+  forgets is a permanent record, not a repeat-infringer policy. Courts have stripped
+  the harbour from providers whose written policy was never actually implemented.
+- The gap is reported as `urgent` only once `acceptsUserUploads` is true.
+
+### `revenueSplit.js` — the word that was already shipped
+
+`Terms.js` publishes *"70% of net sales revenue"* and **does not define net**. That
+is a **4× swing** in platform margin on a $1.99 single — 45¢ if net means after
+costs, 11¢ if it means gross. The definition now lives where the arithmetic does:
+
+> net = charged − payment processing − statutory mechanical − refunds/chargebacks
+
+Pennies balance by assigning the remainder to the platform share, so a month of sales
+reconciles. **`Terms.js` still needs amending to state this** — until then the code
+and the contract agree only by luck.
+
+**Consequence worth knowing, surfaced by wiring these together:** mechanicals scale
+per track while the album price is capped, so **a longer album pays the artist less**
+per sale ($6.20 on 19 tracks vs $6.84 on 12). Pinned by a test.
+
+**Ratchets:** 109 tests across 8 suites. `DESIGNATED_AGENT.registeredWithCopyrightOffice`
+is `null` — when that changes, the test asserting it changes deliberately, which is
+the point.
+
+**None of this is legal advice.** It encodes published rules so the platform can be
+honest about what it owes and what it may claim. The live questions — whether a work
+with disclaimed AI authorship is a "musical work" for §115, and whether owning the
+compositions removes the need for a blanket licence — are for a lawyer.
