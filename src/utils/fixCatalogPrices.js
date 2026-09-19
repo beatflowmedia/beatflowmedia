@@ -1,6 +1,6 @@
 // src/utils/fixCatalogPrices.js
 //
-// Bring Firestore prices back in line with src/utils/pricing.js.
+// Bring Firestore prices back in line with src/utils/pricing.js, from the browser.
 //
 // WHY THIS IS NEEDED AT ALL
 // netlify/functions/create-checkout.js resolves the charge from `item.price` on the
@@ -9,18 +9,19 @@
 //     const basePrice = Number.isFinite(item.price) ? item.price : DEFAULT_SONG_PRICE;
 //
 // So the stored value is what a buyer is actually charged, and changing pricing.js
-// changes nothing for records that already exist. All 138 songs and 12 albums were
-// seeded while pricing.js said $29.00, so they hold 2900 and 26100 while the code,
-// the business-model document and production all say $1.99.
+// changes nothing for records that already exist. That is not a one-off: it has now
+// bitten twice, once when the catalogue was seeded at $29.00 and again when the
+// album rule gained a floor and a cap while every stored album kept its old
+// uncapped price.
 //
-// EVERY NUMBER HERE IS DERIVED, none typed. The existing root-level
-// fix-song-prices.js hardcodes 2900, which is how it became wrong; it also wants a
-// serviceAccountKey.json on disk, which is the file that leaked a key before.
-// This reads the canonical module, so it stays correct when the rule changes again.
-//
-// It supersedes fixSongPricesClient.js, which only handled songs. Albums were never
-// covered -- src/scripts/fix-album-prices.js was deleted in the cleanup -- which is
-// why an album still shows $261.00 while its tracks show $29.00.
+// THE RULE LIVES IN catalogPricePlan.js, NOT HERE.
+// This file is the browser adapter: it reads with the client SDK, shows the plan,
+// and writes. scripts/fix-catalog-prices.js is the same thing over firebase-admin.
+// Both call planCatalogPrices(), so there is exactly one answer to "what should this
+// record cost" regardless of which one you run. Album pricing has already existed in
+// four independent copies in this codebase and every one of them mispriced
+// something; a fifth living inside the tool that repairs the other four would be
+// especially hard to notice.
 //
 // DRY RUN BY DEFAULT. Nothing writes without { apply: true }, matching the
 // convention the station repo uses for anything that touches the catalogue.
@@ -30,76 +31,69 @@
 //
 //   fixCatalogPrices()                  // report what would change
 //   fixCatalogPrices({ apply: true })   // write it
+//
+// Prefer the script when you have a service account -- it verifies its writes by
+// reading them back, which the browser version cannot do as cheaply.
 
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { SONG_PRICE, calculateAlbumPrice, formatPrice } from './pricing';
+import { SONG_PRICE, ALBUM_PRICE_FLOOR, ALBUM_PRICE_CAP, formatPrice } from './pricing';
+import { planCatalogPrices, describePlan } from './catalogPricePlan';
+
+async function readAll(name) {
+  const snap = await getDocs(collection(db, name));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
 
 export async function fixCatalogPrices(options = {}) {
   const { apply = false } = options;
 
   console.log(apply ? '✍️  APPLYING price corrections' : '🔍 DRY RUN — nothing will be written');
-  console.log(`   canonical single price: ${formatPrice(SONG_PRICE)} (${SONG_PRICE} cents)`);
-  console.log('   album rule: trackCount x single');
+  console.log(`   single     : ${formatPrice(SONG_PRICE)}`);
+  console.log(
+    `   album rule : clamp(trackCount × single, ${formatPrice(ALBUM_PRICE_FLOOR)}, ${formatPrice(ALBUM_PRICE_CAP)})`
+  );
 
-  const report = { songs: { checked: 0, wrong: 0, updated: 0 }, albums: { checked: 0, wrong: 0, updated: 0 }, errors: [] };
+  const [songs, albums] = await Promise.all([readAll('songs'), readAll('albums')]);
 
-  // ---- songs -------------------------------------------------------------
-  const songs = await getDocs(collection(db, 'songs'));
-  report.songs.checked = songs.size;
+  const plan = planCatalogPrices({ songs, albums });
+  describePlan(plan).forEach((line) => console.log(line));
 
-  for (const snap of songs.docs) {
-    const song = snap.data();
-    if (song.price === SONG_PRICE) continue;
+  const report = {
+    songs: { checked: plan.summary.songsChecked, wrong: plan.summary.songsWrong, updated: 0 },
+    albums: { checked: plan.summary.albumsChecked, wrong: plan.summary.albumsWrong, updated: 0 },
+    errors: plan.problems.map((p) => `${p.kind} ${p.label}: ${p.reason}`)
+  };
 
-    report.songs.wrong += 1;
-    const from = typeof song.price === 'number' ? formatPrice(song.price) : '(unset)';
-    console.log(`   song  ${song.title || snap.id}: ${from} -> ${formatPrice(SONG_PRICE)}`);
+  if (apply) {
+    for (const change of plan.songs) {
+      try {
+        await updateDoc(doc(db, 'songs', change.id), { price: change.to });
+        report.songs.updated += 1;
+      } catch (err) {
+        report.errors.push(`song ${change.id}: ${err.message}`);
+      }
+    }
 
-    if (!apply) continue;
-    try {
-      await updateDoc(doc(db, 'songs', snap.id), { price: SONG_PRICE });
-      report.songs.updated += 1;
-    } catch (err) {
-      report.errors.push(`song ${snap.id}: ${err.message}`);
+    for (const change of plan.albums) {
+      try {
+        await updateDoc(doc(db, 'albums', change.id), { price: change.to });
+        report.albums.updated += 1;
+      } catch (err) {
+        report.errors.push(`album ${change.id}: ${err.message}`);
+      }
     }
   }
 
-  // ---- albums ------------------------------------------------------------
-  // Derived from the album's OWN trackCount, not a fixed number: a 9-track album
-  // and a 19-track album are not the same price under this rule.
-  const albums = await getDocs(collection(db, 'albums'));
-  report.albums.checked = albums.size;
-
-  for (const snap of albums.docs) {
-    const album = snap.data();
-    const trackCount = Number(album.trackCount) || 0;
-
-    if (!trackCount) {
-      report.errors.push(`album ${album.title || snap.id}: no trackCount, cannot price it`);
-      continue;
-    }
-
-    const expected = calculateAlbumPrice(trackCount);
-    if (album.price === expected) continue;
-
-    report.albums.wrong += 1;
-    const from = typeof album.price === 'number' ? formatPrice(album.price) : '(unset)';
-    console.log(`   album ${album.title || snap.id} (${trackCount} tracks): ${from} -> ${formatPrice(expected)}`);
-
-    if (!apply) continue;
-    try {
-      await updateDoc(doc(db, 'albums', snap.id), { price: expected });
-      report.albums.updated += 1;
-    } catch (err) {
-      report.errors.push(`album ${snap.id}: ${err.message}`);
-    }
-  }
-
-  // ---- summary -----------------------------------------------------------
   console.log('');
-  console.log(`   songs  : ${report.songs.checked} checked, ${report.songs.wrong} wrong` + (apply ? `, ${report.songs.updated} updated` : ''));
-  console.log(`   albums : ${report.albums.checked} checked, ${report.albums.wrong} wrong` + (apply ? `, ${report.albums.updated} updated` : ''));
+  console.log(
+    `   songs  : ${report.songs.checked} checked, ${report.songs.wrong} wrong` +
+      (apply ? `, ${report.songs.updated} updated` : '')
+  );
+  console.log(
+    `   albums : ${report.albums.checked} checked, ${report.albums.wrong} wrong` +
+      (apply ? `, ${report.albums.updated} updated` : '')
+  );
 
   if (report.errors.length) {
     console.warn(`   ${report.errors.length} problem(s):`);

@@ -62,6 +62,8 @@
     "verify:assets": "node scripts/verify-assets.js",
     "verify:csp": "node scripts/verify-csp.js",
     "test:functions": "jest netlify/functions/",
+    "fix:prices": "node scripts/fix-catalog-prices.js",
+    "verify:masters": "node scripts/verify-masters.js",
     "test:integration": "jest --testPathPattern=integration",
     "test:e2e": "cypress run",
     "storybook": "storybook dev -p 6006",
