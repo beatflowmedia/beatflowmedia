@@ -1,6 +1,20 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
+import { currentAgreementVersion, parseAgreementVersion, DOWNLOAD_LICENSE } from "../utils/agreements";
+
+// The version identifier this page is, read from the canonical registry rather than
+// written here. Falls back to a plain label if the agreement is ever unpublished, so
+// the page renders rather than showing "null".
+const TERMS_VERSION = currentAgreementVersion(DOWNLOAD_LICENSE) || "unversioned";
+const TERMS_DATE = (() => {
+  const parsed = parseAgreementVersion(TERMS_VERSION);
+  if (!parsed) return null;
+  const d = new Date(parsed.version + "T00:00:00Z");
+  return Number.isNaN(d.getTime())
+    ? parsed.version
+    : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+})();
 
 export default function Terms() {
   return (
@@ -8,7 +22,20 @@ export default function Terms() {
       <main className="flex-1 pt-16 px-6">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl font-bold mb-4">Terms and Conditions of Use</h1>
-          <p className="text-sm text-gray-400 mb-8">Last updated: January 1, 2025</p>
+          {/* Derived, never typed. src/utils/agreements.js holds the version that
+              create-checkout verifies and stripe-webhook writes onto the purchase
+              record. A hand-edited date here could disagree with the identifier a
+              buyer is recorded as having accepted, which is precisely the evidence
+              the versioning exists to produce. This page and that record cannot
+              drift, because they read the same constant. */}
+          <p className="text-sm text-gray-400 mb-2">
+            Version <span className="font-mono text-gray-300">{TERMS_VERSION}</span>
+            {TERMS_DATE ? <> &middot; in force from {TERMS_DATE}</> : null}
+          </p>
+          <p className="text-sm text-gray-400 mb-8">
+            Your acceptance of this version is recorded with your purchase. Earlier purchases remain
+            governed by whichever version you accepted at the time.
+          </p>
 
           {/* Introduction */}
           <section className="mb-8">
@@ -95,15 +122,98 @@ export default function Terms() {
               <h3 className="text-xl font-semibold text-white mt-6">Licensing for Use</h3>
               <p>
                 When you purchase a license through BeatFlow Media, you receive specific rights as outlined
-                in your purchase. Common license types include:
+                in your purchase. License types include:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>Personal Use:</strong> For individual, non-commercial enjoyment</li>
-                <li><strong>Commercial Use:</strong> For use in commercial projects, advertising, etc.</li>
-                <li><strong>Sync License:</strong> For synchronization with video or other media</li>
+                <li><strong>Download License:</strong> Personal, private listening. Defined in full below.</li>
+                <li><strong>Sync License:</strong> For synchronization with video or other media. Negotiated
+                  separately and not available through self-service checkout.</li>
               </ul>
+
+              <h3 className="text-xl font-semibold text-white mt-6">The Download License — What You Receive</h3>
               <p>
-                Licenses are non-transferable and subject to the specific terms provided at the time of purchase.
+                Buying a single track or an album grants you a <strong>non-exclusive, worldwide,
+                non-transferable, perpetual license</strong> to download one copy of the recording and to listen
+                to it privately, for your own personal enjoyment. The license does not expire, and it survives
+                the end of any subscription you may hold.
+              </p>
+              <p>
+                You may keep personal backup copies on devices you own. You may not give, sell, lend, or
+                transfer the license or the file to anyone else.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">What the Download License Does Not Cover</h3>
+              <p>
+                The following are <strong>not</strong> granted, and each requires a separate written license
+                from BeatFlow Media Group:
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Public performance</strong> — playing the recording to an audience or in a public
+                  or commercial space, including DJ sets, clubs, bars, restaurants, cafés, gyms, retail
+                  premises, salons, offices, events, and live or recorded streams.</li>
+                <li><strong>Broadcast or transmission</strong> — radio, television, webcast, podcast, or any
+                  on-demand or streaming service.</li>
+                <li><strong>Synchronization</strong> — pairing the recording with video, film, games,
+                  advertising, or any other media.</li>
+                <li><strong>Adaptation and derivative works</strong> — edits, remixes, mashups, extensions,
+                  re-edits, stems, sampling, interpolation, or any altered version of the recording.</li>
+                <li><strong>Compilations and mixes</strong> — including the recording in a mix, set,
+                  compilation, or playlist that you publish, distribute, sell, or monetize.</li>
+                <li><strong>Redistribution</strong> — reselling, sharing, file-sharing, or uploading the
+                  recording to any platform, service, library, or marketplace.</li>
+                <li><strong>AI and machine learning</strong> — using the recording, in whole or in part, to
+                  train, fine-tune, condition, or evaluate any machine learning model or dataset.</li>
+                <li><strong>Sublicensing</strong> — granting any of the above to another person, including by
+                  uploading to a platform whose terms would require you to grant them such rights.</li>
+              </ul>
+              <p className="text-sm text-gray-400">
+                If you are a DJ, or you play music in a business, a download license is not sufficient. That
+                use requires public performance rights, which in most territories are obtained from a
+                performing rights organization, and may also require a separate license from us.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Reservation of Rights</h3>
+              <p>
+                All rights not expressly granted in these Terms are reserved by BeatFlow Media Group and its
+                licensors. Nothing in these Terms transfers ownership of any recording, composition, artwork,
+                or trademark to you. A purchase is a license, not a sale of the underlying work.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Scope of Our Warranty</h3>
+              <p>
+                We warrant that we have the right to grant the license described above. We make{' '}
+                <strong>no representation or warranty</strong> that any recording is protected by copyright,
+                that any particular person owns or authored it, that it is original, or that it is or will
+                remain exclusive to you or to us. Recordings are licensed on an{' '}
+                <strong>&ldquo;as is&rdquo;</strong> basis.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">AI Provenance</h3>
+              <p>
+                Some or all recordings available through BeatFlow Media Group are created with the assistance
+                of, or generated by, artificial intelligence tools. The legal status of copyright in
+                AI-generated material is unsettled and varies by jurisdiction. Your rights and obligations
+                under this license are contractual and apply regardless of whether copyright subsists in any
+                particular recording.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Termination of a License</h3>
+              <p>
+                A download license terminates automatically and immediately if you breach any restriction
+                above. On termination you must stop using the recording and delete all copies in your
+                possession. Termination for breach does not entitle you to a refund and does not limit any
+                other remedy available to us.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Acceptance and Versioning</h3>
+              <p>
+                These Terms are versioned by date. You are asked to accept the version in force at the time you
+                buy, and the version identifier and the time of your acceptance are recorded against your
+                purchase. Those recorded values, and not any later revision of this page, govern that purchase.
+              </p>
+              <p>
+                Licenses are non-transferable and subject to the specific terms presented at the time of
+                purchase.
               </p>
             </div>
           </section>
@@ -114,8 +224,31 @@ export default function Terms() {
             <div className="text-gray-300 space-y-4">
               <h3 className="text-xl font-semibold text-white">Purchases</h3>
               <p>
-                All purchases are processed through our payment partner, Stripe. Prices are displayed in USD
-                and include applicable taxes. All sales are final unless otherwise specified.
+                All purchases are processed through our payment partner, Stripe. We do not receive or store
+                your card details. Prices are displayed in USD. The price charged is the price stored against
+                the item at the time of purchase.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Delivery</h3>
+              <p>
+                Purchases are delivered as a digital download from your account. Download links are generated
+                on request and are deliberately short-lived; if a link expires before you use it, request
+                another from your purchase history. Your license does not expire when a link does.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Refunds</h3>
+              <p>
+                Because a purchase delivers a digital file immediately and the license granted cannot be
+                returned, <strong>all sales are final</strong> and we do not offer refunds for change of mind.
+              </p>
+              <p>
+                We will refund you in full where we fail to deliver what you paid for — for example, where the
+                file is corrupt, where the recording does not match its description, or where a charge was
+                duplicated. Contact us and we will make it right.
+              </p>
+              <p className="text-sm text-gray-400">
+                Nothing in this section limits any statutory right you have that cannot be waived under the law
+                of your country or state.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6">Artist Revenue</h3>

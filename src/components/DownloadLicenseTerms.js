@@ -3,10 +3,20 @@
 // What a download purchase actually grants, shown at the point of purchase.
 //
 // WHY THIS EXISTS
-// Nothing in Terms.js or Legal.js currently mentions public performance, remixes,
-// derivative works or sublicensing. So until those pages are written, this is the
-// only place a buyer is told what they are getting -- which makes accuracy more
-// important than completeness.
+// A summary at the point of sale, because a buyer decides here and will not read
+// /terms first. It is the conspicuous notice that makes the acceptance checkbox
+// beside it meaningful -- assent to terms nobody was shown is the thing clickwrap
+// exists to avoid.
+//
+// IT MUST NOT DRIFT FROM /terms. Section 4 of src/pages/Terms.js now defines the
+// download licence in full -- grant, exclusions, reservation of rights, warranty
+// scope, AI provenance, termination. Every line below is a compression of a clause
+// that exists there. If the two ever disagree, the buyer has been shown one deal and
+// bound to another, and the summary is the version they actually read.
+//
+// (Until 2026-09-19 this was the ONLY place any of it was written down: Terms.js
+// mentioned none of public performance, remixes, derivative works or sublicensing,
+// while the checkbox asserted the buyer had accepted all four. That gap is closed.)
 //
 // IT DESCRIBES THE SYSTEM, IT DOES NOT GRANT ANYTHING.
 // Every line here matches what the code records. create-checkout writes
