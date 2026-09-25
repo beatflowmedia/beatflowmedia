@@ -66,6 +66,7 @@
     "verify:masters": "node scripts/verify-masters.js",
     "backfill:ai": "node scripts/backfill-ai-disclosure.js",
     "link:masters": "node scripts/link-masters.js",
+    "licence": "node scripts/revoke-license.js",
     "test:integration": "jest --testPathPattern=integration",
     "test:e2e": "cypress run",
     "storybook": "storybook dev -p 6006",

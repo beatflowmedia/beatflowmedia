@@ -50,7 +50,7 @@ const DialogContent = lazy(() => import('@mui/material/DialogContent'));
 const DialogActions = lazy(() => import('@mui/material/DialogActions'));
 
 function Album() {
-  // Every route to Stripe on this page goes through the licence gate.
+  // Every route to Stripe on this page goes through the license gate.
   // `licenseDialog` is rendered at the bottom; the trigger is inert without it.
   const { requestCheckout, licenseDialog } = useLicensedCheckout({
     onError: (error) => toast.error(`Failed to initiate purchase: ${error.message}`)
@@ -424,7 +424,7 @@ function Album() {
   // handlePurchaseTrack was removed here. It had been unreferenced since the sync
   // menu item stopped calling it (see the comment on that item below), and eslint
   // flagged it as assigned-but-never-used. It mattered more than ordinary dead code
-  // because it called createSongCheckout WITHOUT a licence acceptance -- so anyone
+  // because it called createSongCheckout WITHOUT a license acceptance -- so anyone
   // re-wiring it would have reintroduced an ungated path to Stripe that now fails at
   // the server with a 409 the buyer cannot act on. Purchases on this page go through
   // PurchaseButton, which collects acceptance.
@@ -1078,7 +1078,7 @@ function Album() {
             This used to call the row's own purchase handler, with the same track
             and the same price as the row's own button -- two affordances for one
             action.
-            A sync licence is a DIFFERENT RIGHT from buying the track: it is the
+            A sync license is a DIFFERENT RIGHT from buying the track: it is the
             right to use the recording in a project, sold to content creators,
             restaurants, spas and businesses. It is deliberately priced nowhere in
             this codebase yet, so this shows no price rather than implying the
@@ -1226,7 +1226,7 @@ function Album() {
               nothing, so the album context menu and the outlined Purchase button
               both led here and dead-ended -- albums were only really buyable from
               the PurchaseButton at the top of the page. It now goes through the
-              same licence gate as every other route to Stripe. */}
+              same license gate as every other route to Stripe. */}
           <Button
             variant="contained"
             startIcon={<ShoppingCart />}

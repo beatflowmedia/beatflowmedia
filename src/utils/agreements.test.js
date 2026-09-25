@@ -19,7 +19,7 @@ const {
 } = require('./agreements');
 
 describe('currentAgreementVersion', () => {
-  test('gives the buyer licence a dated identifier', () => {
+  test('gives the buyer license a dated identifier', () => {
     const id = currentAgreementVersion(DOWNLOAD_LICENSE);
     expect(id).toBe('download-license@2026-09-19');
   });
@@ -99,7 +99,7 @@ describe('isCurrentAgreementVersion', () => {
 
 describe('agreementLabel', () => {
   test('names each agreement for the UI', () => {
-    expect(agreementLabel(DOWNLOAD_LICENSE)).toBe('Download Licence Terms');
+    expect(agreementLabel(DOWNLOAD_LICENSE)).toBe('Download License Terms');
     expect(agreementLabel(CONTRIBUTOR_UPLOAD)).toBe('Contributor Upload Agreement');
   });
 

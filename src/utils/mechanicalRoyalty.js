@@ -2,7 +2,7 @@
 //
 // The statutory mechanical royalty owed on a download. SINGLE SOURCE.
 //
-// 17 U.S.C. § 115 creates a COMPULSORY licence: anyone may reproduce and
+// 17 U.S.C. § 115 creates a COMPULSORY license: anyone may reproduce and
 // distribute a nondramatic musical work without asking, provided they pay a rate
 // the Copyright Royalty Board sets. It is not negotiable and not optional, and it
 // attaches to the COMPOSITION -- the song as written -- not to the recording.
@@ -161,7 +161,7 @@ function streamingNote() {
   return (
     'Interactive streaming mechanicals are not per-copy penny rates. The CRB prices ' +
     'them as a percentage of service revenue and of total content cost, subject to a ' +
-    'per-subscriber floor, and they are administered through the MLC blanket licence. ' +
+    'per-subscriber floor, and they are administered through the MLC blanket license. ' +
     'Do not extend the download rates in this module to streams.'
   );
 }

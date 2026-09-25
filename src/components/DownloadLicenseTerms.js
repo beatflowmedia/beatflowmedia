@@ -9,7 +9,7 @@
 // exists to avoid.
 //
 // IT MUST NOT DRIFT FROM /terms. Section 4 of src/pages/Terms.js now defines the
-// download licence in full -- grant, exclusions, reservation of rights, warranty
+// download license in full -- grant, exclusions, reservation of rights, warranty
 // scope, AI provenance, termination. Every line below is a compression of a clause
 // that exists there. If the two ever disagree, the buyer has been shown one deal and
 // bound to another, and the summary is the version they actually read.
@@ -21,7 +21,7 @@
 // IT DESCRIBES THE SYSTEM, IT DOES NOT GRANT ANYTHING.
 // Every line here matches what the code records. create-checkout writes
 // `licenseType: 'personal'` on the purchase, and stripe-webhook writes
-// `licenseType: 'perpetual'` on the licence row for the same transaction. Those two
+// `licenseType: 'perpetual'` on the license row for the same transaction. Those two
 // disagree, and the text below says "personal" and "does not expire" because that
 // is the union of what the system actually stores -- not because someone decided a
 // policy. If the intended grant is broader (commercial use included, as the PRD
@@ -30,7 +30,7 @@
 // grant in the only document the buyer ever reads.
 //
 // DJs ARE CALLED OUT SPECIFICALLY because a DJ needs three rights a download
-// licence does not touch: public performance (playing it to an audience),
+// license does not touch: public performance (playing it to an audience),
 // adaptation (edits, loops, mashups) and sublicensing (publishing the mix on a
 // platform that then gets rights through them). A buyer who assumes "I bought it,
 // I can play it" is the one most likely to be wronged by silence here.
@@ -58,7 +58,7 @@ export default function DownloadLicenseTerms({ compact = false }) {
         What you get
       </Typography>
       <Typography sx={{ color: 'grey.400', fontSize: '0.75rem', lineHeight: 1.5 }}>
-        A personal licence to download and keep this recording. It does not expire.
+        A personal license to download and keep this recording. It does not expire.
       </Typography>
 
       <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem', mt: 1.5, mb: 0.5 }}>
@@ -80,7 +80,7 @@ export default function DownloadLicenseTerms({ compact = false }) {
         <Box component="span" sx={{ color: '#1DB954', fontWeight: 700 }}>
           DJing, or playing music in a business?
         </Box>{' '}
-        That needs a separate licence — a download does not cover it.{' '}
+        That needs a separate license — a download does not cover it.{' '}
         <MuiLink
           component={RouterLink}
           to="/sync-licensing"

@@ -72,9 +72,9 @@ export default function LicenseAcceptance({ accepted, onChange, id = 'accept-dow
             onClick={(e) => e.stopPropagation()}
             sx={{ color: ACCENT, textDecorationColor: 'rgba(29,185,84,0.4)' }}
           >
-            Download Licence Terms
+            Download License Terms
           </MuiLink>
-          , including that this licence does not cover public performance, DJ use,
+          , including that this license does not cover public performance, DJ use,
           remixes or redistribution.
         </Typography>
       </Box>

@@ -114,7 +114,7 @@ describe('calculateBundlePrice — the production library', () => {
 
   test('the CONSUMER album cap does not leak into library pricing', () => {
     // The assertion that matters. $11.99 is what a listener pays for an album; a
-    // production-library pack is a commercial-use licence and its ceiling is set by
+    // production-library pack is a commercial-use license and its ceiling is set by
     // Epidemic and Artlist, not iTunes. If the cap ever reached this function it
     // would underprice every large pack, and underpricing fails silently -- every
     // sale still succeeds.

@@ -162,7 +162,7 @@ const TrackRow = memo(
       [track, dispatch, actions],
     );
 
-    // Collects the licence acceptance before checkout. `licenseDialog` is rendered
+    // Collects the license acceptance before checkout. `licenseDialog` is rendered
     // at the end of this row; the trigger is inert without it, which is deliberate --
     // the gate travels with the ability to buy.
     const { requestCheckout, licenseDialog } = useLicensedCheckout({

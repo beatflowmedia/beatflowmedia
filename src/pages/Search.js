@@ -100,7 +100,7 @@ const FILTER_OPTIONS = {
 };
 
 function Search() {
-  // Collects the licence acceptance before any checkout. `licenseDialog` is
+  // Collects the license acceptance before any checkout. `licenseDialog` is
   // rendered at the bottom of this component; without it the trigger does nothing,
   // which is deliberate -- the gate travels with the ability to buy.
   const { requestCheckout, licenseDialog } = useLicensedCheckout({

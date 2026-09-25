@@ -151,7 +151,7 @@ export default function LicenseAcceptanceDialog({
 
         {!accepted ? (
           <Typography sx={{ color: 'grey.500', fontSize: '0.75rem', mt: 1, textAlign: 'center' }}>
-            Accept the licence terms to continue.
+            Accept the license terms to continue.
           </Typography>
         ) : null}
 

@@ -16,13 +16,21 @@
 //   { userId, itemId, itemType: 'song' | 'album', status: 'completed', licenseId }
 //
 // Known duplication, deliberately not collapsed here: stripe-webhook.js also
-// writes a `licenses` collection keyed by `trackId` for the perpetual-licence
+// writes a `licenses` collection keyed by `trackId` for the perpetual-license
 // model. Two stores for one concept is a Single Source problem, but collapsing
 // them changes purchase fulfilment, which is not this module's job. This reads
 // `purchases`, because that is what every path writes.
 
+const { isRevoked } = require('../../../src/utils/licenseRevocation');
+
 /**
- * @returns {Promise<{entitled: boolean, via: string|null, licenseId: string|null}>}
+ * @returns {Promise<{entitled: boolean, via: string|null, licenseId: string|null, revoked?: boolean, revokedReason?: string|null}>}
+ *
+ * A refusal distinguishes NEVER BOUGHT from REVOKED. They look identical to a
+ * boolean and are completely different to the person on the other end: one needs a
+ * buy button, the other needs an explanation and probably a support ticket. Telling
+ * a paying customer "you have not licensed this" when their license was withdrawn is
+ * how a billing dispute becomes a complaint about being lied to.
  */
 async function resolveMasterEntitlement(db, userId, songId, songData) {
   if (!userId || !songId) return { entitled: false, via: null, licenseId: null };
@@ -35,13 +43,18 @@ async function resolveMasterEntitlement(db, userId, songId, songData) {
     .limit(10)
     .get();
 
-  const completed = (snap) =>
-    snap.docs.map((d) => d.data()).find((p) => p.status === 'completed');
+  // `status` is the PAYMENT state and is left alone; revocation is a separate axis
+  // (see src/utils/licenseRevocation.js). A purchase must be both paid and not
+  // revoked to entitle anything.
+  const paid = (snap) => snap.docs.map((d) => d.data()).filter((p) => p.status === 'completed');
+  const completed = (snap) => paid(snap).find((p) => !isRevoked(p));
+  const revokedOnly = (snap) => paid(snap).find((p) => isRevoked(p));
 
   const directHit = completed(direct);
   if (directHit) {
     return { entitled: true, via: 'purchase', licenseId: directHit.licenseId || null };
   }
+  const directRevoked = revokedOnly(direct);
 
   // 2. Bought the album it belongs to. An album purchase is a purchase of its
   //    contents; a buyer who paid album price should not be refused a track.
@@ -57,6 +70,32 @@ async function resolveMasterEntitlement(db, userId, songId, songData) {
     if (albumHit) {
       return { entitled: true, via: 'album', licenseId: albumHit.licenseId || null };
     }
+    // Revoking an album license has to cascade to its tracks, or the buyer simply
+    // downloads the album's contents one song at a time and the revocation achieves
+    // nothing.
+    const albumRevoked = revokedOnly(viaAlbum);
+    if (albumRevoked) {
+      return {
+        entitled: false, via: null, licenseId: albumRevoked.licenseId || null,
+        revoked: true, revokedReason: albumRevoked.licenseRevokedReason || null
+      };
+    }
+  }
+
+  // Checked after the album, not before: a buyer whose single was revoked but who
+  // also owns the album on a good license should still get the track.
+  //
+  // And BEFORE the subscription check below, which is the deliberate part. A
+  // revocation is targeted at a person and a record; letting an active subscription
+  // hand back what was just withdrawn would make revocation meaningless for anyone
+  // holding a plan -- and a subscriber is exactly who is most able to abuse the
+  // catalogue. Cutting off a subscriber entirely is a separate act: suspend the
+  // subscription.
+  if (directRevoked) {
+    return {
+      entitled: false, via: null, licenseId: directRevoked.licenseId || null,
+      revoked: true, revokedReason: directRevoked.licenseRevokedReason || null
+    };
   }
 
   // 3. Active subscription. Every tier in src/data/pricingPlans.js advertises

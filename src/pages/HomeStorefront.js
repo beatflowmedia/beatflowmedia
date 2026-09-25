@@ -53,7 +53,7 @@ function HomeStorefront({ hideHeader = false, filter = null }) {
     // "Newest 100, then drop the un-licensable ones" returned ZERO: the 134 seeded
     // records are all previewOnly and all newer than the 4 licensable tracks, which
     // sit at ranks 135-138 by createdAt. The storefront showed "No Tracks Available
-    // Yet" while holding four perfectly sellable licences.
+    // Yet" while holding four perfectly sellable licenses.
     //
     // This cannot be a Firestore where('previewOnly','==',false) instead, which is
     // what it should be: a MISSING field is excluded from a query that mentions it,

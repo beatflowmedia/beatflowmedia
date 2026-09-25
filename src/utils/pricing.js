@@ -76,7 +76,7 @@ const ALBUM_PRICE_CAP = 1199;
  * COMMERCIAL RELEASES ONLY -- the COMMERCIAL_RELEASE pool in assetPools.js, which is
  * 134 of the 138 records. Production-library packs are priced by
  * calculateBundlePrice below, because the cap here is a CONSUMER ceiling and would
- * underprice a commercial-use licence.
+ * underprice a commercial-use license.
  *
  *     clamp(trackCount x SONG_PRICE, ALBUM_PRICE_FLOOR, ALBUM_PRICE_CAP)
  *
@@ -124,10 +124,10 @@ function calculateAlbumPrice(trackCount) {
  *
  * ALBUM_PRICE_CAP is a CONSUMER ceiling: $11.99 is what a listener pays for an album
  * they will listen to, and it is anchored to what iTunes and Bandcamp charge. A
- * production-library pack is not that. It is a commercial-use licence sold to
+ * production-library pack is not that. It is a commercial-use license sold to
  * someone who will put the music in their own product, and the ceiling on that is
  * set by Epidemic and Artlist, not by iTunes. Routing a library pack through
- * calculateAlbumPrice would silently cap a commercial licence at a consumer price --
+ * calculateAlbumPrice would silently cap a commercial license at a consumer price --
  * the most expensive kind of mistake this file can make, because it underprices
  * quietly and every sale looks successful.
  *

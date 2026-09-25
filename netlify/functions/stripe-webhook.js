@@ -5,7 +5,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 
 /**
- * The contract half of a purchase record: which licence version the buyer accepted,
+ * The contract half of a purchase record: which license version the buyer accepted,
  * and when they accepted it.
  *
  * Both values were stamped by create-checkout at the moment of the click -- the
@@ -20,7 +20,7 @@ const admin = require('firebase-admin');
  * the purchase types that have no published agreement yet (studio samples,
  * submission credits) rather than pretending they were accepted.
  */
-function licenceAcceptanceFields(session) {
+function licenseAcceptanceFields(session) {
   const meta = (session && session.metadata) || {};
   return {
     acceptedAgreement: meta.acceptedAgreement || null,
@@ -292,7 +292,7 @@ async function handleCheckoutSessionCompleted(session) {
           price: session.amount_total / 100,
           currency: session.currency,
           status: 'completed',
-          ...licenceAcceptanceFields(session),
+          ...licenseAcceptanceFields(session),
           licenseId, // Add license ID to purchase record
           stripeSessionId: session.id,
           stripePaymentIntent: session.payment_intent,
@@ -411,7 +411,7 @@ async function handleCheckoutSessionCompleted(session) {
             price: session.amount_total / 100 / trackIds.length, // Split total price evenly
             currency: session.currency,
             status: 'completed',
-            ...licenceAcceptanceFields(session),
+            ...licenseAcceptanceFields(session),
             licenseId,
             bundlePurchase: true,
             bundleSessionId: session.id,
@@ -541,7 +541,7 @@ async function handleCheckoutSessionCompleted(session) {
       price: session.amount_total / 100, // Convert from cents to dollars
       currency: session.currency,
       status: 'completed',
-      ...licenceAcceptanceFields(session),
+      ...licenseAcceptanceFields(session),
       licenseId, // Add license ID to purchase record
       stripeSessionId: session.id,
       stripePaymentIntent: session.payment_intent,

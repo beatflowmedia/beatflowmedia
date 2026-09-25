@@ -153,7 +153,7 @@ exports.handler = async (event, context) => {
       sampleId,
       sampleTitle,
       licenseType,
-      acceptedAgreement // licence version the buyer ticked; verified below, never trusted
+      acceptedAgreement // license version the buyer ticked; verified below, never trusted
     } = JSON.parse(event.body);
 
     console.log('✅ Request data:', { userId, itemId, itemType, price, priceId, userEmail });
@@ -198,7 +198,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // A download sale REQUIRES a recorded acceptance of the licence in force.
+    // A download sale REQUIRES a recorded acceptance of the license in force.
     //
     // The client sends which version it showed; this refuses anything that is not
     // the CURRENT one. Accepting a stale-but-known version would record assent to
@@ -209,17 +209,17 @@ exports.handler = async (event, context) => {
     // Scoped to song and album on purpose. Subscriptions, submission credits and
     // studio samples are governed by agreements that have not been written yet
     // (see CONTRIBUTOR_UPLOAD and SYNC_LICENSE in src/utils/agreements.js), and
-    // making them accept a DOWNLOAD licence would record the wrong contract --
+    // making them accept a DOWNLOAD license would record the wrong contract --
     // worse than recording none, because it looks like diligence.
-    const requiresLicenceAcceptance = itemType === 'song' || itemType === 'album';
-    if (requiresLicenceAcceptance) {
+    const requiresLicenseAcceptance = itemType === 'song' || itemType === 'album';
+    if (requiresLicenseAcceptance) {
       if (!isCurrentAgreementVersion(acceptedAgreement)) {
-        console.warn('Checkout refused: licence acceptance missing or stale:', acceptedAgreement);
+        console.warn('Checkout refused: license acceptance missing or stale:', acceptedAgreement);
         return {
           statusCode: 409,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            error: 'Please review and accept the current licence terms to continue.',
+            error: 'Please review and accept the current license terms to continue.',
             currentAgreement: currentAgreementVersion(DOWNLOAD_LICENSE)
           })
         };

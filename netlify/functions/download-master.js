@@ -120,6 +120,18 @@ exports.handler = async (event) => {
     // ---- entitlement ------------------------------------------------------
     const entitlement = await resolveMasterEntitlement(db, userId, songId, song);
     if (!entitlement.entitled) {
+      // A revoked license is not the same refusal as never having bought one, and
+      // saying the wrong one to a paying customer turns a policy decision into an
+      // accusation that we lied. 410 Gone rather than 403: the right existed and has
+      // been withdrawn, which is exactly what that status means.
+      if (entitlement.revoked) {
+        console.warn('[download-master] revoked license', entitlement.licenseId, 'user', userId, 'song', songId);
+        return fail(
+          410,
+          'This license has been withdrawn. Contact support if you believe this is an error.',
+          { licenseId: entitlement.licenseId, revoked: true }
+        );
+      }
       return fail(403, 'You have not licensed this track.');
     }
 

@@ -26,7 +26,7 @@ Three clauses that hit this product specifically:
 
 1. **No copyright warranty.** *"Suno makes no representation or warranty to you
    that any copyright will vest in any Output."* Assigns whatever it owns, while
-   saying it may own nothing. Licences may still be sellable; **exclusivity may not
+   saying it may own nothing. Licenses may still be sellable; **exclusivity may not
    be promisable**, and enforcement against a third party using the same recording
    is doubtful. Consistent with the PRO rejection noted at PRD line 451.
 
@@ -43,7 +43,7 @@ Three clauses that hit this product specifically:
 **THE UNRESOLVED QUESTION, and it is the business:** an assignment says you own it
 and owners may license; the commercial-use section reads as *personal* commercial
 exploitation, and no clause grants the user a right to sublicense. Selling sync,
-DJ and download licences IS sublicensing to third parties. Those two readings
+DJ and download licenses IS sublicensing to third parties. Those two readings
 differ. Not a question to settle by reading harder — it needs a lawyer, before
 anything is sold.
 
@@ -60,17 +60,17 @@ written down rather than inferred from whichever price a page happens to show.
 |---|---|---|---|
 | **Single** | one track | listener / creator | `SONG_PRICE` = $1.99 |
 | **Album** | n tracks | listener / creator | trackCount x single, no discount |
-| **Sync licence** | the RIGHT to use music in a project | content creators, restaurants, spas, businesses | **NOT PRICED YET** |
+| **Sync license** | the RIGHT to use music in a project | content creators, restaurants, spas, businesses | **NOT PRICED YET** |
 
 Mood tracks and soundscapes are a further catalogue on the same platform, not a
 separate product line.
 
-**Single and album are the same right at two quantities. A sync licence is a
+**Single and album are the same right at two quantities. A sync license is a
 different right.** That distinction is the one that keeps getting lost: an album at
-`n x $1.99` and a business sync licence are not points on one scale, and pricing
+`n x $1.99` and a business sync license are not points on one scale, and pricing
 them as if they were is how "License for $217.50" appeared on an album page. That
 number was never a decision -- it was `10 x $29.00 x 0.75` from a superseded
-formula, read afterwards as an annual licence.
+formula, read afterwards as an annual license.
 
 **Sync is deliberately unpriced here.** `src/components/PurchaseOptionsDialog.js`
 has the structure for a third option and does not invent one.
@@ -109,6 +109,9 @@ needs its own storefront, NOT its own login.
 | AI provenance + what may be registered | `src/utils/aiDisclosure.js` | `npx jest src/utils/complianceModules.test.js` |
 | DMCA §512(c) safe-harbour conditions | `src/utils/dmcaSafeHarbor.js` | `npx jest src/utils/complianceModules.test.js` |
 | What "net sales revenue" means | `src/utils/revenueSplit.js` (`netDefinition`) | `npx jest src/utils/revenueSplit.test.js` |
+| Where a record's master lives | `masterPath` + `masterBackend` on the song; written by `npm run link:masters` | `npm run link:masters` (idempotent) |
+| Whether a license is withdrawn | `src/utils/licenseRevocation.js` (`isRevoked`) | `npx jest src/utils/licenseRevocation.test.js` |
+| Admin-script boilerplate (env, credentials, batching) | `scripts/lib/admin.js` | every `npm run` script exercises it |
 | Everything else | **NEEDS OWNER** | — |
 
 ## Domain landmines — the things that fail *silently*
@@ -217,7 +220,7 @@ end up transacted through BFMG. Confirmed by Percy 2026-09-18.
 | | Owns |
 |---|---|
 | **RadioStation** | broadcast, programming, the clock, what plays when, the ISRC-keyed record of what exists |
-| **BFMG (here)** | the catalogue as a PRODUCT — price, licence terms, checkout, delivery, entitlement |
+| **BFMG (here)** | the catalogue as a PRODUCT — price, license terms, checkout, delivery, entitlement |
 
 The join is the **ISRC**, because it is the only identifier assigned by a standards
 body rather than by either platform.
@@ -457,7 +460,7 @@ $217.50 with nothing behind it. The delivery probe would still refuse the downlo
 but the charge would already have happened.
 
 **Open product decision (Percy's):** those ten either ship as 320k MP3 — which means
-deciding a paid licence may deliver lossy — or the album is not sold, or the WAVs are
+deciding a paid license may deliver lossy — or the album is not sold, or the WAVs are
 found off-machine.
 
 ### 2026-09-17 — paid master delivery
@@ -522,7 +525,7 @@ had (so never actually permitted) while omitting `child-src`, youtube, vimeo and
 
 ---
 
-## Clickwrap licence acceptance — 2026-09-19
+## Clickwrap license acceptance — 2026-09-19
 
 **The gap:** grepping `acceptedTerms|termsAccepted|agreedTo|consent` across
 `create-checkout.js`, `stripe-webhook.js` and the purchase dialog returned nothing.
@@ -553,7 +556,7 @@ accepted regardless of who owns what. For this catalogue the acceptance record i
   the **current** version (409, not 400: the client should reload, not retry). Stamps
   `acceptedAt` from the **server** clock — a client timestamp is a value the buyer
   controls, and surviving the buyer's dispute is the point.
-- `stripe-webhook.js` — `licenceAcceptanceFields(session)` writes
+- `stripe-webhook.js` — `licenseAcceptanceFields(session)` writes
   `{acceptedAgreement, acceptedAt}` at all **three** purchase-write sites.
 
 **Six ungated routes to Stripe existed, not one.** `Search`, `Home`, `Playlist`,
@@ -624,7 +627,7 @@ cannot widen unnoticed.
 **Production library is NOT governed by this.** `calculateBundlePrice(n, discount)`
 prices the `PRODUCTION_MUSIC` pool: floor, **no cap**. The cap is a *consumer*
 ceiling — what a listener pays for an album they will listen to — and a library pack
-is a commercial-use licence whose ceiling is set by Epidemic and Artlist. Capping one
+is a commercial-use license whose ceiling is set by Epidemic and Artlist. Capping one
 at $11.99 would underprice it *silently*, since every sale still succeeds. The
 discount is a **required argument with no default**: a default would be a pricing
 decision made by whoever wrote the call.
@@ -650,7 +653,7 @@ decision made by whoever wrote the call.
 **Also fixed:** `Album.js`'s "Purchase Now" button had **no `onClick` at all**. The
 album context menu and the outlined Purchase button both dead-ended there, so albums
 were only genuinely buyable from the `PurchaseButton` at the top of the page. It now
-goes through `useLicensedCheckout`, the same licence gate as every other route.
+goes through `useLicensedCheckout`, the same license gate as every other route.
 
 ### Repairing the stored prices
 
@@ -837,4 +840,71 @@ the point.
 **None of this is legal advice.** It encodes published rules so the platform can be
 honest about what it owes and what it may claim. The live questions — whether a work
 with disclaimed AI authorship is a "musical work" for §115, and whether owning the
-compositions removes the need for a blanket licence — are for a lawyer.
+compositions removes the need for a blanket license — are for a lawyer.
+
+---
+
+## Selling what already existed, and a DOSI audit — 2026-09-25
+
+**4 sellable tracks became 93, and 0 albums became 5.** Nothing was bought or
+uploaded; the audio was already there. 3.8 GB in Firebase Storage and 1.3 GB in R2,
+and not one song record said WHERE. `previewOnly` is an inventory flag, and the
+inventory was unfindable.
+
+`npm run link:masters` reads **both** stores and ranks across them with one rule --
+lossless, then largest, then newest -- so a Firebase WAV beats an R2 MP3 for the same
+track. 32 matched WAVs, 57 matched MP3s, 49 matched nothing and stay blocked.
+Matching is by normalised title because the stores name files differently
+(`BrightCorners.mp3` vs `1771182059552_Bright Corners.wav`); every rejected candidate
+prints, so the pick is checkable rather than trusted.
+
+**It stores a path, never a URL.** `songs` is world-readable; a URL would publish the
+product. A path is inert *because* `storage.rules` restricts the folders -- which
+required fixing `artist-uploads`, where `allow read: if request.auth != null` meant a
+free account could take a full master once a path was published. Both the audio rule
+and the catch-all had to change: **Storage rules OR their allow statements across
+every matching path**, so tightening one while the other grants blanket read achieves
+nothing. Deployed.
+
+**License revocation** now backs the termination clause in `/terms`. Revocation is a
+separate axis from payment: `status` describes money, `licenseRevoked` describes the
+license, and they move independently (paid+revoked is abuse; refunded+revoked is a
+chargeback). Overloading `status` would also have silently broken entitlement, which
+tests for exactly `'completed'`. An album revocation cascades to its tracks, beats an
+active subscription, and returns **410 Gone** rather than 403 -- telling a paying
+customer they never bought something is how a policy decision becomes an accusation.
+
+It stops future downloads only. The files are DRM-free; nothing here is a kill
+switch. What it buys is that continued use becomes a breach, evidenced by the license
+id and the acceptance record.
+
+### DOSI audit of this session's own work
+
+Two real failures, found by checking rather than assuming, and both fixed:
+
+**D — rule-of-three blown three times over.** `unescapePem` had **6** copies,
+`loadEnv` and `initAdmin` **5** each. Each copy carried a comment pointing at another
+copy, which is duplication with a note admitting it. Extracted to
+`scripts/lib/admin.js`. This mattered beyond tidiness: `unescapePem` is the function
+already written wrong once here -- `download-master.js` shipped
+`.replace(/
+/g, '
+')`, a no-op, and every download 502'd for as long as it
+existed. Six hand-written copies of a one-character failure mode is six chances to
+repeat it. (`download-master.js` keeps its own copy: a Netlify function cannot reach
+`scripts/`.)
+
+**I — invented vocabulary the product does not use.** The domain says `license` 201
+times; this session introduced `licence` 46 times *including Firestore field names*,
+so a purchase would have carried `licenseId` and `licenceRevoked` in one document.
+Renamed across 27 files while nothing had yet been written with those fields. The
+caveat is explicit: a name matching the UI, the DB column and how the team talks
+beats a more elegant one matching nothing.
+
+**Regression caught by running, not by syntax-checking:** de-duplicating broke
+`link:masters`, whose old local `initAdmin` passed `storageBucket` that the shared
+one takes as an argument. `node --check` passed on all five scripts; executing them
+found it. Syntax is not behaviour.
+
+**Ratchets:** 123 tests across 9 suites. `licence` spelling in identifiers: **0**.
+Hand-written copies of `loadEnv`/`initAdmin` outside `scripts/lib/`: **0**.

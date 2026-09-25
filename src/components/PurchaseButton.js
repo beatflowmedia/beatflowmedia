@@ -13,7 +13,7 @@ import LicenseAcceptanceDialog from './LicenseAcceptanceDialog';
 
 // A song row shows one number and opens the alternatives on tap. An album button has
 // no meaningful alternative to offer, so it opens the plain acceptance dialog
-// instead -- not checkout. Both routes capture the licence acceptance; there is no
+// instead -- not checkout. Both routes capture the license acceptance; there is no
 // longer a path to Stripe that skips it.
 const PurchaseButton = ({
   itemId,
@@ -100,13 +100,13 @@ const PurchaseButton = ({
       return;
     }
     // Everything else -- albums, and any song rendered without a track object --
-    // still has to accept the licence before it can reach Stripe. This used to call
+    // still has to accept the license before it can reach Stripe. This used to call
     // startCheckout directly, which is how the album route sold without ever showing
     // the terms. There is no longer a path to checkout that skips assent.
     setAcceptOpen(true);
   };
 
-  // `acceptedAgreement` is the licence version the buyer ticked in the options
+  // `acceptedAgreement` is the license version the buyer ticked in the options
   // dialog. It is passed through rather than looked up here so that the value which
   // reaches the server is the one attached to the control the buyer actually saw --
   // re-reading the current version at this point would paper over a terms change

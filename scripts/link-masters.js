@@ -39,7 +39,7 @@
 const path = require('path');
 const fs = require('fs');
 
-const ROOT = path.join(__dirname, '..');
+const { ROOT, loadEnv, initAdmin, assertProject, BATCH_SIZE } = require('./lib/admin');
 
 const argv = process.argv.slice(2);
 const has = (f) => argv.includes(f);
@@ -53,43 +53,8 @@ const LOSSLESS_ONLY = has('--lossless-only');
 const EXPECT_PROJECT = valueOf('project', null);
 const BUCKET = valueOf('bucket', 'beatflowmedia.firebasestorage.app');
 
-function loadEnv() {
-  for (const name of ['.env.local', '.env']) {
-    const file = path.join(ROOT, name);
-    if (!fs.existsSync(file)) continue;
-    try {
-      require(path.join(ROOT, 'node_modules', 'dotenv')).config({ path: file });
-    } catch { /* already exported is fine */ }
-  }
-}
 
-/** See scripts/fix-catalog-prices.js — a RegExp here silently matches nothing. */
-function unescapePem(value) {
-  const ESCAPED_NEWLINE = String.fromCharCode(92) + 'n';
-  return String(value || '').split(ESCAPED_NEWLINE).join('\n');
-}
 
-function initAdmin() {
-  const admin = require(path.join(ROOT, 'node_modules', 'firebase-admin'));
-  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  let credential;
-  let projectId;
-
-  if (keyFile && fs.existsSync(keyFile)) {
-    const sa = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
-    credential = admin.credential.cert(sa);
-    projectId = sa.project_id;
-  } else {
-    projectId = process.env.FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = unescapePem(process.env.FIREBASE_PRIVATE_KEY);
-    if (!projectId || !clientEmail || !privateKey) throw new Error('missing Firebase credentials');
-    credential = admin.credential.cert({ projectId, clientEmail, privateKey });
-  }
-
-  admin.initializeApp({ credential, storageBucket: BUCKET });
-  return { admin, projectId };
-}
 
 /** Flatten a title hard enough that storage filenames and catalogue titles meet.
  *  Smart apostrophes, "(feat. …)" and punctuation all differ between the two. */
@@ -105,7 +70,6 @@ function norm(s) {
 
 const AUDIO = new Set(['wav', 'mp3', 'flac', 'aiff', 'aif', 'm4a']);
 const LOSSLESS = new Set(['wav', 'flac', 'aiff', 'aif']);
-const BATCH_SIZE = 400;
 
 /**
  * List every object in the R2 bucket, via a SigV4-presigned ListObjectsV2.
@@ -186,7 +150,7 @@ async function listR2() {
 
 async function main() {
   loadEnv();
-  const { admin, projectId } = initAdmin();
+  const { admin, projectId } = initAdmin({ storageBucket: BUCKET });
 
   console.log('');
   console.log(APPLY ? 'APPLYING master links' : 'DRY RUN - nothing will be written');

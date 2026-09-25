@@ -10,7 +10,7 @@
 // the ordinary cost of duplication.
 //
 // The legal change made it more than untidy. Once create-checkout refuses a sale
-// without a recorded licence acceptance, every copy that does not collect one stops
+// without a recorded license acceptance, every copy that does not collect one stops
 // working -- and the failure lands on the buyer as an unexplained error, not on the
 // developer as a build break. Patching five call sites would have left a sixth to be
 // written next month with no gate at all.

@@ -13,7 +13,7 @@
 // control, and no field on any purchase recording agreement. A grep across
 // create-checkout.js, stripe-webhook.js and the purchase dialog for
 // acceptedTerms|termsAccepted|agreedTo|consent returned zero hits. The platform
-// generated a licenceId per sale -- proof a transaction happened -- with no proof of
+// generated a licenseId per sale -- proof a transaction happened -- with no proof of
 // what the buyer agreed to.
 //
 // CONTRACT IS THE SHIELD, NOT COPYRIGHT.
@@ -33,7 +33,7 @@
 //                                    position BFMG occupies relative to its own
 //                                    upstream suppliers today. You cannot grant
 //                                    downstream more than you hold upstream (chain of
-//                                    title), so a downstream licence is only ever as
+//                                    title), so a downstream license is only ever as
 //                                    good as the upstream warranty behind it.
 //
 // Both live here so there is one place that answers "what has this person agreed to",
@@ -75,7 +75,7 @@ const DOWNLOAD_LICENSE = 'download-license';
  *    - splits and accounting
  *    - indemnity running to BFMG for third-party claims -- the clause that actually
  *      moves the risk of a bad upload back to the person who made it
- *    - takedown and removal rights, and what happens to licences already sold when a
+ *    - takedown and removal rights, and what happens to licenses already sold when a
  *      recording comes down (they must survive, or BFMG breaches its own buyers)
  *    - AI provenance disclosure: which tool, which account tier, and what that tier
  *      terms permit commercially
@@ -112,9 +112,9 @@ const CURRENT_VERSIONS = {
 };
 
 const AGREEMENT_LABELS = {
-  [DOWNLOAD_LICENSE]: 'Download Licence Terms',
+  [DOWNLOAD_LICENSE]: 'Download License Terms',
   [CONTRIBUTOR_UPLOAD]: 'Contributor Upload Agreement',
-  [SYNC_LICENSE]: 'Sync Licence Agreement'
+  [SYNC_LICENSE]: 'Sync License Agreement'
 };
 
 const ALL_AGREEMENTS = Object.values(AGREEMENTS);

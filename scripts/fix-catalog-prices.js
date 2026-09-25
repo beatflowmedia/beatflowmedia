@@ -31,7 +31,7 @@
 const path = require('path');
 const fs = require('fs');
 
-const ROOT = path.join(__dirname, '..');
+const { ROOT, loadEnv, initAdmin, assertProject, BATCH_SIZE } = require('./lib/admin');
 
 // ---------------------------------------------------------------------------
 // Arguments
@@ -57,65 +57,8 @@ if (!['songs', 'albums', 'both'].includes(ONLY)) {
 // Credentials
 // ---------------------------------------------------------------------------
 
-function loadEnv() {
-  // .env.local wins over .env, matching how CRA and Netlify resolve them, so a
-  // developer pointing at a scratch project does not get silently overridden.
-  for (const name of ['.env.local', '.env']) {
-    const file = path.join(ROOT, name);
-    if (!fs.existsSync(file)) continue;
-    try {
-      require(path.join(ROOT, 'node_modules', 'dotenv')).config({ path: file });
-    } catch {
-      /* dotenv absent is fine when the vars are already exported */
-    }
-  }
-}
 
-/**
- * Turn a .env-encoded PEM back into a real one.
- *
- * Plain split/join rather than a RegExp on purpose: `new RegExp("\\" + "n")`
- * compiles to the NEWLINE escape, not to a literal backslash-n, so it matches
- * nothing in a .env value and hands firebase-admin an unusable key. That mistake
- * surfaces as "Invalid PEM formatted message", which reads like a bad key.
- */
-function unescapePem(value) {
-  const ESCAPED_NEWLINE = String.fromCharCode(92) + 'n';
-  return String(value || '').split(ESCAPED_NEWLINE).join('\n');
-}
 
-function initAdmin() {
-  const admin = require(path.join(ROOT, 'node_modules', 'firebase-admin'));
-
-  // An explicit service-account JSON beats the split env vars when present: it is
-  // the format the Firebase console hands you, so it cannot be mis-transcribed.
-  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (keyFile && fs.existsSync(keyFile)) {
-    const sa = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
-    admin.initializeApp({ credential: admin.credential.cert(sa) });
-    return { admin, projectId: sa.project_id, via: `GOOGLE_APPLICATION_CREDENTIALS (${path.basename(keyFile)})` };
-  }
-
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = unescapePem(process.env.FIREBASE_PRIVATE_KEY);
-
-  const missing = [
-    !projectId && 'FIREBASE_PROJECT_ID',
-    !clientEmail && 'FIREBASE_CLIENT_EMAIL',
-    !privateKey && 'FIREBASE_PRIVATE_KEY'
-  ].filter(Boolean);
-
-  if (missing.length) {
-    throw new Error(
-      `missing credentials: ${missing.join(', ')}\n` +
-      `      Set them in .env, or point GOOGLE_APPLICATION_CREDENTIALS at a service-account JSON.`
-    );
-  }
-
-  admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
-  return { admin, projectId, via: '.env (FIREBASE_* vars)' };
-}
 
 // ---------------------------------------------------------------------------
 // Firestore helpers
@@ -126,9 +69,6 @@ async function readCollection(db, name) {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-/** Firestore caps a batch at 500 writes. 400 leaves room and keeps each commit
- *  small enough that a failure is easy to attribute. */
-const BATCH_SIZE = 400;
 
 async function applyChanges(db, collectionName, changes) {
   let written = 0;

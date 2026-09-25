@@ -80,7 +80,7 @@ const SORT_OPTIONS = [
 ];
 
 function Playlist() {
-  // Collects the licence acceptance before any checkout. `licenseDialog` must be
+  // Collects the license acceptance before any checkout. `licenseDialog` must be
   // rendered below or the trigger does nothing -- the gate travels with the ability
   // to buy, so a page cannot gain one without gaining the other.
   const { requestCheckout, licenseDialog } = useLicensedCheckout({

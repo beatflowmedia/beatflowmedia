@@ -134,7 +134,7 @@ class StripeService {
   /**
    * Create a Stripe checkout session for purchasing a song
    */
-  // `acceptedAgreement` is the licence version the buyer ticked, e.g.
+  // `acceptedAgreement` is the license version the buyer ticked, e.g.
   // "download-license@2026-09-19". create-checkout re-checks it against its own
   // copy of src/utils/agreements.js and refuses the sale if it is missing or not
   // current, so this is carried, never defaulted -- a default here would let a

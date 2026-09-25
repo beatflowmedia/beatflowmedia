@@ -32,7 +32,7 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
-const ROOT = path.join(__dirname, '..');
+const { ROOT, loadEnv, initAdmin, assertProject, BATCH_SIZE } = require('./lib/admin');
 
 const argv = process.argv.slice(2);
 const has = (f) => argv.includes(f);
@@ -46,45 +46,8 @@ const EXPECT_PROJECT = valueOf('project', null);
 const CONCURRENCY = Number(valueOf('concurrency', '8')) || 8;
 const PROBE_TTL = 120; // seconds a probe URL stays valid; short, they are used at once
 
-function loadEnv() {
-  for (const name of ['.env.local', '.env']) {
-    const file = path.join(ROOT, name);
-    if (!fs.existsSync(file)) continue;
-    try {
-      require(path.join(ROOT, 'node_modules', 'dotenv')).config({ path: file });
-    } catch { /* already exported is fine */ }
-  }
-}
 
-/** See scripts/fix-catalog-prices.js — a RegExp here silently matches nothing. */
-function unescapePem(value) {
-  const ESCAPED_NEWLINE = String.fromCharCode(92) + 'n';
-  return String(value || '').split(ESCAPED_NEWLINE).join('\n');
-}
 
-function initAdmin() {
-  const admin = require(path.join(ROOT, 'node_modules', 'firebase-admin'));
-
-  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (keyFile && fs.existsSync(keyFile)) {
-    const sa = JSON.parse(fs.readFileSync(keyFile, 'utf8'));
-    admin.initializeApp({ credential: admin.credential.cert(sa) });
-    return { admin, projectId: sa.project_id, via: `GOOGLE_APPLICATION_CREDENTIALS (${path.basename(keyFile)})` };
-  }
-
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = unescapePem(process.env.FIREBASE_PRIVATE_KEY);
-  const missing = [
-    !projectId && 'FIREBASE_PROJECT_ID',
-    !clientEmail && 'FIREBASE_CLIENT_EMAIL',
-    !privateKey && 'FIREBASE_PRIVATE_KEY'
-  ].filter(Boolean);
-  if (missing.length) throw new Error(`missing Firebase credentials: ${missing.join(', ')}`);
-
-  admin.initializeApp({ credential: admin.credential.cert({ projectId, clientEmail, privateKey }) });
-  return { admin, projectId, via: '.env (FIREBASE_* vars)' };
-}
 
 function r2Config() {
   const cfg = {
@@ -145,7 +108,6 @@ async function mapLimit(items, limit, fn) {
   return out;
 }
 
-const BATCH_SIZE = 400;
 
 async function writeFlags(db, changes, value) {
   let written = 0;

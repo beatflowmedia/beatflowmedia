@@ -1,6 +1,6 @@
 // src/components/PurchaseOptionsDialog.js
 //
-// The licence chooser. A track row shows ONE price -- the single -- because a row
+// The license chooser. A track row shows ONE price -- the single -- because a row
 // has space for one number and a buyer scanning a list wants a comparison, not a
 // decision. The alternatives belong here, one tap later.
 //
@@ -11,7 +11,7 @@
 // different stored one is how a storefront advertises one price and charges another.
 //
 // WHY THE OPTIONS NO LONGER BUY IMMEDIATELY
-// They used to: tapping "This track" went straight to Stripe. That made the licence
+// They used to: tapping "This track" went straight to Stripe. That made the license
 // summary below them decorative -- it sat under the button that had already been
 // pressed, which is browsewrap with extra steps. Enforceable acceptance needs the
 // terms shown BEFORE the act that accepts them, so the flow is now
@@ -23,7 +23,7 @@
 // See src/utils/agreements.js for what gets recorded and why.
 //
 // The subscribe row is deliberately OUTSIDE that gate. It navigates to a plan page
-// rather than buying anything here, so gating it behind a download-licence
+// rather than buying anything here, so gating it behind a download-license
 // acceptance would ask for assent to terms that do not govern the action.
 
 import { useEffect, useState } from 'react';
@@ -321,7 +321,7 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
 
             {choice && !accepted ? (
               <Typography sx={{ color: 'grey.500', fontSize: '0.75rem', mt: 1, textAlign: 'center' }}>
-                Accept the licence terms to continue.
+                Accept the license terms to continue.
               </Typography>
             ) : null}
 
