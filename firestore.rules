@@ -666,6 +666,23 @@ service cloud.firestore {
       allow read, update, delete: if isPlatformAdmin();
     }
 
+    /* Sponsor applications - an advertiser applies, an admin approves, THEN they pay.
+
+       Create requires sign-in, unlike studioInquiries which allows anonymous. An
+       application becomes a billing relationship and has to attach to an account;
+       an anonymous one could never be approved into a subscription.
+
+       The applicant may read their OWN application so the page can show its status.
+       Only an admin may update it: approval is the gate that unlocks payment, so a
+       sponsor who could write their own status could approve themselves. */
+    match /sponsorApplications/{applicationId} {
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'submitted';
+      allow read: if isPlatformAdmin()
+        || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update, delete: if isPlatformAdmin();
+    }
     // Studio Projects - admins only
     match /studioProjects/{projectId} {
       allow read, write: if isPlatformAdmin();

@@ -26,9 +26,10 @@
   SECRETS_SCAN_OMIT_KEYS = "REACT_APP_FIREBASE_API_KEY,REACT_APP_FIREBASE_APP_ID,REACT_APP_FIREBASE_AUTH_DOMAIN,REACT_APP_FIREBASE_MEASUREMENT_ID,REACT_APP_FIREBASE_MESSAGING_SENDER_ID,REACT_APP_FIREBASE_PROJECT_ID,REACT_APP_FIREBASE_STORAGE_BUCKET,REACT_APP_STRIPE_PUBLISHABLE_KEY,REACT_APP_STRIPE_STUDENT_PRICE_ID,REACT_APP_STRIPE_CREATOR_PRICE_ID,REACT_APP_STRIPE_PRO_PRICE_ID,REACT_APP_STRIPE_AGENCY_PRICE_ID,REACT_APP_SITE_URL,REACT_APP_ANALYTICS_ID"
 
 [dev]
-  # Serve on 8888. This used to be 3005, which collided with the `dev` script's own
+  # Serve on 8899. 8888 is Netlify Dev's own default and another of Percy's
+  # projects uses it, so this one stays off it. Was briefly 3005, which collided with the `dev` script's own
   # PORT=3005 -- Netlify wanted the same port as the app it was proxying.
-  port = 8888
+  port = 8899
   targetPort = 3006
 
   # Name the script explicitly. Auto-detection picks `npm run dev` (PORT=3005), which

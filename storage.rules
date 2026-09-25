@@ -115,6 +115,25 @@ service firebase.storage {
         && request.resource.size < 10 * 1024 * 1024; // 10MB limit for appeal evidence
     }
 
+    /* Sponsor creative - logos and audio spots submitted for approval.
+
+       Read is ADMIN ONLY, deliberately narrower than the neighbouring rules. This
+       holds an advertiser's unaired campaign material: a competitor with any signed-in
+       account could otherwise read a rival's spot and landing copy before it runs.
+       The sponsor cannot read it back either -- there is no UI that needs to, and the
+       approval conversation happens in the back office.
+
+       50MB ceiling. The station accepts up to 300MB and WANTS uncompressed audio: it
+       transcodes once on its side, so an MP3 from the sponsor would be encoded twice
+       and lose quality that cannot be recovered. A :60 WAV at 44.1kHz/24-bit stereo
+       is about 16MB; 50MB leaves room for a sponsor supplying 96kHz rather than
+       rejecting them at the door. Logos share this rule and sit well under it. */
+    match /sponsor-creative/{userId}/{allPaths=**} {
+      allow read: if isPlatformAdmin();
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 50 * 1024 * 1024;
+    }
     // Curator application uploads - portfolio images, screenshots, etc.
     match /curator-applications/{userId}/{allPaths=**} {
       allow read: if request.auth != null;

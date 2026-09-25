@@ -46,7 +46,7 @@
   "scripts": {
     "start": "cross-env PORT=3006 craco start",
     "start:https": "cross-env PORT=3006 HTTPS=true SSL_CRT_FILE=.certs/localhost.pem SSL_KEY_FILE=.certs/localhost-key.pem craco start",
-    "dev:functions": "netlify dev --offline --target-port 3006",
+    "dev:functions": "netlify dev --offline --port 8899 --target-port 3006",
     "stripe:sponsor-prices": "node scripts/create-sponsor-prices.js",
     "build": "craco build",
     "test": "craco test",

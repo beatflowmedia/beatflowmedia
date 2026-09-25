@@ -32,15 +32,17 @@
 // the need for the rule instead of adding a second one to compensate. The
 // production _redirects keeps its SPA fallback, which is correct there.
 //
-// Stripe is unaffected: `stripe listen` forwards straight to :8888 and never goes
-// through this proxy, so webhooks arrive exactly as before.
+// Stripe is unaffected: `stripe listen` forwards straight to Netlify Dev and never
+// goes through this proxy, so webhooks arrive exactly as before. Point --forward-to
+// at the SAME port as NETLIFY_DEV below (8899) -- 8888 is Netlify Dev's default and
+// another of Percy's projects uses it.
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-// Netlify Dev's port. Kept in step with netlify.toml [dev] port = 8888; if that
+// Netlify Dev's port. Kept in step with netlify.toml [dev] port = 8899; if that
 // changes this must change with it. It is a literal rather than a read of
 // netlify.toml because this file loads before any TOML parser is available and a
 // dev-server bootstrap that can fail to parse is worse than one number to update.
-const NETLIFY_DEV = 'https://localhost:8888';
+const NETLIFY_DEV = 'https://localhost:8899';
 
 module.exports = function (app) {
   app.use(
@@ -59,7 +61,7 @@ module.exports = function (app) {
         // usual cause is simply that Netlify Dev is not running.
         console.error(
           `[setupProxy] ${req.method} ${req.url} -> ${NETLIFY_DEV} failed: ${err.message}\n` +
-          '            Is `netlify dev` running on 8888?'
+          '            Is `netlify dev` running on 8899?'
         );
         if (!res.headersSent) {
           res.writeHead(502, { 'Content-Type': 'application/json' });

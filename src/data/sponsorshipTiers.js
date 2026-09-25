@@ -73,7 +73,13 @@ export const SPONSOR_TIERS = [
     includes: [
       'Increased share of spot rotation',
       'Interactive sponsor card',
-      'Priority placement around peak-hour programming',
+      // Was "Priority placement around peak-hour programming". Deleted, not reworded.
+      // Nothing counts listeners, so there is no evidence any hour carries more of
+      // them than another -- "peak hour" asserted an audience distribution the
+      // station cannot observe, and a sponsor who disputed it could not be answered.
+      // Choice of PROGRAMME is the true version: the eight programmes are named, have
+      // distinct music, and carry ad loads the desk actually enforces.
+      'Your choice of programme, including the busiest ones',
       'Monthly airing report with exact run counts',
       'Spot production included',
       'Cancel any time'

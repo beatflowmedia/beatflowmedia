@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
@@ -8,6 +8,7 @@ import {
   canCheckout,
   formatMonthly
 } from "../data/sponsorshipTiers";
+import { latestApplicationFor, canPay } from "../services/sponsorApplicationService";
 
 // /advertising was linked from /about-ads ("Learn About Advertising") and did not
 // exist -- the route was never registered, so the one call-to-action aimed at
@@ -28,6 +29,22 @@ export default function Advertising() {
   const { user } = useAuth();
   const [busyTier, setBusyTier] = useState(null);
   const [error, setError] = useState(null);
+  const [application, setApplication] = useState(null);
+
+  // Whether this visitor may pay at all, and for which package. Payment is unlocked
+  // by an APPROVED application and by nothing else -- see sponsorApplicationService.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const app = await latestApplicationFor(user);
+      if (!cancelled) setApplication(app);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const approvedTierId = canPay(application) ? application.tierId : null;
 
   const startCheckout = async (tier) => {
     setError(null);
@@ -99,6 +116,31 @@ export default function Advertising() {
             </p>
           </div>
 
+          {/* How this works. Stated before the packages, because the absence of a
+              "buy now" button is otherwise the first thing a visitor notices and the
+              first thing they get wrong. Ordered the way a self-serve ad platform
+              orders it -- Roku Ads Manager: "Create your account" / "Choose your
+              objective and target audience" / "Upload your creative for approval" /
+              "Launch your campaign and measure results". Payment is not one of the
+              four; it attaches at launch, after approval. */}
+          <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-6 mb-12">
+            <h2 className="text-xl font-bold mb-3">How sponsorship works</h2>
+            <ol className="list-decimal list-inside text-gray-400 space-y-2">
+              <li>Pick a package and apply — it takes a few minutes.</li>
+              <li>
+                Send us your spot and logo, or ask us to produce the spot for you.
+              </li>
+              <li>
+                We review it. We decline advertising that does not suit the station,
+                and we tell you before any money changes hands.
+              </li>
+              <li>
+                Once approved, you choose when to start. <strong>Billing begins
+                then</strong> — never at application.
+              </li>
+            </ol>
+          </div>
+
           {/* Tiers */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {SPONSOR_TIERS.map((tier) => {
@@ -125,24 +167,43 @@ export default function Advertising() {
                     ))}
                   </ul>
 
-                  {buyable ? (
+                  {/* APPLY, never "pay now".
+                    *
+                    * This button briefly opened Stripe Checkout directly, which was
+                    * wrong in two ways that reinforce each other.
+                    *
+                    * Operationally: a card payment tells you that money arrived and
+                    * nothing else. No company, no contact, no landing URL, no logo,
+                    * no audio. You would hold a live monthly subscription with no
+                    * idea what to broadcast, and the sponsor would be paying from
+                    * day one for airtime that cannot run.
+                    *
+                    * Editorially: this page promises "we decline advertising we
+                    * judge unsuitable for the station, and we say so BEFORE taking
+                    * payment rather than after". Charging first makes that sentence
+                    * false, and declining afterwards means refunding someone you
+                    * have already annoyed. You cannot let a stranger onto the
+                    * station by credit card and review it later -- the spot airs
+                    * under BFMG's name.
+                    *
+                    * So: apply, be approved, then pay. Checkout stays built and is
+                    * reached after approval. */}
+                  {approvedTierId === tier.id && buyable ? (
+                    // Approved for THIS package. Only now does a pay button exist.
                     <button
                       type="button"
                       onClick={() => startCheckout(tier)}
                       disabled={busyTier === tier.id}
                       className="w-full min-h-[48px] text-base rounded-full font-semibold bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                     >
-                      {busyTier === tier.id ? "Starting checkout..." : "Sponsor monthly"}
+                      {busyTier === tier.id ? "Starting…" : "Start my sponsorship"}
                     </button>
                   ) : (
-                    // No Stripe Price configured for this tier yet. Degrade to the
-                    // enquiry form rather than showing a button that fails: an
-                    // advertiser who hits an error does not write to you, they leave.
                     <Link
-                      to="/contact"
-                      className="w-full min-h-[48px] flex items-center justify-center text-base rounded-full font-semibold bg-gray-700 hover:bg-gray-600 transition-colors"
+                      to={`/advertising/apply?tier=${tier.id}`}
+                      className="w-full min-h-[48px] flex items-center justify-center text-base rounded-full font-semibold bg-green-600 hover:bg-green-500 transition-colors"
                     >
-                      Enquire about this package
+                      Apply for {tier.name}
                     </Link>
                   )}
                 </div>

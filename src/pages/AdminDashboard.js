@@ -23,6 +23,7 @@ const ContentHub = lazy(() => import("../components/admin/ContentHub"));
 const AppealsReview = lazy(() => import("../components/admin/AppealsReview"));
 const MarketingDashboard = lazy(() => import("../components/admin/MarketingDashboard"));
 const StudioInquiriesManager = lazy(() => import("../components/admin/StudioInquiriesManager"));
+const SponsorApplicationsManager = lazy(() => import("../components/admin/SponsorApplicationsManager"));
 const StudioProjectsManager = lazy(() => import("../components/admin/StudioProjectsManager"));
 
 export default function AdminDashboard() {
@@ -145,6 +146,18 @@ export default function AdminDashboard() {
             <span>Marketing Engine</span>
           </button>
 
+
+          <button
+            onClick={() => setActiveTab("sponsor-applications")}
+            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
+              activeTab === "sponsor-applications"
+                ? "bg-green-600 text-white"
+                : "hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            <Mail fontSize="small" />
+            <span>Radio Sponsors</span>
+          </button>
           <button
             onClick={() => setActiveTab("studio-inquiries")}
             className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
@@ -326,6 +339,13 @@ export default function AdminDashboard() {
           {activeTab === "marketing" && (
             <div>
               <MarketingDashboard />
+            </div>
+          )}
+
+          {activeTab === "sponsor-applications" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Radio Sponsorship Applications</h2>
+              <SponsorApplicationsManager />
             </div>
           )}
 
