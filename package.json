@@ -64,6 +64,7 @@
     "test:functions": "jest netlify/functions/",
     "fix:prices": "node scripts/fix-catalog-prices.js",
     "verify:masters": "node scripts/verify-masters.js",
+    "verify:terms": "node scripts/verify-terms.js",
     "backfill:ai": "node scripts/backfill-ai-disclosure.js",
     "link:masters": "node scripts/link-masters.js",
     "licence": "node scripts/revoke-license.js",

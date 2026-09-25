@@ -111,6 +111,7 @@ needs its own storefront, NOT its own login.
 | What "net sales revenue" means | `src/utils/revenueSplit.js` (`netDefinition`) | `npx jest src/utils/revenueSplit.test.js` |
 | Where a record's master lives | `masterPath` + `masterBackend` on the song; written by `npm run link:masters` | `npm run link:masters` (idempotent) |
 | Whether a license is withdrawn | `src/utils/licenseRevocation.js` (`isRevoked`) | `npx jest src/utils/licenseRevocation.test.js` |
+| Who is on superseded terms | derived from `acceptedAgreement` vs `agreements.js` | `npm run verify:terms` |
 | Admin-script boilerplate (env, credentials, batching) | `scripts/lib/admin.js` | every `npm run` script exercises it |
 | Everything else | **NEEDS OWNER** | — |
 
@@ -908,3 +909,62 @@ found it. Syntax is not behaviour.
 
 **Ratchets:** 123 tests across 9 suites. `licence` spelling in identifiers: **0**.
 Hand-written copies of `loadEnv`/`initAdmin` outside `scripts/lib/`: **0**.
+
+---
+
+## What was NOT built, and why — 2026-09-25
+
+Percy asked whether the platform should carry a user-facing version, the way Suno
+announces a new model generation with an upgrade prompt.
+
+**Declined.** Suno versions the thing being sold — a user on v5 versus v6 gets
+different music out, so the version is the product and is worth announcing. A version
+of this storefront changes nothing a buyer receives. Announcing it asks them to care
+about our plumbing.
+
+**Also declined: a "what's new" announcement modal.** Checked before building:
+
+```
+published terms versions : 1      -> nobody is on an old one
+purchases on stale terms : 0      -> nobody to notify
+songs added in 90 days   : 138    -> the seeding, not a release cadence
+```
+
+A notifier with nothing to notify is decoration that reads as capability, and the next
+person maintains it believing it works. That is the **I caveat** — do not invent
+structure the content cannot support — and the PHAST rule applied to features: no
+pillar for a capability the product lacks.
+
+**And declined: a hand-maintained semver.** `package.json` has said `0.1.0` for **309
+commits**, which is the argument made for us. A version nobody increments is a second
+source of truth that lies. Git is the origin; the useful addition would be stamping
+the deploy's `COMMIT_REF` onto purchase records so a sale can be traced to the code
+that served it — offered, not yet built.
+
+### What WAS built: `npm run verify:terms`
+
+`agreements.js` forbids editing a published version in place, which creates an
+obligation nobody was tracking: the moment a new version ships, every existing buyer
+is on a superseded one, and a contract changed without telling the other side is a
+weak contract. That obligation existed only as a comment.
+
+This turns it into a number. Detection only — it does not notify, because what to
+send and whether continued use implies acceptance are decisions for a person and
+probably a lawyer, and building the sending half first would bake in an answer nobody
+chose.
+
+**Unit is the purchase, not the user.** Acceptance is recorded per purchase because
+that is what makes it evidence: this buyer, this text, this moment, this item. A user
+who bought twice under two versions is two agreements, and merging them loses the
+distinction that would matter in a dispute.
+
+Exits non-zero when anyone is on superseded terms, so it can gate a release.
+Pre-clickwrap purchases are reported but are **not** an error — they are historical
+and cannot be retrofitted, only noted.
+
+**Verified by simulation, not by assumption:** bumping the version to a future date
+made it report 1 superseded buyer with the email, then reverting returned it to 0. A
+detector that has never detected anything is untested.
+
+**Ratchet:** buyers on superseded terms — **0**. It stays 0 until a version is
+published, and the first non-zero is the notification obligation appearing.
