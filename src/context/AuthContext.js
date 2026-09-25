@@ -177,17 +177,45 @@ export const AuthProvider = ({ children }) => {
           { merge: true }
         );
       } catch (popupError) {
-        // If popup fails due to COOP or being blocked, fallback to redirect
-        if (
+        // Fall back to a full-page redirect ONLY when the popup genuinely never
+        // opened. Two of the old conditions were not failures, and each produced a
+        // SECOND sign-in on top of a working first one:
+        //
+        //   Cross-Origin-Opener-Policy in the message
+        //     A warning, not an error. We set no COOP header -- it comes from
+        //     Google's own sign-in page, and it only means Firebase cannot poll
+        //     `popup.closed` across origins. The popup is open and working. Matching
+        //     on that string fired a redirect over a live popup, which is exactly
+        //     the two-modal symptom.
+        //
+        //   auth/cancelled-popup-request
+        //     Means ANOTHER popup request superseded this one. Falling back here
+        //     compounds the problem: the superseded attempt opens a redirect while
+        //     the surviving popup is still up.
+        //
+        // auth/popup-closed-by-user is deliberately absent too: the user shutting
+        // the window is a decision, not a fault, and reopening it as a redirect
+        // ignores them.
+        const popupNeverOpened =
           popupError.code === 'auth/popup-blocked' ||
-          popupError.code === 'auth/cancelled-popup-request' ||
-          popupError.message?.includes('Cross-Origin-Opener-Policy')
-        ) {
-          console.log("Popup blocked, using redirect method...");
+          popupError.code === 'auth/operation-not-supported-in-this-environment';
+
+        if (popupNeverOpened) {
+          console.log('Popup was blocked by the browser; using redirect instead.');
           await signInWithRedirect(auth, provider);
-        } else {
-          throw popupError;
+          return;
         }
+
+        // User closed the window or a second attempt superseded this one. Neither is
+        // an error worth surfacing, and neither should start a new sign-in.
+        if (
+          popupError.code === 'auth/popup-closed-by-user' ||
+          popupError.code === 'auth/cancelled-popup-request'
+        ) {
+          return;
+        }
+
+        throw popupError;
       }
     } catch (e) {
       console.error("Google sign-in error:", e);
