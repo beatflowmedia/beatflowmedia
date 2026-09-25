@@ -134,7 +134,10 @@ export default function Footer() {
             </a>
           ))}
         </div>
-        <p>© 2025 BeatFlow Media.</p>
+        {/* Derived, not typed. This read "© 2025" through the whole of 2026, and
+            replacing it with a fresh literal would simply be wrong again each
+            January -- a value that must track reality cannot be a constant. */}
+        <p>© {new Date().getFullYear()} BeatFlow Media.</p>
       </div>
     </footer>
   );

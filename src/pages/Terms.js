@@ -28,13 +28,24 @@ export default function Terms() {
               buyer is recorded as having accepted, which is precisely the evidence
               the versioning exists to produce. This page and that record cannot
               drift, because they read the same constant. */}
+          {/* SCOPED DELIBERATELY. The identifier versions the DOWNLOAD LICENSE, not
+              this whole page -- and the acceptance checkbox at checkout asks the
+              buyer to accept exactly that, by name. Heading the full document
+              "Version download-license@..." implied the recorded acceptance covered
+              all fifteen sections, including arbitration, subscriptions and artist
+              revenue, which the buyer was never shown and never agreed to. Claiming
+              more scope than the evidence supports is the failure this versioning
+              exists to prevent, so the label says which part it governs. */}
           <p className="text-sm text-gray-400 mb-2">
-            Version <span className="font-mono text-gray-300">{TERMS_VERSION}</span>
+            Download License version:{' '}
+            <span className="font-mono text-gray-300">{TERMS_VERSION}</span>
             {TERMS_DATE ? <> &middot; in force from {TERMS_DATE}</> : null}
           </p>
           <p className="text-sm text-gray-400 mb-8">
-            Your acceptance of this version is recorded with your purchase. Earlier purchases remain
-            governed by whichever version you accepted at the time.
+            That identifier and the time of your acceptance are recorded with your purchase, and
+            they govern the <strong>Download License</strong> in section 4. Earlier purchases remain
+            governed by whichever version was accepted at the time. The remaining sections are the
+            general terms of use for the Service and are not separately versioned.
           </p>
 
           {/* Introduction */}
@@ -132,7 +143,7 @@ export default function Terms() {
 
               <h3 className="text-xl font-semibold text-white mt-6">The Download License — What You Receive</h3>
               <p>
-                Buying a single track or an album grants you a <strong>non-exclusive, worldwide,
+                Licensing a single track or an album grants you a <strong>non-exclusive, worldwide,
                 non-transferable, perpetual license</strong> to download one copy of the recording and to listen
                 to it privately, for your own personal enjoyment. The license does not expire, and it survives
                 the end of any subscription you may hold.
