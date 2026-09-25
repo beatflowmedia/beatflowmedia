@@ -22,12 +22,33 @@ const {
   MASTER_URL_TTL_SECONDS
 } = require('./lib/masters');
 
+/**
+ * Turn an environment-encoded PEM back into a real one.
+ *
+ * This function used to do `.replace(/\n/g, '\n')` -- replacing a newline with a
+ * newline, which is a no-op. The escaped sequences therefore survived into the key
+ * and firebase-admin threw "Invalid PEM formatted message" at MODULE LOAD, so every
+ * download returned a 502 before a single line of this file's logic ran. It had
+ * never worked in production; nothing had exercised it because nothing was
+ * deliverable. create-checkout.js has the correct `\\n` form, which is why that
+ * function worked and this one did not.
+ *
+ * Written as split/join rather than a regex on purpose: the bug above is one
+ * backslash, invisible in review, and it fails the same way again if anyone
+ * "simplifies" this back to a RegExp. Both encodings are handled -- a value that
+ * already contains real newlines passes through untouched.
+ */
+function unescapePem(value) {
+  const ESCAPED_NEWLINE = String.fromCharCode(92) + 'n';
+  return String(value || '').split(ESCAPED_NEWLINE).join('\n');
+}
+
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\n/g, '\n')
+      privateKey: unescapePem(process.env.FIREBASE_PRIVATE_KEY)
     })
   });
 }
