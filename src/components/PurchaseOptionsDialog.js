@@ -269,7 +269,7 @@ export default function PurchaseOptionsDialog({ open, onClose, track, onSelect }
                   title={album.title || 'The full album'}
                   caption={'All ' + trackCount + ' tracks'}
                   price={formatPrice(albumPrice)}
-                  note={albumSaving > 0 ? 'Save ' + formatPrice(albumSaving) + ' vs buying separately' : null}
+                  note={albumSaving > 0 ? 'Save ' + formatPrice(albumSaving) + ' vs licensing separately' : null}
                   selected={!!choice && choice.type === 'album'}
                   onClick={() => setChoice({ type: 'album', itemId: album.id, price: albumPrice })}
                 />

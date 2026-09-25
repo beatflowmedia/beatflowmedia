@@ -505,7 +505,7 @@ function Playlist() {
     try {
       const hasPurchased = await stripeService.hasPurchasedSong(user.uid, track.id);
       if (hasPurchased) {
-        toast.info('You already own this song! Redirecting to downloads...');
+        toast.info('You already have a license for this track. Redirecting to your downloads...');
         navigate('/downloads');
         return;
       }

@@ -506,7 +506,7 @@ function Home() {
     try {
       // Check if already purchased
       if (purchasedSongIds.has(song.id)) {
-        toast.info('You already own this song! Redirecting to downloads...');
+        toast.info('You already have a license for this track. Redirecting to your downloads...');
         navigate('/downloads');
         return;
       }
