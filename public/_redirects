@@ -65,13 +65,20 @@
 /podcaster/dashboard                 /                       301
 /link/:slug                          /marketing/landing/:slug 301
 
-# Bundler output lives in webpack's memory during `netlify dev`, not on disk.
-# Netlify checks the filesystem before proxying, does not find /static/js/bundle.js,
-# and lets the SPA fallback below swallow it -- the browser then gets index.html with
-# a text/html content-type where it expected JavaScript, refuses to execute it, and
-# renders a blank page. This passthrough keeps asset paths off the fallback.
-# Harmless in production, where these files really are on disk.
-/static/*  /static/:splat  200
+# A `/static/*  /static/:splat  200` rule used to sit here, meant to stop the SPA
+# fallback swallowing webpack's in-memory bundle during `netlify dev`. It could never
+# have worked: a rewrite whose destination is its own source changes nothing, so the
+# catch-all below still matched and served index.html as text/html where the browser
+# expected JavaScript -- "Unexpected token '<'" and a blank page. Measured, not
+# assumed: with the rule in place, /static/js/bundle.js returned 9246 bytes of HTML.
+#
+# It is gone rather than repaired, because it was compensating for a dev-server
+# layering mistake rather than a redirect problem. We now browse CRA directly and
+# forward only /.netlify/* to Netlify Dev -- see src/setupProxy.js. Netlify's redirect
+# engine is no longer in the asset path, so there is nothing for it to swallow.
+#
+# Production never needed it: files there are on disk and are served before redirects
+# are consulted, which is why beatflowmediagroup.com always returned real JavaScript.
 
 # SPA fallback - must be last
 /*  /index.html  200
