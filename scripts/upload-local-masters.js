@@ -56,6 +56,30 @@ function norm(s) {
 /** Local names drop the spaces, so compare a space-free form too. */
 const squash = (s) => norm(s).split(' ').join('');
 
+/**
+ * Songs whose local file is named something no normalisation reaches, mapped by hand.
+ *
+ * Found by asking the right question rather than by tuning a matcher: if a track has
+ * a 30-second preview and a measured duration, the full audio MUST have existed when
+ * that preview was cut. playlist.json records the source each preview was made from,
+ * and it named both of these directly.
+ *
+ *   "Sunday at the Corner Store"       -> SundayattheCornerStoreBonusTrack.mp3
+ *   "The Emotion Code (Love Language)" -> TheEmotionCode.mp3
+ *
+ * One gained a word, the other lost two. A matcher loose enough to bridge either
+ * would also pair tracks that merely share a phrase, and mispairing means a buyer
+ * receives a recording they did not license. So the exception is declared: a human
+ * stating these are the same recording, which is the judgement a threshold would only
+ * be imitating.
+ *
+ * Keyed by the normalised SONG title; the value is the exact local filename.
+ */
+const SOURCE_OVERRIDES = {
+  'sunday at the corner store': 'SundayattheCornerStoreBonusTrack.mp3',
+  'the emotion code love language': 'TheEmotionCode.mp3'
+};
+
 /** Storage object names: keep it readable, lose anything awkward in a URL path. */
 function safeName(title, ext) {
   return String(title).replace(/[\\/:*?"<>|]/g, '-').trim() + ext;
@@ -101,7 +125,11 @@ async function main() {
   const plan = [];
   const noSource = [];
   blocked.forEach((s) => {
-    const hit = byKey.get(norm(s.title)) || bySquash.get(squash(s.title));
+    // Declared override first; see SOURCE_OVERRIDES.
+    const forced = SOURCE_OVERRIDES[norm(s.title)];
+    const hit = forced
+      ? local.find((f) => f.file === forced)
+      : (byKey.get(norm(s.title)) || bySquash.get(squash(s.title)));
     if (!hit) { noSource.push(s); return; }
     const ext = path.extname(hit.file).toLowerCase();
     plan.push({ song: s, src: hit, dest: DEST_PREFIX + safeName(s.title, ext), bytes: fs.statSync(hit.full).size, ext });
