@@ -97,6 +97,7 @@ needs its own storefront, NOT its own login.
 | Local image assets | `public/` | `npm run verify:assets` |
 | Album cover field name | **NEEDS OWNER** — `cover` and `coverUrl` both in use | none yet |
 | Song / album pricing | `src/utils/pricing.js` (**CommonJS**, so the station can `require` it) | `npx jest src/utils/pricing.test.js` |
+| Which catalogue a record belongs to | `src/utils/assetPools.js` (`assetPoolOf`) | none — classification is a stored decision |
 | Content Security Policy | `config/csp.js` | `npm run verify:csp` |
 | Master object key + delivery contract | `netlify/functions/lib/masters.js` | `npm run test:functions` |
 | "may this user have this item" | `netlify/functions/lib/entitlement.js` | - |
@@ -968,3 +969,40 @@ detector that has never detected anything is untested.
 
 **Ratchet:** buyers on superseded terms — **0**. It stays 0 until a version is
 published, and the first non-zero is the notification obligation appearing.
+
+---
+
+## DOSI pass — 2026-09-25 (second)
+
+**D — an abstraction extracted but not adopted.** `scripts/lib/admin.js` was created
+earlier the same day and only the newest script used its `args()` and
+`assertProject()`. Five others still rolled their own argv parsing and inline project
+check: the helper existed, the duplication stayed, and the next script would have
+copied a neighbour. Half an abstraction is worse than none — it reads as done.
+All five converted; hand-rolled argv parsers now **0**.
+
+**Regression caught by running, again.** The conversion dropped `ROOT` from the
+import while four scripts still used it. `node --check` passed on all five; executing
+them failed instantly with `ROOT is not defined`. Second time in one day that syntax
+passed and behaviour did not, which is the argument for running every script after
+touching shared code, not sampling one.
+
+**I — deleted two files that were worse than dead.**
+`src/utils/fixSongPricesClient.js` and root `fix-song-prices.js`: zero importers,
+and both hardcode **2900 / $29.00** while the canonical price is **199**. Not merely
+stale — *actively dangerous*, because running `fix-song-prices.js` would have written
+$29.00 back across the catalogue and undone the repair done hours earlier. It also
+wants a `serviceAccountKey.json` on disk, which is the file pattern that leaked a
+live key from this repo before. A name that no longer matches the domain is a
+deletion candidate; one that contradicts the canonical value and can destroy data is
+a deletion.
+
+**S — `assetPools.js` was canonical for a concern the table did not list.** Added.
+If a concern is not in the table, that is the finding.
+
+**O — nothing.** No profile, no query log, no bundle delta, so no optimisation. If
+the metric cannot be stated, it is not optimisation.
+
+**Ratchets:** hand-written copies of `loadEnv`/`initAdmin`/argv parsing outside
+`scripts/lib/` — **0**. Canonical modules absent from the Single Source table —
+**0**. Files contradicting `pricing.js` — **0**. Tests **123** across **9** suites.

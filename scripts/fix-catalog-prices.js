@@ -31,18 +31,13 @@
 const path = require('path');
 const fs = require('fs');
 
-const { ROOT, loadEnv, initAdmin, assertProject, BATCH_SIZE } = require('./lib/admin');
+const { ROOT, loadEnv, initAdmin, assertProject, args, BATCH_SIZE } = require('./lib/admin');
 
 // ---------------------------------------------------------------------------
 // Arguments
 // ---------------------------------------------------------------------------
 
-const argv = process.argv.slice(2);
-const has = (flag) => argv.includes(flag);
-const valueOf = (name, dflt) => {
-  const hit = argv.find((a) => a.startsWith(`--${name}=`));
-  return hit ? hit.slice(name.length + 3) : dflt;
-};
+const { has, value: valueOf } = args();
 
 const APPLY = has('--apply');
 const ONLY = valueOf('only', 'both'); // songs | albums | both
@@ -132,9 +127,7 @@ async function main() {
 
   // Assert, don't infer. A key that is accepted proves only that SOME project
   // accepted it -- which is exactly how a repair lands in the wrong environment.
-  if (EXPECT_PROJECT && projectId !== EXPECT_PROJECT) {
-    throw new Error(`REFUSING: --project=${EXPECT_PROJECT} but credentials are for "${projectId}"`);
-  }
+  assertProject(projectId, EXPECT_PROJECT);
 
   const db = admin.firestore();
 

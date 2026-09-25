@@ -32,14 +32,9 @@
 const path = require('path');
 const fs = require('fs');
 
-const { ROOT, loadEnv, initAdmin, assertProject, BATCH_SIZE } = require('./lib/admin');
+const { ROOT, loadEnv, initAdmin, assertProject, args, BATCH_SIZE } = require('./lib/admin');
 
-const argv = process.argv.slice(2);
-const has = (f) => argv.includes(f);
-const valueOf = (name, dflt) => {
-  const hit = argv.find((a) => a.startsWith(`--${name}=`));
-  return hit ? hit.slice(name.length + 3) : dflt;
-};
+const { has, value: valueOf } = args();
 
 const APPLY = has('--apply');
 const DISCLOSURE = valueOf('disclosure', null);
@@ -81,9 +76,7 @@ async function main() {
   const { admin, projectId, via } = initAdmin();
   console.log(`  credentials : ${via}`);
   console.log(`  project     : ${projectId}`);
-  if (EXPECT_PROJECT && projectId !== EXPECT_PROJECT) {
-    throw new Error(`REFUSING: --project=${EXPECT_PROJECT} but credentials are for "${projectId}"`);
-  }
+  assertProject(projectId, EXPECT_PROJECT);
 
   const db = admin.firestore();
   const snap = await db.collection('songs').get();
