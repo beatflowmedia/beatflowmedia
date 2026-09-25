@@ -40,17 +40,34 @@ import { stripeService } from '../services/stripeService';
 import LicenseAcceptanceDialog from '../components/LicenseAcceptanceDialog';
 
 export default function useLicensedCheckout(options = {}) {
-  const { onError } = options;
+  const { onError, onRequiresSignIn } = options;
   const { user } = useAuth();
 
   // The item waiting on an acceptance. Null means no dialog is open, so one piece
   // of state carries both "what" and "whether", and they cannot disagree.
   const [pending, setPending] = useState(null);
 
+  // Signed out, the dialog never opens.
+  //
+  // Not a security control -- create-checkout has always refused unauthenticated
+  // calls. It is about WHO AGREED. The dialog's tick box records that a named person
+  // accepted a named version of the terms at a known moment, and that is the whole
+  // value of it. Showing it to someone with no identity collects a promise from
+  // nobody, and attaching it to whoever signs in afterwards records an agreement
+  // that never happened.
+  //
+  // The guard lives here rather than in the six pages that call this, because six
+  // copies of a check is six chances to forget one -- and the one that gets
+  // forgotten is the one that ships.
   const requestCheckout = useCallback((item) => {
     if (!item || !item.itemId) return;
+    if (!user) {
+      if (onRequiresSignIn) onRequiresSignIn();
+      else if (onError) onError(new Error('Please sign in to license music.'));
+      return;
+    }
     setPending(item);
-  }, []);
+  }, [user, onRequiresSignIn, onError]);
 
   const cancel = useCallback(() => setPending(null), []);
 

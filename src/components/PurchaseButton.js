@@ -95,6 +95,29 @@ const PurchaseButton = ({
   // Tapping the price opens the chooser when there is a choice to make. Checkout
   // itself stays in one place below, so every route to Stripe is the same route.
   const handlePurchase = async () => {
+    // SIGN IN FIRST, before any dialog opens. This check used to live in
+    // startCheckout, at the END of the flow, so an anonymous visitor could pick an
+    // option, read the license summary, tick the acceptance box and press pay --
+    // and only then be told to sign in. All that work, then a wall.
+    //
+    // The worse half was legal, not cosmetic. The tick box records WHO accepted
+    // WHICH version WHEN, and that is the whole point of it. Collecting assent from
+    // someone with no identity and attaching it to whoever signs in afterwards
+    // records an agreement nobody made. Identity has to exist before assent can mean
+    // anything, so it is established first.
+    //
+    // create-checkout has always refused unauthenticated calls, so nothing could
+    // ever have been BOUGHT this way. This is about not asking for a promise from
+    // someone we cannot yet name.
+    if (!user) {
+      await showAlert(
+        'Sign In Required',
+        'Please sign in to license music. Your license is recorded against your account.',
+        'info'
+      );
+      return;
+    }
+
     if (offersOptions) {
       setOptionsOpen(true);
       return;
@@ -220,7 +243,16 @@ const PurchaseButton = ({
         // costs and what else is on offer is the reason to sign in. Sign-in is
         // prompted when they actually choose. Without options there is nothing to
         // show, so the button stays disabled as before.
-        disabled={loading || (!user && !offersOptions)}
+        // Deliberately NOT disabled for signed-out visitors. It used to be, but only
+        // when `!offersOptions` -- so an album button was dead while a track button
+        // beside it was live, which is the inconsistency that let the dialog open
+        // signed out in the first place.
+        //
+        // Enabled-and-explains beats disabled-and-silent: a greyed button with no
+        // reason reads as broken, and the price is exactly the thing that should
+        // prompt someone to make an account. handlePurchase above asks them to sign
+        // in, which is a route forward rather than a dead end.
+        disabled={loading}
         aria-haspopup={offersOptions ? 'dialog' : undefined}
         sx={compact
           // 44px is the fat-finger minimum (WCAG 2.5.5). `size="small"` renders
