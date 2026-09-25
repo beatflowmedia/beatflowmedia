@@ -1,286 +1,331 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
-import { useModal } from "../hooks/useModal";
 import {
   submitGeneralInquiry,
+  validateGeneralInquiry,
   INQUIRY_SOURCES
 } from "../services/studioInquiryService";
 
+// This page said "Coming Soon" while /about told the same visitor that sync is
+// "handled directly" and that we would "come back with terms". One fact, two pages,
+// opposite answers -- and the wrong one was on the page the buyer actually lands on.
+//
+// Sync licensing is not coming: it WORKS, and has all along. BFMG holds both the
+// recording and the composition, so a sync licence can be granted with one signature
+// today. What does not exist is SELF-SERVICE sync -- instant quotes, a rate card, a
+// project dashboard. That is a real distinction and the page now draws it, rather
+// than describing an unbuilt product while hiding the working one.
+//
+// The removed claims were not aspirational, they were false: "instant quotes" (every
+// quote is manual), "track all your licenses in one place" (no such screen exists),
+// and an "Early Access" signup for a launch that is not scheduled and collected
+// nothing. A visitor who believes "Coming Soon" leaves and does not come back.
+
+// Value IS label, deliberately. These used to be slugs -- "tv", "video-game" -- which
+// were stored verbatim and then rendered raw in the admin table, so the back office
+// showed "video-game" where a human was reading. A machine slug is only worth the
+// mapping it saves, and here it saved none: nothing switches on these values.
+const PROJECT_TYPES = [
+  "Film",
+  "Television",
+  "Commercial / Advertisement",
+  "Video Game",
+  "Podcast",
+  "YouTube / Social Media",
+  "Corporate Video",
+  "Other"
+];
+
+// What a sync licence from BFMG actually includes. Every line is checkable against
+// the catalogue and the licence terms; nothing here describes an intention.
+const WHAT_YOU_GET = [
+  {
+    title: "One-stop clearance",
+    body:
+      "We hold the recording and the composition. One licence covers both, so there is no publisher to clear separately."
+  },
+  {
+    title: "Quoted per project",
+    body:
+      "Priced on media, term and territory rather than a fixed rate card. Tell us the use and we come back with terms."
+  },
+  {
+    title: "AI provenance stated",
+    body:
+      "We tell you in writing how each recording was made. If your broadcaster or platform asks, you have the answer."
+  },
+  {
+    title: "Direct from the owner",
+    body:
+      "You are dealing with the rights holder, not an agent representing one. Nobody has to be chased for approval."
+  }
+];
+
+const EMPTY = { name: "", email: "", company: "", projectType: "", message: "" };
+
 export default function SyncLicensing() {
-  const { showAlert } = useModal();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    company: "",
-    projectType: "",
-    message: ""
-  });
-  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState(EMPTY);
+  const [errors, setErrors] = useState([]);
+  const [submitted, setSubmitted] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      await showAlert('Info', 'Please fill in all required fields', 'info');
+
+    // The shared validator, not a local truthiness check. The old one tested that
+    // name/email/message were non-empty and never checked the email was an ADDRESS,
+    // so a typo produced a lead we had no way to answer -- indistinguishable, in the
+    // back office, from a lead we simply had not replied to yet. Two forms feeding
+    // one inbox must agree on what a valid enquiry is.
+    const check = validateGeneralInquiry({
+      name: formData.name,
+      email: formData.email,
+      topic: formData.projectType || "Sync Licensing",
+      message: formData.message
+    });
+    if (!check.isValid) {
+      setErrors(check.errors);
       return;
     }
 
+    setErrors([]);
     setSubmitting(true);
-    try {
-      // Was: addDoc(collection(db, "syncLicensingInquiries"), ...).
-      //
-      // That collection had a write and no reader -- no admin screen queried it, so
-      // every sync enquiry ever submitted landed somewhere nobody opens while the
-      // sender saw "we will be in touch". Sync is the highest-value lead here, which
-      // made it the most expensive silent failure on the site.
-      //
-      // Now it goes to the one inbox the back office actually reads.
-      const result = await submitGeneralInquiry({
-        name: formData.name,
-        email: formData.email,
-        company: formData.company,
-        topic: formData.projectType || "Sync Licensing",
-        message: formData.message,
-        source: INQUIRY_SOURCES.SYNC
-      });
-      if (!result.success) throw new Error(result.message);
-      setSubmitted(true);
-      setFormData({
-        name: "",
-        email: "",
-        company: "",
-        projectType: "",
-        message: ""
-      });
-    } catch (error) {
-      console.error("Error submitting inquiry:", error);
-      await showAlert('Error', 'Failed to submit inquiry. Please try again.', 'error');
-    } finally {
-      setSubmitting(false);
+    // Was: addDoc(collection(db, "syncLicensingInquiries"), ...) -- a collection with
+    // a write and no reader. Every sync enquiry ever submitted landed somewhere nobody
+    // opens while the sender saw "we will be in touch".
+    const result = await submitGeneralInquiry({
+      name: formData.name,
+      email: formData.email,
+      company: formData.company,
+      topic: formData.projectType || "Sync Licensing",
+      message: formData.message,
+      source: INQUIRY_SOURCES.SYNC
+    });
+    setSubmitting(false);
+
+    if (result.success) {
+      // The service's message, not a second copy of it. This page used to promise
+      // "24-48 hours" while the service returned "two business days" and the footnote
+      // below said something else again -- three statements of one commitment, free to
+      // drift apart, and the visitor believed whichever one they read.
+      setSubmitted(result.message);
+      setFormData(EMPTY);
+    } else {
+      setErrors([result.message]);
     }
   };
 
+  // One definition. 16px text keeps mobile Safari from zooming the page on focus;
+  // 44px min-height keeps the control a thumb target rather than a cursor target.
+  const field =
+    "w-full min-h-[44px] text-base bg-gray-700 text-white p-3 rounded border " +
+    "border-gray-600 focus:border-green-500 focus:outline-none";
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
-      <main className="flex-1 pt-16 px-6">
-        <div className="max-w-4xl mx-auto text-center py-20">
-          {/* Icon */}
-          <div className="mb-8">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-600 to-blue-600 rounded-full">
-              <svg
-                className="w-12 h-12 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          </div>
-
+      <main className="flex-1 pt-16 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto py-16 sm:py-20">
           {/* Heading */}
-          <h1 className="text-5xl font-bold mb-4">Sync Licensing</h1>
-          <p className="text-2xl text-gray-400 mb-8">Coming Soon</p>
-
-          {/* Description */}
-          <div className="max-w-2xl mx-auto mb-12">
-            <p className="text-lg text-gray-300 mb-6">
-              We're building a comprehensive sync licensing platform for music supervisors,
-              filmmakers, and content creators to easily license music for their projects.
-            </p>
-            <p className="text-gray-400 mb-6">
-              Our sync licensing system will include:
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mb-8">
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="font-bold text-green-500 mb-2"> Quick Licensing</h3>
-                <p className="text-sm text-gray-400">
-                  Instant quotes and streamlined licensing process
-                </p>
-              </div>
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="font-bold text-green-500 mb-2"> Custom Rates</h3>
-                <p className="text-sm text-gray-400">
-                  Flexible pricing based on project type and usage
-                </p>
-              </div>
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="font-bold text-green-500 mb-2"> Rights Clearance</h3>
-                <p className="text-sm text-gray-400">
-                  Complete master and publishing rights included
-                </p>
-              </div>
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="font-bold text-green-500 mb-2"> Project Management</h3>
-                <p className="text-sm text-gray-400">
-                  Track all your licenses and downloads in one place
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-8 mb-8">
-            <h2 className="text-2xl font-bold mb-3">Get Early Access</h2>
-            <p className="text-white mb-6">
-              Be the first to know when sync licensing launches. Sign up for updates.
-            </p>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <Link
-                to="/contact"
-                className="bg-white text-gray-900 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Contact Us
-              </Link>
-              <Link
-                to="/browse"
-                className="bg-gray-800 text-white px-8 py-3 rounded-full font-semibold hover:bg-gray-700 transition-colors"
-              >
-                Browse Music
-              </Link>
-            </div>
-          </div>
-
-          {/* Contact Form */}
-          <div className="bg-gray-800 rounded-lg p-8 max-w-2xl mx-auto text-left">
-            <h2 className="text-2xl font-bold mb-4 text-center">Request Information</h2>
-            <p className="text-gray-400 mb-6 text-center">
-              Interested in sync licensing? Fill out the form below and we'll get back to you soon.
-            </p>
-
-            {submitted && (
-              <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-6">
-                <p className="text-green-500 font-semibold">✓ Thank you for your inquiry!</p>
-                <p className="text-gray-300 text-sm mt-1">
-                  We've received your message and will contact you within 24-48 hours.
-                </p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-semibold mb-2">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-700 text-white p-3 rounded border border-gray-600 focus:border-green-500 focus:outline-none"
-                  placeholder="Your full name"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold mb-2">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-700 text-white p-3 rounded border border-gray-600 focus:border-green-500 focus:outline-none"
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="company" className="block text-sm font-semibold mb-2">
-                  Company / Organization
-                </label>
-                <input
-                  type="text"
-                  id="company"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleChange}
-                  className="w-full bg-gray-700 text-white p-3 rounded border border-gray-600 focus:border-green-500 focus:outline-none"
-                  placeholder="Company name (optional)"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="projectType" className="block text-sm font-semibold mb-2">
-                  Project Type
-                </label>
-                <select
-                  id="projectType"
-                  name="projectType"
-                  value={formData.projectType}
-                  onChange={handleChange}
-                  className="w-full bg-gray-700 text-white p-3 rounded border border-gray-600 focus:border-green-500 focus:outline-none"
+          <div className="text-center mb-12">
+            <div className="mb-8">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-600 to-blue-600 rounded-full">
+                <svg
+                  className="w-12 h-12 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
-                  <option value="">Select a project type</option>
-                  <option value="film">Film</option>
-                  <option value="tv">Television</option>
-                  <option value="commercial">Commercial / Advertisement</option>
-                  <option value="video-game">Video Game</option>
-                  <option value="podcast">Podcast</option>
-                  <option value="youtube">YouTube / Social Media</option>
-                  <option value="corporate">Corporate Video</option>
-                  <option value="other">Other</option>
-                </select>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
               </div>
+            </div>
 
-              <div>
-                <label htmlFor="message" className="block text-sm font-semibold mb-2">
-                  Message *
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  rows={5}
-                  className="w-full bg-gray-700 text-white p-3 rounded border border-gray-600 focus:border-green-500 focus:outline-none"
-                  placeholder="Tell us about your project and licensing needs..."
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`w-full py-3 rounded-full font-semibold transition-colors ${
-                  submitting
-                    ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                    : "bg-green-600 text-white hover:bg-green-700"
-                }`}
-              >
-                {submitting ? "Submitting..." : "Submit Inquiry"}
-              </button>
-            </form>
-
-            {/* The mailto that stood here offered a route the form cannot track --
-                and it named a mailbox (licensing@) that is not one of the addresses
-                the legal pages publish. An escape hatch to an inbox nobody watches
-                is worse than no escape hatch: it looks like a second chance and is
-                actually a dead end. */}
-            <p className="text-gray-500 text-xs text-center mt-4">
-              We reply within two business days.
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Sync Licensing</h1>
+            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto">
+              Music for film, television, advertising, games and online video —
+              licensed directly by the company that owns it.
             </p>
           </div>
+
+          {/* What a licence includes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
+            {WHAT_YOU_GET.map((item) => (
+              <div key={item.title} className="bg-gray-800 rounded-lg p-5">
+                <h2 className="font-bold text-green-500 mb-2">{item.title}</h2>
+                <p className="text-sm text-gray-400">{item.body}</p>
+              </div>
+            ))}
           </div>
+
+          {/* How it works -- stated plainly, because the absence of a checkout button
+              is the single most likely reason a visitor leaves this page. */}
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-12">
+            <h2 className="text-xl font-bold mb-3">How it works</h2>
+            <ol className="list-decimal list-inside text-gray-400 space-y-2">
+              <li>Tell us about the project below — what it is, where it runs, for how long.</li>
+              <li>We come back with terms and a quote, usually within two business days.</li>
+              <li>
+                On agreement we issue the licence and deliver the master. One signature
+                covers both the recording and the composition.
+              </li>
+            </ol>
+            <p className="text-sm text-gray-500 mt-4">
+              Sync is quoted rather than sold from a rate card, because the price of a
+              national advertisement and a student film are not the same number. If you
+              want a track for personal or small-scale use instead,{" "}
+              <Link to="/browse" className="text-gray-300 hover:underline">
+                browse the catalogue
+              </Link>{" "}
+              — those licences are issued at checkout.
+            </p>
+          </div>
+
+          {/* Enquiry form */}
+          <div className="bg-gray-800 rounded-lg p-6 sm:p-8 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-2 text-center">Tell us about your project</h2>
+            <p className="text-gray-400 mb-6 text-center text-sm">
+              The more you can say about the use, the closer the first quote will be.
+            </p>
+
+            {submitted ? (
+              <div
+                role="status"
+                className="bg-green-900/30 border border-green-700 rounded-lg p-6 text-center"
+              >
+                <p className="text-green-500 font-semibold mb-2">Enquiry received</p>
+                <p className="text-gray-300 text-sm mb-4">{submitted}</p>
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(null)}
+                  className="min-h-[44px] px-5 text-base bg-gray-700 hover:bg-gray-600 rounded-full font-medium"
+                >
+                  Send another
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                {errors.length > 0 && (
+                  <div
+                    role="alert"
+                    className="bg-red-900/30 border border-red-700 rounded-lg p-4"
+                  >
+                    <ul className="list-disc list-inside text-red-200 space-y-1 text-sm">
+                      {errors.map((err) => (
+                        <li key={err}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="name" className="block text-sm font-semibold mb-2">
+                    Name <span className="text-green-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    autoComplete="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className={field}
+                    placeholder="Your full name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold mb-2">
+                    Email <span className="text-green-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={field}
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="company" className="block text-sm font-semibold mb-2">
+                    Company / Organization{" "}
+                    <span className="text-gray-500 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="company"
+                    name="company"
+                    autoComplete="organization"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className={field}
+                    placeholder="Company name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="projectType" className="block text-sm font-semibold mb-2">
+                    Project type
+                  </label>
+                  <select
+                    id="projectType"
+                    name="projectType"
+                    value={formData.projectType}
+                    onChange={handleChange}
+                    className={field}
+                  >
+                    <option value="">Select a project type</option>
+                    {PROJECT_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-semibold mb-2">
+                    About the project <span className="text-green-500">*</span>
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    rows={5}
+                    className={field}
+                    placeholder="Where will it run, for how long, and in which territories? If you already have a track in mind, name it."
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`w-full min-h-[48px] text-base rounded-full font-semibold transition-colors ${
+                    submitting
+                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  }`}
+                >
+                  {submitting ? "Sending..." : "Send enquiry"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       </main>
       <Footer />
     </div>
