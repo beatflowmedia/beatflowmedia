@@ -92,6 +92,15 @@ export const SPONSOR_TIERS = [
  * FIRST and fall back to the enquiry form.
  */
 export function stripePriceIdFor(tier) {
+  // The DYNAMIC lookup works here only because Create React App's DefinePlugin
+  // replaces the whole `process.env` expression with an object literal of every
+  // REACT_APP_* value, so indexing it at runtime indexes that literal.
+  //
+  // Most bundlers do NOT do this -- Vite and Next replace only static
+  // `process.env.SOME_NAME` references and leave a computed index undefined. If this
+  // project ever changes build tool, every tier silently becomes "not buyable" and
+  // the page quietly falls back to the enquiry form with nothing in the console.
+  // Verified by grepping the built bundle for the price IDs, not assumed.
   return process.env[tier.priceIdEnv] || null;
 }
 
