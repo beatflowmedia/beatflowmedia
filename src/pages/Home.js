@@ -163,13 +163,31 @@ function Home() {
         });
         unsubscribers.push(unsubTrending);
 
-        // Load new releases (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
+        // The most recent releases. NOT a 30-day window -- see below.
+        //
+        // This used to be:
+        //   where("releaseDate", ">", thirtyDaysAgo)   // a Date object
+        //
+        // and returned zero every time, for three separate reasons:
+        //
+        //   1. `releaseDate` is a STRING on all 138 songs, and Firestore compares by
+        //      TYPE before value. A string is never > a Date, so the filter could not
+        //      match anything, ever. Silent: no error, just an empty shelf on the
+        //      home page while 93 tracks were on sale.
+        //   2. 99 of the 138 hold an empty string -- no date to compare at all.
+        //   3. The newest real date is 2026-02-02. Even with the types fixed, a
+        //      30-day window is honestly empty.
+        //
+        // So the filter is removed rather than repaired. "Released in the last 30
+        // days" describes a cadence this catalogue does not have; "the most recent
+        // releases" is true today and stays true if releases ever become weekly.
+        //
+        // Ordering on the string is deliberate, not an oversight: ISO-8601 dates sort
+        // lexicographically in the same order as chronologically, and empty strings
+        // sort last under `desc`, so undated records fall to the bottom rather than
+        // masquerading as the newest.
         const newReleasesQuery = query(
           collection(db, "songs"),
-          where("releaseDate", ">", thirtyDaysAgo),
           orderBy("releaseDate", "desc"),
           limit(15)
         );
@@ -643,7 +661,7 @@ function Home() {
             }}
           />
           <Chip
-            label="New Releases"
+            label="Latest Releases"
             onClick={() => setActiveCategory('new-releases')}
             sx={{
               flexShrink: 0,
