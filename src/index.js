@@ -2,6 +2,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { applyAdConsent } from "./utils/adConsent";
+
+// Before render, not after. index.html pauses every ad request until this runs, so
+// the sooner it runs the smaller the delay to the first ad -- and until it runs, no
+// ad is requested at all. It is deliberately outside React: it must happen once per
+// page load regardless of which route mounts, and it must not wait for auth.
+applyAdConsent();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 

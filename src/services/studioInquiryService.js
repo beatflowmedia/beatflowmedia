@@ -214,7 +214,19 @@ export const validateInquiryData = (data) => {
 export const INQUIRY_SOURCES = {
   STUDIO: 'studio',
   CONTACT: 'contact',
-  SYNC: 'sync'
+  SYNC: 'sync',
+  SPONSOR: 'sponsor'
+};
+
+// What the admin table's "Use Case" column shows for each source. A lookup rather
+// than a ternary chain: the ternary read `source === SYNC ? 'Sync Licensing' : ...`
+// and every new source would have added another branch to a conditional nobody would
+// remember to update -- the third source is exactly where that goes wrong.
+const USE_CASE_BY_SOURCE = {
+  [INQUIRY_SOURCES.SYNC]: 'Sync Licensing',
+  [INQUIRY_SOURCES.SPONSOR]: 'Advertising / Sponsorship',
+  [INQUIRY_SOURCES.CONTACT]: 'General Contact',
+  [INQUIRY_SOURCES.STUDIO]: 'Studio Consultation'
 };
 
 /**
@@ -238,7 +250,7 @@ export const submitGeneralInquiry = async (data) => {
       email: String(data.email || '').trim().toLowerCase(),
       businessName: String(data.company || '').trim(),
       serviceInterest: String(data.topic || '').trim() || 'General Enquiry',
-      useCase: source === INQUIRY_SOURCES.SYNC ? 'Sync Licensing' : 'General Contact',
+      useCase: USE_CASE_BY_SOURCE[source] || 'General Contact',
       projectDetails: String(data.message || '').trim(),
       timeline: '',
       budget: '',

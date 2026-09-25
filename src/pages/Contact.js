@@ -23,12 +23,18 @@ import {
 
 // The topics are the ones we can actually route. Keep this list short: a topic with
 // no owner in the back office is a promise we cannot keep.
+//
+// Each topic carries its own source. This used to be `topic.startsWith("Sync")` at
+// the call site -- routing inferred from the first four characters of display copy,
+// which silently misroutes the moment someone rewords a label. The label and where
+// it goes belong together.
 const TOPICS = [
-  "Licensing a track or album",
-  "Sync licensing (film, TV, advertising, games)",
-  "My account, downloads or receipts",
-  "Rights, legal or takedown",
-  "Something else"
+  { label: "Licensing a track or album", source: INQUIRY_SOURCES.CONTACT },
+  { label: "Sync licensing (film, TV, advertising, games)", source: INQUIRY_SOURCES.SYNC },
+  { label: "Advertising or sponsorship on BeatFlow Radio", source: INQUIRY_SOURCES.SPONSOR },
+  { label: "My account, downloads or receipts", source: INQUIRY_SOURCES.CONTACT },
+  { label: "Rights, legal or takedown", source: INQUIRY_SOURCES.CONTACT },
+  { label: "Something else", source: INQUIRY_SOURCES.CONTACT }
 ];
 
 const EMPTY = { name: "", email: "", company: "", topic: "", message: "" };
@@ -51,12 +57,13 @@ export default function Contact() {
     }
     setErrors([]);
     setSending(true);
-    // Sync enquiries are flagged at source so the back office can triage them
-    // first -- they are the highest-value messages this form carries.
-    const source = form.topic.startsWith("Sync")
-      ? INQUIRY_SOURCES.SYNC
-      : INQUIRY_SOURCES.CONTACT;
-    const result = await submitGeneralInquiry({ ...form, source });
+    // Read the source off the chosen topic, so the back office can triage sync and
+    // sponsorship ahead of the rest -- those are the messages with money attached.
+    const chosen = TOPICS.find((t) => t.label === form.topic);
+    const result = await submitGeneralInquiry({
+      ...form,
+      source: chosen ? chosen.source : INQUIRY_SOURCES.CONTACT
+    });
     setSending(false);
     if (result.success) {
       setSent(result.message);
@@ -175,8 +182,8 @@ export default function Contact() {
                   >
                     <option value="">Choose a topic</option>
                     {TOPICS.map((topic) => (
-                      <option key={topic} value={topic}>
-                        {topic}
+                      <option key={topic.label} value={topic.label}>
+                        {topic.label}
                       </option>
                     ))}
                   </select>

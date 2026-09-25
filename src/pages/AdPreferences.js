@@ -4,6 +4,10 @@ import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import {
+  setPersonalizedAdsAllowed,
+  reconcileFromProfile
+} from "../utils/adConsent";
 
 export default function AdPreferences() {
   const { user } = useAuth();
@@ -37,7 +41,14 @@ export default function AdPreferences() {
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists() && userDoc.data().adPreferences) {
-          setPreferences(userDoc.data().adPreferences);
+          const stored = userDoc.data().adPreferences;
+          setPreferences(stored);
+          // Pull the account's choice forward into local storage. Firestore is the
+          // origin of record, but it arrives too late in the page lifecycle to gate
+          // an ad request, so the local copy is what actually does the work on the
+          // NEXT load. Without this, signing in on a new device silently reverts the
+          // visitor to personalised ads.
+          reconcileFromProfile(stored);
         }
       } catch (err) {
         console.error('Error loading ad preferences:', err);
@@ -57,8 +68,15 @@ export default function AdPreferences() {
     }));
   };
 
+  // Both bulk actions pass the new object to handleSave EXPLICITLY.
+  //
+  // They used to call setPreferences(...) and then handleSave() on the next line.
+  // React state updates are asynchronous, so handleSave still closed over the OLD
+  // preferences and wrote those to Firestore -- "Disable All" saved whatever was
+  // there before, then the UI showed the toggles off and a success message. The
+  // screen and the stored record disagreed, and the screen was the one lying.
   const handleDisableAll = () => {
-    setPreferences({
+    const next = {
       personalizedAds: false,
       audioAds: true, // Can't disable on free tier
       displayAds: true, // Can't disable on free tier
@@ -68,12 +86,13 @@ export default function AdPreferences() {
       demographicTargeting: false,
       behavioralTargeting: false,
       contextualTargeting: false
-    });
-    handleSave();
+    };
+    setPreferences(next);
+    handleSave(next);
   };
 
   const handleEnableAll = () => {
-    setPreferences({
+    const next = {
       personalizedAds: true,
       audioAds: true,
       displayAds: true,
@@ -83,12 +102,16 @@ export default function AdPreferences() {
       demographicTargeting: true,
       behavioralTargeting: true,
       contextualTargeting: true
-    });
-    handleSave();
+    };
+    setPreferences(next);
+    handleSave(next);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (override) => {
     if (!user) return;
+    // Default to state for the plain Save button; take the argument when a bulk
+    // action already knows the value and state has not caught up yet.
+    const toSave = override || preferences;
 
     try {
       setError(null);
@@ -98,19 +121,25 @@ export default function AdPreferences() {
       if (userDoc.exists()) {
         // Update existing user document
         await updateDoc(userRef, {
-          adPreferences: preferences,
+          adPreferences: toSave,
           adPreferencesUpdatedAt: new Date().toISOString()
         });
       } else {
         // Create new user document
         await setDoc(userRef, {
-          adPreferences: preferences,
+          adPreferences: toSave,
           adPreferencesUpdatedAt: new Date().toISOString()
         });
       }
 
-      // Also save to localStorage as backup
-      localStorage.setItem('adPreferences', JSON.stringify(preferences));
+      // Write the choice where the ad tag can actually see it.
+      //
+      // This line used to be localStorage.setItem('adPreferences', JSON.stringify(...))
+      // described as a "backup" -- a second unread copy under a third key, which is
+      // how you get three sources of truth and no behaviour. The ad tag needs one
+      // boolean, synchronously, before it requests anything; adConsent owns that key
+      // and index.html holds ad requests until it has been applied.
+      setPersonalizedAdsAllowed(toSave.personalizedAds);
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);

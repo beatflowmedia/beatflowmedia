@@ -58,6 +58,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Cookies = lazy(() => import("./pages/Cookies"));
 const CookieSettings = lazy(() => import("./pages/CookieSettings"));
 const AboutAds = lazy(() => import("./pages/AboutAds"));
+const Advertising = lazy(() => import("./pages/Advertising"));
 const AdPreferences = lazy(() => import("./pages/AdPreferences"));
 const Accessibility = lazy(() => import("./pages/Accessibility"));
 const NoticeAtCollection = lazy(() => import("./pages/NoticeAtCollection"));
@@ -174,6 +175,7 @@ export default function AppRoutes() {
         <Route path="cookies" element={<Cookies />} />
         <Route path="cookie-settings" element={<CookieSettings />} />
         <Route path="about-ads" element={<AboutAds />} />
+        <Route path="advertising" element={<Advertising />} />
         <Route path="ad-preferences" element={<AdPreferences />} />
         <Route path="accessibility" element={<Accessibility />} />
         <Route path="notice-at-collection" element={<NoticeAtCollection />} />

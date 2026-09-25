@@ -3,7 +3,7 @@
   <head>
     <!-- v2.0 - Updated CSP for tracking pixels -->
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.firebaseio.com https://accounts.google.com https://connect.facebook.net https://analytics.tiktok.com https://pagead2.googlesyndication.com https://*.googleadservices.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob: https://*.googleusercontent.com; media-src 'self' https://storage.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app blob: data:; connect-src 'self' ws://localhost:* http://localhost:* https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google-analytics.com https://api.stripe.com https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss://firestore.googleapis.com wss://*.firebaseio.com https://www.facebook.com https://analytics.tiktok.com https://*.google.com https://*.doubleclick.net https://*.adtrafficquality.google https://ep1.adtrafficquality.google; frame-src 'self' https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.youtube.com https://player.vimeo.com https://js.stripe.com https://hooks.stripe.com https://accounts.google.com https://*.firebaseapp.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://tpc.googlesyndication.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.firebaseio.com https://accounts.google.com https://connect.facebook.net https://analytics.tiktok.com https://pagead2.googlesyndication.com https://*.googleadservices.com https://*.adtrafficquality.google; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob: https://*.googleusercontent.com; media-src 'self' https://storage.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app blob: data:; connect-src 'self' ws://localhost:* http://localhost:* https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google-analytics.com https://api.stripe.com https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss://firestore.googleapis.com wss://*.firebaseio.com https://www.facebook.com https://analytics.tiktok.com https://*.google.com https://*.doubleclick.net https://*.adtrafficquality.google https://ep1.adtrafficquality.google; frame-src 'self' https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.youtube.com https://player.vimeo.com https://js.stripe.com https://hooks.stripe.com https://accounts.google.com https://*.firebaseapp.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://tpc.googlesyndication.com; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com;" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
@@ -107,10 +107,29 @@
     -->
     <!-- End TikTok Pixel Code -->
 
-    <!-- Google AdSense Verification Code -->
+    <!-- Google AdSense -->
+
+    <!-- Hold every ad request until the app has applied the visitor's ads choice.
+
+         /ad-preferences used to save a "Personalized Ads" toggle to Firestore that
+         nothing ever read, so the choice changed nothing. Google's flag is stateless
+         and must be set on EVERY page load BEFORE any ad request fires, which an
+         async Firestore read arrives far too late to do.
+
+         So the tag is paused here and resumed by src/utils/adConsent.js, which reads
+         the choice synchronously and sets requestNonPersonalizedAds first.
+
+         This FAILS CLOSED on purpose: if the bundle never loads, pauseAdRequests is
+         never cleared and no ad is requested at all. We would rather lose the
+         impression than serve a personalised ad to someone who declined one.
+         https://support.google.com/adsense/answer/7670312 -->
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).pauseAdRequests = 1;
+    </script>
+
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8171029345239877"
          crossorigin="anonymous"></script>
-    <!-- End Google AdSense Verification Code -->
+    <!-- End Google AdSense -->
 
     <!--
       manifest.json provides metadata used when your web app is installed on a
