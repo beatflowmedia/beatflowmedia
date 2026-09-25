@@ -67,6 +67,7 @@
     "verify:terms": "node scripts/verify-terms.js",
     "backfill:ai": "node scripts/backfill-ai-disclosure.js",
     "link:masters": "node scripts/link-masters.js",
+    "upload:masters": "node scripts/upload-local-masters.js",
     "licence": "node scripts/revoke-license.js",
     "test:integration": "jest --testPathPattern=integration",
     "test:e2e": "cypress run",
