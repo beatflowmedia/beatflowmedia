@@ -189,3 +189,102 @@ export const validateInquiryData = (data) => {
     errors
   };
 };
+
+/* ------------------------------------------------------------------------- *
+ * One inbox, not three.
+ *
+ * The platform had three places a lead could land and only ONE of them had a
+ * reader. `syncLicensingInquiries` was written by the Sync Licensing form and
+ * queried by nothing -- no admin screen, no notification, no export. Every sync
+ * enquiry ever submitted went into a collection nobody opens, and the submitter
+ * got a "we'll be in touch" that was not true. Sync is the highest-value lead on
+ * this platform, so that was the most expensive silent failure on the site.
+ *
+ * The fix is Single Source: every enquiry lands in `studioInquiries`, which is
+ * the collection StudioInquiriesManager already reads. It is NOT renamed --
+ * a name matching the code, the rules and the admin screen beats a better word
+ * matching nothing, and renaming a live collection orphans its documents.
+ *
+ * The mapping below deliberately reuses `serviceInterest` and `useCase` rather
+ * than adding parallel fields, because those are the two columns the admin table
+ * already renders. A new field would need new UI to be visible, and an enquiry
+ * that is invisible in the back office is the bug we are fixing.
+ * ------------------------------------------------------------------------- */
+
+export const INQUIRY_SOURCES = {
+  STUDIO: 'studio',
+  CONTACT: 'contact',
+  SYNC: 'sync'
+};
+
+/**
+ * Submit a general enquiry (contact form, sync licensing) into the same inbox
+ * the back office reads.
+ *
+ * @param {Object} data
+ * @param {string} data.name
+ * @param {string} data.email
+ * @param {string} data.topic   - what it is about; shown as the table's "Service Interest"
+ * @param {string} data.message
+ * @param {string} [data.company]
+ * @param {string} [data.source] - one of INQUIRY_SOURCES; defaults to CONTACT
+ * @returns {Promise<{success: boolean, inquiryId: string|null, message: string}>}
+ */
+export const submitGeneralInquiry = async (data) => {
+  const source = data.source || INQUIRY_SOURCES.CONTACT;
+  try {
+    const inquiry = {
+      name: String(data.name || '').trim(),
+      email: String(data.email || '').trim().toLowerCase(),
+      businessName: String(data.company || '').trim(),
+      serviceInterest: String(data.topic || '').trim() || 'General Enquiry',
+      useCase: source === INQUIRY_SOURCES.SYNC ? 'Sync Licensing' : 'General Contact',
+      projectDetails: String(data.message || '').trim(),
+      timeline: '',
+      budget: '',
+      source,
+      status: 'new',
+      adminNotes: '',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    const docRef = await addDoc(collection(db, 'studioInquiries'), inquiry);
+
+    return {
+      success: true,
+      inquiryId: docRef.id,
+      message: 'Thanks — your message reached the team. We reply within two business days.'
+    };
+  } catch (error) {
+    console.error('Error submitting enquiry:', error);
+    return {
+      success: false,
+      inquiryId: null,
+      message: 'We could not send that. Please try again in a moment.',
+      error: error.message
+    };
+  }
+};
+
+/**
+ * Validate a general enquiry. Separate from validateInquiryData because the
+ * studio consultation form requires serviceInterest/useCase/20-char details and
+ * a contact message legitimately does not -- reusing that validator would reject
+ * valid messages, which is the DRY caveat: two rules that look alike are still
+ * two rules.
+ */
+export const validateGeneralInquiry = (data) => {
+  const errors = [];
+  if (!data.name || !data.name.trim()) errors.push('Please tell us your name.');
+  if (!data.email || !data.email.trim()) {
+    errors.push('Please give us an email address so we can reply.');
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+    errors.push('That email address does not look right.');
+  }
+  if (!data.topic || !data.topic.trim()) errors.push('Please choose what your message is about.');
+  if (!data.message || data.message.trim().length < 10) {
+    errors.push('Please add a little more detail (at least 10 characters).');
+  }
+  return { isValid: errors.length === 0, errors };
+};

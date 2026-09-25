@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
-import { db } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useModal } from "../hooks/useModal";
+import {
+  submitGeneralInquiry,
+  INQUIRY_SOURCES
+} from "../services/studioInquiryService";
 
 export default function SyncLicensing() {
   const { showAlert } = useModal();
@@ -33,11 +35,23 @@ export default function SyncLicensing() {
 
     setSubmitting(true);
     try {
-      await addDoc(collection(db, "syncLicensingInquiries"), {
-        ...formData,
-        createdAt: serverTimestamp(),
-        status: "new"
+      // Was: addDoc(collection(db, "syncLicensingInquiries"), ...).
+      //
+      // That collection had a write and no reader -- no admin screen queried it, so
+      // every sync enquiry ever submitted landed somewhere nobody opens while the
+      // sender saw "we will be in touch". Sync is the highest-value lead here, which
+      // made it the most expensive silent failure on the site.
+      //
+      // Now it goes to the one inbox the back office actually reads.
+      const result = await submitGeneralInquiry({
+        name: formData.name,
+        email: formData.email,
+        company: formData.company,
+        topic: formData.projectType || "Sync Licensing",
+        message: formData.message,
+        source: INQUIRY_SOURCES.SYNC
       });
+      if (!result.success) throw new Error(result.message);
       setSubmitted(true);
       setFormData({
         name: "",
@@ -257,14 +271,13 @@ export default function SyncLicensing() {
               </button>
             </form>
 
+            {/* The mailto that stood here offered a route the form cannot track --
+                and it named a mailbox (licensing@) that is not one of the addresses
+                the legal pages publish. An escape hatch to an inbox nobody watches
+                is worse than no escape hatch: it looks like a second chance and is
+                actually a dead end. */}
             <p className="text-gray-500 text-xs text-center mt-4">
-              Or email us directly at{" "}
-              <a
-                href="mailto:licensing@beatflowmediagroup.com"
-                className="text-green-500 hover:underline"
-              >
-                licensing@beatflowmediagroup.com
-              </a>
+              We reply within two business days.
             </p>
           </div>
           </div>

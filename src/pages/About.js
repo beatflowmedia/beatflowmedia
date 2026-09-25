@@ -1,6 +1,22 @@
 import React from "react";
 import Footer from "../components/Footer";
 
+// This page replaced copy that was lifted near-verbatim from Spotify's own About
+// page -- "With Spotify, it's easy to find the right music for every moment - on your
+// phone, your computer, your tablet and more. There are millions of tracks and
+// podcasts on Spotify" -- with the name swapped. On a platform whose entire legal
+// position rests on respecting other people's rights, that was the least defensible
+// page on the site.
+//
+// It also claimed "millions of tracks and podcasts" against a catalogue of 138 tracks
+// and no podcasts at all. A quantity claim that specific and that wrong is not
+// puffery, it is a false advertising exposure -- and it is the kind of claim a
+// competitor or a regulator can check in one click.
+//
+// Everything below is true as written and checkable against the catalogue. Where a
+// number would date quickly it is described rather than counted, so the page does not
+// silently become false the next time the catalogue grows.
+
 export default function About() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -8,73 +24,123 @@ export default function About() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left column */}
           <div>
-            <h1 className="text-4xl font-bold mb-4">About BeatFlow Media</h1>
-            <p className="text-gray-400 mb-6">
-              With BeatFlow Media, it’s easy to find the right music for every
-              moment — on your phone, your computer, your tablet and more. There
-              are millions of tracks and podcasts on BeatFlow Media. So whether
-              you’re behind the wheel, working out, partying or relaxing, the
-              right music or podcast is always at your fingertips. Choose what
-              you want to listen to, or let BeatFlow Media surprise you.
+            <h1 className="text-4xl font-bold mb-4">About BeatFlow Media Group</h1>
+            <p className="text-gray-400 mb-4">
+              BeatFlow Media Group is an independent music company. We write, produce and
+              release our own catalogue, and we license it directly — without the chain of
+              intermediaries that usually sits between a recording and the person who wants
+              to use it.
             </p>
-            <h2 className="text-2xl font-semibold mb-2">
-              Customer Service and Support
-            </h2>
+            <p className="text-gray-400 mb-6">
+              Every release is cleared at source. Because we hold both the recording and the
+              composition, a single licence covers both — no separate publisher to chase, no
+              split rights to reconcile. We call that one-stop clearance, and it is the
+              reason this catalogue exists.
+            </p>
+
+            <h2 className="text-2xl font-semibold mb-2">How our music is made</h2>
+            <p className="text-gray-400 mb-6">
+              Our recordings are produced with the assistance of artificial intelligence.
+              Lyrics and songwriting are human work; performance and instrumentation are
+              generated. We say so plainly because you deserve to know what you are
+              licensing, and because the law in this area is still settling. Our{" "}
+              <a href="/terms" className="text-white hover:underline">
+                licence terms
+              </a>{" "}
+              set out exactly what a purchase grants you and what it does not.
+            </p>
+
+            <h2 className="text-2xl font-semibold mb-2">Customer service and support</h2>
             <ul className="list-disc list-inside text-gray-400 mb-6 space-y-2">
               <li>
                 <a href="/support" className="text-white hover:underline">
                   Help
                 </a>
-                : Check our help site for answers to your questions and to learn
-                how to get the most out of BeatFlow Media.
+                : answers to common questions about licensing, downloads and your account.
               </li>
               <li>
-                <a href="/community" className="text-white hover:underline">
-                  Community
+                <a href="/sync-licensing" className="text-white hover:underline">
+                  Sync licensing
                 </a>
-                : Get support from other BeatFlow Media users. If there isn’t
-                already an answer there for your question, post it and someone
-                will quickly answer.
+                : for film, television, advertising, games and other media. Handled
+                directly, not through self-service checkout.
               </li>
               <li>
                 <a href="/contact" className="text-white hover:underline">
                   Contact us
                 </a>
-                : Shoot the BeatFlow Media support team a message — we’re here
-                to help.
+                : message the team and we will get back to you.
               </li>
               <li>
                 <a href="/accessibility" className="text-white hover:underline">
-                  Accessibility support
+                  Accessibility
                 </a>
-                : Simply tweet the team and they’ll do all they can to help.
+                : tell us where the site fails you and we will fix it.
               </li>
             </ul>
           </div>
+
           {/* Right column */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8">
+            {/* No mailto links. Enquiries are raised in the app and land in the
+                back office (studioInquiryService -> StudioInquiriesManager), where
+                they can be tracked, assigned and answered. A published mailbox
+                bypasses all of that: the message arrives somewhere nobody is
+                measuring, and a licensing enquiry that goes unanswered is a sale
+                that quietly did not happen.
+
+                The Terms and Privacy Policy still carry postal and email contacts,
+                because a contract and a privacy notice are REQUIRED to name a way to
+                reach the company. That is a legal obligation, not a support channel,
+                and the distinction is why those pages keep theirs while this one
+                does not. */}
             <div>
-              <h3 className="text-xl font-semibold mb-2">
-                BeatFlow around the world
-              </h3>
+              <h3 className="text-xl font-semibold mb-2">Get in touch</h3>
               <ul className="text-gray-400 space-y-6">
                 <li>
-                  <strong>BeatFlow USA</strong>
+                  <strong className="text-white">General enquiries</strong>
                   <br />
-                  478 Cubhouse Dr.
+                  <a href="/contact" className="text-white hover:underline">
+                    Send us a message
+                  </a>{" "}
+                  — it reaches the team directly and we can track it through to an answer.
+                </li>
+                <li>
+                  <strong className="text-white">Licensing and sync</strong>
                   <br />
-                  Middletown, NJ 07748
+                  <a href="/sync-licensing" className="text-white hover:underline">
+                    Start a licensing enquiry
+                  </a>{" "}
+                  — tell us about the project and we will come back with terms.
+                </li>
+                <li>
+                  <strong className="text-white">Support</strong>
                   <br />
-                  USA
-                  <br />
-                  <a
-                    href="mailto:office@beatflowmediagroup.com"
-                    className="text-white hover:underline"
-                  >
-                    office@beatflowmediagroup.com
-                  </a>
+                  <a href="/support" className="text-white hover:underline">
+                    Help centre
+                  </a>{" "}
+                  — account, downloads and licence questions.
                 </li>
               </ul>
+
+              <div className="mt-8 pt-6 border-t border-gray-700">
+                <p className="text-sm text-gray-500">
+                  <strong className="text-gray-300">BeatFlow Media Group</strong>
+                  <br />
+                  Middletown, New Jersey, United States
+                </p>
+                <p className="text-sm text-gray-500 mt-3">
+                  Our registered postal address and legal contacts are in our{" "}
+                  <a href="/terms" className="text-gray-300 hover:underline">
+                    Terms
+                  </a>{" "}
+                  and{" "}
+                  <a href="/privacy-policy" className="text-gray-300 hover:underline">
+                    Privacy Policy
+                  </a>
+                  .
+                </p>
+              </div>
             </div>
           </div>
         </div>
