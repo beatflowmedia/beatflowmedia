@@ -130,6 +130,11 @@ export default function SponsorApply() {
     }
   };
 
+  // The chosen package decides what the creative step asks for. Supporter carries no
+  // audio, so offering an audio upload there offers to make something it cannot run.
+  const selectedTier = SPONSOR_TIERS.find((t) => t.id === form.tierId) || null;
+  const wantsAudio = Boolean(selectedTier && selectedTier.audioSpot);
+
   const field =
     "w-full min-h-[44px] text-base bg-gray-700 text-white p-3 rounded border " +
     "border-gray-600 focus:border-green-500 focus:outline-none";
@@ -398,9 +403,19 @@ export default function SponsorApply() {
               <fieldset className="space-y-4">
                 <legend className="text-xl font-bold mb-1">3. Upload your creative</legend>
                 <p className="text-sm text-gray-400">
-                  We review everything before it airs. Up to 25MB per file.
+                  We review everything before it airs. Audio up to 50MB, logo up to 40MB.
                 </p>
 
+                {!wantsAudio && selectedTier && (
+                  <p className="text-sm text-gray-400 bg-gray-900/50 rounded p-3">
+                    {selectedTier.name} is a sponsor-card package — it carries no audio
+                    spot, so there is nothing to upload but your logo. Choose Rotation or
+                    Featured if you want a spot on air.
+                  </p>
+                )}
+
+                {wantsAudio && (
+                  <>
                 {/* WAV is asked for FIRST, which looks backwards for a web upload and
                   * is not. The station transcodes everything it receives to MP3 and
                   * normalises it. An MP3 arriving here gets encoded twice -- once by
@@ -454,6 +469,17 @@ export default function SponsorApply() {
                   </p>
                 </div>
 
+                {/* Only offered where a spot can actually run.
+                  *
+                  * Supporter is a sponsor-card package and carries NO audio at all
+                  * (audioSpot: false). Showing an upload and an offer to produce a spot
+                  * for that tier offered to make something the package cannot air --
+                  * the sponsor would supply it, we would take the money, and it would
+                  * sit unused.
+                  *
+                  * Production is INCLUDED in both tiers that carry audio, so there is
+                  * no upcharge to state. If that ever changes, the price belongs in
+                  * sponsorshipTiers.js with the rest of the money, not in this label. */}
                 <label className="flex gap-3 items-start p-4 rounded-lg bg-gray-800 border border-gray-700 cursor-pointer min-h-[44px]">
                   <input
                     type="checkbox"
@@ -463,13 +489,18 @@ export default function SponsorApply() {
                     className="mt-1 w-5 h-5 accent-green-500"
                   />
                   <span>
-                    <span className="block font-semibold">Produce the spot for me</span>
+                    <span className="block font-semibold">
+                      Produce the spot for me — no extra charge
+                    </span>
                     <span className="block text-sm text-gray-400">
-                      Included with Rotation and Featured. We will write and record it
-                      from your description and send it for your approval before it airs.
+                      Included with {selectedTier ? selectedTier.name : "this package"}.
+                      We write and record it from what you have told us above, and send
+                      it for your approval. Nothing airs until you have approved it.
                     </span>
                   </span>
                 </label>
+                  </>
+                )}
 
                 {/* Guidance corrected against how the station actually processes art.
                   *

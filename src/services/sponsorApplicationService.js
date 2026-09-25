@@ -1,6 +1,7 @@
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebaseConfig';
+import { SPONSOR_TIERS } from '../data/sponsorshipTiers';
 
 /**
  * Sponsor applications — apply, be approved, THEN pay.
@@ -87,10 +88,12 @@ export function validateApplication(form) {
     errors.push('Please describe what you are advertising in a little more detail.');
   }
 
-  // The audio spot is optional ONLY because two tiers include production. If the
-  // sponsor is not asking us to produce it and has not attached one, there is nothing
-  // to air -- which is exactly the state this whole flow exists to prevent.
-  if (!form.wantsProduction && !form.audioFile) {
+  // Audio is required only for tiers that CARRY audio. Supporter is a sponsor-card
+  // package with no spot, so demanding one there would block a valid application
+  // for a file that could never be played. The tier is the authority on this, not
+  // the form: see sponsorshipTiers.js audioSpot.
+  const tier = SPONSOR_TIERS.find((t) => t.id === form.tierId);
+  if (tier && tier.audioSpot && !form.wantsProduction && !form.audioFile) {
     errors.push('Attach your audio spot, or tick "produce the spot for me".');
   }
 
