@@ -137,7 +137,12 @@ export default function Footer() {
         {/* Derived, not typed. This read "© 2025" through the whole of 2026, and
             replacing it with a fresh literal would simply be wrong again each
             January -- a value that must track reality cannot be a constant. */}
-        <p>© {new Date().getFullYear()} BeatFlow Media.</p>
+        {/* The YEAR is derived because it must track reality; the NAME is the legal
+            entity because a copyright notice asserts who holds the rights. "BeatFlow
+            Media" is the brand and is correct in the nav and page titles; a rights
+            claim has to name the company that exists, which is BeatFlow Media Group
+            -- the same party the Terms and Privacy Policy now name. */}
+        <p>© {new Date().getFullYear()} BeatFlow Media Group.</p>
       </div>
     </footer>
   );

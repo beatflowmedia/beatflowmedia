@@ -1,14 +1,30 @@
 import React from "react";
 import Footer from "../components/Footer";
 
+// When this policy first took effect. It does not change.
+const EFFECTIVE_DATE = "January 1, 2025";
+
+// When the text last MATERIALLY changed.
+//
+// Deliberately a constant and NOT new Date(): the copyright year in the footer
+// should track reality, but this records a fact about the document. A "Last
+// Updated" that is always today claims a change that did not happen, which is worse
+// than a stale date because it cannot be caught.
+//
+// It read "January 1, 2025" for twenty months while section 10 promised to update it
+// on material changes -- and material changes had happened. BUMP THIS whenever the
+// text below changes in substance. Fixing a typo is not a bump; changing what is
+// collected, shared, or retained is.
+const LAST_UPDATED = "September 25, 2026";
+
 export default function PrivacyPolicy() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <main className="flex-1 pt-16 px-6">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl font-bold mb-4">Privacy Policy</h1>
-          <p className="text-gray-400 mb-2">Effective Date: January 1, 2025</p>
-          <p className="text-gray-400 mb-12">Last Updated: January 1, 2025</p>
+          <p className="text-gray-400 mb-2">Effective Date: {EFFECTIVE_DATE}</p>
+          <p className="text-gray-400 mb-12">Last Updated: {LAST_UPDATED}</p>
 
           <div className="prose prose-invert max-w-none">
             {/* Introduction */}
@@ -31,8 +47,21 @@ export default function PrivacyPolicy() {
 
               <h3 className="text-2xl font-semibold mb-3 mt-6">2.1 Information You Provide</h3>
               <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4">
-                <li>Account registration data (name, email, password, date of birth)</li>
-                <li>Payment information (credit card details, billing address)</li>
+                {/* Describes what is ACTUALLY collected, verified against the code.
+                    Two claims were removed because they were untrue:
+
+                    "date of birth" -- no such field exists anywhere in the app.
+                    "credit card details" -- the app never sees a card. Checkout is
+                    hosted by Stripe, and Terms section 5 already says "We do not
+                    receive or store your card details". A privacy policy that
+                    overstates collection is not cautious: it contradicts the Terms,
+                    misleads the reader about their exposure, and claims a PCI
+                    obligation this platform does not carry. */}
+                <li>Account registration data (name, email, and profile details from
+                  your Google account if you sign in with Google)</li>
+                <li>Payment details are collected by <strong>Stripe</strong>, our payment processor.
+                  We never see or store your card number. We receive only a transaction
+                  record, the amount, and the email you gave at checkout.</li>
                 <li>Profile information (username, profile picture, preferences)</li>
                 <li>User-generated content (playlists, comments, reviews)</li>
                 <li>Communications with customer support</li>
