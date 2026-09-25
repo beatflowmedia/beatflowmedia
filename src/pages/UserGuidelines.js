@@ -15,9 +15,9 @@ export default function UserGuidelines() {
             <h2 className="text-3xl font-bold mb-4">Community Standards</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                BeatFlow Media is a community-driven platform that connects artists, listeners, and curators.
+                BeatFlow Media Group is a community-driven platform that connects artists, listeners, and curators.
                 These User Guidelines outline the standards of behavior we expect from all members of our community.
-                By using BeatFlow Media, you agree to follow these guidelines and help us maintain a safe,
+                By using BeatFlow Media Group, you agree to follow these guidelines and help us maintain a safe,
                 respectful, and creative environment.
               </p>
               <p>
@@ -32,7 +32,7 @@ export default function UserGuidelines() {
             <h2 className="text-3xl font-bold mb-4">1. Be Respectful</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                BeatFlow Media is built on mutual respect. We expect all users to treat each other with kindness
+                BeatFlow Media Group is built on mutual respect. We expect all users to treat each other with kindness
                 and consideration.
               </p>
 
@@ -65,7 +65,7 @@ export default function UserGuidelines() {
             <h2 className="text-3xl font-bold mb-4">2. Content Standards</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                All content uploaded to BeatFlow Media must meet our quality and safety standards.
+                All content uploaded to BeatFlow Media Group must meet our quality and safety standards.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6">Prohibited Content</h3>
@@ -100,7 +100,7 @@ export default function UserGuidelines() {
             <h2 className="text-3xl font-bold mb-4">3. Respect Intellectual Property</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                Copyright and intellectual property rights are fundamental to BeatFlow Media's ecosystem.
+                Copyright and intellectual property rights are fundamental to BeatFlow Media Group's ecosystem.
               </p>
 
               <div className="bg-gray-800 rounded-lg p-6">
@@ -125,7 +125,7 @@ export default function UserGuidelines() {
               </div>
 
               <p className="mt-4">
-                If you believe content on BeatFlow Media infringes your copyright, please submit a DMCA notice to{" "}
+                If you believe content on BeatFlow Media Group infringes your copyright, please submit a DMCA notice to{" "}
                 <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
                   legal@beatflowmediagroup.com
                 </a>
@@ -138,7 +138,7 @@ export default function UserGuidelines() {
             <h2 className="text-3xl font-bold mb-4">4. Authenticity and Integrity</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                We value genuine engagement and authentic representation on BeatFlow Media.
+                We value genuine engagement and authentic representation on BeatFlow Media Group.
               </p>
 
               <div className="bg-red-900/20 border border-red-700 rounded-lg p-6">
@@ -180,7 +180,7 @@ export default function UserGuidelines() {
                   <li>Don't solicit personal information from minors</li>
                   <li>Respect other users' privacy settings and boundaries</li>
                   <li>Report suspicious or harmful behavior immediately</li>
-                  <li>Don't use BeatFlow Media to stalk, harass, or threaten others</li>
+                  <li>Don't use BeatFlow Media Group to stalk, harass, or threaten others</li>
                   <li>Keep your account credentials secure and don't share them</li>
                 </ul>
               </div>
@@ -192,7 +192,7 @@ export default function UserGuidelines() {
             <h2 className="text-3xl font-bold mb-4">6. Commercial Activity</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                BeatFlow Media supports legitimate commercial activity, but certain practices are prohibited.
+                BeatFlow Media Group supports legitimate commercial activity, but certain practices are prohibited.
               </p>
 
               <div className="bg-gray-800 rounded-lg p-6">
@@ -319,7 +319,7 @@ export default function UserGuidelines() {
               </div>
 
               <p className="mt-4">
-                Enforcement decisions are made at BeatFlow Media's sole discretion. If you believe your account
+                Enforcement decisions are made at BeatFlow Media Group's sole discretion. If you believe your account
                 was unfairly penalized, you may appeal by contacting{" "}
                 <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">
                   support@beatflowmediagroup.com
@@ -338,7 +338,7 @@ export default function UserGuidelines() {
                 or a notice on the platform.
               </p>
               <p>
-                Your continued use of BeatFlow Media after guideline updates constitutes acceptance of the
+                Your continued use of BeatFlow Media Group after guideline updates constitutes acceptance of the
                 new guidelines.
               </p>
             </div>
@@ -352,7 +352,7 @@ export default function UserGuidelines() {
                 If you have questions about these User Guidelines or need clarification, please contact us:
               </p>
               <div className="bg-gray-800 rounded-lg p-6">
-                <p><strong className="text-white">BeatFlow Media Inc.</strong></p>
+                <p><strong className="text-white">BeatFlow Media Group</strong></p>
                 <p>Community Team</p>
                 <p>478 Cubhouse Dr.</p>
                 <p>Middletown, NJ 07748</p>
@@ -371,7 +371,7 @@ export default function UserGuidelines() {
           <div className="bg-green-900/20 border border-green-700 rounded-lg p-6 mb-8">
             <h3 className="text-xl font-bold mb-2">Thank You</h3>
             <p className="text-gray-300">
-              Thank you for being part of the BeatFlow Media community and helping us create a safe,
+              Thank you for being part of the BeatFlow Media Group community and helping us create a safe,
               respectful, and inspiring platform for music lovers and creators worldwide.
             </p>
           </div>

@@ -17,7 +17,7 @@ export default function Legal() {
             <div className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
               <h2 className="text-2xl font-bold mb-3">Terms and Conditions of Use</h2>
               <p className="text-gray-400 mb-4">
-                Please read these terms and conditions carefully before using BeatFlow Media's services.
+                Please read these terms and conditions carefully before using BeatFlow Media Group's services.
                 By using our service, you agree to be bound by these terms.
               </p>
               <p className="text-sm text-gray-500 mb-3">Last updated: January 1, 2025</p>
@@ -29,7 +29,7 @@ export default function Legal() {
             <div className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
               <h2 className="text-2xl font-bold mb-3">Privacy Policy</h2>
               <p className="text-gray-400 mb-4">
-                Learn about how we collect, use, and protect your personal information when you use BeatFlow Media.
+                Learn about how we collect, use, and protect your personal information when you use BeatFlow Media Group.
               </p>
               <p className="text-sm text-gray-500 mb-3">Last updated: January 1, 2025</p>
               <Link to="/privacy-policy" className="text-green-500 hover:underline font-semibold">
@@ -40,7 +40,7 @@ export default function Legal() {
             <div className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
               <h2 className="text-2xl font-bold mb-3">User Guidelines</h2>
               <p className="text-gray-400 mb-4">
-                Community standards and acceptable use policies for all BeatFlow Media users.
+                Community standards and acceptable use policies for all BeatFlow Media Group users.
               </p>
               <p className="text-sm text-gray-500 mb-3">Last updated: January 1, 2025</p>
               <Link to="/user-guidelines" className="text-green-500 hover:underline font-semibold">
@@ -69,14 +69,14 @@ export default function Legal() {
             <Link to="/about-ads" className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
               <h3 className="text-xl font-bold mb-2">About Ads</h3>
               <p className="text-gray-400 text-sm">
-                Learn about advertising on BeatFlow Media
+                Learn about advertising on BeatFlow Media Group
               </p>
             </Link>
 
             <Link to="/accessibility" className="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition-colors">
               <h3 className="text-xl font-bold mb-2">Accessibility</h3>
               <p className="text-gray-400 text-sm">
-                Our commitment to making BeatFlow Media accessible to everyone
+                Our commitment to making BeatFlow Media Group accessible to everyone
               </p>
             </Link>
 
@@ -102,20 +102,20 @@ export default function Legal() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Copyright</h3>
                 <p>
-                  All content on BeatFlow Media, including music, artwork, and text, is protected by copyright laws.
+                  All content on BeatFlow Media Group, including music, artwork, and text, is protected by copyright laws.
                   Unauthorized copying or distribution is prohibited.
                 </p>
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">Trademarks</h3>
                 <p>
-                  BeatFlow Media and related logos are trademarks of BeatFlow Media Inc. All rights reserved.
+                  BeatFlow Media Group and related logos are trademarks of BeatFlow Media Group All rights reserved.
                 </p>
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">DMCA</h3>
                 <p>
-                  If you believe content on BeatFlow Media infringes your copyright, please submit a DMCA notice to{" "}
+                  If you believe content on BeatFlow Media Group infringes your copyright, please submit a DMCA notice to{" "}
                   <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
                     legal@beatflowmediagroup.com
                   </a>
@@ -129,7 +129,7 @@ export default function Legal() {
             <h2 className="text-2xl font-bold mb-4">Legal Contact Information</h2>
             <div className="text-gray-400 space-y-2">
               <p>
-                <strong className="text-white">BeatFlow Media Inc.</strong>
+                <strong className="text-white">BeatFlow Media Group</strong>
               </p>
               <p>Legal Department</p>
               <p>478 Cubhouse Dr.</p>

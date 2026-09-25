@@ -15,7 +15,7 @@ export default function PrivacyPolicy() {
             <div className="mb-12">
               <h2 className="text-3xl font-bold mb-4">1. Introduction</h2>
               <p className="text-gray-300 mb-4">
-                This Privacy Policy explains how BeatFlow Media Inc. ("BeatFlow Media," "we," "us," or "our")
+                This Privacy Policy explains how BeatFlow Media Group ("BeatFlow Media Group," "we," "us," or "our")
                 collects, uses, discloses, and protects your personal information when you use our music streaming
                 service, websites, and applications (collectively, the "Service").
               </p>
@@ -183,7 +183,7 @@ export default function PrivacyPolicy() {
                 please contact us:
               </p>
               <div className="bg-gray-800 rounded-lg p-6 text-gray-300">
-                <p><strong className="text-white">BeatFlow Media Inc.</strong></p>
+                <p><strong className="text-white">BeatFlow Media Group</strong></p>
                 <p>Privacy Department</p>
                 <p>478 Cubhouse Dr.</p>
                 <p>Middletown, NJ 07748</p>

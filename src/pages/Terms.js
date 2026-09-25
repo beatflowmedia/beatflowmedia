@@ -53,8 +53,8 @@ export default function Terms() {
             <h2 className="text-3xl font-bold mb-4">1. Introduction</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                Welcome to BeatFlow Media. These Terms and Conditions ("Terms") govern your use of our website,
-                applications, and services (collectively, the "Service"). By accessing or using BeatFlow Media,
+                Welcome to BeatFlow Media Group. These Terms and Conditions ("Terms") govern your use of our website,
+                applications, and services (collectively, the "Service"). By accessing or using BeatFlow Media Group,
                 you agree to be bound by these Terms.
               </p>
               <p>
@@ -69,7 +69,7 @@ export default function Terms() {
             <h2 className="text-3xl font-bold mb-4">2. Account Registration</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                To access certain features of BeatFlow Media, you must create an account. You agree to:
+                To access certain features of BeatFlow Media Group, you must create an account. You agree to:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Provide accurate, current, and complete information during registration</li>
@@ -79,7 +79,7 @@ export default function Terms() {
                 <li>Not share your account with others or allow unauthorized access</li>
               </ul>
               <p>
-                You must be at least 13 years old to use BeatFlow Media. If you are under 18, you must have
+                You must be at least 13 years old to use BeatFlow Media Group. If you are under 18, you must have
                 parental or guardian consent.
               </p>
             </div>
@@ -125,14 +125,14 @@ export default function Terms() {
             <div className="text-gray-300 space-y-4">
               <h3 className="text-xl font-semibold text-white">Content Ownership</h3>
               <p>
-                All music, artwork, text, and other content on BeatFlow Media is protected by copyright and
+                All music, artwork, text, and other content on BeatFlow Media Group is protected by copyright and
                 intellectual property laws. Artists retain ownership of their uploaded content, but grant
-                BeatFlow Media a non-exclusive license to distribute and promote such content.
+                BeatFlow Media Group a non-exclusive license to distribute and promote such content.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6">Licensing for Use</h3>
               <p>
-                When you purchase a license through BeatFlow Media, you receive specific rights as outlined
+                When you purchase a license through BeatFlow Media Group, you receive specific rights as outlined
                 in your purchase. License types include:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
@@ -264,7 +264,7 @@ export default function Terms() {
 
               <h3 className="text-xl font-semibold text-white mt-6">Artist Revenue</h3>
               <p>
-                Artists earn <strong>70% of net sales revenue</strong>, with BeatFlow Media retaining 30% as a
+                Artists earn <strong>70% of net sales revenue</strong>, with BeatFlow Media Group retaining 30% as a
                 platform fee covering hosting, bandwidth, catalog administration, and platform maintenance.
                 Payouts are processed monthly via Stripe Connect, subject to a minimum threshold of $50.
               </p>
@@ -278,7 +278,7 @@ export default function Terms() {
               <p className="text-sm text-gray-400">
                 Worked example. A track sold at $1.99: payment processing of $0.36 and a statutory mechanical
                 royalty of $0.131 are deducted, leaving net sales revenue of $1.50. The artist receives $1.05
-                and BeatFlow Media retains $0.45.
+                and BeatFlow Media Group retains $0.45.
               </p>
               <p className="text-sm text-gray-400">
                 The statutory mechanical rate is set by the U.S. Copyright Royalty Board and changes annually.
@@ -327,7 +327,7 @@ export default function Terms() {
             <h2 className="text-3xl font-bold mb-4">7. Content Moderation</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                BeatFlow Media reserves the right to remove any content that violates these Terms or our
+                BeatFlow Media Group reserves the right to remove any content that violates these Terms or our
                 Community Guidelines. We may also suspend or terminate accounts for violations. Content
                 moderation decisions are at our sole discretion.
               </p>
@@ -346,7 +346,7 @@ export default function Terms() {
             <h2 className="text-3xl font-bold mb-4">8. Privacy</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                Your use of BeatFlow Media is also governed by our{" "}
+                Your use of BeatFlow Media Group is also governed by our{" "}
                 <Link to="/privacy-policy" className="text-green-500 hover:underline">
                   Privacy Policy
                 </Link>
@@ -393,7 +393,7 @@ export default function Terms() {
             <h2 className="text-3xl font-bold mb-4">11. Indemnification</h2>
             <div className="text-gray-300 space-y-4">
               <p>
-                You agree to indemnify and hold harmless BeatFlow Media, its officers, directors, employees,
+                You agree to indemnify and hold harmless BeatFlow Media Group, its officers, directors, employees,
                 and agents from any claims, damages, losses, liabilities, and expenses (including attorneys' fees)
                 arising from:
               </p>
@@ -460,7 +460,7 @@ export default function Terms() {
                 If you have questions about these Terms, please contact us at:
               </p>
               <div className="bg-gray-800 rounded-lg p-6">
-                <p><strong className="text-white">BeatFlow Media Inc.</strong></p>
+                <p><strong className="text-white">BeatFlow Media Group</strong></p>
                 <p>Legal Department</p>
                 <p>478 Cubhouse Dr.</p>
                 <p>Middletown, NJ 07748</p>
@@ -479,7 +479,7 @@ export default function Terms() {
           <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-6 mb-8">
             <h3 className="text-xl font-bold mb-2">Agreement</h3>
             <p className="text-gray-300">
-              By using BeatFlow Media, you acknowledge that you have read, understood, and agree to be bound
+              By using BeatFlow Media Group, you acknowledge that you have read, understood, and agree to be bound
               by these Terms and Conditions.
             </p>
           </div>
