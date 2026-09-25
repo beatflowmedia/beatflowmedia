@@ -52,9 +52,17 @@ const BUCKET = valueOf('bucket', 'beatflowmedia.firebasestorage.app');
 
 
 /** Flatten a title hard enough that storage filenames and catalogue titles meet.
- *  Smart apostrophes, "(feat. …)" and punctuation all differ between the two. */
+ *  Smart apostrophes, "(feat. …)" and punctuation all differ between the two.
+ *
+ *  HTML entities are decoded first, because at least one file was uploaded with the
+ *  entity baked into its NAME -- "What We Don&apos;t Say.mp3". Without decoding,
+ *  stripping punctuation turns that into "what we don apos t say", which matches
+ *  nothing, and the track stayed unsellable for a stray ampersand. */
 function norm(s) {
   return String(s || '')
+    .replace(/&apos;|&#39;|&rsquo;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
     .toLowerCase()
     .replace(/[‘’‛ʼ]/g, "'")
     .replace(/\(feat\.?[^)]*\)/g, ' ')
@@ -62,6 +70,25 @@ function norm(s) {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 }
+
+/**
+ * Titles that genuinely differ between the catalogue and the file, mapped by hand.
+ *
+ * No normalisation can bridge these -- they are different words, not different
+ * punctuation. "In This Light We are Golden" against "In This Light, We're Golden"
+ * is a rewrite, and an algorithm loose enough to match it would also match tracks
+ * that merely share a few words, which is far worse: a buyer paying for one
+ * recording and receiving another.
+ *
+ * So the exception is DECLARED rather than inferred. Each entry is a human saying
+ * "these two are the same recording", which is exactly the judgement a fuzzy
+ * threshold would be pretending to make.
+ *
+ * Keyed by the normalised SONG title; the value is the normalised FILE title.
+ */
+const TITLE_OVERRIDES = {
+  'in this light we are golden': 'in this light we re golden'
+};
 
 const AUDIO = new Set(['wav', 'mp3', 'flac', 'aiff', 'aif', 'm4a']);
 const LOSSLESS = new Set(['wav', 'flac', 'aiff', 'aif']);
@@ -219,7 +246,9 @@ async function main() {
   const alreadyLinked = [];
 
   songs.forEach((s) => {
-    const cands = byKey.get(norm(s.title)) || [];
+    // Declared overrides win over the normalised title; see TITLE_OVERRIDES.
+    const wanted = TITLE_OVERRIDES[norm(s.title)] || norm(s.title);
+    const cands = byKey.get(wanted) || [];
     if (!cands.length) { noMaster.push(s); return; }
 
     const ranked = [...cands].sort((a, b) => {
