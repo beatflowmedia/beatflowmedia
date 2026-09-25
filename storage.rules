@@ -38,17 +38,33 @@ service firebase.storage {
     }
 
     match /artist-uploads/audio/{allPaths=**} {
-      // Secure audio streaming: Requires authentication
-      // Signed URLs are generated via Cloud Function (getSignedAudioUrl)
-      // This provides security, analytics, and monetization capabilities
-      allow read: if request.auth != null;
+      // Audio is delivered by SIGNED URL ONLY, never by direct read.
+      //
+      // This previously granted read to any authenticated user, which made a free
+      // account enough to fetch a full-length master -- and once song records carry
+      // a masterPath, the path to fetch is published on a world-readable document.
+      // Purchase became optional.
+      //
+      // Nothing legitimate needed that grant. Playback goes through the
+      // getSignedAudioUrl Cloud Function and downloads through
+      // netlify/functions/download-master.js; both sign with admin credentials,
+      // which bypass these rules entirely. So closing direct read costs nothing and
+      // is what makes storing masterPath safe.
+      allow read: if isPlatformAdmin();
       allow write: if request.auth != null
         && request.resource.size < 500 * 1024 * 1024; // 500MB limit for high-quality WAV files
     }
 
     match /artist-uploads/{allPaths=**} {
-      // Catch-all for other artist uploads
-      allow read: if request.auth != null;
+      // Catch-all for other artist uploads, including artist-uploads/full/ where
+      // nine of the linked masters live.
+      //
+      // This one is the load-bearing change. Storage rules OR their allow statements
+      // across every matching path, so tightening artist-uploads/audio/ above does
+      // nothing while this catch-all still grants blanket read -- it would keep
+      // handing out full/ to any signed-in account. Covers stay public via their own
+      // rule above; everything else here is served by signed URL.
+      allow read: if isPlatformAdmin();
       allow write: if request.auth != null
         && request.resource.size < 500 * 1024 * 1024;
     }

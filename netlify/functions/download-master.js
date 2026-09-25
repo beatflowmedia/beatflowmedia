@@ -103,50 +103,139 @@ exports.handler = async (event) => {
     }
 
     // ---- locate the master ------------------------------------------------
-    // Throws 422 when the record has no valid ISRC. Four test uploads are in that
-    // state; they are not part of the seeded catalogue and have no lossless master.
+    //
+    // TWO BACKENDS, ONE CONTRACT. Both end in a short-lived signed URL for a file
+    // the buyer has paid for; they differ only in where the bytes live.
+    //
+    //   masterPath  -> Firebase Storage. An explicit object path written onto the
+    //                  record by scripts/link-masters.js. Preferred when present,
+    //                  because an explicit pointer beats a derived one: it says
+    //                  which file, not which file we would expect.
+    //   isrc        -> Cloudflare R2 at masters/<ISRC>.wav, the seeded convention.
+    //
+    // The path is stored on a WORLD-READABLE record, which is safe only because
+    // storage.rules restricts admin-uploads/** to isPlatformAdmin(). The path grants
+    // nothing on its own; the signature does. If those rules are ever loosened, this
+    // stops being safe and the field has to move.
     let key;
-    try {
-      key = masterObjectKey(song.isrc);
-    } catch (err) {
-      console.warn('[download-master] no ISRC for song', songId, song.title);
-      return fail(err.statusCode || 422, err.message);
-    }
+    let filename;
+    let url;
 
-    const cfg = r2Config();
+    const storedPath = typeof song.masterPath === 'string' ? song.masterPath.trim() : '';
+    // Which store the path refers to. Defaults to firebase so the 33 records linked
+    // before R2 existed keep working without a backfill -- an absent discriminator
+    // must never mean "guess", and firebase was the only possibility at the time.
+    const backend = song.masterBackend === 'r2' ? 'r2' : 'firebase';
 
-    // ---- does the master actually exist? ----------------------------------
-    // A valid ISRC is not a promise that a file was pushed. Ten records (all of
-    // "The Best Nights Of Our Lives") have perfectly good ISRCs and no lossless
-    // master anywhere -- masterObjectKey() cannot catch that, because there is
-    // nothing wrong with the identifier. Handing out a signed URL anyway gives the
-    // buyer a 404 AFTER paying, which is the one outcome this whole path exists to
-    // prevent. One HEAD is cheap next to a refund.
-    const probeUrl = presignGetObject({ ...cfg, key, expiresIn: 60, method: 'HEAD' });
-    let probe;
-    try {
-      probe = await fetch(probeUrl, { method: 'HEAD' });
-    } catch (err) {
-      console.error('[download-master] master bucket unreachable:', err.message);
-      return fail(503, 'Downloads are temporarily unavailable. Please try again shortly.');
-    }
-    if (probe.status === 404) {
-      console.warn('[download-master] no master object at', key, 'for', song.title);
-      return fail(409, 'A lossless master is not available for this track yet.');
-    }
-    if (!probe.ok) {
-      console.error('[download-master] HEAD returned', probe.status, 'for', key);
-      return fail(502, 'Could not prepare your download.');
-    }
+    if (storedPath && backend === 'r2') {
+      // ---- Cloudflare R2, explicit path -------------------------------------
+      // Distinct from the ISRC branch below: that DERIVES masters/<ISRC>.wav from a
+      // convention, this uses a path something actually saw in the bucket. An
+      // explicit pointer beats a derived one whenever both exist.
+      key = storedPath;
+      const ext = (storedPath.split('.').pop() || 'mp3').toLowerCase();
+      filename = masterDownloadFilename(song.title, song.isrc).replace(/\.[a-z0-9]+$/i, '.' + ext);
 
-    const filename = masterDownloadFilename(song.title, song.isrc);
-    const url = presignGetObject({
-      ...cfg,
-      key,
-      expiresIn: MASTER_URL_TTL_SECONDS,
-      // Make the browser save it under a human name rather than the ISRC.
-      responseContentDisposition: 'attachment; filename="' + filename + '"'
-    });
+      const cfg = r2Config();
+      const probeUrl = presignGetObject({ ...cfg, key, expiresIn: 60, method: 'HEAD' });
+      let probe;
+      try {
+        probe = await fetch(probeUrl, { method: 'HEAD' });
+      } catch (err) {
+        console.error('[download-master] R2 unreachable:', err.message);
+        return fail(503, 'Downloads are temporarily unavailable. Please try again shortly.');
+      }
+      if (probe.status === 404) {
+        console.warn('[download-master] no R2 object at', key, 'for', song.title);
+        return fail(409, 'The master file for this track is not available yet.');
+      }
+      if (!probe.ok) {
+        console.error('[download-master] R2 HEAD returned', probe.status, 'for', key);
+        return fail(502, 'Could not prepare your download.');
+      }
+
+      url = presignGetObject({
+        ...cfg,
+        key,
+        expiresIn: MASTER_URL_TTL_SECONDS,
+        responseContentDisposition: 'attachment; filename="' + filename + '"'
+      });
+    } else if (storedPath) {
+      // ---- Firebase Storage -------------------------------------------------
+      key = storedPath;
+      const ext = (storedPath.split('.').pop() || 'mp3').toLowerCase();
+      filename = masterDownloadFilename(song.title, song.isrc).replace(/\.[a-z0-9]+$/i, '.' + ext);
+
+      const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'beatflowmedia.firebasestorage.app';
+      const file = admin.storage().bucket(bucketName).file(storedPath);
+
+      // Same reasoning as the R2 HEAD below: a recorded path is not a promise the
+      // object is still there. A 404 AFTER paying is the outcome this path exists
+      // to prevent, and one existence check is cheap next to a refund.
+      let exists = false;
+      try {
+        [exists] = await file.exists();
+      } catch (err) {
+        console.error('[download-master] storage unreachable:', err.message);
+        return fail(503, 'Downloads are temporarily unavailable. Please try again shortly.');
+      }
+      if (!exists) {
+        console.warn('[download-master] no object at', storedPath, 'for', song.title);
+        return fail(409, 'The master file for this track is not available yet.');
+      }
+
+      try {
+        [url] = await file.getSignedUrl({
+          action: 'read',
+          expires: Date.now() + MASTER_URL_TTL_SECONDS * 1000,
+          responseDisposition: 'attachment; filename="' + filename + '"'
+        });
+      } catch (err) {
+        console.error('[download-master] could not sign', storedPath, err.message);
+        return fail(502, 'Could not prepare your download.');
+      }
+    } else {
+      // ---- Cloudflare R2 ----------------------------------------------------
+      // Throws 422 when the record has no valid ISRC. Four test uploads are in that
+      // state; they are not part of the seeded catalogue and have no lossless master.
+      try {
+        key = masterObjectKey(song.isrc);
+      } catch (err) {
+        console.warn('[download-master] no ISRC and no masterPath for song', songId, song.title);
+        return fail(err.statusCode || 422, err.message);
+      }
+
+      const cfg = r2Config();
+
+      // A valid ISRC is not a promise that a file was pushed. Records can have a
+      // perfectly good identifier and no master anywhere -- masterObjectKey() cannot
+      // catch that, because there is nothing wrong with the identifier.
+      const probeUrl = presignGetObject({ ...cfg, key, expiresIn: 60, method: 'HEAD' });
+      let probe;
+      try {
+        probe = await fetch(probeUrl, { method: 'HEAD' });
+      } catch (err) {
+        console.error('[download-master] master bucket unreachable:', err.message);
+        return fail(503, 'Downloads are temporarily unavailable. Please try again shortly.');
+      }
+      if (probe.status === 404) {
+        console.warn('[download-master] no master object at', key, 'for', song.title);
+        return fail(409, 'A lossless master is not available for this track yet.');
+      }
+      if (!probe.ok) {
+        console.error('[download-master] HEAD returned', probe.status, 'for', key);
+        return fail(502, 'Could not prepare your download.');
+      }
+
+      filename = masterDownloadFilename(song.title, song.isrc);
+      url = presignGetObject({
+        ...cfg,
+        key,
+        expiresIn: MASTER_URL_TTL_SECONDS,
+        // Make the browser save it under a human name rather than the ISRC.
+        responseContentDisposition: 'attachment; filename="' + filename + '"'
+      });
+    }
 
     // ---- audit ------------------------------------------------------------
     // Non-fatal: a buyer who paid gets their file even if logging fails.
