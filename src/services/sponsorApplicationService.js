@@ -142,7 +142,17 @@ function fileProblem(file, types, label) {
  * @param {string[]} [fields] - restrict the check to these; omit to check everything.
  */
 export function validateApplication(form, fields) {
-  const names = fields && fields.length ? fields : Object.keys(RULES);
+  // Array.isArray, NOT a truthiness check on .length.
+  //
+  // This read `fields && fields.length ? fields : Object.keys(RULES)`, which cannot
+  // tell "check nothing" from "check everything": an empty array is truthy but its
+  // .length is 0, so it fell through to validating the WHOLE form. The wizard's first
+  // step owns no fields and passes [], so pressing Continue on step one reported every
+  // error on the form before the sponsor had been shown a single input.
+  //
+  // An explicit [] now means exactly what it says. Omitting the argument still checks
+  // everything, which is what the final submit relies on.
+  const names = Array.isArray(fields) ? fields : Object.keys(RULES);
   const errors = names
     .map((name) => (RULES[name] ? RULES[name](form) : null))
     .filter(Boolean);

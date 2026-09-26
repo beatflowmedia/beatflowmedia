@@ -68,6 +68,7 @@
     "fix:prices": "node scripts/fix-catalog-prices.js",
     "verify:masters": "node scripts/verify-masters.js",
     "verify:terms": "node scripts/verify-terms.js",
+    "verify:sponsor": "node scripts/verify-sponsor-validation.js",
     "backfill:ai": "node scripts/backfill-ai-disclosure.js",
     "link:masters": "node scripts/link-masters.js",
     "upload:masters": "node scripts/upload-local-masters.js",
