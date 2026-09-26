@@ -41,7 +41,7 @@ export const APPLICATION_STATUS = {
 // this constant is here so the client cannot accidentally send anything else.
 const INITIAL_STATUS = APPLICATION_STATUS.SUBMITTED;
 
-const MAX_BYTES = 25 * 1024 * 1024;
+const MAX_BYTES = 50 * 1024 * 1024;
 const AUDIO_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/aiff'];
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
 
@@ -63,51 +63,89 @@ async function uploadCreative(userId, file, kind) {
   return { path, url: await getDownloadURL(fileRef) };
 }
 
-export function validateApplication(form) {
-  const errors = [];
+/**
+ * Validation rules, keyed by the field they belong to.
+ *
+ * A wizard validates ONE STEP at a time, and the obvious way to do that is a second
+ * set of per-step checks -- which is exactly how a wizard and its submit handler end
+ * up disagreeing about what a valid application is. The rules live here once; a step
+ * names the fields it covers and gets the same rule applied.
+ *
+ * Each entry returns an error string or null. Rules that depend on another field
+ * (audio depends on the chosen tier) receive the whole form.
+ */
+const RULES = {
+  tierId: (f) => (!f.tierId ? 'Please choose a sponsorship package.' : null),
 
-  if (!form.tierId) errors.push('Please choose a sponsorship package.');
-  if (!form.company || !form.company.trim()) errors.push('Please give us the advertiser or brand name.');
-  if (!form.blurb || !form.blurb.trim()) errors.push('Please give us the one line for your sponsor card.');
-  if (!form.cta || !form.cta.trim()) errors.push('Please give us a button label for your sponsor card.');
-  if (!form.contactName || !form.contactName.trim()) errors.push('Please give us a contact name.');
+  company: (f) =>
+    !f.company || !f.company.trim() ? 'Please give us the advertiser or brand name.' : null,
 
-  if (!form.email || !form.email.trim()) {
-    errors.push('Please give us an email address.');
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-    errors.push('That email address does not look right.');
-  }
+  blurb: (f) =>
+    !f.blurb || !f.blurb.trim() ? 'Please give us the one line for your sponsor card.' : null,
 
-  if (!form.landingUrl || !form.landingUrl.trim()) {
-    errors.push('Please give us the web address the sponsor card should link to.');
-  } else if (!/^https?:\/\/.+\..+/i.test(form.landingUrl.trim())) {
-    errors.push('The landing web address should start with http:// or https://');
-  }
+  cta: (f) =>
+    !f.cta || !f.cta.trim() ? 'Please give us a button label for your sponsor card.' : null,
 
-  if (!form.describe || form.describe.trim().length < 20) {
-    errors.push('Please describe what you are advertising in a little more detail.');
-  }
+  contactName: (f) =>
+    !f.contactName || !f.contactName.trim() ? 'Please give us a contact name.' : null,
 
-  // Audio is required only for tiers that CARRY audio. Supporter is a sponsor-card
-  // package with no spot, so demanding one there would block a valid application
-  // for a file that could never be played. The tier is the authority on this, not
-  // the form: see sponsorshipTiers.js audioSpot.
-  const tier = SPONSOR_TIERS.find((t) => t.id === form.tierId);
-  if (tier && tier.audioSpot && !form.wantsProduction && !form.audioFile) {
-    errors.push('Attach your audio spot, or tick "produce the spot for me".');
-  }
-
-  [['audioFile', AUDIO_TYPES, 'audio'], ['logoFile', IMAGE_TYPES, 'image']].forEach(
-    ([field, types, label]) => {
-      const file = form[field];
-      if (!file) return;
-      if (file.size > MAX_BYTES) errors.push(`That ${label} file is over 25MB.`);
-      if (file.type && !types.includes(file.type)) {
-        errors.push(`That ${label} file is not a supported format.`);
-      }
+  email: (f) => {
+    if (!f.email || !f.email.trim()) return 'Please give us an email address.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
+      return 'That email address does not look right.';
     }
-  );
+    return null;
+  },
 
+  landingUrl: (f) => {
+    if (!f.landingUrl || !f.landingUrl.trim()) {
+      return 'Please give us the web address the sponsor card should link to.';
+    }
+    if (!/^https?:\/\/.+\..+/i.test(f.landingUrl.trim())) {
+      return 'The landing web address should start with http:// or https://';
+    }
+    return null;
+  },
+
+  describe: (f) =>
+    !f.describe || f.describe.trim().length < 20
+      ? 'Please describe what you are advertising in a little more detail.'
+      : null,
+
+  // Required only for tiers that CARRY audio. Supporter is a sponsor-card package
+  // with no spot, so demanding one there would block a valid application over a file
+  // that could never be played. The tier is the authority, not the form.
+  audioFile: (f) => {
+    const tier = SPONSOR_TIERS.find((t) => t.id === f.tierId);
+    if (tier && tier.audioSpot && !f.wantsProduction && !f.audioFile) {
+      return 'Attach your audio spot, or tick "produce the spot for me".';
+    }
+    return fileProblem(f.audioFile, AUDIO_TYPES, 'audio');
+  },
+
+  logoFile: (f) => fileProblem(f.logoFile, IMAGE_TYPES, 'image')
+};
+
+function fileProblem(file, types, label) {
+  if (!file) return null;
+  if (file.size > MAX_BYTES) return `That ${label} file is over 50MB.`;
+  if (file.type && !types.includes(file.type)) {
+    return `That ${label} file is not a supported format.`;
+  }
+  return null;
+}
+
+/**
+ * Validate the whole application, or only the named fields.
+ *
+ * @param {Object} form
+ * @param {string[]} [fields] - restrict the check to these; omit to check everything.
+ */
+export function validateApplication(form, fields) {
+  const names = fields && fields.length ? fields : Object.keys(RULES);
+  const errors = names
+    .map((name) => (RULES[name] ? RULES[name](form) : null))
+    .filter(Boolean);
   return { isValid: errors.length === 0, errors };
 }
 
