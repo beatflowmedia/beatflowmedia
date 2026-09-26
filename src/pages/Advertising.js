@@ -107,12 +107,27 @@ export default function Advertising() {
               and when. The station schedule is deterministic, so those counts are
               arithmetic rather than estimates, and we will show you the working.
             </p>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm mb-4">
               We do <strong>not</strong> currently measure audience size. BeatFlow Radio
               does not count listeners, so we cannot tell you how many people heard your
               spot, and we will not quote you a reach figure we cannot stand behind. If
               audience numbers are essential to your buy, this is not the right placement
               yet — and we would rather say that now than invoice you for it.
+            </p>
+
+            {/* Stated up front because the station has NO day-of-week dimension at all.
+                Programme selection is a pure function of the time of day, so Saturday is
+                identical to Tuesday, and a weekday-only buy cannot be expressed -- if we
+                offered one it would be silently ignored, which is the worst outcome: the
+                sponsor pays for a distinction that does not exist and nothing errors.
+                Saying it here turns a future complaint into an upfront fact, and for
+                most advertisers it is good news rather than bad. */}
+            <p className="text-gray-400 text-sm">
+              The station runs the same schedule <strong>every day</strong>, including
+              weekends and holidays. A daily spot is a daily spot — 365 days a year. We
+              cannot currently run a weekday-only or weekend-only campaign, so if your
+              message is shaped around opening hours, tell us and we will write it to
+              work any day.
             </p>
           </div>
 

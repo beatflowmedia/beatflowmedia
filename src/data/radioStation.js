@@ -33,6 +33,19 @@
 // every rotation to divide the day evenly: an engineering change, not a reporting
 // one. Programmes, by contrast, are real, named and enforced today.
 //
+// THE SAME SCHEDULE RUNS EVERY DAY. There is no day-of-week dimension anywhere in
+// the station: programme selection matches the time of day against from/to clock
+// times and nothing else, and the coverage model is one 1440-minute day repeated.
+// Saturday is identical to Tuesday, and there is no seasonal or holiday
+// programming -- running one would mean editing the rotation, deploying, and
+// manually reverting afterwards, with nothing that expires.
+//
+// So a weekday-only or weekend-only buy CANNOT be offered. Not partially: there is
+// no field to express it, so a day-of-week option added here would be accepted,
+// stored, and silently ignored -- the sponsor paying for a distinction that does
+// not exist, with nothing erroring. If that dimension is ever wanted it is a real
+// feature on the station side, not a field here.
+//
 // Hours are America/New_York and are NOT localised: cue() is a pure function of wall
 // clock, so localising would mean different listeners hearing different audio.
 // Overlaps resolve narrowest-wins -- The Rock Block takes 18:00-19:00 out of Evening
