@@ -21,7 +21,11 @@ import {
   latestApplicationFor,
   APPLICATION_STATUS,
   canPay,
-  normalizeLandingUrl
+  normalizeLandingUrl,
+  START_TIMELINES,
+  DEFAULT_START_TIMELINE,
+  timelineNeedsDate,
+  startTimelineLabel
 } from "../services/sponsorApplicationService";
 
 /**
@@ -74,6 +78,7 @@ const EMPTY = {
   email: "",
   landingUrl: "",
   describe: "",
+  startTimeline: DEFAULT_START_TIMELINE,
   preferredStart: "",
   spotBlock: DEFAULT_SPOT_BLOCK,
   wantsProduction: false,
@@ -189,7 +194,10 @@ export default function SponsorApply() {
     {
       n: 3,
       title: "Your details",
-      fields: ["company", "contactName", "email", "landingUrl", "blurb", "cta", "describe"]
+      fields: [
+        "company", "contactName", "email", "landingUrl",
+        "blurb", "cta", "describe", "startTimeline"
+      ]
     },
     { n: 4, title: "Your creative", fields: ["audioFile", "logoFile"] }
   ];
@@ -547,12 +555,57 @@ export default function SponsorApply() {
                     <textarea id="describe" name="describe" rows={4} value={form.describe} onChange={change} className={field} placeholder="What the product or service is, and anything we should know before it airs." />
                   </div>
 
+                  {/* A timeline, not a bare date picker.
+                    *
+                    * The date input was awkward on a phone and implied a precision we do
+                    * not control: we review within two business days and the sponsor
+                    * then chooses when to start, so a specific date was a commitment
+                    * neither side had made.
+                    *
+                    * It also tells us nothing about the buyer. "As soon as you can" and
+                    * "just exploring" are different conversations, and a date cannot
+                    * distinguish them.
+                    *
+                    * The picker is still here for the sponsor who genuinely has a date --
+                    * a launch, an event -- but only appears once they say so, so the
+                    * awkward widget is in front of the few people who need it. */}
                   <div>
-                    <label htmlFor="preferredStart" className="block text-sm font-semibold mb-2">
-                      Preferred start <span className="text-gray-500 font-normal">(optional)</span>
+                    <label htmlFor="startTimeline" className="block text-sm font-semibold mb-2">
+                      When would you like to start? <span className="text-green-500">*</span>
                     </label>
-                    <input id="preferredStart" name="preferredStart" type="date" value={form.preferredStart} onChange={change} className={field} />
+                    <select
+                      id="startTimeline"
+                      name="startTimeline"
+                      value={form.startTimeline}
+                      onChange={change}
+                      className={field}
+                    >
+                      {START_TIMELINES.map((timeline) => (
+                        <option key={timeline.id} value={timeline.id}>
+                          {timeline.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+
+                  {timelineNeedsDate(form.startTimeline) && (
+                    <div>
+                      <label htmlFor="preferredStart" className="block text-sm font-semibold mb-2">
+                        Which date? <span className="text-green-500">*</span>
+                      </label>
+                      <input
+                        id="preferredStart"
+                        name="preferredStart"
+                        type="date"
+                        value={form.preferredStart}
+                        onChange={change}
+                        className={field}
+                      />
+                      <p className="text-sm text-gray-500 mt-2">
+                        We will confirm we can hit it before anything is charged.
+                      </p>
+                    </div>
+                  )}
 
                   {navButtons(false)}
                 </div>
@@ -657,6 +710,12 @@ export default function SponsorApply() {
                       ["Link", form.landingUrl],
                       ["Card line", form.blurb],
                       ["Button", form.cta],
+                      [
+                        "Start",
+                        timelineNeedsDate(form.startTimeline)
+                          ? form.preferredStart || "a date you have not picked yet"
+                          : startTimelineLabel(form.startTimeline)
+                      ],
                       ...(wantsAudio
                         ? [
                             ["Spot length", `:${form.spotBlock}`],

@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { programNameFor } from '../data/radioStation';
+import { startTimelineLabel } from '../services/sponsorApplicationService';
 
 /**
  * Package an approved sponsor into the exact folder BeatFlow Radio's desk expects.
@@ -65,7 +66,11 @@ export function buildSponsorTxt(app) {
     'target block:  :' + (app.spotBlock || '30'),
     'programme:     ' + programNameFor(app.programId),
     'package:       ' + (app.tierId || ''),
-    'preferred start: ' + (app.preferredStart || 'not specified'),
+    // The timeline is what the sponsor actually told us. preferredStart only exists
+    // for the one option that asks for a date, so printing it alone would show a blank
+    // for most applications and read as "they did not say".
+    'start:         ' + startTimelineLabel(app.startTimeline) +
+      (app.preferredStart ? ' (' + app.preferredStart + ')' : ''),
     '',
     'contact:    ' + (app.contactName || '') + ' <' + (app.email || '') + '>',
     '',

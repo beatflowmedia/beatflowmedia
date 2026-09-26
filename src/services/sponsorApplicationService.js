@@ -49,6 +49,52 @@ export const APPLICATION_STATUS = {
 // this constant is here so the client cannot accidentally send anything else.
 const INITIAL_STATUS = APPLICATION_STATUS.SUBMITTED;
 
+/**
+ * When the sponsor wants to start.
+ *
+ * This was a bare date picker, which was wrong twice over. A native date input
+ * renders differently in every browser and is genuinely awkward on a phone; worse, an
+ * exact date implies a precision we do not control. We review within two business
+ * days and the sponsor then chooses when to start, so "14 March" was a commitment
+ * neither side had made.
+ *
+ * A timeline also QUALIFIES the applicant, which a date cannot. "As soon as you can"
+ * and "just exploring" are different conversations, and knowing which arrives is the
+ * difference between answering in order and answering in the right order.
+ *
+ * 'date' keeps the precise case rather than losing it: a sponsor with a product
+ * launch or an event has a real date, and choosing that option reveals the picker.
+ * Progressive disclosure, so the awkward widget is only in front of the few people
+ * who actually need it.
+ *
+ * `urgent` marks the ones worth answering first. It is data rather than a rule about
+ * ordering, because who to call first is a business judgement, not a constant.
+ */
+export const START_TIMELINES = [
+  { id: 'asap', label: 'As soon as you can', urgent: true },
+  { id: 'two-weeks', label: 'Within two weeks', urgent: true },
+  { id: 'month', label: 'Within a month', urgent: false },
+  { id: 'quarter', label: 'In the next three months', urgent: false },
+  { id: 'date', label: 'On a particular date', urgent: false, needsDate: true },
+  { id: 'exploring', label: 'Just exploring for now', urgent: false }
+];
+
+export const DEFAULT_START_TIMELINE = 'month';
+
+export function startTimelineById(id) {
+  return START_TIMELINES.find((t) => t.id === id) || null;
+}
+
+export function timelineNeedsDate(id) {
+  const timeline = startTimelineById(id);
+  return Boolean(timeline && timeline.needsDate);
+}
+
+export function startTimelineLabel(id) {
+  const timeline = startTimelineById(id);
+  return timeline ? timeline.label : id;
+}
+
 // Size and format come from radioStation.js, which is also what the dropzones use.
 // These were separate lists here and drifted: the UI accepted FLAC, M4A, AAC, OGG,
 // GIF and AVIF while this file rejected every one of them, so a sponsor could attach
@@ -155,6 +201,17 @@ const RULES = {
       ? 'Please describe what you are advertising in a little more detail.'
       : null,
 
+  startTimeline: (f) => {
+    if (!startTimelineById(f.startTimeline)) return 'Please tell us when you would like to start.';
+    // The date is required ONLY for the option that asks for one. Requiring it always
+    // would reimpose the picker this replaced; never requiring it would let someone
+    // choose "on a particular date" and not say which.
+    if (timelineNeedsDate(f.startTimeline) && !String(f.preferredStart || '').trim()) {
+      return 'Please pick the date you would like to start.';
+    }
+    return null;
+  },
+
   // Required only for tiers that CARRY audio. Supporter is a sponsor-card package
   // with no spot, so demanding one there would block a valid application over a file
   // that could never be played. The tier is the authority, not the form.
@@ -237,7 +294,10 @@ export async function submitApplication(user, form) {
       // Stored normalised, so the card links where the applicant was shown it would.
       landingUrl: normalizeLandingUrl(form.landingUrl),
       describe: form.describe.trim(),
-      preferredStart: form.preferredStart || '',
+      startTimeline: form.startTimeline || DEFAULT_START_TIMELINE,
+      // Only meaningful for the 'date' timeline; blanked otherwise so a stale value
+      // from a changed answer cannot be read as a commitment.
+      preferredStart: timelineNeedsDate(form.startTimeline) ? form.preferredStart || '' : '',
       wantsProduction: Boolean(form.wantsProduction),
       audio,
       logo,

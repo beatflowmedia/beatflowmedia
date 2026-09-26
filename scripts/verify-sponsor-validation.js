@@ -111,7 +111,8 @@ const { validateApplication, normalizeLandingUrl } = loadEsModule(
 
 const EMPTY = {
   tierId: '', company: '', blurb: '', cta: '', contactName: '', email: '',
-  landingUrl: '', describe: '', wantsProduction: false, audioFile: null, logoFile: null
+  landingUrl: '', describe: '', startTimeline: '', preferredStart: '',
+  wantsProduction: false, audioFile: null, logoFile: null
 };
 
 const CASES = [
@@ -128,10 +129,15 @@ const CASES = [
     errors: 1
   },
   {
+    // The count is a literal ON PURPOSE. Deriving it from Object.keys(RULES) would
+    // make this pass for any set of rules, including an empty one, which is the
+    // assertion that proves nothing. A hardcoded number means adding or removing a
+    // rule fails here and forces someone to notice -- which is how it caught the
+    // timeline rule being added.
     label: 'omitted field list checks EVERYTHING (final submit)',
     run: () => validateApplication(EMPTY),
     valid: false,
-    errors: 8
+    errors: 9
   },
   {
     label: 'unknown field names are ignored, not thrown on',
@@ -192,6 +198,37 @@ const CASES = [
     run: () => validateApplication({ ...EMPTY, landingUrl: 'my shop' }, ['landingUrl']),
     valid: false,
     errors: 1
+  },
+  {
+    label: 'a timeline must be chosen',
+    run: () => validateApplication({ ...EMPTY, startTimeline: '' }, ['startTimeline']),
+    valid: false,
+    errors: 1
+  },
+  {
+    label: 'an invented timeline id is rejected',
+    run: () => validateApplication({ ...EMPTY, startTimeline: 'next-year' }, ['startTimeline']),
+    valid: false,
+    errors: 1
+  },
+  {
+    label: 'a normal timeline needs no date',
+    run: () => validateApplication({ ...EMPTY, startTimeline: 'asap' }, ['startTimeline']),
+    valid: true,
+    errors: 0
+  },
+  {
+    label: '"on a particular date" without a date is rejected',
+    run: () => validateApplication({ ...EMPTY, startTimeline: 'date', preferredStart: '' }, ['startTimeline']),
+    valid: false,
+    errors: 1
+  },
+  {
+    label: '"on a particular date" with a date is accepted',
+    run: () =>
+      validateApplication({ ...EMPTY, startTimeline: 'date', preferredStart: '2026-11-03' }, ['startTimeline']),
+    valid: true,
+    errors: 0
   }
 ];
 

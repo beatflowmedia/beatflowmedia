@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { APPLICATION_STATUS } from "../../services/sponsorApplicationService";
+import {
+  APPLICATION_STATUS,
+  startTimelineLabel,
+  startTimelineById
+} from "../../services/sponsorApplicationService";
 import { SPONSOR_TIERS } from "../../data/sponsorshipTiers";
 import { programNameFor } from "../../data/radioStation";
 import { buildHandoffZip } from "../../utils/sponsorHandoff";
@@ -133,6 +137,21 @@ export default function SponsorApplicationsManager() {
 
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm mb-4">
                   <div><dt className="inline text-gray-500">Contact: </dt><dd className="inline text-gray-300">{app.contactName} ({app.email})</dd></div>
+                  {/* The timeline is the qualification signal -- it is why the field
+                      replaced a date picker. Surfaced here so the queue can be worked
+                      in a sensible order rather than purely newest-first. */}
+                  <div>
+                    <dt className="inline text-gray-500">Start: </dt>
+                    <dd className="inline text-gray-300">
+                      {startTimelineLabel(app.startTimeline)}
+                      {app.preferredStart ? ` (${app.preferredStart})` : ""}
+                      {(startTimelineById(app.startTimeline) || {}).urgent && (
+                        <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-900/50 text-amber-300 border border-amber-700">
+                          wants it soon
+                        </span>
+                      )}
+                    </dd>
+                  </div>
                   <div>
                     <dt className="inline text-gray-500">Link: </dt>
                     <dd className="inline">
