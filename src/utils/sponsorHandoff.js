@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { programNameFor } from '../data/radioPrograms';
+import { programNameFor } from '../data/radioStation';
 
 /**
  * Package an approved sponsor into the exact folder BeatFlow Radio's desk expects.

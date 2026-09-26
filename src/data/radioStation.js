@@ -1,4 +1,11 @@
-// src/data/radioPrograms.js
+// src/data/radioStation.js
+//
+// Facts about BeatFlow Radio that the sponsor forms need: its programmes, the spot
+// lengths it sells, and the labels a sponsor card button may carry.
+//
+// Named radioPrograms.js until three of its four exports stopped being programmes.
+// A file name is a claim about what is inside it, and one that has drifted sends the
+// next reader looking for CTA options somewhere that does not exist.
 //
 // BeatFlow Radio's programmes, for sponsors choosing where their spot runs.
 //
@@ -124,3 +131,107 @@ export const SPOT_BLOCKS = [
   { id: '30', label: ':30 — thirty seconds', words: 'roughly 65–75 words' },
   { id: '60', label: ':60 — sixty seconds', words: 'roughly 130–150 words' }
 ];
+
+/**
+ * Allowed sponsor-card button labels.
+ *
+ * This was a free-text field, which is a liability rather than a flexibility. A
+ * sponsor could write anything: a label too long for a square card, a claim we would
+ * have to reject at review, or an urgency line ("Claim your prize") that makes the
+ * station look like an ad network. Preventing it at the input costs nothing;
+ * rejecting it at approval costs a round trip with someone who has already paid
+ * attention.
+ *
+ * A fixed list also keeps the card visually consistent, which is the whole reason it
+ * looks like a station feature rather than a banner.
+ *
+ * DELIBERATELY NO "OTHER" OPTION. An escape hatch to free text would restore exactly
+ * the problem this removes. A sponsor who genuinely needs something else says so in
+ * "what are you advertising", and it is handled at approval by a human -- which is
+ * the same gate that already decides whether the ad runs at all.
+ *
+ * Kept short on purpose: a long list is its own failure, because a sponsor scrolling
+ * twenty near-identical options picks badly.
+ */
+export const CTA_OPTIONS = [
+  'Visit the website',
+  'Learn more',
+  'Shop now',
+  'Book now',
+  'Get a quote',
+  'See the menu',
+  'Get the app',
+  'Explore the platform'
+];
+
+export function isAllowedCta(value) {
+  return CTA_OPTIONS.includes(value);
+}
+
+/**
+ * What the station accepts as creative, in ONE place.
+ *
+ * These were three places that disagreed, which is the failure mode this file exists
+ * to prevent:
+ *
+ *   - the dropzone accepted FLAC, M4A, AAC, OGG, GIF and AVIF
+ *   - the validator rejected all six as "not a supported format"
+ *   - the dropzone capped logos at 40MB while the validator allowed 50MB
+ *
+ * So a sponsor could drop a FLAC, watch the UI accept it, fill in the rest, and be
+ * told at submit that their file was unsupported. The UI invited a file the rules
+ * refused.
+ *
+ * The format lists come from the STATION's own accepted set, because it is the thing
+ * that ultimately has to ingest the file -- anything we accept that it cannot is a
+ * promise we break later, by hand.
+ *
+ * `accept` is in react-dropzone's shape so the component can use it directly, and
+ * mimeTypesOf() derives the validator's list from the same object. One edit changes
+ * both, and they cannot drift.
+ *
+ * NOT the last word on size: storage.rules independently caps a sponsor-creative
+ * write at 50MB. That rule is the real gate and is enforced by Firebase; this is the
+ * friendly check that happens first. If you raise a ceiling here, raise it there too
+ * or uploads will fail after the sponsor has waited for them.
+ */
+export const AUDIO_SPEC = {
+  maxBytes: 50 * 1024 * 1024,
+  accept: {
+    'audio/wav': ['.wav'],
+    'audio/x-wav': ['.wav'],
+    'audio/aiff': ['.aiff', '.aif'],
+    'audio/x-aiff': ['.aiff', '.aif'],
+    'audio/flac': ['.flac'],
+    'audio/x-flac': ['.flac'],
+    'audio/mpeg': ['.mp3'],
+    'audio/mp4': ['.m4a'],
+    'audio/aac': ['.aac'],
+    'audio/ogg': ['.ogg']
+  }
+};
+
+export const LOGO_SPEC = {
+  maxBytes: 40 * 1024 * 1024,
+  // No SVG: the station re-encodes every logo to JPEG and its pipeline is raster
+  // only. Offering SVG would accept a file that cannot be processed.
+  accept: {
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/webp': ['.webp'],
+    'image/gif': ['.gif'],
+    'image/avif': ['.avif']
+  }
+};
+
+export function mimeTypesOf(spec) {
+  return Object.keys(spec.accept);
+}
+
+/** For messages, so a limit and the number quoted at the sponsor cannot disagree. */
+export function megabytesOf(spec) {
+  return Math.round(spec.maxBytes / (1024 * 1024));
+}
+
+/** The spot length assumed when a sponsor has not chosen one. */
+export const DEFAULT_SPOT_BLOCK = '30';

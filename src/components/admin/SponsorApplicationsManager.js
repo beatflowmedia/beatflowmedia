@@ -3,7 +3,7 @@ import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp } 
 import { db } from "../../firebaseConfig";
 import { APPLICATION_STATUS } from "../../services/sponsorApplicationService";
 import { SPONSOR_TIERS } from "../../data/sponsorshipTiers";
-import { programNameFor } from "../../data/radioPrograms";
+import { programNameFor } from "../../data/radioStation";
 import { buildHandoffZip } from "../../utils/sponsorHandoff";
 
 // The approval desk for radio sponsorships. Approval is the gate that unlocks payment

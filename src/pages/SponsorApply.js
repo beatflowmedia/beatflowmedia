@@ -4,13 +4,24 @@ import Footer from "../components/Footer";
 import FileDropzone from "../components/FileDropzone";
 import { useAuth } from "../context/AuthContext";
 import { SPONSOR_TIERS, formatMonthly } from "../data/sponsorshipTiers";
-import { PROGRAM_CHOICES, NO_PREFERENCE, SPOT_BLOCKS, programNameFor } from "../data/radioPrograms";
+import {
+  PROGRAM_CHOICES,
+  NO_PREFERENCE,
+  SPOT_BLOCKS,
+  CTA_OPTIONS,
+  AUDIO_SPEC,
+  LOGO_SPEC,
+  megabytesOf,
+  DEFAULT_SPOT_BLOCK,
+  programNameFor
+} from "../data/radioStation";
 import {
   submitApplication,
   validateApplication,
   latestApplicationFor,
   APPLICATION_STATUS,
-  canPay
+  canPay,
+  normalizeLandingUrl
 } from "../services/sponsorApplicationService";
 
 /**
@@ -64,7 +75,7 @@ const EMPTY = {
   landingUrl: "",
   describe: "",
   preferredStart: "",
-  spotBlock: "30",
+  spotBlock: DEFAULT_SPOT_BLOCK,
   wantsProduction: false,
   audioFile: null,
   logoFile: null
@@ -462,7 +473,35 @@ export default function SponsorApply() {
                     <label htmlFor="landingUrl" className="block text-sm font-semibold mb-2">
                       Where the sponsor card should link <span className="text-green-500">*</span>
                     </label>
-                    <input id="landingUrl" name="landingUrl" type="url" placeholder="https://" value={form.landingUrl} onChange={change} className={field} />
+                    {/* type="text", not type="url".
+                      *
+                      * A url input applies the browser's own validation, which rejects
+                      * "example.com" before our normaliser ever runs -- the browser
+                      * would fight the very convenience we are adding.
+                      *
+                      * Normalised on BLUR rather than on every keystroke: prepending
+                      * while someone is still typing moves the caret and is infuriating.
+                      * On blur they see exactly what will be stored, which is the same
+                      * function the service uses. */}
+                    <input
+                      id="landingUrl"
+                      name="landingUrl"
+                      type="text"
+                      inputMode="url"
+                      placeholder="example.com"
+                      value={form.landingUrl}
+                      onChange={change}
+                      onBlur={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          landingUrl: normalizeLandingUrl(prev.landingUrl)
+                        }))
+                      }
+                      className={field}
+                    />
+                    <p className="text-sm text-gray-500 mt-2">
+                      No need to type https:// — we add it.
+                    </p>
                   </div>
 
                   {/* blurb and cta come from the SPONSOR, never written by us. The
@@ -478,11 +517,27 @@ export default function SponsorApply() {
                     <p className="text-sm text-gray-500 mt-2">Shown on screen while your spot plays.</p>
                   </div>
 
+                  {/* Fixed list, not free text. A sponsor could otherwise write a
+                      label too long for a square card, a claim we would have to reject
+                      at review, or an urgency line that makes the station read as an ad
+                      network. The validator enforces the same list, so this is a rule
+                      rather than a suggestion. */}
                   <div>
                     <label htmlFor="cta" className="block text-sm font-semibold mb-2">
                       Button label <span className="text-green-500">*</span>
                     </label>
-                    <input id="cta" name="cta" type="text" maxLength={40} value={form.cta} onChange={change} className={field} placeholder="Shop the collection" />
+                    <select id="cta" name="cta" value={form.cta} onChange={change} className={field}>
+                      <option value="">Choose a label</option>
+                      {CTA_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-sm text-gray-500 mt-2">
+                      This is the button on your sponsor card. If none of these fit, say
+                      so below and we will sort it out with you.
+                    </p>
                   </div>
 
                   <div>
@@ -508,7 +563,7 @@ export default function SponsorApply() {
                 <div className="space-y-5">
                   <h2 className="text-2xl font-bold">Your creative</h2>
                   <p className="text-sm text-gray-400">
-                    We review everything before it airs. Audio up to 50MB, logo up to 40MB.
+                    We review everything before it airs. Audio up to {megabytesOf(AUDIO_SPEC)}MB, logo up to {megabytesOf(LOGO_SPEC)}MB.
                     Attachments are not saved if you reload, so add them just before you
                     submit.
                   </p>
@@ -529,18 +584,9 @@ export default function SponsorApply() {
                       <FileDropzone
                         label="Your audio spot"
                         hint="WAV is best — we convert it ourselves, so an uncompressed file keeps the quality. MP3, M4A, FLAC, AIFF, AAC and OGG are fine too. Do not normalise or master it; we level every spot automatically."
-                        accept={{
-                          "audio/wav": [".wav"],
-                          "audio/x-wav": [".wav"],
-                          "audio/aiff": [".aiff", ".aif"],
-                          "audio/flac": [".flac"],
-                          "audio/mpeg": [".mp3"],
-                          "audio/mp4": [".m4a"],
-                          "audio/aac": [".aac"],
-                          "audio/ogg": [".ogg"]
-                        }}
+                        accept={AUDIO_SPEC.accept}
                         file={form.audioFile}
-                        maxBytes={50 * 1024 * 1024}
+                        maxBytes={AUDIO_SPEC.maxBytes}
                         onFile={setFile("audioFile")}
                       />
 
@@ -587,15 +633,9 @@ export default function SponsorApply() {
                   <FileDropzone
                     label="Your logo"
                     hint="JPG, PNG, WEBP, GIF or AVIF. Send the largest version you have — we resize it. A square mark works best. It is displayed as a JPEG, so transparency is flattened."
-                    accept={{
-                      "image/png": [".png"],
-                      "image/jpeg": [".jpg", ".jpeg"],
-                      "image/webp": [".webp"],
-                      "image/gif": [".gif"],
-                      "image/avif": [".avif"]
-                    }}
-                    file={form.logoFile}
-                    maxBytes={40 * 1024 * 1024}
+                    accept={LOGO_SPEC.accept}
+                        file={form.logoFile}
+                        maxBytes={LOGO_SPEC.maxBytes}
                     onFile={setFile("logoFile")}
                   />
 

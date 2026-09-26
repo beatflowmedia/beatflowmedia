@@ -2,6 +2,14 @@ import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimest
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebaseConfig';
 import { SPONSOR_TIERS } from '../data/sponsorshipTiers';
+import {
+  isAllowedCta,
+  AUDIO_SPEC,
+  LOGO_SPEC,
+  mimeTypesOf,
+  megabytesOf,
+  DEFAULT_SPOT_BLOCK
+} from '../data/radioStation';
 
 /**
  * Sponsor applications — apply, be approved, THEN pay.
@@ -41,9 +49,10 @@ export const APPLICATION_STATUS = {
 // this constant is here so the client cannot accidentally send anything else.
 const INITIAL_STATUS = APPLICATION_STATUS.SUBMITTED;
 
-const MAX_BYTES = 50 * 1024 * 1024;
-const AUDIO_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/aiff'];
-const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+// Size and format come from radioStation.js, which is also what the dropzones use.
+// These were separate lists here and drifted: the UI accepted FLAC, M4A, AAC, OGG,
+// GIF and AVIF while this file rejected every one of them, so a sponsor could attach
+// a file the form welcomed and be refused at submit.
 
 /**
  * Upload one creative file to the sponsor's own folder.
@@ -61,6 +70,32 @@ async function uploadCreative(userId, file, kind) {
   // what survives if the URL is ever regenerated, and is the only way to find the
   // object again from a script.
   return { path, url: await getDownloadURL(fileRef) };
+}
+
+/**
+ * Add https:// when the sponsor did not type a scheme.
+ *
+ * People type "example.com". Rejecting that taught them nothing and cost a round
+ * trip through an error message for a mistake the form can simply fix.
+ *
+ * ONE implementation, used in three places that must agree: the validator checks the
+ * normalised value, submitApplication STORES the normalised value, and the field
+ * normalises on blur so the sponsor sees exactly what will be saved. If the UI tidied
+ * the display and the service stored the raw text, the card would link somewhere the
+ * applicant never saw.
+ *
+ * https, not http, because it is the safe default and the station's validate.js curls
+ * advertiser URLs following redirects -- an http-only site will redirect and still
+ * resolve. An existing scheme is left alone: a sponsor who deliberately typed http://
+ * knows something we do not, and silently upgrading it could break a link that works.
+ */
+export function normalizeLandingUrl(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) return trimmed;
+  // Guard against a mistyped or unsupported scheme becoming "https://ftp://host".
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return 'https://' + trimmed;
 }
 
 /**
@@ -83,8 +118,17 @@ const RULES = {
   blurb: (f) =>
     !f.blurb || !f.blurb.trim() ? 'Please give us the one line for your sponsor card.' : null,
 
-  cta: (f) =>
-    !f.cta || !f.cta.trim() ? 'Please give us a button label for your sponsor card.' : null,
+  // Must be one of the allowed labels, not merely non-empty.
+  //
+  // Checking only that free text was present would leave the fixed list as a UI
+  // suggestion: anything reaching this function by another route -- a restored draft
+  // written when the list was different, or a later caller -- would pass. The list is
+  // the rule, so the rule checks the list.
+  cta: (f) => {
+    if (!f.cta || !f.cta.trim()) return 'Please choose a button label for your sponsor card.';
+    if (!isAllowedCta(f.cta)) return 'Please choose one of the listed button labels.';
+    return null;
+  },
 
   contactName: (f) =>
     !f.contactName || !f.contactName.trim() ? 'Please give us a contact name.' : null,
@@ -98,11 +142,10 @@ const RULES = {
   },
 
   landingUrl: (f) => {
-    if (!f.landingUrl || !f.landingUrl.trim()) {
-      return 'Please give us the web address the sponsor card should link to.';
-    }
-    if (!/^https?:\/\/.+\..+/i.test(f.landingUrl.trim())) {
-      return 'The landing web address should start with http:// or https://';
+    const url = normalizeLandingUrl(f.landingUrl);
+    if (!url) return 'Please give us the web address the sponsor card should link to.';
+    if (!/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(url)) {
+      return 'That does not look like a web address. Try something like example.com';
     }
     return null;
   },
@@ -120,17 +163,21 @@ const RULES = {
     if (tier && tier.audioSpot && !f.wantsProduction && !f.audioFile) {
       return 'Attach your audio spot, or tick "produce the spot for me".';
     }
-    return fileProblem(f.audioFile, AUDIO_TYPES, 'audio');
+    return fileProblem(f.audioFile, AUDIO_SPEC, 'audio');
   },
 
-  logoFile: (f) => fileProblem(f.logoFile, IMAGE_TYPES, 'image')
+  logoFile: (f) => fileProblem(f.logoFile, LOGO_SPEC, 'logo')
 };
 
-function fileProblem(file, types, label) {
+function fileProblem(file, spec, label) {
   if (!file) return null;
-  if (file.size > MAX_BYTES) return `That ${label} file is over 50MB.`;
-  if (file.type && !types.includes(file.type)) {
-    return `That ${label} file is not a supported format.`;
+  // Size quoted FROM the limit, not typed beside it: a hardcoded "50MB" becomes a
+  // lie the moment the ceiling moves, and it is the sponsor who is misinformed.
+  if (file.size > spec.maxBytes) {
+    return `That ${label} file is over ${megabytesOf(spec)}MB.`;
+  }
+  if (file.type && !mimeTypesOf(spec).includes(file.type)) {
+    return `That ${label} file is not a format we can use.`;
   }
   return null;
 }
@@ -180,14 +227,15 @@ export async function submitApplication(user, form) {
       // and can check that programme's ad load before approving.
       programId: form.programId || 'no-preference',
       // The sponsor's INTENDED length. Never a measured duration -- see the form.
-      spotBlock: form.spotBlock || '30',
+      spotBlock: form.spotBlock || DEFAULT_SPOT_BLOCK,
       company: form.company.trim(),
       // Straight onto the station's sponsor card. Collected, never composed by us.
       blurb: form.blurb.trim(),
       cta: form.cta.trim(),
       contactName: form.contactName.trim(),
       email: form.email.trim().toLowerCase(),
-      landingUrl: form.landingUrl.trim(),
+      // Stored normalised, so the card links where the applicant was shown it would.
+      landingUrl: normalizeLandingUrl(form.landingUrl),
       describe: form.describe.trim(),
       preferredStart: form.preferredStart || '',
       wantsProduction: Boolean(form.wantsProduction),
