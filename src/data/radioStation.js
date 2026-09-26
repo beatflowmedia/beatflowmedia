@@ -235,3 +235,33 @@ export function megabytesOf(spec) {
 
 /** The spot length assumed when a sponsor has not chosen one. */
 export const DEFAULT_SPOT_BLOCK = '30';
+
+/**
+ * Logo guidance, stated as numbers a designer can work to.
+ *
+ * This read "a square mark works best", which is an opinion rather than a spec. A
+ * sponsor cannot act on it, so they send a wide wordmark at whatever size their
+ * website uses, and it lands in a square slot mostly empty.
+ *
+ * The numbers are derived from what the station actually does, not invented:
+ *   - it resizes to FIT WITHIN 800x800 preserving aspect, so 800x800 is the largest
+ *     size ever displayed and anything smaller is upscaled and soft. That makes
+ *     1000x1000 the honest minimum to ask for, with headroom.
+ *   - the slot is square, so a 1:1 image is the only one that fills it. A 3:1
+ *     wordmark shrinks to fit the width and leaves two-thirds of the slot empty.
+ *   - output is JPEG, so alpha is flattened. A logo designed for a white page arrives
+ *     with a white box around it on a dark player.
+ *
+ * Asking for larger than 800 is deliberate: re-encoding from a bigger original is
+ * always better than upscaling, and it costs the sponsor nothing to send what they
+ * already have.
+ */
+export const LOGO_MIN_PIXELS = 1000;
+export const LOGO_DISPLAY_PIXELS = 800;
+
+export const LOGO_GUIDANCE =
+  `Square (1:1), at least ${LOGO_MIN_PIXELS} x ${LOGO_MIN_PIXELS} pixels — ` +
+  `${LOGO_DISPLAY_PIXELS} x ${LOGO_DISPLAY_PIXELS} is the size it appears at, so send more than that, not less. ` +
+  'JPG, PNG, WEBP, GIF or AVIF. Send the icon or symbol rather than a wide wordmark, ' +
+  'which leaves most of a square slot empty. It is shown as a JPEG, so transparency ' +
+  'becomes a solid background — avoid a logo that relies on it.';

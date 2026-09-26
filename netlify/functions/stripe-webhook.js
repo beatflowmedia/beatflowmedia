@@ -979,11 +979,26 @@ async function handleInvoicePaymentFailed(invoice) {
       // Use nodemailer to send warning email
       const nodemailer = require('nodemailer');
 
+      // A literal Gmail App Password sat here as a `|| fallback`. It was a live
+      // credential in a git repository, present in three commits, and a fallback is
+      // the worst shape for one: the code works whether or not the environment is
+      // configured, so nobody ever discovers that a committed secret is what is
+      // holding it up.
+      //
+      // REVOKE the old password at myaccount.google.com/apppasswords. Removing the
+      // line does not make it safe -- it remains in history.
+      //
+      // Fails loudly now instead of falling back silently.
+      if (!process.env.SMTP_PASSWORD) {
+        console.error('[stripe-webhook] SMTP_PASSWORD not set - warning email not sent.');
+        return;
+      }
+
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-          user: 'beatflowmediagroup@gmail.com',
-          pass: process.env.SMTP_PASSWORD || 'eezq fupe ocue ocow'
+          user: process.env.SMTP_USER || 'beatflowmediagroup@gmail.com',
+          pass: process.env.SMTP_PASSWORD
         }
       });
 

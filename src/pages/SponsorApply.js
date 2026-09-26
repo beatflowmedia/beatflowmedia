@@ -12,6 +12,7 @@ import {
   AUDIO_SPEC,
   LOGO_SPEC,
   megabytesOf,
+  LOGO_GUIDANCE,
   DEFAULT_SPOT_BLOCK,
   programNameFor
 } from "../data/radioStation";
@@ -25,7 +26,9 @@ import {
   START_TIMELINES,
   DEFAULT_START_TIMELINE,
   timelineNeedsDate,
-  startTimelineLabel
+  startTimelineLabel,
+  startTimelineNote,
+  hasTightProductionTimeline
 } from "../services/sponsorApplicationService";
 
 /**
@@ -586,6 +589,13 @@ export default function SponsorApply() {
                         </option>
                       ))}
                     </select>
+                    {/* Answers "so what happens now?" at the moment it is asked.
+                        Without it, an urgent applicant invents an expectation we never
+                        agreed to and a browsing one assumes they are about to be sold
+                        at. */}
+                    <p className="text-sm text-gray-400 mt-2">
+                      {startTimelineNote(form.startTimeline)}
+                    </p>
                   </div>
 
                   {timelineNeedsDate(form.startTimeline) && (
@@ -678,6 +688,24 @@ export default function SponsorApply() {
                           </span>
                         </span>
                       </label>
+
+                      {/* Warned about, not blocked. Wanting us to write and record the
+                          spot AND wanting to be on air quickly is the request most
+                          likely to disappoint, because production is manual and has no
+                          agreed turnaround. The combination is legitimate and usually
+                          achievable, so refusing it would turn away business -- saying
+                          so costs a sentence, and finding out after approval costs the
+                          relationship. */}
+                      {hasTightProductionTimeline(form) && (
+                        <p className="text-sm text-amber-200 bg-amber-900/20 border border-amber-800 rounded-lg p-4">
+                          You have asked us to produce the spot and you would like to
+                          start{" "}
+                          {startTimelineLabel(form.startTimeline).toLowerCase()}. That is
+                          usually fine, but writing and recording takes us a little time.
+                          We will tell you honestly what is achievable when we review
+                          this — before anything is charged.
+                        </p>
+                      )}
                     </>
                   )}
 
@@ -685,7 +713,7 @@ export default function SponsorApply() {
                       flattened and SVG is not accepted. The slot is square. */}
                   <FileDropzone
                     label="Your logo"
-                    hint="JPG, PNG, WEBP, GIF or AVIF. Send the largest version you have — we resize it. A square mark works best. It is displayed as a JPEG, so transparency is flattened."
+                    hint={LOGO_GUIDANCE}
                     accept={LOGO_SPEC.accept}
                         file={form.logoFile}
                         maxBytes={LOGO_SPEC.maxBytes}

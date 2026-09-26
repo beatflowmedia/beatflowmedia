@@ -70,13 +70,62 @@ const INITIAL_STATUS = APPLICATION_STATUS.SUBMITTED;
  * `urgent` marks the ones worth answering first. It is data rather than a rule about
  * ordering, because who to call first is a business judgement, not a constant.
  */
+/**
+ * Each option carries the `note` shown to the sponsor when they pick it.
+ *
+ * Choosing a timeline raises an obvious question -- "so what happens now?" -- and
+ * leaving it unanswered is how an urgent applicant builds an expectation we never
+ * agreed to and a browsing one thinks they are about to be sold at. The answer
+ * belongs beside the choice, not in a follow-up email.
+ *
+ * The notes deliberately quote NO turnaround figures beyond the two business days we
+ * already commit to elsewhere. Spot production has no agreed turnaround, revision
+ * count or cancellation position -- BFMG has no sponsorship terms at all yet -- so a
+ * number here would be invented, and an invented number on a page a sponsor acts on
+ * is the thing to avoid. They say what we will do, not how fast we will do it.
+ */
 export const START_TIMELINES = [
-  { id: 'asap', label: 'As soon as you can', urgent: true },
-  { id: 'two-weeks', label: 'Within two weeks', urgent: true },
-  { id: 'month', label: 'Within a month', urgent: false },
-  { id: 'quarter', label: 'In the next three months', urgent: false },
-  { id: 'date', label: 'On a particular date', urgent: false, needsDate: true },
-  { id: 'exploring', label: 'Just exploring for now', urgent: false }
+  {
+    id: 'asap',
+    label: 'As soon as you can',
+    urgent: true,
+    note:
+      'We will come back within two business days. If we are producing the spot for you, we will tell you then what is realistic rather than guess now.'
+  },
+  {
+    id: 'two-weeks',
+    label: 'Within two weeks',
+    urgent: true,
+    note:
+      'Usually fine. If we are producing the spot, we will confirm the timing when we review — you will not be charged before we agree it.'
+  },
+  {
+    id: 'month',
+    label: 'Within a month',
+    urgent: false,
+    note: 'Comfortable. We will agree a start date with you when we approve the application.'
+  },
+  {
+    id: 'quarter',
+    label: 'In the next three months',
+    urgent: false,
+    note:
+      'Plenty of room. If it is tied to a season or a campaign, say so below and we will plan around it.'
+  },
+  {
+    id: 'date',
+    label: 'On a particular date',
+    urgent: false,
+    needsDate: true,
+    note: 'We will confirm we can hit it before anything is charged.'
+  },
+  {
+    id: 'exploring',
+    label: 'Just exploring for now',
+    urgent: false,
+    note:
+      'No pressure and no charge. Send this in and we will reply with what you would need and what it would cost, then leave it with you. We will not chase you.'
+  }
 ];
 
 export const DEFAULT_START_TIMELINE = 'month';
@@ -93,6 +142,27 @@ export function timelineNeedsDate(id) {
 export function startTimelineLabel(id) {
   const timeline = startTimelineById(id);
   return timeline ? timeline.label : id;
+}
+
+export function startTimelineNote(id) {
+  const timeline = startTimelineById(id);
+  return timeline ? timeline.note : '';
+}
+
+/**
+ * The one combination we should warn about before they submit.
+ *
+ * Asking us to write and record the spot AND wanting to be on air quickly is the
+ * request most likely to disappoint, because production is manual and has no agreed
+ * turnaround. Saying so up front costs a sentence; discovering it after someone has
+ * been approved costs the relationship.
+ *
+ * It is a WARNING, not a validation error. The combination is perfectly legitimate
+ * and often achievable -- blocking it would refuse business we can usually do.
+ */
+export function hasTightProductionTimeline(form) {
+  const timeline = startTimelineById(form.startTimeline);
+  return Boolean(form.wantsProduction && timeline && timeline.urgent);
 }
 
 // Size and format come from radioStation.js, which is also what the dropzones use.

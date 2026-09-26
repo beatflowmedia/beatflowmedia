@@ -96,9 +96,16 @@ const SPONSOR_TIERS = [
 ];
 
 const noop = () => {};
-const { validateApplication, normalizeLandingUrl } = loadEsModule(
+const {
+  validateApplication,
+  normalizeLandingUrl,
+  START_TIMELINES,
+  startTimelineNote,
+  hasTightProductionTimeline
+} = loadEsModule(
   'src/services/sponsorApplicationService.js',
-  ['validateApplication', 'normalizeLandingUrl'],
+  ['validateApplication', 'normalizeLandingUrl', 'START_TIMELINES',
+    'startTimelineNote', 'hasTightProductionTimeline'],
   {
     SPONSOR_TIERS,
     ...STATION,
@@ -200,6 +207,38 @@ const CASES = [
     errors: 1
   },
   {
+    // Uses the real ceiling rather than a literal, so raising the limit cannot leave
+    // this check asserting an old number.
+    label: 'an oversize audio file is rejected at the spec ceiling',
+    run: () =>
+      validateApplication(
+        { ...EMPTY, tierId: 'rotation', audioFile: { name: 'x.wav', type: 'audio/wav', size: AUDIO_SPEC.maxBytes + 1 } },
+        ['audioFile']
+      ),
+    valid: false,
+    errors: 1
+  },
+  {
+    label: 'a logo in a format the station cannot process is rejected',
+    run: () =>
+      validateApplication(
+        { ...EMPTY, logoFile: { name: 'x.svg', type: 'image/svg+xml', size: 1000 } },
+        ['logoFile']
+      ),
+    valid: false,
+    errors: 1
+  },
+  {
+    label: 'a logo in an accepted format passes',
+    run: () =>
+      validateApplication(
+        { ...EMPTY, logoFile: { name: 'x.png', type: Object.keys(LOGO_SPEC.accept)[1], size: 1000 } },
+        ['logoFile']
+      ),
+    valid: true,
+    errors: 0
+  },
+  {
     label: 'a timeline must be chosen',
     run: () => validateApplication({ ...EMPTY, startTimeline: '' }, ['startTimeline']),
     valid: false,
@@ -231,6 +270,31 @@ const CASES = [
     errors: 0
   }
 ];
+
+// Checks that are assertions about data rather than validator cases, collected here
+// and reported with the rest.
+const failedExtra = [];
+
+// Every timeline must carry guidance. A silent option leaves the sponsor asking "so
+// what happens now?" with no answer, which is how an urgent applicant invents an
+// expectation nobody agreed to. Adding an option without a note fails here.
+START_TIMELINES.forEach((timeline) => {
+  const note = startTimelineNote(timeline.id);
+  const ok = typeof note === 'string' && note.trim().length > 20;
+  if (!ok) failedExtra.push(`timeline "${timeline.id}" has no usable note`);
+});
+
+// The tight-production warning fires on exactly the cases it should.
+[
+  [{ wantsProduction: true, startTimeline: 'asap' }, true, 'produce + asap warns'],
+  [{ wantsProduction: true, startTimeline: 'two-weeks' }, true, 'produce + two weeks warns'],
+  [{ wantsProduction: true, startTimeline: 'quarter' }, false, 'produce + three months does not warn'],
+  [{ wantsProduction: false, startTimeline: 'asap' }, false, 'own audio + asap does not warn'],
+  [{ wantsProduction: true, startTimeline: 'nonsense' }, false, 'unknown timeline does not warn']
+].forEach(([input, expected, label]) => {
+  const got = hasTightProductionTimeline(input);
+  if (got !== expected) failedExtra.push(`${label}: got ${got}, expected ${expected}`);
+});
 
 // Normalisation itself, separately from validation: these are the exact strings the
 // sponsor card will link to, so a wrong one sends listeners somewhere the advertiser
@@ -271,7 +335,15 @@ URL_CASES.forEach(([input, expected]) => {
   );
 });
 
-const total = CASES.length + URL_CASES.length;
+if (failedExtra.length === 0) {
+  console.log('  PASS  every timeline carries guidance for the sponsor');
+  console.log('  PASS  tight-production warning fires on exactly the right combinations');
+} else {
+  failedExtra.forEach((message) => console.log('  FAIL  ' + message));
+  failed += failedExtra.length;
+}
+
+const total = CASES.length + URL_CASES.length + 2;
 console.log('');
 if (failed) {
   console.error(failed + ' of ' + total + ' checks FAILED.');
