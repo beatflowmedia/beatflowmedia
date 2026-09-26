@@ -34,20 +34,45 @@
 // in ONE place so changing them is one edit. Amounts are in CENTS, integers, for the
 // same reason prices are everywhere else in this codebase: 19.99 * 100 is 1998.9999
 // in floating point.
+// Every tier carries audio, because card-only sponsorship cannot be rendered by the
+// station -- see the Supporter comment below. `audioSpot` is kept rather than deleted
+// as an always-true flag because the validator and the form both branch on it, so a
+// future card-only tier would be caught by those branches instead of quietly shipping
+// a package the player cannot display.
 export const SPONSOR_TIERS = [
   {
     id: 'supporter',
     name: 'Supporter',
     monthlyCents: 4900,
-    // Card only. No audio, so no production work and no airtime consumed.
-    summary: 'Your logo and link on the sponsor card, shown in rotation to listeners.',
+    // WAS card-only, with no audio spot. That tier could not be delivered and was
+    // withdrawn rather than repriced.
+    //
+    // The station's sponsor card renders in exactly two states: the advertiser whose
+    // spot is currently playing, or the station's own house ad between records. There
+    // is no third path -- no card rotation, no idle slot, no persistent "brought to
+    // you by". A sponsor with no audio therefore has no moment at which their card
+    // can appear, so $49/month bought something the player would never show.
+    //
+    // Worse, it would have failed SILENTLY. Nothing rejects a promo with no airings:
+    // not the desk, not validate.js. It would sit in playlist.json, valid, and simply
+    // never render -- discovered only when the sponsor asked why they had not seen
+    // themselves.
+    //
+    // Card rotation is also not merely unbuilt, it was deliberately REMOVED: cycling
+    // cards once put BeatFlow's own mark above "Brought to you by Perrice Consulting",
+    // two advertisers in one box with the wrong one on top.
+    //
+    // So the cheap tier is now the smallest thing the machine actually does: a short
+    // spot in one programme. That uses the path that exists, consumes countable
+    // inventory, and the card comes with it.
+    summary: 'A :15 spot in one programme of your choice, with your sponsor card while it airs.',
     includes: [
-      'Sponsor card with logo, blurb and link',
-      'Listed on the BeatFlow Radio sponsors page',
-      'Monthly airing report',
+      'A :15 spot in the programme you choose',
+      'Sponsor card with your logo, blurb and link while it airs',
+      'Monthly airing report with exact run counts',
       'Cancel any time'
     ],
-    audioSpot: false,
+    audioSpot: true,
     priceIdEnv: 'REACT_APP_STRIPE_SPONSOR_SUPPORTER_PRICE_ID'
   },
   {

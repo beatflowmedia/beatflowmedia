@@ -43,53 +43,75 @@
 // house policy, because presenting an editorial choice as a physical constraint would
 // be a scarcity claim dressed up as engineering.
 
+// HOURS ARE THE REAL ONES, not the nominal ones.
+//
+// Programmes overlap and resolve narrowest-wins, so a wide programme does not own all
+// the time its start and end suggest. Measured minute by minute across the day:
+//
+//   Midday Flow     nominal 5h  -> ACTUAL 4h      (The Lunch Mix takes 12:00-13:00)
+//   Afternoon Flow  nominal 4h  -> ACTUAL 2h26m   (The Spotlight and The Rock Block)
+//
+// Afternoon Flow was overstated by 39%, and it is the one a sponsor is most likely to
+// notice, because "the afternoon" sounds like it includes drive time and does not. A
+// buyer who finds the gap after paying has a fair complaint; one told up front may
+// simply buy The Rock Block as well.
+//
+// Every minute of the day is owned by something; nothing falls through.
 export const RADIO_PROGRAMS = [
   {
     id: 'night-flow',
     name: 'Night Flow',
     hours: '00:00 – 06:00',
+    actualHours: '6 hours',
     blurb: 'Long, quiet stretches for overnight listening.'
   },
   {
     id: 'morning-flow',
     name: 'Morning Flow',
     hours: '06:00 – 10:00',
+    actualHours: '4 hours',
     blurb: 'Brighter and more upbeat as the day starts.'
   },
   {
     id: 'midday-flow',
     name: 'Midday Flow',
-    hours: '10:00 – 15:00',
-    blurb: 'The main daytime rotation.'
+    hours: '10:00 – 15:00, except 12:00 – 13:00',
+    actualHours: '4 hours',
+    blurb: 'The main daytime rotation. The Lunch Mix takes the middle hour.'
   },
   {
     id: 'the-lunch-mix',
     name: 'The Lunch Mix',
     hours: '12:00 – 13:00',
+    actualHours: '1 hour',
     blurb: 'A shorter, livelier hour inside the middle of the day.'
   },
   {
     id: 'afternoon-flow',
     name: 'Afternoon Flow',
-    hours: '15:00 – 19:00',
-    blurb: 'Faster turnover through the afternoon.'
+    hours: '15:00 – 19:00, except 16:00 – 16:34 and 18:00 – 19:00',
+    actualHours: '2 hours 26 minutes',
+    blurb: 'Faster turnover through the afternoon. The Spotlight and The Rock Block take their slots out of it.'
   },
   {
     id: 'the-spotlight',
     name: 'The Spotlight',
     hours: '16:00 – 16:34',
+    actualHours: '34 minutes',
     blurb: 'A short focused feature. One of the busiest for sponsors.'
   },
   {
     id: 'the-rock-block',
     name: 'The Rock Block',
     hours: '18:00 – 19:00',
+    actualHours: '1 hour',
     blurb: 'Heavier hour. The most heavily sponsored on the station.'
   },
   {
     id: 'evening-flow',
     name: 'Evening Flow',
     hours: '19:00 – 00:00',
+    actualHours: '5 hours',
     blurb: 'Winding down into the night.'
   }
 ];
