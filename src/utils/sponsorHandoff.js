@@ -64,7 +64,7 @@ export function buildSponsorTxt(app) {
     'cta:        ' + (app.cta || ''),
     '',
     'target block:  :' + (app.spotBlock || '30'),
-    'programme:     ' + programNameFor(app.programId),
+    'programme:     ' + (app.programId ? programNameFor(app.programId) : 'to be agreed'),
     'package:       ' + (app.tierId || ''),
     // The timeline is what the sponsor actually told us. preferredStart only exists
     // for the one option that asks for a date, so printing it alone would show a blank

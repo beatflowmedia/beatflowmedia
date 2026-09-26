@@ -123,7 +123,7 @@ export default function SponsorApplicationsManager() {
                   <div>
                     <h3 className="text-xl font-bold">{app.company}</h3>
                     <p className="text-sm text-gray-400">
-                      {tier ? tier.name : app.tierId} · {programNameFor(app.programId)} · :{app.spotBlock || "30"}
+                      {tier ? tier.name : app.tierId} · {app.programId ? programNameFor(app.programId) : "programme to be agreed"} · :{app.spotBlock || "30"}
                     </p>
                   </div>
                   <span

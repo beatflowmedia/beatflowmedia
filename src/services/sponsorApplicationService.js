@@ -350,9 +350,12 @@ export async function submitApplication(user, form) {
       userId: user.uid,
       status: INITIAL_STATUS,
       tierId: form.tierId,
-      // Which programme they want. Stored so the desk knows where to place the spot
-      // and can check that programme's ad load before approving.
-      programId: form.programId || 'no-preference',
+      // No programme is recorded. The application no longer asks which one, because
+      // the sponsor had nothing to choose on -- there is no audience data and there
+      // cannot be -- and the two programmes anyone picks on instinct are the two with
+      // almost no capacity left. Placement is agreed during approval, where real
+      // capacity is visible. Readers show 'to be agreed' rather than a default that
+      // would look like the sponsor's choice.
       // The sponsor's INTENDED length. Never a measured duration -- see the form.
       spotBlock: form.spotBlock || DEFAULT_SPOT_BLOCK,
       company: form.company.trim(),

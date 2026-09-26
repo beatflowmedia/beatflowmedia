@@ -84,7 +84,7 @@ function loadEsModule(relPath, exportNames, injected = {}) {
 // means the service can start importing another of its exports without this script
 // silently breaking -- which it did once, when the specs moved here.
 const STATION = loadEsModule('src/data/radioStation.js', [
-  'RADIO_PROGRAMS', 'NO_PREFERENCE', 'PROGRAM_CHOICES', 'programNameFor',
+  'RADIO_PROGRAMS', 'programNameFor',
   'SPOT_BLOCKS', 'CTA_OPTIONS', 'isAllowedCta',
   'AUDIO_SPEC', 'LOGO_SPEC', 'mimeTypesOf', 'megabytesOf', 'DEFAULT_SPOT_BLOCK'
 ]);

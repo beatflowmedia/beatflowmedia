@@ -5,16 +5,13 @@ import FileDropzone from "../components/FileDropzone";
 import { useAuth } from "../context/AuthContext";
 import { SPONSOR_TIERS, formatMonthly } from "../data/sponsorshipTiers";
 import {
-  PROGRAM_CHOICES,
-  NO_PREFERENCE,
   SPOT_BLOCKS,
   CTA_OPTIONS,
   AUDIO_SPEC,
   LOGO_SPEC,
   megabytesOf,
   LOGO_GUIDANCE,
-  DEFAULT_SPOT_BLOCK,
-  programNameFor
+  DEFAULT_SPOT_BLOCK
 } from "../data/radioStation";
 import {
   submitApplication,
@@ -73,7 +70,6 @@ const DRAFT_KEY = "bfmg.sponsor.draft.v1";
 
 const EMPTY = {
   tierId: "",
-  programId: NO_PREFERENCE.id,
   company: "",
   blurb: "",
   cta: "",
@@ -422,49 +418,6 @@ export default function SponsorApply() {
                     ))}
                   </div>
 
-                  <div>
-                    <label htmlFor="programId" className="block text-sm font-semibold mb-2">
-                      Which programme?
-                    </label>
-                    <select
-                      id="programId"
-                      name="programId"
-                      value={form.programId}
-                      onChange={change}
-                      className={field}
-                    >
-                      {/* The option shows the programme's REAL airtime, not its
-                          nominal span. Narrower programmes take slots out of wider
-                          ones, so Afternoon Flow's "15:00-19:00" is actually 2h26m --
-                          a 39% overstatement, and the one a sponsor is most likely to
-                          notice, because "the afternoon" sounds like it includes drive
-                          time. The exclusions appear underneath rather than in the
-                          option label, which would be unreadable in a select. */}
-                      {PROGRAM_CHOICES.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                          {p.actualHours ? ` — ${p.actualHours} a day` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {(() => {
-                      const chosen = PROGRAM_CHOICES.find((p) => p.id === form.programId) || {};
-                      return (
-                        <>
-                          <p className="text-sm text-gray-400 mt-2">{chosen.blurb}</p>
-                          {chosen.hours && (
-                            <p className="text-sm text-gray-500 mt-1">{chosen.hours}</p>
-                          )}
-                        </>
-                      );
-                    })()}
-                    <p className="text-sm text-gray-500 mt-3">
-                      We cap how much advertising each programme carries, so the busier
-                      ones fill up. We confirm space when we review your application, and
-                      tell you before you are charged if it is full.
-                    </p>
-                  </div>
-
                   {navButtons(false)}
                 </div>
               )}
@@ -747,7 +700,6 @@ export default function SponsorApply() {
                   <dl className="bg-gray-800 rounded-lg p-5 space-y-2 text-sm">
                     {[
                       ["Package", selectedTier ? `${selectedTier.name} — ${formatMonthly(selectedTier)}` : "—"],
-                      ["Programme", programNameFor(form.programId)],
                       ["Advertiser", form.company],
                       ["Contact", `${form.contactName} (${form.email})`],
                       ["Link", form.landingUrl],

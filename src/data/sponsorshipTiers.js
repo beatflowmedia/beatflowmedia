@@ -65,9 +65,9 @@ export const SPONSOR_TIERS = [
     // So the cheap tier is now the smallest thing the machine actually does: a short
     // spot in one programme. That uses the path that exists, consumes countable
     // inventory, and the card comes with it.
-    summary: 'A :15 spot in one programme of your choice, with your sponsor card while it airs.',
+    summary: 'A :15 spot in one programme, with your sponsor card while it airs.',
     includes: [
-      'A :15 spot in the programme you choose',
+      'A :15 spot in one programme, agreed with you',
       'Sponsor card with your logo, blurb and link while it airs',
       'Monthly airing report with exact run counts',
       'Cancel any time'

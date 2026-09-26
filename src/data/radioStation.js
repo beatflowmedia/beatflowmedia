@@ -116,19 +116,21 @@ export const RADIO_PROGRAMS = [
   }
 ];
 
-// The honest default. A sponsor with no preference gets spread across the rotation,
-// which is also where the real headroom is.
-export const NO_PREFERENCE = {
-  id: 'no-preference',
-  name: 'No preference — run it across the station',
-  hours: 'All programmes',
-  blurb: 'We place it where there is room. This is usually the best value.'
-};
-
-export const PROGRAM_CHOICES = [NO_PREFERENCE, ...RADIO_PROGRAMS];
-
+/**
+ * Look up a programme's display name.
+ *
+ * NO_PREFERENCE and PROGRAM_CHOICES used to live here, wrapping this list for a
+ * picker in the sponsor application. That picker was removed: it asked a buyer to
+ * choose with nothing to choose on, since there is no audience data and cannot be.
+ * Placement is agreed during approval instead, where real capacity is visible.
+ *
+ * The vocabulary of CHOOSING went with it, because a "no preference" option only
+ * means something where a preference was offered. The programme list itself stays --
+ * it is true reference data, and once a programme IS agreed the handoff sheet and the
+ * admin screen need its name.
+ */
 export function programNameFor(id) {
-  const found = PROGRAM_CHOICES.find((p) => p.id === id);
+  const found = RADIO_PROGRAMS.find((p) => p.id === id);
   return found ? found.name : id;
 }
 
