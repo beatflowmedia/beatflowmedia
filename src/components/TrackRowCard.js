@@ -159,7 +159,13 @@ export default function TrackRowCard({
           </div>
         )}
 
-        {/* Like Button (Thumbs Up) */}
+        {/* Like Button (Thumbs Up)
+          *
+          * Guarded like the favourite button beside it. onToggleLike was called
+          * unguarded, so any caller that did not pass it rendered a button which
+          * threw a TypeError on click -- a control that looks live and is not.
+          * An optional prop has to actually be optional. */}
+        {onToggleLike && (
         <Box
           sx={{ display: 'flex', alignItems: 'center', gap: 0.5, position: 'relative', zIndex: 10 }}
           onClickCapture={(e) => e.stopPropagation()}
@@ -200,6 +206,7 @@ export default function TrackRowCard({
             </Typography>
           )}
         </Box>
+        )}
 
         {/* Favorite Button (Heart) */}
         {onToggleFavorite && (
@@ -240,7 +247,8 @@ export default function TrackRowCard({
           </Box>
         )}
 
-        {/* More Options */}
+        {/* More Options -- guarded for the same reason as Like above. */}
+        {onMoreOptions && (
         <IconButton
           size="small"
           onClick={(e) => {
@@ -254,6 +262,7 @@ export default function TrackRowCard({
         >
           <MoreVert />
         </IconButton>
+        )}
       </CardContent>
     </Card>
   );

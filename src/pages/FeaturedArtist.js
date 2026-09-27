@@ -9,30 +9,38 @@
 // no filter and nothing to click -- 52 tracks, 38% of the catalogue, with an artist
 // identity the storefront could not be navigated by.
 //
+// USES TrackRowCard, WHICH THE FIRST VERSION DID NOT.
+// That version hand-rolled its own row with a Play button and nothing else, on a site
+// that exists to LICENSE music. Twelve tracks a buyer could hear and not buy, which is
+// the same defect as a page that looks like it does something and does not. The shared
+// row brings the licence button, like, favourite and options, and it means this page
+// cannot drift from how every other track list behaves.
+//
 // WHY IT READS THE WHOLE COLLECTION
-// Firestore cannot query a substring, and the credit lives inside the title, so there
+// Firestore cannot query a substring and the credit lives inside the title, so there
 // is no server-side filter for "features SYNNE" short of denormalising a field --
 // which would be a second copy of a fact the title already holds, free to drift. At
 // 138 songs one read is cheap and correct. If the catalogue reaches thousands this
 // becomes the wrong shape and wants a real search index, which is a different problem
 // with a different answer; this is not that yet.
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link as RouterLink } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { Box, Typography } from '@mui/material';
 import { db } from '../firebaseConfig';
 import Footer from '../components/Footer';
+import TrackRowCard from '../components/TrackRowCard';
 import { artworkUrl } from '../utils/artwork';
 import { usePlaySong } from '../hooks/usePlaySong';
 import {
   titleFeatures,
-  titleWithoutFeature,
   parseFeaturedArtists,
   featuredArtistSlug
 } from '../utils/featuredArtists';
 
 export default function FeaturedArtist() {
   const { slug } = useParams();
-  const { playSong, isSongPlaying } = usePlaySong();
+  const { playSong, isCurrentSong, isPlaying } = usePlaySong();
 
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,12 +80,74 @@ export default function FeaturedArtist() {
       .flatMap((song) => parseFeaturedArtists(song.title))
       .find((name) => featuredArtistSlug(name) === slug) || slug;
 
+  // Which albums these tracks come from. Every persona's credits currently sit on a
+  // single album, so this is usually one link -- but deriving it means a persona
+  // appearing across two releases later does not silently lose the second.
+  const albums = [
+    ...new Map(
+      songs
+        .filter((song) => song.albumId || song.albumTitle || song.album)
+        .map((song) => [
+          song.albumId || song.albumTitle || song.album,
+          { id: song.albumId, title: song.albumTitle || song.album }
+        ])
+    ).values()
+  ];
+
+  const hero = songs[0];
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <main className="flex-1 pt-16 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto py-10 sm:py-14">
-          <p className="text-sm text-gray-500 mb-2">Featured artist</p>
-          <h1 className="text-4xl sm:text-5xl font-bold mb-3">{displayName}</h1>
+          {/* Header with artwork. The first version was a bare text heading, which
+              read as thinner than the rest of the site -- and an artist page with no
+              image is the one page where that is most obviously missing. */}
+          <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-end mb-10">
+            {hero && (
+              <img
+                src={artworkUrl(hero)}
+                alt=""
+                className="w-40 h-40 sm:w-48 sm:h-48 rounded-lg object-cover shadow-lg flex-shrink-0"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="text-sm text-gray-400 uppercase tracking-wide mb-1">
+                Featured artist
+              </p>
+              <h1 className="text-4xl sm:text-6xl font-bold mb-3 break-words">
+                {displayName}
+              </h1>
+              {!loading && songs.length > 0 && (
+                <p className="text-gray-400">
+                  {songs.length} {songs.length === 1 ? 'track' : 'tracks'} ·{' '}
+                  {/* Stated plainly, because a buyer told the recordings are
+                      AI-assisted may reasonably wonder who this is. */}
+                  produced by Percy Rice for BeatFlow Media Group
+                </p>
+              )}
+              {albums.length > 0 && (
+                <p className="text-gray-400 mt-2">
+                  From{' '}
+                  {albums.map((album, index) => (
+                    <span key={album.title}>
+                      {index > 0 && ', '}
+                      {album.id ? (
+                        <RouterLink
+                          to={`/album/${album.id}`}
+                          className="text-green-500 hover:underline"
+                        >
+                          {album.title}
+                        </RouterLink>
+                      ) : (
+                        album.title
+                      )}
+                    </span>
+                  ))}
+                </p>
+              )}
+            </div>
+          </div>
 
           {loading ? (
             <p className="text-gray-400">Loading…</p>
@@ -88,56 +158,38 @@ export default function FeaturedArtist() {
           ) : songs.length === 0 ? (
             <p className="text-gray-400">
               No tracks found for this artist.{' '}
-              <Link to="/browse" className="text-green-500 hover:underline">
+              <RouterLink to="/browse" className="text-green-500 hover:underline">
                 Browse the catalogue
-              </Link>
+              </RouterLink>
               .
             </p>
           ) : (
-            <>
-              {/* Says plainly what a featured credit means here, because a buyer who
-                  has been told the recordings are AI-assisted may reasonably wonder
-                  who this is. */}
-              <p className="text-gray-400 mb-8">
-                {songs.length} {songs.length === 1 ? 'track' : 'tracks'} featuring{' '}
-                {displayName}, produced by Percy Rice for BeatFlow Media Group.
-              </p>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {songs.map((song, index) => (
+                <TrackRowCard
+                  key={song.id}
+                  track={song}
+                  index={index}
+                  isCurrentTrack={isCurrentSong ? isCurrentSong(song) : false}
+                  isPlaying={isPlaying}
+                  onPlay={playSong}
+                  showArtist={false}
+                  showPurchase
+                />
+              ))}
+            </Box>
+          )}
 
-              <ul className="space-y-2">
-                {songs.map((song) => (
-                  <li
-                    key={song.id}
-                    className="flex items-center gap-4 bg-gray-800 rounded-lg p-3 hover:bg-gray-750"
-                  >
-                    <img
-                      src={artworkUrl(song)}
-                      alt=""
-                      className="w-14 h-14 rounded object-cover flex-shrink-0"
-                      loading="lazy"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        to={`/song/${song.id}`}
-                        className="block font-semibold truncate hover:underline"
-                      >
-                        {titleWithoutFeature(song.title)}
-                      </Link>
-                      <p className="text-sm text-gray-400 truncate">
-                        {song.album || song.albumName || 'Single'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => playSong(song)}
-                      className="min-h-[44px] min-w-[44px] px-4 rounded-full bg-green-600 hover:bg-green-500 text-sm font-semibold flex-shrink-0"
-                      aria-label={`Play ${titleWithoutFeature(song.title)}`}
-                    >
-                      {isSongPlaying && isSongPlaying(song) ? 'Playing' : 'Play'}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
+          {!loading && songs.length > 0 && (
+            <Typography variant="body2" sx={{ color: 'grey.500', mt: 4 }}>
+              {displayName} is a featured artist on releases produced by Percy Rice.
+              Licences are issued by BeatFlow Media Group, which holds both the
+              recording and the composition — see our{' '}
+              <RouterLink to="/terms" style={{ color: '#9ca3af' }}>
+                terms
+              </RouterLink>
+              .
+            </Typography>
           )}
         </div>
       </main>
