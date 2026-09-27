@@ -15,9 +15,12 @@ import {
   ThumbUpOffAlt,
   MoreVert
 } from '@mui/icons-material';
+import React from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import PurchaseButton from './PurchaseButton';
 import { useSongPlays } from '../hooks/useSongPlays';
 import { SONG_PRICE } from '../utils/pricing';
+import { parseFeaturedArtists, featuredArtistSlug } from '../utils/featuredArtists';
 
 /**
  * Reusable track row component for displaying songs in album and artist pages
@@ -100,8 +103,38 @@ export default function TrackRowCard({
               />
             )}
           </Box>
+          {/* Featured credits, made clickable.
+            *
+            * The personas -- Lyle Carpenter, SYNNE, Adam Cetera, Dawn Calvin -- live
+            * inside the track title, which is where the distributor registered them.
+            * They are a real public identity: a buyer meets one on the radio or a DSP,
+            * arrives here, and until now had a name with nothing to do. Search found
+            * them because search matches on title, but there was nothing to click.
+            *
+            * Rendered from the title rather than a stored field so the credit cannot
+            * drift from the name that was actually registered. The title itself is
+            * left intact above: it is what the buyer is licensing, and quietly
+            * rewriting it in the one place they are deciding to buy would be wrong. */}
           <Typography variant="body2" sx={{ color: 'grey.400' }}>
             {showArtist && artistName ? `${artistName} • ` : ''}
+            {parseFeaturedArtists(track.title).map((name, index) => (
+              <React.Fragment key={name}>
+                {index > 0 && ', '}
+                <Box
+                  component={RouterLink}
+                  to={`/featuring/${featuredArtistSlug(name)}`}
+                  onClick={(event) => event.stopPropagation()}
+                  sx={{
+                    color: 'grey.300',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline', color: 'white' }
+                  }}
+                >
+                  {name}
+                </Box>
+                {' • '}
+              </React.Fragment>
+            ))}
             {playCount.toLocaleString()} plays
           </Typography>
         </Box>

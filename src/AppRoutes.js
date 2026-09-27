@@ -59,6 +59,7 @@ const Cookies = lazy(() => import("./pages/Cookies"));
 const CookieSettings = lazy(() => import("./pages/CookieSettings"));
 const AboutAds = lazy(() => import("./pages/AboutAds"));
 const Advertising = lazy(() => import("./pages/Advertising"));
+const FeaturedArtist = lazy(() => import("./pages/FeaturedArtist"));
 const SponsorApply = lazy(() => import("./pages/SponsorApply"));
 const AdPreferences = lazy(() => import("./pages/AdPreferences"));
 const Accessibility = lazy(() => import("./pages/Accessibility"));
@@ -121,6 +122,10 @@ export default function AppRoutes() {
           <Route path="discover" element={<CategoryPage />} />
           <Route path="charts/:type" element={<CategoryPage />} />
           <Route path="song/:id" element={<SongPage />} />
+          {/* Featured artists are derived from "(feat. X)" in the track title,
+              which is where the distributor registered them. No artists collection
+              backs this -- see src/utils/featuredArtists.js. */}
+          <Route path="featuring/:slug" element={<FeaturedArtist />} />
           <Route path="debug-song-price" element={<DebugSongPrice />} />
           <Route path="discover-weekly" element={<DiscoverWeekly />} />
         </Route>
