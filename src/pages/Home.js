@@ -205,10 +205,23 @@ function Home() {
         unsubscribers.push(unsubReleases);
 
         // Load recent albums
+        //
+        // limit was 10 against a catalogue of 12, so two albums were simply unreachable
+        // from the home page -- and WHICH two was arbitrary, because 8 of the 12 have
+        // no releaseDate at all. Ordering by a field two thirds of the collection is
+        // missing does not order anything; it just picks.
+        //
+        // Raised rather than removed: an unbounded query on a shelf is a real problem
+        // once the catalogue grows, and this is a "recently released" strip, not a
+        // browse page. 24 clears the current 12 with room to double.
+        //
+        // THE ORDERING IS STILL UNRELIABLE until those 8 albums get a releaseDate. The
+        // heading claims recency the data cannot support. That is a data fix, not a
+        // code one -- inventing dates here would make the shelf look right and be wrong.
         const recentAlbumsQuery = query(
           collection(db, "albums"),
           orderBy("releaseDate", "desc"),
-          limit(10)
+          limit(24)
         );
 
         const unsubAlbums = onSnapshot(recentAlbumsQuery, (snapshot) => {

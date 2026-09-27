@@ -158,7 +158,12 @@ export default function SponsorApplicationsManager() {
                       {/* Opened in a new tab so an admin can confirm it resolves. A dead
                           link fails the station's build, and an invented URL is the one
                           advertising fault that has actually reached air there. */}
-                      <a href={app.landingUrl} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline break-all">
+                      {/* rel="sponsored" as well as noopener. This particular link sits
+                          behind admin auth and is never crawled, so it changes nothing
+                          today -- it is here so the attribute travels with the pattern
+                          if a sponsor list is ever made public. An unmarked paid link is
+                          a link scheme, and the penalty is sitewide rather than local. */}
+                      <a href={app.landingUrl} target="_blank" rel="noopener noreferrer sponsored" className="text-green-500 hover:underline break-all">
                         {app.landingUrl}
                       </a>
                     </dd>
