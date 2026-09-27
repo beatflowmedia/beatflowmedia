@@ -20,24 +20,40 @@ export default function GenrePage() {
   const [newReleases, setNewReleases] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Format genre for display
+
+  // Title-cases a slug for the heading ONLY, never for querying.
+  //
+  // This used to build the query value too: where('genre', '==', formatGenre(slug)).
+  // It round-trips only for values made of letters and spaces, so the moment a genre
+  // contains punctuation it breaks silently -- "R&B" slugifies to "r-b" and formats
+  // back to "R B", which matches no document and renders an empty page with no error.
+  // Songs now carry a stored `genreSlug` and the query uses that.
+  //
+  // The heading prefers the real `genre` off the first result, falling back to this
+  // only when there are no results to read it from.
   const formatGenre = (genreSlug) => {
-    return genreSlug
+    return String(genreSlug || '')
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
+  // The heading shows the genre as it is STORED -- "R&B / Soul" -- taken off the
+  // first result. formatGenre(slug) would render that as "R B Soul", because the
+  // slug has already lost the punctuation. Falls back to the slug only when there
+  // is nothing to read a real value from.
+  const displayGenre =
+    (popularSongs.find((song) => song.genre) || newReleases.find((song) => song.genre) || {})
+      .genre || formatGenre(genre);
+
   useEffect(() => {
     const fetchSongs = async () => {
       try {
         setLoading(true);
-        const genreFormatted = formatGenre(genre);
-
-        // Fetch popular songs (by play count)
+        // Query the STORED slug, not a title-cased guess. See formatGenre above.
         const popularQuery = query(
           collection(db, 'songs'),
-          where('genre', '==', genreFormatted),
+          where('genreSlug', '==', genre),
           orderBy('playCount', 'desc'),
           limit(12)
         );
@@ -51,14 +67,20 @@ export default function GenrePage() {
           .filter(song => song.isVisible !== false); // Filter out hidden songs
         setPopularSongs(popularData);
 
-        // Fetch new releases (by release date)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
+        // Latest in this genre.
+        //
+        // This filtered on where('releaseDate', '>', thirtyDaysAgo) -- a Date object
+        // compared against releaseDate, which is stored as a string like "2025-06-08".
+        // Firestore orders by TYPE before value, so a string is never greater than a
+        // Date and that clause could never match anything. The section was permanently
+        // empty and nothing errored. Same fault was on the home page and is fixed there.
+        //
+        // The window is dropped rather than repaired: two thirds of the catalogue has
+        // no releaseDate at all, so "released in the last 30 days" cannot be answered
+        // honestly yet. Newest-first is true regardless of how many dates exist.
         const newReleasesQuery = query(
           collection(db, 'songs'),
-          where('genre', '==', genreFormatted),
-          where('releaseDate', '>', thirtyDaysAgo),
+          where('genreSlug', '==', genre),
           orderBy('releaseDate', 'desc'),
           limit(12)
         );
@@ -245,7 +267,7 @@ export default function GenrePage() {
               textShadow: '2px 2px 8px rgba(0,0,0,0.8)'
             }}
           >
-            {formatGenre(genre)}
+            {displayGenre}
           </Typography>
         </Box>
       </Box>
@@ -260,7 +282,7 @@ export default function GenrePage() {
             variant="h5"
             sx={{ color: 'text.primary', fontWeight: 'bold', mb: 3 }}
           >
-            Popular {formatGenre(genre)}
+            Popular {displayGenre}
           </Typography>
           <Grid container spacing={2}>
             {popularSongs.map((song) => (
@@ -279,7 +301,7 @@ export default function GenrePage() {
             variant="h5"
             sx={{ color: 'text.primary', fontWeight: 'bold', mb: 3 }}
           >
-            New {formatGenre(genre)} Releases
+            Latest in {displayGenre}
           </Typography>
           <Grid container spacing={2}>
             {newReleases.map((song) => (
