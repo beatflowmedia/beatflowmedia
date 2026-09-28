@@ -389,8 +389,15 @@ function toMp3(sourcePath) {
         continue;
       }
 
-      const isWav = path.extname(item.file).toLowerCase() === '.wav';
-      const converted = isWav ? toMp3(item.file) : null;
+      // Convert ANYTHING that is not already mp3, not just wav.
+      //
+      // The first version tested only for .wav, so .m4a, .flac and .aiff were uploaded
+      // byte-for-byte but named ".mp3" and served as audio/mpeg -- a file that lies
+      // about its own format. It would download with the wrong extension and fail to
+      // play, and the only symptom a buyer gets is "this file is broken". Memphis Love
+      // is entirely .m4a, which is how it surfaced.
+      const alreadyMp3 = path.extname(item.file).toLowerCase() === '.mp3';
+      const converted = alreadyMp3 ? null : toMp3(item.file);
       const audioSource = converted ? converted.file : item.file;
       const audioDest = DEST_PREFIX + slug(item.collection) + '/' + item.title + '.mp3';
 
