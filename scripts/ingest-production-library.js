@@ -90,8 +90,46 @@ const SKIP_FOLDERS = new Set([
   'Suno',
   'Alphabet Videos',
   'Faceless Youtube Channel',
-  'The Silicon Baobab Promos'
+  'The Silicon Baobab Promos',
+  // Promos and working exports rather than product. Named individually rather than
+  // pattern-matched: /^test/i would one day swallow a real collection called
+  // "Test Card Themes".
+  'The Silicon Baobab Final Audio Mastered',
+  'FullYutubeStreamVErsion',
+  'jazzy neo-soul'
 ]);
+
+/**
+ * Tracks excluded by NAME, for reasons the folder cannot express.
+ *
+ * COVERS AND REMIXES are the important half. A cover is someone else's COMPOSITION.
+ * The platform's whole proposition is one-stop clearance -- BFMG holds the recording
+ * and the composition, so a single licence covers both -- and on a cover it does not.
+ * Listing one would make /terms untrue for that record and would grant rights BFMG
+ * does not hold. Percy has not confirmed these individually, so they stay out; some
+ * may well be his own work remixed, and each can be added back deliberately.
+ *
+ * JOINED EXPORTS are continuous mixes built for a YouTube upload, not tracks. Their
+ * tags name audio-joiner.com, which is also why they carry no Suno id -- re-encoding
+ * strips it.
+ */
+const SKIP_TITLES = new Set([
+  // Covers and remixes of other people's compositions
+  'Atlantis - From.Us (Cover)',
+  "DJ Illuminado (Carlos' Song) (Remix) (Cover)",
+  'Favorite Birthday...Ever (Cover)',
+  'Let it Slide (Remix Me)',
+  'little island (Cover)',
+  'nikiDUA - Memory 03 (Cover)',
+  'Balcony (Scoson Cover)',
+  'Out Yo Head - Remix',
+  'Right Kind of Wrong (Remix)',
+  // Joined exports, not individual tracks
+  'SunsetChillVIbesEPYouTube'
+]);
+
+// "Cloud Cover" contains the word cover and is not one -- the exclusions above are an
+// explicit list precisely so a substring match cannot take a real track with it.
 
 const AUDIO_EXT = new Set(['.mp3', '.wav', '.flac', '.m4a', '.aiff', '.aif']);
 const IMAGE_EXT = ['.jpeg', '.jpg', '.png', '.webp'];
@@ -186,7 +224,7 @@ function toMp3(sourcePath) {
   console.log('');
 
   const files = walk(FROM);
-  const skipped = { folder: 0, sameTrackOtherFormat: 0, inCatalogue: 0 };
+  const skipped = { folder: 0, sameTrackOtherFormat: 0, inCatalogue: 0, excludedTitle: 0 };
 
   // Group by COLLECTION + TITLE, not title alone.
   //
@@ -211,6 +249,7 @@ function toMp3(sourcePath) {
     if (ONLY_FOLDER && collection !== ONLY_FOLDER) continue;
 
     const title = path.basename(file, path.extname(file));
+    if (SKIP_TITLES.has(title)) { skipped.excludedTitle += 1; continue; }
     const key = slug(collection) + '|' + normTitle(title);
     const group = groups.get(key) || [];
     group.push({ file, title, collection });
@@ -259,6 +298,7 @@ function toMp3(sourcePath) {
   console.log('');
   console.log('SKIPPED');
   console.log('  ' + String(skipped.folder).padStart(4) + '  in excluded folders');
+  console.log('  ' + String(skipped.excludedTitle).padStart(4) + '  covers, remixes and joined exports');
   console.log('  ' + String(skipped.inCatalogue).padStart(4) + '  already in the catalogue');
   console.log('  ' + String(skipped.sameTrackOtherFormat).padStart(4) + '  same track in another format (best source kept)');
 
