@@ -131,6 +131,37 @@ const SKIP_TITLES = new Set([
 // "Cloud Cover" contains the word cover and is not one -- the exclusions above are an
 // explicit list precisely so a substring match cannot take a real track with it.
 
+/**
+ * Folders that are RELEASES, not production-library collections.
+ *
+ * Percy's classification, not inferred: "It's Christmas Time Again" falls under
+ * Albums, and Interstellar Drift and After Hours at the Library are production
+ * library despite reading like sequential releases. Naming cannot decide this --
+ * "Eternal Flame" and "Deep Sleep" look alike and are different products.
+ *
+ * The distinction is structural, not cosmetic. A release needs an albums/ document
+ * and an albumId on every track, or it appears on no album page and in no album
+ * browse -- six loose tracks with a shared string in a field nothing joins on.
+ */
+const ALBUM_FOLDERS = new Set([
+  "It's Christmas Time Again",
+  'Eternal Flame',
+  'From Pain to Light',
+  'Memphis Love'
+]);
+
+/**
+ * Which pool a track belongs to, using the vocabulary assetPools.js already defines.
+ *
+ * Set EXPLICITLY rather than left to assetPoolOf()'s heuristic. That classifier infers
+ * from the presence of isrc/trackNumber (a release) or mood/bpm/loopable (licensing
+ * metadata), and these records have neither -- so every one of them would classify as
+ * null and sit unpooled. We know which is which here; stating it beats a guess made
+ * later from absent fields.
+ */
+const POOL_RELEASE = 'commercial-release';
+const POOL_PRODUCTION = 'production-music';
+
 const AUDIO_EXT = new Set(['.mp3', '.wav', '.flac', '.m4a', '.aiff', '.aif']);
 const IMAGE_EXT = ['.jpeg', '.jpg', '.png', '.webp'];
 
@@ -220,7 +251,17 @@ function toMp3(sourcePath) {
   const existing = new Set();
   const snap = await db.collection('songs').select('title').get();
   snap.forEach((doc) => existing.add(normTitle(doc.get('title'))));
-  console.log('Catalogue already holds ' + existing.size + ' distinct titles.');
+
+  // Existing albums by normalised title. A folder matching one ATTACHES to it rather
+  // than creating a second album with the same name -- three folders already match
+  // ("What She Said", "Maps & Moments", "I Should of Shown up For You"), and a
+  // duplicate album is invisible in a list and impossible to tell apart later.
+  const albumIdByTitle = new Map();
+  const albumSnap = await db.collection('albums').get();
+  albumSnap.forEach((doc) => albumIdByTitle.set(normTitle(doc.get('title')), doc.id));
+
+  console.log('Catalogue already holds ' + existing.size + ' distinct titles and ' +
+    albumIdByTitle.size + ' albums.');
   console.log('');
 
   const files = walk(FROM);
@@ -277,6 +318,25 @@ function toMp3(sourcePath) {
     if (LIMIT && plan.length >= LIMIT) break;
   }
 
+  // Provisional track numbers for album folders only.
+  //
+  // Assigned AFTER the plan is built so numbering is contiguous over what will
+  // actually be written -- numbering during the walk would leave gaps wherever a
+  // track was skipped as a duplicate format or already present.
+  //
+  // Alphabetical because the filenames carry no order and the intended sequence is
+  // recorded nowhere. Stable and reorderable beats absent, which sorts arbitrarily on
+  // an album page; it is presentation, not a claim about the record.
+  const albumCounters = new Map();
+  plan
+    .filter((item) => ALBUM_FOLDERS.has(item.collection))
+    .sort((a, b) => a.collection.localeCompare(b.collection) || a.title.localeCompare(b.title))
+    .forEach((item) => {
+      const next = (albumCounters.get(item.collection) || 0) + 1;
+      albumCounters.set(item.collection, next);
+      item.trackNumber = next;
+    });
+
   // Report by collection before anything is written.
   const byCollection = {};
   plan.forEach((item) => {
@@ -291,6 +351,7 @@ function toMp3(sourcePath) {
     .forEach(([name, stat]) =>
       console.log(
         '  ' + String(stat.n).padStart(4) + '  ' + name.padEnd(46) +
+        (ALBUM_FOLDERS.has(name) ? '[ALBUM] ' : '        ') +
         (stat.art === stat.n ? 'all have art' : stat.art + '/' + stat.n + ' have art')
       )
     );
@@ -349,10 +410,40 @@ function toMp3(sourcePath) {
         coverUrl = 'https://storage.googleapis.com/' + BUCKET + '/' + encodeURI(artDest);
       }
 
+      const isAlbum = ALBUM_FOLDERS.has(item.collection);
+
+      // Attach to an existing album, or create one once per run.
+      let albumId = null;
+      if (isAlbum) {
+        const key = normTitle(item.collection);
+        if (!albumIdByTitle.has(key)) {
+          const created = await db.collection('albums').add({
+            title: item.collection,
+            artist: ARTIST,
+            artistName: ARTIST,
+            recordLabel: RECORD_LABEL,
+            aiDisclosure: AI_DISCLOSURE,
+            humanContributions: HUMAN_CONTRIBUTIONS,
+            isVisible: true,
+            assetPool: POOL_RELEASE,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          albumIdByTitle.set(key, created.id);
+          console.log('  ALBUM created: ' + item.collection + '  (' + created.id + ')');
+        }
+        albumId = albumIdByTitle.get(key);
+      }
+
       await db.collection('songs').add({
         title: item.title,
         album: item.collection,
         albumTitle: item.collection,
+        ...(albumId ? { albumId } : {}),
+        // PROVISIONAL running order, alphabetical by title. The filenames carry no
+        // track numbers, so the intended sequence is not recorded anywhere -- this is
+        // stable and reorderable in admin rather than a claim about the album.
+        ...(isAlbum ? { trackNumber: item.trackNumber } : {}),
+        assetPool: isAlbum ? POOL_RELEASE : POOL_PRODUCTION,
         artist: ARTIST,
         artistName: ARTIST,
         recordLabel: RECORD_LABEL,
