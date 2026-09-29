@@ -5,6 +5,7 @@ import { Box, Typography } from '@mui/material';
 import BrowseFilters from '../components/BrowseFilters';
 import HomeStorefront from './HomeStorefront';
 import { getBrowseCategory } from '../config/browseCategories';
+import { ASSET_POOLS } from '../utils/assetPools';
 
 const BrowseByCategory = () => {
   const { category } = useParams();
@@ -31,7 +32,16 @@ const BrowseByCategory = () => {
         </Box>
 
         {/* Reuse HomeStorefront component for track display, filtered by the active category */}
-        <HomeStorefront hideHeader filter={activeCategory} />
+        {/* Browse defaults to the LIBRARY, not the albums. Every /browse route is
+              someone licensing music for their own work; the platform pages
+              (TikTok, Instagram, YouTube) carry no pool of their own and would
+              otherwise fall through to the storefront's commercial-release
+              default, showing a creator Percy's artist albums. */}
+          <HomeStorefront
+            hideHeader
+            filter={activeCategory}
+            pool={activeCategory?.pool || ASSET_POOLS.PRODUCTION_MUSIC}
+          />
       </Box>
     </Box>
   );

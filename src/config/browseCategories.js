@@ -1,4 +1,5 @@
 // src/config/browseCategories.js
+import { ASSET_POOLS } from '../utils/assetPools';
 // Single source of truth for the /browse/:category pages (CategoryNav -> BrowseByCategory).
 //
 // Each entry:
@@ -30,11 +31,29 @@ export const PLATFORM_OPTIONS = [
   { value: 'youtube', label: 'YouTube' },
 ];
 
+// Which catalogue each browse surface serves.
+//
+// Browse is where someone LICENSES music for their own work, so it shows the library
+// rather than the artist releases. Those live on the listening storefront, which is
+// the same component asking for a different pool.
+//
+// The PRD calls this "shared backend, independent surfaces" (S84) -- one component,
+// one query, the pool as the parameter. A second copy of the storefront per pool is
+// how the two drift apart.
 export const BROWSE_CATEGORIES = {
-  // Facet landing pages — show everything; narrowing happens elsewhere.
-  mood:    { title: 'Browse by Mood',     description: 'Find the perfect vibe for your content' },
-  genre:   { title: 'Browse by Genre',    description: 'Explore music by style and genre' },
-  usecase: { title: 'Browse by Use Case', description: 'Music curated for specific content types' },
+  // Facet landing pages — the library, narrowed further by the sidebar.
+  mood:    { title: 'Browse by Mood',     description: 'Find the perfect vibe for your content', pool: ASSET_POOLS.PRODUCTION_MUSIC },
+  genre:   { title: 'Browse by Genre',    description: 'Explore music by style and genre',       pool: ASSET_POOLS.PRODUCTION_MUSIC },
+  usecase: { title: 'Browse by Use Case', description: 'Music curated for specific content types', pool: ASSET_POOLS.PRODUCTION_MUSIC },
+
+  // Functional music is its own market -- wellness, clinics, focus and sleep apps --
+  // and assetPools.js calls it PRD sub-brand #1. Mixing it into the production grid
+  // buries the thing that differentiates this catalogue from a stock library.
+  functional: {
+    title: 'Focus, Sleep & Somatic',
+    description: 'Music that does a job: focus, sleep, calm and somatic work',
+    pool: ASSET_POOLS.FUNCTIONAL_MUSIC,
+  },
 
   // Platform pages — filter to tracks tagged for that platform (soft until tagged).
   tiktok: {

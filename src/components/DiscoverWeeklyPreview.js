@@ -15,7 +15,8 @@ import ArrowForward from '@mui/icons-material/ArrowForward';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { ASSET_POOLS } from '../utils/assetPools';
 import { useNavigate } from 'react-router-dom';
 import { artworkUrl } from '../utils/artwork';
 
@@ -40,6 +41,8 @@ function DiscoverWeeklyPreview() {
         // Get recent quality songs (simplified for preview)
         const previewQuery = query(
           collection(db, 'songs'),
+          // See DiscoverWeekly: this is the same listening surface in miniature.
+          where('assetPool', '==', ASSET_POOLS.COMMERCIAL_RELEASE),
           orderBy('createdAt', 'desc'),
           limit(8)
         );

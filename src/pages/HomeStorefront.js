@@ -5,13 +5,20 @@ import { PlayArrow, Pause, Download, Timer, Speed } from '@mui/icons-material';
 import { useAuth } from "../context/AuthContext";
 import { usePlaySong } from "../hooks/usePlaySong";
 import { db } from "../firebaseConfig";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
+import { ASSET_POOLS } from "../utils/assetPools";
 import OptimizedImage from "../components/OptimizedImage";
 import { stripeService } from "../services/stripeService";
 import { useNavigate } from "react-router-dom";
 import { artworkUrl } from '../utils/artwork';
 
-function HomeStorefront({ hideHeader = false, filter = null }) {
+/**
+ * @param {string|null} pool  which assetPool to show. Defaults to commercial-release
+ *   because this is the LISTENING storefront -- that is the pool it has always meant
+ *   to show, it simply had nothing else in the collection until the production
+ *   library arrived.
+ */
+function HomeStorefront({ hideHeader = false, filter = null, pool = ASSET_POOLS.COMMERCIAL_RELEASE }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
@@ -63,8 +70,29 @@ function HomeStorefront({ hideHeader = false, filter = null }) {
     //
     // Reads are billed now that the project is on Blaze, so this is a stopgap with a
     // known cost (~138 reads per load), not the end state.
+    // FILTERED BY POOL, and this is why.
+    //
+    // The production-library ingest added 782 records with today's createdAt. This
+    // query orders by createdAt desc and took 500, so the newest 500 became 472
+    // production tracks and 28 album tracks -- and the 141 original commercial
+    // releases fell to rank 783 of 923, past the cap. Percy's own albums vanished
+    // from his own storefront, with nothing erroring.
+    //
+    // Raising the limit would have hidden that rather than fixed it. The PRD (S14)
+    // already named the real problem: the catalogue is three distinct products for
+    // three distinct markets, sold through one undifferentiated storefront.
+    // S81: asset pool = sub-brand.
+    //
+    // Every record now carries a pool, which is what makes this possible -- the
+    // discriminator existed in assetPools.js and was populated by nothing until the
+    // backfill.
+    //
+    // Needs the songs(assetPool ASC, createdAt DESC) composite index: a where and an
+    // orderBy on different fields cannot be served without one, and Firestore fails
+    // the query rather than returning partial results.
     const tracksQuery = query(
       collection(db, "songs"),
+      where("assetPool", "==", pool),
       orderBy("createdAt", "desc"),
       limit(500)
     );
@@ -97,7 +125,10 @@ function HomeStorefront({ hideHeader = false, filter = null }) {
       isMounted = false;
       unsubscribe();
     };
-  }, []);
+    // pool is a dependency: the subscription is built from it, so a surface that
+    // switches pool must resubscribe. Without it the component would keep showing
+    // the first pool it ever rendered and look like the filter does not work.
+  }, [pool]);
 
   const handlePreviewTrack = (track) => {
     // usePlaySong toggles play/pause when this is already the current track,

@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { ASSET_POOLS } from '../utils/assetPools';
 import { toast } from 'react-toastify';
 import { artworkUrl } from '../utils/artwork';
 
@@ -103,6 +104,11 @@ function DiscoverWeekly() {
         try {
           const forYouQuery = query(
             collection(db, 'songs'),
+            // Commercial releases only. Discover Weekly is a listening feature, and
+            // after the production-library ingest the newest 20 songs were 20
+            // production cues -- Percy opened it and found his library instead of his
+            // music. A focus bed is not a discovery.
+            where('assetPool', '==', ASSET_POOLS.COMMERCIAL_RELEASE),
             orderBy('createdAt', 'desc'),
             limit(20)
           );
@@ -117,7 +123,11 @@ function DiscoverWeekly() {
         } catch (err) {
           console.error('Error loading For You:', err);
           // Fallback: just get any songs
-          const fallbackQuery = query(collection(db, 'songs'), limit(20));
+          const fallbackQuery = query(
+            collection(db, 'songs'),
+            where('assetPool', '==', ASSET_POOLS.COMMERCIAL_RELEASE),
+            limit(20)
+          );
           const fallbackSnapshot = await getDocs(fallbackQuery);
           const fallbackSongs = fallbackSnapshot.docs.map(doc => ({
             id: doc.id,

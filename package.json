@@ -73,6 +73,7 @@
     "ingest:library": "node scripts/ingest-production-library.js",
     "scan:provenance": "node scripts/scan-library-provenance.js",
     "previews": "node scripts/generate-previews.js",
+    "backfill:pools": "node scripts/backfill-asset-pools.js",
     "backfill:ai": "node scripts/backfill-ai-disclosure.js",
     "link:masters": "node scripts/link-masters.js",
     "upload:masters": "node scripts/upload-local-masters.js",
