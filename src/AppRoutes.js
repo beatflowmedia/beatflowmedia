@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import AppShell from "./layouts/AppShell";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { isComingSoon } from "./config/comingSoon";
 
 // Lazy-loaded pages
 const Home = lazy(() => import("./pages/Home"));
@@ -167,8 +168,15 @@ export default function AppRoutes() {
         <Route path="community" element={<Community />} />
         <Route path="developers" element={<Developers />} />
 
-        {/* Premium plan pages */}
-        <Route path="audiobooks" element={<Audiobooks />} />
+        {/* Premium plan pages.
+            /audiobooks quotes "Audiobooks Access -- $12.99/month" against a collection
+            holding 0 documents, with nothing in the repo able to write one. A price on a
+            page is an offer, so this route stays closed until there is inventory behind
+            it. The page is untouched; deleting its entry in config/comingSoon.js
+            publishes it again. */}
+        {!isComingSoon('audiobooks') && (
+          <Route path="audiobooks" element={<Audiobooks />} />
+        )}
 
         {/* Legal pages */}
         <Route path="legal" element={<Legal />} />

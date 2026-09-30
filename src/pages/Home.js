@@ -25,7 +25,6 @@ import ThumbUpOffAlt from '@mui/icons-material/ThumbUpOffAlt';
 import MoreVert from '@mui/icons-material/MoreVert';
 import Share from '@mui/icons-material/Share';
 import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
-import TrendingUp from '@mui/icons-material/TrendingUp';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import PersonRemove from '@mui/icons-material/PersonRemove';
 import QueueMusic from '@mui/icons-material/QueueMusic';
@@ -43,6 +42,8 @@ import { usePlaySong } from "../hooks/usePlaySong";
 import { toast } from "react-toastify";
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
+import { ASSET_POOLS } from "../utils/assetPools";
+import { isComingSoon } from "../config/comingSoon";
 import ShareButton from "../utils/ShareButton";
 import firebaseCache from "../utils/firebaseCache";
 import { stripeService } from "../services/stripeService";
@@ -73,7 +74,16 @@ function Home() {
   const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
   const navigate = useNavigate();
   // Enhanced state management for discovery features
-  const [activeCategory, setActiveCategory] = useState('all'); // 'all', 'music', 'podcasts', 'audiobooks'
+  // 'all' | 'new-releases' | 'podcasts' | 'audiobooks'
+  //
+  // 'music' is GONE, not renamed. It and 'all' both resolved to `trendingSongs` -- two
+  // chips, one answer, so whichever one you clicked the page did not change. A control
+  // that cannot change anything is furniture, and the reader has no way to tell it apart
+  // from one that is broken.
+  //
+  // 'podcasts' and 'audiobooks' remain reachable values because the chips come back the
+  // day those launch; see config/comingSoon.js.
+  const [activeCategory, setActiveCategory] = useState('all');
   const [showFollowingOnly, setShowFollowingOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -143,8 +153,31 @@ function Home() {
           setTrendingSongs(cachedTrending);
         }
 
+        // FILTERED BY POOL. This is the listening storefront, and it shows releases.
+        //
+        // This query used to read the whole `songs` collection. That was harmless while
+        // the collection WAS the releases, and stopped being harmless the moment the
+        // production library landed: 923 songs, of which 754 are library and functional
+        // cues that are licensed into other people's work, not listened to here.
+        //
+        // The browse pages were given this filter already (HomeStorefront). This page
+        // was not, and this page is `/` -- so the front door kept showing the mixed
+        // catalogue while every other surface had been separated. PRD S81: asset pool =
+        // sub-brand; S84: independent surfaces. The front page is the most independent
+        // surface there is.
+        //
+        // Needs the songs(assetPool ASC, playCount DESC) composite index -- a where and
+        // an orderBy on different fields cannot be served without one, and Firestore
+        // fails the query outright rather than returning partial results.
+        //
+        // NOTE ON THE ORDERING, which this change does NOT fix: playCount is 0 on all
+        // 923 records, so "trending" is ordering by a constant and Firestore falls back
+        // to document id. The shelf is arbitrary, not popular. Filtering by pool makes
+        // it arbitrary *within the right catalogue*, which is a real improvement and is
+        // not the same as the shelf being correct. Ranking needs play data to exist.
         const trendingQuery = query(
           collection(db, "songs"),
+          where("assetPool", "==", ASSET_POOLS.COMMERCIAL_RELEASE),
           orderBy("playCount", "desc"),
           limit(20)
         );
@@ -160,6 +193,20 @@ function Home() {
           console.log('Home: Loaded', trending.length, 'visible trending songs from Firebase');
           setTrendingSongs(trending);
           firebaseCache.set(cacheKey, trending);
+        }, (err) => {
+          // This listener had NO error handler, which is the expensive half of the
+          // problem. A where + orderBy on different fields needs a composite index, and
+          // Firestore does not degrade -- it fails the query outright. With no handler
+          // the rejection was invisible and the page simply showed an empty shelf,
+          // indistinguishable from a catalogue with nothing in it.
+          //
+          // failed-precondition specifically means "build the index"; the message
+          // carries a console link that creates it. Surfacing it is the difference
+          // between a five-minute fix and an afternoon.
+          console.error('Home: trending query failed —', err.code, err.message);
+          setError(err.code === 'failed-precondition'
+            ? 'Trending is unavailable: a database index is still building.'
+            : 'Trending is unavailable right now.');
         });
         unsubscribers.push(unsubTrending);
 
@@ -186,8 +233,17 @@ function Home() {
         // lexicographically in the same order as chronologically, and empty strings
         // sort last under `desc`, so undated records fall to the bottom rather than
         // masquerading as the newest.
+        // Pool-filtered for the same reason as trending. Measured: releaseDate exists on
+        // 39 of the 169 commercial releases and on ZERO of the 754 library and
+        // functional records, and Firestore excludes a document missing the field it is
+        // asked to order by. So this shelf was already drawing from commercial releases
+        // only, by accident. Stating it makes the shelf correct by construction rather
+        // than by a coincidence that a single tagged library track would end.
+        //
+        // Needs the songs(assetPool ASC, releaseDate DESC) composite index.
         const newReleasesQuery = query(
           collection(db, "songs"),
+          where("assetPool", "==", ASSET_POOLS.COMMERCIAL_RELEASE),
           orderBy("releaseDate", "desc"),
           limit(15)
         );
@@ -201,6 +257,9 @@ function Home() {
             .filter(song => song.isVisible !== false); // Filter out hidden songs
           console.log('Home: Loaded', releases.length, 'new releases from Firebase (visible only)');
           setNewReleases(releases);
+        }, (err) => {
+          // Same missing handler, same reason -- see the trending listener above.
+          console.error('Home: new-releases query failed —', err.code, err.message);
         });
         unsubscribers.push(unsubReleases);
 
@@ -255,43 +314,55 @@ function Home() {
         });
         unsubscribers.push(unsubArtists);
 
-        // Load podcasts
-        const podcastsQuery = query(
-          collection(db, "podcast_episodes"),
-          orderBy("releaseDate", "desc"),
-          limit(20)
-        );
+        // Podcasts and audiobooks are subscribed to ONLY once they launch.
+        //
+        // Both collections hold 0 documents and nothing in the repo writes to either, so
+        // these listeners opened a billed connection to fetch nothing, forever, on every
+        // visit to the front page. The error handler made that invisible: a missing
+        // collection logged quietly and set an empty array, which is indistinguishable
+        // from a collection that exists and happens to be empty.
+        //
+        // Gating on the same flag that hides the chips keeps the fetch and the control
+        // in step. A surface nobody can reach should not be paying to stay warm.
+        if (!isComingSoon('podcasts')) {
+          const podcastsQuery = query(
+            collection(db, "podcast_episodes"),
+            orderBy("releaseDate", "desc"),
+            limit(20)
+          );
 
-        const unsubPodcasts = onSnapshot(podcastsQuery, (snapshot) => {
-          const podcastsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setPodcasts(podcastsData);
-        }, (error) => {
-          console.log('Podcasts collection not available:', error.message);
-          setPodcasts([]);
-        });
-        unsubscribers.push(unsubPodcasts);
+          const unsubPodcasts = onSnapshot(podcastsQuery, (snapshot) => {
+            const podcastsData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            setPodcasts(podcastsData);
+          }, (error) => {
+            console.log('Podcasts collection not available:', error.message);
+            setPodcasts([]);
+          });
+          unsubscribers.push(unsubPodcasts);
+        }
 
-        // Load audiobooks
-        const audiobooksQuery = query(
-          collection(db, "audiobooks"),
-          orderBy("releaseDate", "desc"),
-          limit(20)
-        );
+        if (!isComingSoon('audiobooks')) {
+          const audiobooksQuery = query(
+            collection(db, "audiobooks"),
+            orderBy("releaseDate", "desc"),
+            limit(20)
+          );
 
-        const unsubAudiobooks = onSnapshot(audiobooksQuery, (snapshot) => {
-          const audiobooksData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          setAudiobooks(audiobooksData);
-        }, (error) => {
-          console.log('Audiobooks collection not available:', error.message);
-          setAudiobooks([]);
-        });
-        unsubscribers.push(unsubAudiobooks);
+          const unsubAudiobooks = onSnapshot(audiobooksQuery, (snapshot) => {
+            const audiobooksData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            setAudiobooks(audiobooksData);
+          }, (error) => {
+            console.log('Audiobooks collection not available:', error.message);
+            setAudiobooks([]);
+          });
+          unsubscribers.push(unsubAudiobooks);
+        }
 
         // Following filter is handled in getCurrentContent() function, no separate state needed
 
@@ -379,11 +450,13 @@ function Home() {
   const getCurrentContent = () => {
     let content = [];
 
-    // Get base content by category
+    // Get base content by category.
+    //
+    // 'all' and 'music' were separate cases returning the same array. They are one case
+    // now, and 'music' is kept only as an alias so a bookmarked or in-flight state value
+    // cannot fall through to `default` and look like a bug.
     switch (activeCategory) {
       case 'all':
-        content = trendingSongs;
-        break;
       case 'music':
         content = trendingSongs;
         break;
@@ -418,6 +491,11 @@ function Home() {
   };
 
   const currentContent = getCurrentContent();
+
+  // Three places asked "is the music catalogue on screen?" by spelling out the same
+  // two-value comparison, which is how the 'music' alias would get missed at one of
+  // them during the next edit. Named once instead.
+  const showingMusicCatalogue = activeCategory === 'all' || activeCategory === 'music';
 
   // Enhanced interaction handlers - using DRY hook
   const handlePlaySong = useCallback((song) => {
@@ -660,19 +738,11 @@ function Home() {
               '&:hover': { bgcolor: activeCategory === 'all' ? 'white' : 'rgba(255,255,255,0.1)' }
             }}
           />
-          <Chip
-            label="Music"
-            onClick={() => setActiveCategory('music')}
-            sx={{
-              flexShrink: 0,
-              fontSize: 'clamp(0.75rem, calc(0.7rem + 0.3vw), 0.875rem)',
-              height: 'clamp(28px, calc(1.5rem + 0.5vw), 36px)',
-              bgcolor: activeCategory === 'music' ? 'white' : 'transparent',
-              color: activeCategory === 'music' ? 'black' : 'white',
-              border: activeCategory === 'music' ? 'none' : '1px solid grey',
-              '&:hover': { bgcolor: activeCategory === 'music' ? 'white' : 'rgba(255,255,255,0.1)' }
-            }}
-          />
+          {/* The "Music" chip was here. It set activeCategory to 'music', which resolved
+              to the same trendingSongs array as 'all' -- so clicking it changed the
+              highlight and nothing else. Removed rather than given a distinct meaning:
+              this whole page is the music catalogue, so a chip narrowing it to "music"
+              names a distinction the product does not have. */}
           <Chip
             label="Latest Releases"
             onClick={() => setActiveCategory('new-releases')}
@@ -686,32 +756,41 @@ function Home() {
               '&:hover': { bgcolor: activeCategory === 'new-releases' ? 'white' : 'rgba(255,255,255,0.1)' }
             }}
           />
-          <Chip
-            label="Podcasts"
-            onClick={() => setActiveCategory('podcasts')}
-            sx={{
-              flexShrink: 0,
-              fontSize: 'clamp(0.75rem, calc(0.7rem + 0.3vw), 0.875rem)',
-              height: 'clamp(28px, calc(1.5rem + 0.5vw), 36px)',
-              bgcolor: activeCategory === 'podcasts' ? 'white' : 'transparent',
-              color: activeCategory === 'podcasts' ? 'black' : 'white',
-              border: activeCategory === 'podcasts' ? 'none' : '1px solid grey',
-              '&:hover': { bgcolor: activeCategory === 'podcasts' ? 'white' : 'rgba(255,255,255,0.1)' }
-            }}
-          />
-          <Chip
-            label="Audiobooks"
-            onClick={() => setActiveCategory('audiobooks')}
-            sx={{
-              flexShrink: 0,
-              fontSize: 'clamp(0.75rem, calc(0.7rem + 0.3vw), 0.875rem)',
-              height: 'clamp(28px, calc(1.5rem + 0.5vw), 36px)',
-              bgcolor: activeCategory === 'audiobooks' ? 'white' : 'transparent',
-              color: activeCategory === 'audiobooks' ? 'black' : 'white',
-              border: activeCategory === 'audiobooks' ? 'none' : '1px solid grey',
-              '&:hover': { bgcolor: activeCategory === 'audiobooks' ? 'white' : 'rgba(255,255,255,0.1)' }
-            }}
-          />
+          {/* Hidden until they launch, not deleted -- these are planned products, so the
+              chips come back by deleting an entry in config/comingSoon.js. Both
+              collections are empty and nothing writes to them, so today these chips
+              answer every click with an empty shelf, which reads as a broken page rather
+              than as a product we have not shipped. */}
+          {!isComingSoon('podcasts') && (
+            <Chip
+              label="Podcasts"
+              onClick={() => setActiveCategory('podcasts')}
+              sx={{
+                flexShrink: 0,
+                fontSize: 'clamp(0.75rem, calc(0.7rem + 0.3vw), 0.875rem)',
+                height: 'clamp(28px, calc(1.5rem + 0.5vw), 36px)',
+                bgcolor: activeCategory === 'podcasts' ? 'white' : 'transparent',
+                color: activeCategory === 'podcasts' ? 'black' : 'white',
+                border: activeCategory === 'podcasts' ? 'none' : '1px solid grey',
+                '&:hover': { bgcolor: activeCategory === 'podcasts' ? 'white' : 'rgba(255,255,255,0.1)' }
+              }}
+            />
+          )}
+          {!isComingSoon('audiobooks') && (
+            <Chip
+              label="Audiobooks"
+              onClick={() => setActiveCategory('audiobooks')}
+              sx={{
+                flexShrink: 0,
+                fontSize: 'clamp(0.75rem, calc(0.7rem + 0.3vw), 0.875rem)',
+                height: 'clamp(28px, calc(1.5rem + 0.5vw), 36px)',
+                bgcolor: activeCategory === 'audiobooks' ? 'white' : 'transparent',
+                color: activeCategory === 'audiobooks' ? 'black' : 'white',
+                border: activeCategory === 'audiobooks' ? 'none' : '1px solid grey',
+                '&:hover': { bgcolor: activeCategory === 'audiobooks' ? 'white' : 'rgba(255,255,255,0.1)' }
+              }}
+            />
+          )}
         </Box>
 
         {/* Following Filter (only show if user is logged in) */}
@@ -824,7 +903,7 @@ function Home() {
       )}
 
       {/* Personalized Sections (only for logged in users and 'all'/'music' categories) */}
-      {user && (activeCategory === 'all' || activeCategory === 'music') && (
+      {user && showingMusicCatalogue && (
         <>
           <Box sx={{ mb: 'clamp(2rem, calc(1.5rem + 3vw), 6rem)' }}>
             <Suspense fallback={
@@ -844,7 +923,7 @@ function Home() {
       )}
 
       {/* Discover Weekly Preview (2026 Hybrid Strategy - Algorithmic Seeding) */}
-      {(activeCategory === 'all' || activeCategory === 'music') && (
+      {showingMusicCatalogue && (
         <>
           <Suspense fallback={
             <Box sx={{
@@ -984,22 +1063,17 @@ function Home() {
                   }
                 }}
               >
-                {/* Trending Badge */}
-                {activeCategory === 'music' && index < 3 && (
-                  <Chip
-                    icon={<TrendingUp />}
-                    label={`#${index + 1}`}
-                    size="small"
-                    color="primary"
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      left: 8,
-                      zIndex: 1,
-                      fontWeight: 'bold'
-                    }}
-                  />
-                )}
+                {/* The #1/#2/#3 trending badge was here, gated on activeCategory ===
+                    'music'. It is gone for two independent reasons, either of which
+                    would be enough:
+
+                      1. Nothing sets 'music' any more, so it could never render.
+                      2. playCount is 0 on all 923 records, so the order it was
+                         numbering is Firestore's document-id fallback. The badge was
+                         stamping a confident ranking onto an arbitrary list.
+
+                    It comes back when there is play data to rank by -- a badge that
+                    names a position has to be reading a position. */}
 
                 {/* Purchased Badge */}
                 {isPurchased && (

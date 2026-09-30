@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { isComingSoon } from "../config/comingSoon";
 
 /**
  * BrowsePage
@@ -16,13 +17,15 @@ export default function BrowsePage() {
       label: "Podcasts",
       color: "bg-blue-600",
       image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=400&h=711&fit=crop",
-      url: "/category/podcasts"
+      url: "/category/podcasts",
+      comingSoon: "podcasts"
     },
     {
       label: "Audiobooks",
       color: "bg-orange-600",
       image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=711&fit=crop",
-      url: "/category/audiobooks"
+      url: "/category/audiobooks",
+      comingSoon: "audiobooks"
     },
     {
       label: "Live Events",
@@ -54,7 +57,8 @@ export default function BrowsePage() {
       label: "Podcast Charts",
       color: "bg-rose-600",
       image: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400&h=711&fit=crop",
-      url: "/charts/podcasts"
+      url: "/charts/podcasts",
+      comingSoon: "podcasts"
     },
     {
       label: "New Releases",
@@ -115,7 +119,7 @@ export default function BrowsePage() {
       <h1 className="text-3xl font-bold mb-4">Browse all</h1>
       {/* Grid of categories */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-        {categories.map((cat, index) => (
+        {categories.filter((cat) => !isComingSoon(cat.comingSoon)).map((cat, index) => (
           <div
             key={index}
             onClick={() => navigate(cat.url)}
