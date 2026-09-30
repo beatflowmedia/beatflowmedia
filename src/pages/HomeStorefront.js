@@ -226,7 +226,6 @@ function HomeStorefront({ hideHeader = false, filter = null, pool = ASSET_POOLS.
                   <OptimizedImage
                     src={artworkUrl(track)}
                     alt={track.title || 'Track cover'}
-                    fallback="/images/Logo.png"
                     sx={{
                       position: 'absolute',
                       top: 0,

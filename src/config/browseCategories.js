@@ -41,6 +41,15 @@ export const PLATFORM_OPTIONS = [
 // one query, the pool as the parameter. A second copy of the storefront per pool is
 // how the two drift apart.
 export const BROWSE_CATEGORIES = {
+  // The LIBRARY itself: everything licensable, unfaceted. This is the top-level
+  // destination for someone who wants music for their own work, as distinct from
+  // someone browsing Percy's releases. The facets below narrow it.
+  library: {
+    title: 'Production Library',
+    description: 'Music to license for video, podcasts, ads and games',
+    pool: ASSET_POOLS.PRODUCTION_MUSIC,
+  },
+
   // Facet landing pages — the library, narrowed further by the sidebar.
   mood:    { title: 'Browse by Mood',     description: 'Find the perfect vibe for your content', pool: ASSET_POOLS.PRODUCTION_MUSIC },
   genre:   { title: 'Browse by Genre',    description: 'Explore music by style and genre',       pool: ASSET_POOLS.PRODUCTION_MUSIC },
