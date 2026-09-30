@@ -23,7 +23,7 @@
 // not exist on a touchscreen -- on a phone that menu was unreachable. Platform is now
 // a normal row of links inside the Library tier.
 import { Link, useLocation } from 'react-router-dom';
-import { FaTiktok, FaInstagram, FaYoutube, FaHeart, FaMusic, FaBriefcase, FaCompactDisc, FaBrain } from 'react-icons/fa';
+import { FaHeart, FaMusic, FaBriefcase, FaCompactDisc, FaBrain } from 'react-icons/fa';
 
 const CATALOGUES = [
   {
@@ -54,9 +54,10 @@ const LIBRARY_FACETS = [
   { id: 'usecase', label: 'By Use Case', icon: FaBriefcase, path: '/browse/usecase' },
   { id: 'mood', label: 'By Mood', icon: FaHeart, path: '/browse/mood' },
   { id: 'genre', label: 'By Genre', icon: FaMusic, path: '/browse/genre' },
-  { id: 'tiktok', label: 'TikTok', icon: FaTiktok, path: '/browse/tiktok' },
-  { id: 'instagram', label: 'Instagram', icon: FaInstagram, path: '/browse/instagram' },
-  { id: 'youtube', label: 'YouTube', icon: FaYoutube, path: '/browse/youtube' }
+  // All three platform tabs removed -- TikTok, Instagram and YouTube. Each filtered on
+  // song.platforms, present on 0 of 562 library records, so each showed the same set as
+  // /browse/library. See config/browseCategories.js for the measurement and for why
+  // renaming to "Social Media" was rejected. They return when there are short edits.
 ];
 
 const LIBRARY_PATHS = new Set(LIBRARY_FACETS.map((f) => f.path).concat('/browse/library'));

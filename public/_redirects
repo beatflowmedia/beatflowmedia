@@ -50,6 +50,16 @@
 /samples                             /browse                 301
 /audio-kits                          /browse                 301
 /mood-library                        /browse                 301
+
+# Removed browse routes -- all three platform pages. Each filtered on song.platforms,
+# a field present on 0 of 562 library records, so each returned the same set as
+# /browse/library. The library also holds only 2 tracks under 15s and 11 under 30s, so
+# the short-form pages promised inventory that does not exist. A removed URL 301s to its
+# closest live equivalent rather than 404ing -- a 404 is a crawl-budget leak, and these
+# were linked from the site nav.
+/browse/tiktok                       /browse/library         301
+/browse/instagram                    /browse/library         301
+/browse/youtube                      /browse/library         301
 /resources/help-center               /support                301
 /resources/analytics-help-center     /support                301
 /resources/partners                  /about                  301

@@ -11,20 +11,28 @@ import { ASSET_POOLS } from '../utils/assetPools';
 //                               Used for aspirational facets whose song data isn't
 //                               populated yet (so we never ship an empty storefront).
 //
+// A NOTE ON `soft`, since it is the thing that hid a real problem for months:
+// it was introduced so an untagged facet would never ship an empty storefront. What it
+// actually did was make three platform pages indistinguishable from /browse/library
+// while each carried a heading claiming it was narrowed. `soft` is honest for a facet
+// whose data is *arriving*; it is a disguise for one whose data is never coming. Before
+// adding it, check that the tags are on their way.
+//
 // FUTURE-PROOFING:
-//  - Platform matching reads song.platforms — a field that doesn't exist on songs yet.
-//    Until the uploader tags tracks (a `platforms` multi-select, like the existing
-//    `mood` picker), `soft` keeps these pages showing all tracks. The day tracks are
-//    tagged, filtering activates with zero code change here.
 //  - At larger scale, client-side filtering can be swapped for server-side Firestore
 //    `where` queries. Add { field, operator, value } to an entry and build the query
 //    from it — the mapping stays centralized in this one file.
 
-const hasPlatform = (song, platform) =>
-  Array.isArray(song.platforms) && song.platforms.includes(platform);
-
-// Shared platform options. `value` is the browse slug — so tags written by the
-// uploader / admin editor always line up with the /browse/:slug routes below.
+// Shared platform options for the uploader and the admin editor.
+//
+// These are KEPT even though only YouTube has a browse route. They describe what a track
+// is suited to, which is real metadata worth recording now so it exists the day there
+// are short edits to sell -- deleting the tags would mean re-adding them later and
+// re-tagging from scratch.
+//
+// So `value` is no longer guaranteed to be a /browse/:slug route. It was, and the old
+// comment here promised it; that promise is what made three routes exist for a field
+// nothing populated. A tag is a description of the track, a route is a page we can fill.
 export const PLATFORM_OPTIONS = [
   { value: 'tiktok', label: 'TikTok' },
   { value: 'instagram', label: 'Instagram' },
@@ -64,25 +72,40 @@ export const BROWSE_CATEGORIES = {
     pool: ASSET_POOLS.FUNCTIONAL_MUSIC,
   },
 
-  // Platform pages — filter to tracks tagged for that platform (soft until tagged).
-  tiktok: {
-    title: 'Music for TikTok',
-    description: '7-15 second loops perfect for TikTok',
-    match: (s) => hasPlatform(s, 'tiktok'),
-    soft: true,
-  },
-  instagram: {
-    title: 'Music for Instagram',
-    description: 'Music optimized for Instagram Reels and Stories',
-    match: (s) => hasPlatform(s, 'instagram'),
-    soft: true,
-  },
-  youtube: {
-    title: 'Music for YouTube',
-    description: 'Tracks licensed for YouTube monetization',
-    match: (s) => hasPlatform(s, 'youtube'),
-    soft: true,
-  },
+  // THE PLATFORM PAGES ARE GONE -- all three of them.
+  //
+  // TikTok, Instagram and YouTube were `soft: true` filtering on song.platforms, a field
+  // present on 0 of 562 library records, so each returned the identical set as
+  // /browse/library. Three tabs, one answer -- the same fault as the All/Music chips on
+  // the home page, three times over.
+  //
+  // TIKTOK AND INSTAGRAM: the catalogue cannot supply them, which no amount of tagging
+  // fixes. Durations across the 562 production tracks:
+  //
+  //     < 15s      2        1-3 min   193
+  //     15-30s    11        3-5 min   318
+  //     30-60s     9        5+ min     29        loopable === true: 0
+  //
+  // 511 of 562 run 1-5 minutes. This library is beds and cues, not short-form hooks, so
+  // "Music for TikTok" is a 2-track shelf however it is filtered.
+  //
+  // YOUTUBE WENT TOO, and keeping it briefly was an inconsistency worth recording. The
+  // argument for removing the other two was that platform is not a property of a track;
+  // a YouTube page with no `match` then has no way to differ from /browse/library except
+  // its heading, which is the fault it was meant to escape. An argument that only
+  // applies to two of three cases was not the real argument.
+  //
+  // RENAMING WAS CONSIDERED AND REJECTED. "Social Media" over the same unfiltered list
+  // returns the same 562 tracks under a vaguer promise; filtering it honestly on
+  // duration yields 22. A better word for a page that cannot answer its own question is
+  // still a page that cannot answer it -- the I caveat, exactly: a name that no longer
+  // matches the domain is a deletion candidate, not a rename candidate.
+  //
+  // The real control already exists and is honest: the duration facet in BrowseFilters,
+  // derived from data that is actually present. These pages return when there are short
+  // edits to sell, which is a product decision about cutting 15s and 30s versions, not a
+  // browse bug. All three 301 to /browse/library in public/_redirects -- a removed URL
+  // goes to its closest live equivalent rather than 404ing.
 };
 
 export const getBrowseCategory = (slug) => BROWSE_CATEGORIES[slug] || null;
