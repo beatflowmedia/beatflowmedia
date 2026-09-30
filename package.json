@@ -70,6 +70,7 @@
     "verify:terms": "node scripts/verify-terms.js",
     "verify:sponsor": "node scripts/verify-sponsor-validation.js",
     "verify:featured": "node scripts/verify-featured-artists.js",
+    "verify:facets": "node scripts/verify-catalog-facets.js",
     "ingest:library": "node scripts/ingest-production-library.js",
     "scan:provenance": "node scripts/scan-library-provenance.js",
     "previews": "node scripts/generate-previews.js",

@@ -7,6 +7,7 @@ import { usePlaySong } from "../hooks/usePlaySong";
 import { db } from "../firebaseConfig";
 import { collection, onSnapshot, query, orderBy, limit, where } from "firebase/firestore";
 import { ASSET_POOLS } from "../utils/assetPools";
+import { applyFilters } from "../utils/catalogFacets";
 import OptimizedImage from "../components/OptimizedImage";
 import { stripeService } from "../services/stripeService";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +19,18 @@ import { artworkUrl } from '../utils/artwork';
  *   to show, it simply had nothing else in the collection until the production
  *   library arrived.
  */
-function HomeStorefront({ hideHeader = false, filter = null, pool = ASSET_POOLS.COMMERCIAL_RELEASE }) {
+function HomeStorefront({
+  hideHeader = false,
+  filter = null,
+  pool = ASSET_POOLS.COMMERCIAL_RELEASE,
+  // The sidebar's current selection, and a way to report what was loaded.
+  //
+  // The PARENT owns the filter state, because the sidebar and the grid must agree
+  // about it and they are siblings -- holding it in either would mean the other
+  // reaching sideways for it, which is how two components end up with two answers.
+  activeFilters = null,
+  onTracksLoaded = null
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { playSong: playSelectedSong, isSongPlaying } = usePlaySong();
@@ -119,6 +131,9 @@ function HomeStorefront({ hideHeader = false, filter = null, pool = ASSET_POOLS.
         });
       setTracks(loadedTracks);
       setLoading(false);
+      // Hand the loaded set up so the sidebar can derive its facets from exactly what
+      // is on screen, rather than a second query or a hardcoded list.
+      if (onTracksLoaded) onTracksLoaded(loadedTracks);
     });
 
     return () => {
@@ -128,7 +143,10 @@ function HomeStorefront({ hideHeader = false, filter = null, pool = ASSET_POOLS.
     // pool is a dependency: the subscription is built from it, so a surface that
     // switches pool must resubscribe. Without it the component would keep showing
     // the first pool it ever rendered and look like the filter does not work.
-  }, [pool]);
+    // onTracksLoaded is a dependency because the effect calls it. The parent must
+    // pass a useCallback-stable function, or this resubscribes on every render and
+    // re-reads the collection each time -- reads are billed on Blaze.
+  }, [pool, onTracksLoaded]);
 
   const handlePreviewTrack = (track) => {
     // usePlaySong toggles play/pause when this is already the current track,
@@ -164,7 +182,17 @@ function HomeStorefront({ hideHeader = false, filter = null, pool = ASSET_POOLS.
   // Apply the active browse-category filter, if any. Soft categories fall back to
   // showing everything when nothing matches yet (e.g. platform tags not populated).
   const matched = filter?.match ? tracks.filter(filter.match) : tracks;
-  const visibleTracks = filter?.soft && matched.length === 0 ? tracks : matched;
+  const categoryTracks = filter?.soft && matched.length === 0 ? tracks : matched;
+
+  // Sidebar narrowing, applied AFTER the category. The category says which shelf you
+  // are looking at; the filters narrow within it. Applying them in the other order
+  // would let a filter pull in tracks from a shelf the visitor did not choose.
+  //
+  // No `soft` fallback here, deliberately. A soft category shows everything when its
+  // tags are not populated yet, because the page would otherwise look broken. An
+  // explicit filter is a question the visitor asked, and answering "no results" with
+  // every result is worse than answering honestly.
+  const visibleTracks = applyFilters(categoryTracks, activeFilters);
 
   if (visibleTracks.length === 0) {
     return (

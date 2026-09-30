@@ -1,103 +1,101 @@
 // src/components/BrowseFilters.js
-// Filter panel for music licensing marketplace
-import { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  Slider,
-  Chip,
-  Button
-} from '@mui/material';
-import { ExpandMore, FilterList } from '@mui/icons-material';
+//
+// The browse sidebar. CONTROLLED by its parent, and it offers only the facets the
+// catalogue can actually answer.
+//
+// WHAT WAS WRONG
+// It was rendered as <BrowseFilters /> with no props while its own signature took
+// onFilterChange and onClearFilters. Every chip and slider updated local state and
+// called an optional callback that had never been passed. Six facets, none connected
+// to anything -- a panel that looked like a feature and was furniture.
+//
+// Wiring it up as it stood would have been worse than leaving it dead. Measured across
+// 923 songs: duration 919, explicit 919, bpm 4, mood 4, loopable 4, genre 0. Clicking
+// "Jazz" would have emptied the grid -- a confident wrong answer that a catalogue with
+// 49 cocktail-piano tracks has none. A filter that can only return nothing is worse
+// than no filter.
+//
+// So the facets come from the records the grid loaded, via facetsOf(). A section
+// renders only when there is something to choose BETWEEN, and appears by itself the
+// day its data lands -- no second edit, no list to keep in step.
+//
+// THE GENRE LIST IS GONE, NOT UPDATED. It was hardcoded as Hip-Hop, Electronic, Pop,
+// Rock, R&B, Jazz, Classical, Country, Latin, Reggae. The vocabulary Percy chose, and
+// that the station emits, is R&B/Soul, Rock, Indie, Dance/Electronic. Replacing one
+// hardcoded list with another would have kept the fault: one fact with two owners and
+// nothing reconciling them. Deriving removes the second owner.
+import { Box, Typography, Chip, Slider, Checkbox, FormControlLabel, Button, Divider } from '@mui/material';
+import FilterList from '@mui/icons-material/FilterList';
+import { EMPTY_FILTERS } from '../utils/catalogFacets';
 
-const BrowseFilters = ({ onFilterChange, onClearFilters }) => {
-  const [filters, setFilters] = useState({
-    duration: [0, 300], // 0-5 minutes in seconds
-    bpm: [60, 180],
-    genres: [],
-    moods: [],
-    explicit: null, // null = both, true = explicit only, false = clean only
-    loopable: null
-  });
+const CHIP_SX = (selected) => ({
+  bgcolor: selected ? '#1DB954' : 'rgba(255,255,255,0.08)',
+  color: selected ? 'white' : 'grey.300',
+  fontWeight: selected ? 600 : 400,
+  minHeight: 36,
+  '&:hover': { bgcolor: selected ? '#1ed760' : 'rgba(255,255,255,0.16)' }
+});
 
-  const durations = [
-    { label: '< 15s (TikTok)', min: 0, max: 15 },
-    { label: '15-30s (Reels)', min: 15, max: 30 },
-    { label: '30-60s', min: 30, max: 60 },
-    { label: '1-3 min', min: 60, max: 180 },
-    { label: '3-5 min', min: 180, max: 300 },
-    { label: '5+ min', min: 300, max: 600 }
-  ];
+const Section = ({ title, children }) => (
+  <Box sx={{ mb: 3 }}>
+    <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 'bold', mb: 1.5 }}>
+      {title}
+    </Typography>
+    {children}
+  </Box>
+);
 
-  const genres = [
-    'Hip-Hop', 'Electronic', 'Pop', 'Rock', 'R&B',
-    'Jazz', 'Classical', 'Country', 'Latin', 'Reggae'
-  ];
+const BrowseFilters = ({
+  facets = {},
+  filters = EMPTY_FILTERS,
+  onFilterChange,
+  onClearFilters
+}) => {
+  const set = (patch) => onFilterChange?.({ ...filters, ...patch });
 
-  const moods = [
-    'Uplifting', 'Chill', 'Energetic', 'Dramatic', 'Dark',
-    'Happy', 'Sad', 'Motivational', 'Relaxing', 'Intense'
-  ];
-
-  const handleDurationChange = (event, newValue) => {
-    const updated = { ...filters, duration: newValue };
-    setFilters(updated);
-    onFilterChange?.(updated);
+  const toggleIn = (key, value) => {
+    const current = filters[key] || [];
+    set({
+      [key]: current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value]
+    });
   };
 
-  const handleBPMChange = (event, newValue) => {
-    const updated = { ...filters, bpm: newValue };
-    setFilters(updated);
-    onFilterChange?.(updated);
-  };
-
-  const handleGenreToggle = (genre) => {
-    const updated = {
-      ...filters,
-      genres: filters.genres.includes(genre)
-        ? filters.genres.filter(g => g !== genre)
-        : [...filters.genres, genre]
-    };
-    setFilters(updated);
-    onFilterChange?.(updated);
-  };
-
-  const handleMoodToggle = (mood) => {
-    const updated = {
-      ...filters,
-      moods: filters.moods.includes(mood)
-        ? filters.moods.filter(m => m !== mood)
-        : [...filters.moods, mood]
-    };
-    setFilters(updated);
-    onFilterChange?.(updated);
-  };
-
-  const handleClearAll = () => {
-    const cleared = {
-      duration: [0, 300],
-      bpm: [60, 180],
-      genres: [],
-      moods: [],
-      explicit: null,
-      loopable: null
-    };
-    setFilters(cleared);
-    onClearFilters?.();
-    onFilterChange?.(cleared);
-  };
-
-  const activeFilterCount =
-    filters.genres.length +
-    filters.moods.length +
+  const activeCount =
+    (filters.genres?.length || 0) +
+    (filters.moods?.length || 0) +
+    (filters.duration ? 1 : 0) +
+    (filters.bpm ? 1 : 0) +
     (filters.explicit !== null ? 1 : 0) +
     (filters.loopable !== null ? 1 : 0);
+
+  const buckets = facets.durationBuckets || [];
+  const hasAnything =
+    buckets.length > 1 ||
+    (facets.genres?.length || 0) > 1 ||
+    (facets.moods?.length || 0) > 1 ||
+    facets.bpm ||
+    facets.explicit ||
+    facets.loopable;
+
+  // Nothing to offer is stated rather than shown as an empty panel, so it reads as a
+  // catalogue that is not tagged yet rather than a control that is broken.
+  if (!hasAnything) {
+    return (
+      <Box sx={{ width: { xs: '100%', md: 280 }, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, p: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <FilterList sx={{ color: 'grey.500' }} />
+          <Typography variant="h6" sx={{ color: 'grey.500', fontWeight: 'bold' }}>
+            Filters
+          </Typography>
+        </Box>
+        <Typography variant="body2" sx={{ color: 'grey.500' }}>
+          These tracks are not tagged with anything to filter by yet.
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -110,225 +108,130 @@ const BrowseFilters = ({ onFilterChange, onClearFilters }) => {
         overflowY: 'auto'
       }}
     >
-      {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterList sx={{ color: 'white' }} />
           <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
             Filters
           </Typography>
-          {activeFilterCount > 0 && (
+          {activeCount > 0 && (
             <Chip
-              label={activeFilterCount}
+              label={activeCount}
               size="small"
               sx={{ bgcolor: '#1DB954', color: 'white', fontWeight: 'bold' }}
             />
           )}
         </Box>
-        {activeFilterCount > 0 && (
+        {activeCount > 0 && (
           <Button
             size="small"
-            onClick={handleClearAll}
-            sx={{ color: 'grey.400', minWidth: 'auto' }}
+            onClick={() => onClearFilters?.()}
+            sx={{ color: 'grey.400', minHeight: 44 }}
           >
             Clear
           </Button>
         )}
       </Box>
 
-      {/* Duration Filter */}
-      <Accordion
-        defaultExpanded
-        sx={{
-          bgcolor: 'transparent',
-          boxShadow: 'none',
-          '&:before': { display: 'none' }
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMore sx={{ color: 'white' }} />}
-          sx={{ color: 'white', px: 0 }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            Duration
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 0 }}>
-          <Slider
-            value={filters.duration}
-            onChange={handleDurationChange}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${Math.floor(value / 60)}:${(value % 60).toString().padStart(2, '0')}`}
-            min={0}
-            max={300}
-            sx={{ color: '#1DB954', mb: 2 }}
-          />
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {durations.map((d) => (
-              <Chip
-                key={d.label}
-                label={d.label}
-                size="small"
-                onClick={() => setFilters({ ...filters, duration: [d.min, d.max] })}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'rgba(29,185,84,0.3)' }
-                }}
-              />
-            ))}
-          </Box>
-        </AccordionDetails>
-      </Accordion>
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 2 }} />
 
-      {/* BPM Filter */}
-      <Accordion
-        sx={{
-          bgcolor: 'transparent',
-          boxShadow: 'none',
-          '&:before': { display: 'none' }
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMore sx={{ color: 'white' }} />}
-          sx={{ color: 'white', px: 0 }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            BPM
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 0 }}>
+      {buckets.length > 1 && (
+        <Section title="Duration">
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {buckets.map((bucket) => {
+              const selected =
+                filters.duration &&
+                filters.duration[0] === bucket.min &&
+                filters.duration[1] === bucket.max;
+              return (
+                <Chip
+                  key={bucket.label}
+                  label={bucket.label}
+                  onClick={() =>
+                    set({ duration: selected ? null : [bucket.min, bucket.max] })
+                  }
+                  sx={CHIP_SX(selected)}
+                />
+              );
+            })}
+          </Box>
+        </Section>
+      )}
+
+      {facets.bpm && (
+        <Section title="BPM">
           <Slider
-            value={filters.bpm}
-            onChange={handleBPMChange}
+            value={filters.bpm || facets.bpm}
+            min={facets.bpm[0]}
+            max={facets.bpm[1]}
+            onChange={(event, value) => set({ bpm: value })}
             valueLabelDisplay="auto"
-            min={60}
-            max={180}
             sx={{ color: '#1DB954' }}
           />
-          <Typography variant="caption" sx={{ color: 'grey.400' }}>
-            {filters.bpm[0]} - {filters.bpm[1]} BPM
+          <Typography variant="caption" sx={{ color: 'grey.500' }}>
+            {(filters.bpm || facets.bpm)[0]} – {(filters.bpm || facets.bpm)[1]} BPM
           </Typography>
-        </AccordionDetails>
-      </Accordion>
+        </Section>
+      )}
 
-      {/* Genre Filter */}
-      <Accordion
-        sx={{
-          bgcolor: 'transparent',
-          boxShadow: 'none',
-          '&:before': { display: 'none' }
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMore sx={{ color: 'white' }} />}
-          sx={{ color: 'white', px: 0 }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            Genre
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 0 }}>
+      {(facets.genres?.length || 0) > 1 && (
+        <Section title="Genre">
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {genres.map((genre) => (
+            {facets.genres.map((genre) => (
               <Chip
                 key={genre}
                 label={genre}
-                size="small"
-                onClick={() => handleGenreToggle(genre)}
-                sx={{
-                  bgcolor: filters.genres.includes(genre) ? '#1DB954' : 'rgba(255,255,255,0.1)',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: filters.genres.includes(genre) ? '#1ed760' : 'rgba(255,255,255,0.2)'
-                  }
-                }}
+                onClick={() => toggleIn('genres', genre)}
+                sx={CHIP_SX(filters.genres?.includes(genre))}
               />
             ))}
           </Box>
-        </AccordionDetails>
-      </Accordion>
+        </Section>
+      )}
 
-      {/* Mood Filter */}
-      <Accordion
-        sx={{
-          bgcolor: 'transparent',
-          boxShadow: 'none',
-          '&:before': { display: 'none' }
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMore sx={{ color: 'white' }} />}
-          sx={{ color: 'white', px: 0 }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            Mood
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 0 }}>
+      {(facets.moods?.length || 0) > 1 && (
+        <Section title="Mood">
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {moods.map((mood) => (
+            {facets.moods.map((mood) => (
               <Chip
                 key={mood}
                 label={mood}
-                size="small"
-                onClick={() => handleMoodToggle(mood)}
-                sx={{
-                  bgcolor: filters.moods.includes(mood) ? '#1DB954' : 'rgba(255,255,255,0.1)',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: filters.moods.includes(mood) ? '#1ed760' : 'rgba(255,255,255,0.2)'
-                  }
-                }}
+                onClick={() => toggleIn('moods', mood)}
+                sx={CHIP_SX(filters.moods?.includes(mood))}
               />
             ))}
           </Box>
-        </AccordionDetails>
-      </Accordion>
+        </Section>
+      )}
 
-      {/* Content Type Filter */}
-      <Accordion
-        sx={{
-          bgcolor: 'transparent',
-          boxShadow: 'none',
-          '&:before': { display: 'none' }
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMore sx={{ color: 'white' }} />}
-          sx={{ color: 'white', px: 0 }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            Content Type
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ px: 0 }}>
-          <FormGroup>
+      {(facets.explicit || facets.loopable) && (
+        <Section title="Content Type">
+          {facets.explicit && (
             <FormControlLabel
               control={
                 <Checkbox
                   checked={filters.explicit === false}
-                  onChange={() => setFilters({ ...filters, explicit: filters.explicit === false ? null : false })}
-                  sx={{ color: 'grey.400', '&.Mui-checked': { color: '#1DB954' } }}
+                  onChange={() => set({ explicit: filters.explicit === false ? null : false })}
+                  sx={{ color: 'grey.500', '&.Mui-checked': { color: '#1DB954' } }}
                 />
               }
-              label="Clean Only"
-              sx={{ color: 'white' }}
+              label={<Typography sx={{ color: 'grey.300' }}>Clean only</Typography>}
             />
+          )}
+          {facets.loopable && (
             <FormControlLabel
               control={
                 <Checkbox
                   checked={filters.loopable === true}
-                  onChange={() => setFilters({ ...filters, loopable: filters.loopable === true ? null : true })}
-                  sx={{ color: 'grey.400', '&.Mui-checked': { color: '#1DB954' } }}
+                  onChange={() => set({ loopable: filters.loopable === true ? null : true })}
+                  sx={{ color: 'grey.500', '&.Mui-checked': { color: '#1DB954' } }}
                 />
               }
-              label="Loopable"
-              sx={{ color: 'white' }}
+              label={<Typography sx={{ color: 'grey.300' }}>Loopable</Typography>}
             />
-          </FormGroup>
-        </AccordionDetails>
-      </Accordion>
+          )}
+        </Section>
+      )}
     </Box>
   );
 };
