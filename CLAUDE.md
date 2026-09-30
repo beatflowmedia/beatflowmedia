@@ -1006,3 +1006,246 @@ the metric cannot be stated, it is not optimisation.
 **Ratchets:** hand-written copies of `loadEnv`/`initAdmin`/argv parsing outside
 `scripts/lib/` — **0**. Canonical modules absent from the Single Source table —
 **0**. Files contradicting `pricing.js` — **0**. Tests **123** across **9** suites.
+
+---
+
+## The front page was never separated — 2026-09-30
+
+Pool separation was built into `HomeStorefront` and the browse routes, and `/` renders
+`Home.js`, which had no `assetPool` filter at all. So every surface *except the front
+door* was fixed. Found only because Percy screenshotted the chip row and asked whether
+it was wired.
+
+**The lesson worth keeping: "the storefront" was two components, and the work was done
+to the one that was easier to find.** Grep for the concern (`assetPool`), not for the
+component you remember touching.
+
+### S — one flag for what has not launched
+
+`src/config/comingSoon.js` is now canonical for content types the platform intends to
+sell but has not built. Measured against the live database:
+
+| collection | documents | writers in repo |
+|---|---|---|
+| `podcast_episodes` | 0 | none |
+| `audiobooks` | 0 | none |
+
+`purgeFirebase.js` already carried `// Not implemented` against both. So a cleanup
+script and a storefront disagreed about whether the product existed, and the storefront
+was the one customers could see. `/audiobooks` quoted **$12.99/month** against zero
+inventory — a price on a page is an offer.
+
+**These are hidden, NOT deleted, and that is the point.** The I caveat says a name that
+no longer matches the domain is a deletion candidate. These names match a domain we have
+not reached yet, so they are gated instead. Launching one = delete its entry; the chips,
+the route and the Firestore listeners all read the same flag, so there is no second list.
+
+The listeners are gated too: both opened a billed connection on every front-page visit
+to fetch nothing, forever, and the error handler made that indistinguishable from an
+empty collection.
+
+### D — two chips, one answer
+
+`All` and `Music` both resolved to `trendingSongs`. Clicking either changed the
+highlight and nothing else, which a reader cannot tell apart from a broken control.
+`Music` removed rather than given a distinct meaning: the page *is* the music catalogue,
+so a chip narrowing it to "music" names a distinction the product does not have.
+
+### I — a badge that numbered an arbitrary list
+
+The `#1 #2 #3` trending badge ranked by `playCount`, which is **0 on all 923 records**.
+Firestore was falling back to document id, so the badge stamped a confident ranking onto
+an arbitrary order. Removed until there is play data to rank by.
+
+**This is not fixed by this session's work and must not be reported as fixed.** Filtering
+by pool makes the shelf arbitrary *within the right catalogue*. That is an improvement
+and is not the same as the shelf being correct.
+
+### Indexes — and a flap that nearly got reported as success
+
+Added `songs(assetPool, playCount DESC)` and `songs(assetPool, releaseDate DESC)`.
+A `where` and an `orderBy` on different fields cannot be served without one, and
+Firestore **fails the query outright** rather than degrading.
+
+Both listeners had **no error handler**, so that failure would have rendered as an empty
+shelf — the exact signature of an empty catalogue. Handlers added; `failed-precondition`
+is surfaced by name because it means "the index is still building".
+
+**The flap:** immediately after deploy, one poll returned `trending=20 newReleases=15`
+and the very next query failed with *"that index is currently building"*. A single
+success is not proof during an index build. Re-verified with **three consecutive
+passes** before calling it done. Ratchet: index readiness is never claimed from one
+green query.
+
+### Open — the platform tabs promise inventory that does not exist
+
+`/browse/tiktok`, `/instagram`, `/youtube` are `soft: true` and filter on
+`song.platforms`, present on **0 of 562** library tracks — so all three return the
+identical set as `/browse/library`. The All/Music fault, three times over.
+
+Tagging will not fix it. Duration across the production library:
+
+```
+< 15s      2      1-3 min   193
+15-30s    11      3-5 min   318
+30-60s     9      5+ min     29        loopable=true: 0
+```
+
+**511 of 562 are 1-5 minutes.** The library is beds and cues, not short-form hooks, and
+"platform" here is a property of the *cut*, not of the track — which duration and
+loopable already describe, from data that exists. `/browse/youtube` is also headed
+*"Tracks licensed for YouTube monetization"*, a licence claim over an unfiltered list.
+
+**Resolved: all three removed**, and the route to that answer is the part worth keeping.
+The first pass kept YouTube -- a 3-minute bed genuinely is YouTube music -- and Percy
+rejected it. He was right: the argument for cutting the other two was that platform is
+not a property of a track, and a YouTube page with no `match` then differs from
+/browse/library only by its heading, which is the fault it was meant to escape. **An
+argument that only applies to two of three cases was not the real argument.**
+
+Renaming to "Social Media" was raised and rejected on the same ground: the same
+unfiltered 562 under a vaguer promise, or 22 tracks if filtered honestly on duration. The
+I caveat decides it -- a name that no longer matches the domain is a deletion candidate,
+not a rename candidate. All three 301 to /browse/library.
+
+The honest control already existed: the duration facet in BrowseFilters, derived from
+data that is present. `PLATFORM_OPTIONS` is KEPT for the uploader and admin editor --
+the tags describe what a track suits, and are worth recording before the edits exist --
+but the comment promising every option is a /browse/:slug route is gone. That promise is
+what created three pages for a field nothing populated.
+
+### Licensing, as it actually stands
+
+There is **no per-platform licence**. `pricingPlans.js` sells "License for all major
+social platforms" as one grant, and a licence record carries `userId`, `trackId` and
+`licenseType` — no platform field. `platform` appears once, in
+`registerPublishedProject`, derived from a URL the customer supplies: it records where
+they *did* use a track, not where they *may*. That is self-reported usage for locking in
+perpetual rights, not enforcement.
+
+### Ratchets
+
+Storefront components without a pool filter — **0** (was 1 of 2).
+Chips resolving to the same content as another chip — **0**.
+Firestore listeners on the front page without an error handler — **0**.
+Collections subscribed with zero writers in the repo — **0**.
+Unlaunched surfaces gated outside `config/comingSoon.js` — **0**.
+`playCount > 0` across the catalogue — **0**. Until this moves, no shelf may claim rank.
+
+## Concepts covered
+
+| Concept | Decision that surfaced it | Call |
+|---|---|---|
+| **Scope of grant** — a licence is cut along media/platform, territory, term and exclusivity; price is a function of width | Whether to sell per-platform licences | Keep the bundle; price *use type* and *term*, the axes already modelled. Grant wording is a lawyer question, not settled here |
+| **Composite index as a hard precondition** | Adding `where` + `orderBy` on different fields | Firestore fails the query rather than degrading — so the index ships with the query, and the listener needs an error handler or the failure looks like an empty catalogue |
+
+### The collection survived the import — and is a string nothing joins on
+
+Percy's observation, and it is load-bearing: the production library was imported **by
+folder**, and the folders were already collections. They survived — stored as
+`album`/`albumTitle`, **24 distinct values across 754 tracks, zero missing**:
+
+```
+56 Jazz-Infused Neo-Soul Instrumentals   26 Piano Trio Cocktail Music For Relaxation
+48 Relaxing Chill Music                  24 Ambient Sitar for Calm & Sleep
+48 After Midnight Vibes                  24 Deep Sleep / Sleep Transition
+48 8d Music - Dragon Burial              24 Deep Focus Mind Lab / Work Flow / Deep Work
+43 Sunset Chill Vibes                    21 Best of House
+35 Balearic                              16 Party songs
+```
+
+These are not genres, they are **situations** — a venue programming grid that already
+exists. Piano Trio Cocktail is a restaurant, Ambient Sitar is a spa, Balearic and Best
+of House are a gym, Deep Focus x4 is a coworking floor.
+
+**A correction this forced.** The advice given earlier that day was "do not sell 25
+tracks, sell the pool", on the grounds that policing an arbitrary subset is a support
+burden that earns nothing. That is right about a subset the customer assembles and wrong
+about these: a named, curated collection is not a list to police, it is a product with a
+name. **The channels are the product; the pool is the inventory.**
+
+**The gap:** `library tracks with albumId: 0 of 754`. No `collections/` document, no
+join. The ingest script's own comment names the risk it then walked into — *"six loose
+tracks with a shared string in a field nothing joins on"* — it applied that reasoning to
+the 4 release folders and left the 24 collections as text. So a collection cannot today
+be linked to, priced, put in a cart, or granted.
+
+**Semantic call: `collection`.** Percy says collection; the ingest script says collection
+(`item.collection`, `byCollection`, "scope to one collection"); only the database field
+says `album`. Two of three already agree and the odd one out is the wrong one.
+
+- **Not `channel`**, though that is the industry word for the venue product. A collection
+  is what the thing *is*; a channel is what it is *sold as* in one product. Naming the
+  entity after a tier that does not exist yet would bake one product's vocabulary into
+  something that must also serve browse, licensing and the library UI.
+- **Not a rename of `album`**, which keeps meaning *release* — what it already means for
+  the 16 albums and the 4 release folders. Do not rename an established concept because
+  a better word exists.
+
+Planned: `collections/` docs, `collectionId` + `collectionTitle` per track, `album` and
+`albumId` reserved for releases. **Clearing `album` on the 754 library tracks is the
+honest end state but needs a consumer audit first** — something may be reading it, and a
+write that breaks a surface is worse than a field with a stale meaning.
+
+### Licensing — the three-axis model, and why nothing fits the venue case
+
+A restaurant wanting background music has nowhere to go, and `Terms.js` already says so:
+public performance in "restaurants, cafés, gyms, retail premises, salons" is in the **not
+granted** list, requiring "a separate license from us" **which does not exist**. The legal
+position is correct and the product is missing.
+
+The tangle is that there are THREE answers to "what does a plan grant", and none is on
+the licence:
+
+| Where | Says | Live |
+|---|---|---|
+| `data/pricingPlans.js` | student/creator/pro/agency — licensing | yes |
+| `services/entitlementService.js` | Free / Premium $9.99 / Family $14.99 / Artist Pro — **streaming** | no — reachable only via a middleware nothing imports |
+| `licenses/{id}` | `licenseType` + a tier name | yes, and says nothing about permitted use |
+
+`LICENSING_TYPES` in entitlementService already defines `SYNC`, `PERFORMANCE`,
+`MECHANICAL` and `TERRITORIES`. The vocabulary exists and nothing uses it.
+
+**The model: three orthogonal axes.**
+
+1. **Delivery** — `download` (a file they keep) | `stream` (playback from us)
+2. **Grant** — `sync` | `performance` | `broadcast` | `mechanical`
+3. **Scope** — term, territory, and for venues **locations**
+
+| Product | Delivery | Grant | Scope |
+|---|---|---|---|
+| Creator tiers (existing 4) | download | sync | while subscribed + published-perpetual |
+| One-off track licence | download | sync | perpetual |
+| Venue (not built) | **stream only** | performance | per location, while subscribed |
+
+**Delivery follows from use, and that is the enforcement.** A creator needs the file
+because they are editing it into a timeline; a venue needs playback because it is
+performing it. A venue holding 25 masters cannot be stopped by cancelling a subscription
+and cannot be audited — with a stream, cancellation stops the music. **Leverage lives in
+the delivery mechanism, not the contract; a term you cannot observe or revoke is a wish.**
+This is why Soundtrack Your Brand and Cloud Cover ship an app, not files.
+
+Open wrinkle: **hold music** usually needs a file, because phone systems take an upload.
+That needs a narrow download bound to the on-hold grant, or a stream URL if the PBX
+supports one. Not solved, not pretended to be.
+
+**The landmine on "PRO-free".** Controlling both the recording and the composition would
+let BFMG licence a venue directly and let it skip ASCAP/BMI — which is the entire pitch
+of the competitors above, at $27-70 per location per month. It holds only with 100% of
+the writer share on every track in the package. Measured: of 754 library tracks, **zero**
+carry any writer, publisher, PRO, split or ISWC field. Nothing in the data supports the
+claim yet, and this is the one item on the list that needs a lawyer before it is sold.
+
+**Consumer streaming was considered and declined.** The Individual/Duo/Family/Student
+ladder already existed and was already 301'd to /explore-premium, and no playback in the
+app is subscription-gated. In streaming the product is catalogue breadth — 169
+commercial-release tracks against Spotify's ~100M is not a comparison with a winning
+price. In licensing the product is permission and curation, where 754 tracks is plenty.
+
+### Concepts covered (continued)
+
+| Concept | Decision that surfaced it | Call |
+|---|---|---|
+| **Public performance right** — playing a recording in a commercial space is a use legally separate from copying or syncing it | A restaurant wanting 25 tracks for business hours | Needs its own product; `Terms.js` already reserves it. Direct licensing could bypass PROs, but only with 100% writer share — unevidenced today |
+| **Delivery vs grant** — what you receive is separable from what you may do | Whether venue subscriptions include downloads | Creator yes, venue no. Stream-only is what makes cancellation mean anything |
+| **Catalogue breadth vs curation** — streaming sells breadth, licensing sells permission | Whether the four tiers should become streaming plans | Keep them as licensing; 169 tracks cannot win a breadth comparison |
