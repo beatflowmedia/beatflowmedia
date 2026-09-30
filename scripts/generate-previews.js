@@ -164,9 +164,18 @@ function cutPreview(source, durationSeconds) {
       await bucket.file(dest).makePublic();
       const url = 'https://storage.googleapis.com/' + BUCKET + '/' + dest;
 
+      // previewOnly is NOT set here, and that was a real bug.
+      //
+      // It reads like "this record has a preview" and means the opposite: "a preview
+      // is ALL there is -- no master can be delivered". The storefront filters those
+      // out and create-checkout refuses them, so setting it true while generating
+      // previews made all 785 tracks invisible AND unsellable in one line.
+      //
+      // Every one of these HAS a master, sitting in storage with its path on the
+      // record. Having a preview and having a master are independent facts, and the
+      // flag describes the second.
       await db.collection('songs').doc(item.id).update({
-        audioUrl: url,
-        previewOnly: true
+        audioUrl: url
       });
 
       done += 1;
