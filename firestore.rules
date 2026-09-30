@@ -103,6 +103,24 @@ service cloud.firestore {
                        isPlatformAdmin());
     }
 
+    // Collections - the production library's curated sets.
+    //
+    // Public read, because a collection is a shelf in the storefront: /browse/library
+    // lists them and each has its own page. Writes are admin-only and in practice come
+    // from scripts/backfill-collections.js, which DERIVES these documents from the
+    // folder names the ingest preserved on each track -- they are not hand-authored.
+    //
+    // Without this block the default-deny catch-all at the bottom of this file applies,
+    // and the browse query fails with permission-denied. An onSnapshot without an error
+    // handler renders that as an empty grid, which is indistinguishable from a library
+    // that has no collections -- the same silent-failure shape that hid the missing
+    // composite index on the home page.
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow list: if true; // Allow collection queries
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
     // Album Reviews - authenticated users can create and read
     match /albumReviews/{reviewId} {
       allow read: if true;

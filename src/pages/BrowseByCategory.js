@@ -22,6 +22,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
 import BrowseFilters from '../components/BrowseFilters';
+import CollectionGrid from '../components/CollectionGrid';
 import HomeStorefront from './HomeStorefront';
 import { getBrowseCategory } from '../config/browseCategories';
 import { ASSET_POOLS } from '../utils/assetPools';
@@ -42,6 +43,10 @@ const BrowseByCategory = () => {
   const handleTracksLoaded = useCallback((tracks) => setLoadedTracks(tracks), []);
 
   const facets = useMemo(() => facetsOf(loadedTracks), [loadedTracks]);
+
+  // `library` and `functional` are the pool LANDING pages -- the top of a catalogue.
+  // The facet routes (mood, genre, usecase) are already a narrowing.
+  const isPoolLanding = category === 'library' || category === 'functional';
 
   return (
     <Box sx={{ display: 'flex', gap: 3, p: 3, height: '100%', overflow: 'hidden' }}>
@@ -71,6 +76,19 @@ const BrowseByCategory = () => {
             Instagram, YouTube) carry no pool of their own and would otherwise fall
             through to the storefront's commercial-release default, showing a creator
             Percy's artist albums. */}
+        {/* The collections come FIRST, because they are the structure the catalogue
+            actually has. /browse/library used to open on 562 undifferentiated tracks;
+            the library was imported by folder and those folders were already Percy's
+            curation -- 24 named sets, each a situation rather than a genre.
+
+            Shown only on the two pool landing pages. On a facet page (mood, genre, use
+            case) the visitor has already chosen how to narrow, and offering a second,
+            different narrowing above their results answers a question they did not
+            ask. */}
+        {isPoolLanding && (
+          <CollectionGrid pool={activeCategory?.pool} title="Browse by collection" />
+        )}
+
         <HomeStorefront
           hideHeader
           filter={activeCategory}

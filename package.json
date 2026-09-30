@@ -71,6 +71,8 @@
     "verify:sponsor": "node scripts/verify-sponsor-validation.js",
     "verify:featured": "node scripts/verify-featured-artists.js",
     "verify:facets": "node scripts/verify-catalog-facets.js",
+    "verify:collections": "node scripts/verify-collections.js",
+    "backfill:collections": "node scripts/backfill-collections.js",
     "ingest:library": "node scripts/ingest-production-library.js",
     "scan:provenance": "node scripts/scan-library-provenance.js",
     "previews": "node scripts/generate-previews.js",

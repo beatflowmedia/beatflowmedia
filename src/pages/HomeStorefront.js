@@ -29,7 +29,11 @@ function HomeStorefront({
   // about it and they are siblings -- holding it in either would mean the other
   // reaching sideways for it, which is how two components end up with two answers.
   activeFilters = null,
-  onTracksLoaded = null
+  onTracksLoaded = null,
+  // When set, the grid shows ONE collection and `pool` is ignored -- a collection
+  // belongs to exactly one pool, so asking for both would be asking the same question
+  // twice and letting the answers disagree.
+  collectionId = null
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -102,12 +106,29 @@ function HomeStorefront({
     // Needs the songs(assetPool ASC, createdAt DESC) composite index: a where and an
     // orderBy on different fields cannot be served without one, and Firestore fails
     // the query rather than returning partial results.
-    const tracksQuery = query(
-      collection(db, "songs"),
-      where("assetPool", "==", pool),
-      orderBy("createdAt", "desc"),
-      limit(500)
-    );
+    // A collection is queried by id, and WITHOUT an orderBy -- deliberately.
+    //
+    // `where` + `orderBy` on different fields needs a composite index, and the largest
+    // collection is 56 tracks, so ordering those in memory costs nothing and saves an
+    // index that would have to be deployed before the page could work at all.
+    //
+    // It also has to be a server-side `where` rather than a client-side match on the
+    // pool query: production-music holds 562 records against a limit of 500, so
+    // filtering after the fact would silently drop whichever collections fell past the
+    // cap. That is the same class of bug as the ingest burying Percy's albums at rank
+    // 783 -- a limit quietly deciding what exists.
+    const tracksQuery = collectionId
+      ? query(
+          collection(db, "songs"),
+          where("collectionId", "==", collectionId),
+          limit(500)
+        )
+      : query(
+          collection(db, "songs"),
+          where("assetPool", "==", pool),
+          orderBy("createdAt", "desc"),
+          limit(500)
+        );
 
     const unsubscribe = onSnapshot(tracksQuery, (snapshot) => {
       if (!isMounted) return;
@@ -146,7 +167,7 @@ function HomeStorefront({
     // onTracksLoaded is a dependency because the effect calls it. The parent must
     // pass a useCallback-stable function, or this resubscribes on every render and
     // re-reads the collection each time -- reads are billed on Blaze.
-  }, [pool, onTracksLoaded]);
+  }, [pool, collectionId, onTracksLoaded]);
 
   const handlePreviewTrack = (track) => {
     // usePlaySong toggles play/pause when this is already the current track,

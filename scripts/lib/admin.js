@@ -62,6 +62,23 @@ function unescapePem(value) {
  * @returns {{admin: object, projectId: string, via: string}}
  */
 function initAdmin(options = {}) {
+  // loadEnv() was defined, exported, and never called from here.
+  //
+  // This helper exists because five scripts had grown their own copy of loadEnv. The
+  // copies were deleted and the call site was not added, so initAdmin read
+  // process.env and found nothing unless the caller had separately loaded .env or run
+  // node with `-r dotenv/config`. It failed with "missing credentials", which reads
+  // like an absent or revoked service account and sends you to the Firebase console
+  // rather than to this line.
+  //
+  // Same shape as the fault the ledger already recorded for this file: an abstraction
+  // extracted but not adopted. Half an abstraction is worse than none, because it
+  // reads as done.
+  //
+  // Safe to call every time: dotenv does not overwrite a variable already set, so a
+  // caller that loaded env itself, and Netlify's injected environment, both still win.
+  loadEnv();
+
   const admin = require(path.join(ROOT, 'node_modules', 'firebase-admin'));
 
   const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;

@@ -18,6 +18,7 @@ const PlaylistView = lazy(() => import("./components/PlaylistView"));
 const WhatsNew = lazy(() => import("./components/WhatsNew"));
 const ExplorePremium = lazy(() => import("./components/ExplorePremium"));
 const BrowsePage = lazy(() => import("./pages/BrowsePage"));
+const CollectionPage = lazy(() => import("./pages/CollectionPage"));
 const BrowseByCategory = lazy(() => import("./pages/BrowseByCategory"));
 const SongPage = lazy(() => import("./pages/SongPage"));
 const DebugSongPrice = lazy(() => import("./pages/DebugSongPrice"));
@@ -116,6 +117,8 @@ export default function AppRoutes() {
           <Route path="explore-premium" element={<ExplorePremium />} />
           <Route path="browse" element={<BrowsePage />} />
           <Route path="browse/:category" element={<BrowseByCategory />} />
+          {/* One production-library collection. Slug is the collections/ doc id. */}
+          <Route path="collection/:slug" element={<CollectionPage />} />
           <Route path="genre/:genre" element={<GenrePage />} />
           <Route path="category/:category" element={<CategoryPage />} />
           <Route path="made-for-you" element={<CategoryPage />} />
