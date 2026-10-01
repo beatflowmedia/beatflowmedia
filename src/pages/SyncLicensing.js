@@ -26,15 +26,61 @@ import {
 // were stored verbatim and then rendered raw in the admin table, so the back office
 // showed "video-game" where a human was reading. A machine slug is only worth the
 // mapping it saves, and here it saved none: nothing switches on these values.
-const PROJECT_TYPES = [
-  "Film",
-  "Television",
-  "Commercial / Advertisement",
-  "Video Game",
-  "Podcast",
-  "YouTube / Social Media",
-  "Corporate Video",
-  "Other"
+// TWO RIGHTS, NOT ONE LIST.
+//
+// This page offered only sync project types -- Film, Television, Commercial, Video
+// Game, Podcast, YouTube, Corporate Video -- while the purchase dialog sends people
+// here with the words "DJing, or playing music in a business? That needs a separate
+// license." Neither of those is a sync use.
+//
+//   SYNC is pairing a recording with moving image. It is what a film, an advert or a
+//   game needs.
+//
+//   PUBLIC PERFORMANCE is playing a recording to an audience or in a commercial
+//   space. It is what a restaurant, a gym, a spa, a shop or a DJ needs.
+//
+// They are different rights and Terms.js already treats them as such: public
+// performance is in the "not granted" list of every download licence, with the promise
+// of "a separate license from us". A restaurant owner who read that, clicked through,
+// and landed on a page about advertising campaigns had been answered with a different
+// question. Both are quoted rather than sold from a rate card, so they share one form
+// -- but the visitor has to be able to say which one they are asking about.
+const LICENCE_KINDS = [
+  {
+    id: "sync",
+    label: "Sync — film, TV, advertising, games",
+    blurb:
+      "Pairing a recording with moving image. One signature covers the recording and the composition.",
+    types: [
+      "Film",
+      "Television",
+      "Commercial / Advertisement",
+      "Video Game",
+      "Podcast",
+      "YouTube / Social Media",
+      "Corporate Video",
+      "Other"
+    ]
+  },
+  {
+    id: "performance",
+    label: "Public performance — business premises, DJ sets, events",
+    blurb:
+      "Playing recordings to an audience or in a commercial space. A download licence does not cover this, whoever you bought it from.",
+    types: [
+      "Restaurant / café",
+      "Bar / club / nightlife",
+      "Gym / fitness studio",
+      "Spa / clinic / wellness",
+      "Retail store",
+      "Office / coworking space",
+      "Hotel / hospitality",
+      "DJ set",
+      "Live event / conference",
+      "Telephone on-hold",
+      "Other"
+    ]
+  }
 ];
 
 // What a sync licence from BFMG actually includes. Every line is checkable against
@@ -62,7 +108,7 @@ const WHAT_YOU_GET = [
   }
 ];
 
-const EMPTY = { name: "", email: "", company: "", projectType: "", message: "" };
+const EMPTY = { name: "", email: "", company: "", projectType: "", message: "", licenceKind: "sync" };
 
 export default function SyncLicensing() {
   const [formData, setFormData] = useState(EMPTY);
@@ -72,6 +118,15 @@ export default function SyncLicensing() {
 
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const activeKind =
+    LICENCE_KINDS.find((k) => k.id === formData.licenceKind) || LICENCE_KINDS[0];
+
+  // Switching the right CLEARS the project type. The two lists share no values, so
+  // keeping the old one would submit "Video Game" against a public performance
+  // enquiry -- a lead that reads as a mistake and has to be chased to mean anything.
+  const handleKindChange = (e) =>
+    setFormData((prev) => ({ ...prev, licenceKind: e.target.value, projectType: "" }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +139,7 @@ export default function SyncLicensing() {
     const check = validateGeneralInquiry({
       name: formData.name,
       email: formData.email,
-      topic: formData.projectType || "Sync Licensing",
+      topic: formData.projectType || activeKind.label,
       message: formData.message
     });
     if (!check.isValid) {
@@ -101,9 +156,14 @@ export default function SyncLicensing() {
       name: formData.name,
       email: formData.email,
       company: formData.company,
-      topic: formData.projectType || "Sync Licensing",
+      topic: formData.projectType || activeKind.label,
       message: formData.message,
-      source: INQUIRY_SOURCES.SYNC
+      // The SOURCE follows the right being asked about. A venue enquiry filed under
+      // "Sync Licensing" is answered by whoever handles adverts, with a quote shaped
+      // for a campaign -- the lead arrives, and arrives wrong.
+      source: activeKind.id === "performance"
+        ? INQUIRY_SOURCES.PERFORMANCE
+        : INQUIRY_SOURCES.SYNC
     });
     setSubmitting(false);
 
@@ -150,10 +210,15 @@ export default function SyncLicensing() {
               </div>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Sync Licensing</h1>
+            {/* The H1 named one right while the page is the destination for two.
+                The purchase dialog links here with "DJing, or playing music in a
+                business?", so a visitor arriving on "Sync Licensing" had been sent to
+                a page that did not mention their question. */}
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Licensing</h1>
             <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto">
-              Music for film, television, advertising, games and online video —
-              licensed directly by the company that owns it.
+              Sync for film, television, advertising and games — and public performance
+              for business premises, DJ sets and events. Licensed directly by the
+              company that owns the recording and the composition.
             </p>
           </div>
 
@@ -180,13 +245,23 @@ export default function SyncLicensing() {
               </li>
             </ol>
             <p className="text-sm text-gray-500 mt-4">
-              Sync is quoted rather than sold from a rate card, because the price of a
-              national advertisement and a student film are not the same number. If you
-              want a track for personal or small-scale use instead,{" "}
-              <Link to="/browse" className="text-gray-300 hover:underline">
-                browse the catalogue
+              Both are quoted rather than sold from a rate card, because a national
+              advertisement and a student film are not the same number, and neither are
+              one café and a gym chain. If you want a track for personal or
+              small-scale use instead,{" "}
+              <Link to="/browse/library" className="text-gray-300 hover:underline">
+                browse the library
               </Link>{" "}
               — those licences are issued at checkout.
+            </p>
+            {/* Stated here rather than left for the quote, because it is the single
+                most common misunderstanding this page exists to correct: a download
+                licence is not a performance licence, from us or from anyone. */}
+            <p className="text-sm text-gray-500 mt-3">
+              Playing music in a business is a <strong className="text-gray-300">public
+              performance</strong>, which no download licence covers — ours or any
+              other seller&rsquo;s. It is a separate right, and this is where you ask
+              for it.
             </p>
           </div>
 
@@ -276,9 +351,33 @@ export default function SyncLicensing() {
                   />
                 </div>
 
+                {/* WHICH RIGHT, asked before what the project is.
+                    The answer changes the list below AND the inbox the enquiry lands
+                    in, so it cannot be inferred from a project type -- "Other" means
+                    nothing without it. */}
+                <div>
+                  <label htmlFor="licenceKind" className="block text-sm font-semibold mb-2">
+                    What do you need? <span className="text-green-500">*</span>
+                  </label>
+                  <select
+                    id="licenceKind"
+                    name="licenceKind"
+                    value={formData.licenceKind}
+                    onChange={handleKindChange}
+                    className={field}
+                  >
+                    {LICENCE_KINDS.map((kind) => (
+                      <option key={kind.id} value={kind.id}>
+                        {kind.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-2">{activeKind.blurb}</p>
+                </div>
+
                 <div>
                   <label htmlFor="projectType" className="block text-sm font-semibold mb-2">
-                    Project type
+                    {activeKind.id === "performance" ? "Where will it play?" : "Project type"}
                   </label>
                   <select
                     id="projectType"
@@ -287,8 +386,10 @@ export default function SyncLicensing() {
                     onChange={handleChange}
                     className={field}
                   >
-                    <option value="">Select a project type</option>
-                    {PROJECT_TYPES.map((type) => (
+                    <option value="">
+                      {activeKind.id === "performance" ? "Select a venue type" : "Select a project type"}
+                    </option>
+                    {activeKind.types.map((type) => (
                       <option key={type} value={type}>
                         {type}
                       </option>

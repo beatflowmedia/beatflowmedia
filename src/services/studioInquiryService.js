@@ -215,6 +215,12 @@ export const INQUIRY_SOURCES = {
   STUDIO: 'studio',
   CONTACT: 'contact',
   SYNC: 'sync',
+  // Public performance -- playing a recording to an audience or in a commercial
+  // space. A SEPARATE RIGHT from sync, not a variety of it: sync pairs music with
+  // moving image, performance plays it in a room. Terms.js already excludes
+  // performance from every download licence and promises "a separate license from
+  // us", and this is the inbox that promise arrives in.
+  PERFORMANCE: 'performance',
   SPONSOR: 'sponsor'
 };
 
@@ -224,6 +230,7 @@ export const INQUIRY_SOURCES = {
 // remember to update -- the third source is exactly where that goes wrong.
 const USE_CASE_BY_SOURCE = {
   [INQUIRY_SOURCES.SYNC]: 'Sync Licensing',
+  [INQUIRY_SOURCES.PERFORMANCE]: 'Public Performance',
   [INQUIRY_SOURCES.SPONSOR]: 'Advertising / Sponsorship',
   [INQUIRY_SOURCES.CONTACT]: 'General Contact',
   [INQUIRY_SOURCES.STUDIO]: 'Studio Consultation'
