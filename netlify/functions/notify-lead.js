@@ -45,6 +45,8 @@ function clean(value) {
     .slice(0, MAX_FIELD);
 }
 
+const { sendEmail } = require('./lib/send-email');
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
@@ -105,31 +107,24 @@ exports.handler = async (event) => {
   }
   lines.push('', 'Open the Leads tab in the admin dashboard to action this.');
 
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from,
-        to: [to], // from the environment, never from the request
-        subject,
-        text: lines.join('\n')
-      })
-    });
+  // Sent through lib/send-email.js. This file used to POST to Resend itself, and when
+  // stripe-webhook.js needed to send too, the choice was a second copy of this block or
+  // one sender. The copy would have been the third mail implementation in the repo.
+  const result = await sendEmail({
+    label: 'notify-lead',
+    to,
+    from,
+    subject,
+    text: lines.join('\n')
+  });
 
-    if (!response.ok) {
-      const body = await response.text();
-      // Log the status and Resend's message, never the key.
-      console.error(`[notify-lead] Resend returned ${response.status}: ${body.slice(0, 500)}`);
-      return { statusCode: 200, body: JSON.stringify({ sent: false, reason: 'provider error' }) };
-    }
-
-    return { statusCode: 200, body: JSON.stringify({ sent: true }) };
-  } catch (err) {
-    console.error('[notify-lead] send failed:', err.message);
-    return { statusCode: 200, body: JSON.stringify({ sent: false, reason: 'send failed' }) };
+  if (!result.sent) {
+    // Still 200. A lead form that 500s because an inbox is unreachable loses the lead
+    // it was reporting -- the record is already written, the email is the notification.
+    return { statusCode: 200, body: JSON.stringify({ sent: false, reason: result.reason }) };
   }
+
+  // No try/catch here any more: sendEmail never throws. It returns {sent, reason} and
+  // logs its own failures, so a caller cannot forget to handle one.
+  return { statusCode: 200, body: JSON.stringify({ sent: true, id: result.id }) };
 };

@@ -3,6 +3,7 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
+const { sendEmail } = require('./lib/send-email');
 
 /**
  * The contract half of a purchase record: which license version the buyer accepted,
@@ -976,34 +977,18 @@ async function handleInvoicePaymentFailed(invoice) {
     const customerEmail = invoice.customer_email;
 
     if (customerEmail) {
-      // Use nodemailer to send warning email
-      const nodemailer = require('nodemailer');
-
-      // A literal Gmail App Password sat here as a `|| fallback`. It was a live
-      // credential in a git repository, present in three commits, and a fallback is
-      // the worst shape for one: the code works whether or not the environment is
-      // configured, so nobody ever discovers that a committed secret is what is
-      // holding it up.
+      // Sent through lib/send-email.js, which posts to Resend.
       //
-      // REVOKE the old password at myaccount.google.com/apppasswords. Removing the
-      // line does not make it safe -- it remains in history.
+      // This built a nodemailer transport against Gmail with an App Password. Two
+      // problems, and the leak was only the second one: an App Password grants IMAP as
+      // well as SMTP, so a credential needed to send ONE templated email could also
+      // read the mailbox. A send-only API key is the right shape for a send-only job.
       //
-      // Fails loudly now instead of falling back silently.
-      if (!process.env.SMTP_PASSWORD) {
-        console.error('[stripe-webhook] SMTP_PASSWORD not set - warning email not sent.');
-        return;
-      }
-
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.SMTP_USER || 'beatflowmediagroup@gmail.com',
-          pass: process.env.SMTP_PASSWORD
-        }
-      });
-
-      const mailOptions = {
-        from: 'BeatFlow Media <beatflowmediagroup@gmail.com>',
+      // It was also the platform's second mail provider -- notify-lead.js already used
+      // Resend -- so mail could fail in two places, in two ways, with no single thing
+      // to check. One provider now.
+      const result = await sendEmail({
+        label: 'stripe-webhook/invoice-failed',
         to: customerEmail,
         subject: 'Payment Issue - Action Needed to Keep Your BeatFlow Active',
         html: `
@@ -1031,10 +1016,13 @@ async function handleInvoicePaymentFailed(invoice) {
 
           <p>Best,<br>BeatFlow Billing Team</p>
         `
-      };
+      });
 
-      await transporter.sendMail(mailOptions);
-      console.log('Payment failure email sent to:', customerEmail);
+      // Logged, never thrown. A warning email that cannot send must not fail the
+      // webhook: Stripe would retry the whole event, and the payment problem the email
+      // was about would be buried under delivery retries.
+      if (result.sent) console.log('Payment failure email sent to:', customerEmail);
+      else console.error('[stripe-webhook] payment failure email NOT sent:', result.reason);
     }
 
     // Record failed payment
