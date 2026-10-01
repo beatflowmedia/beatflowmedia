@@ -1,10 +1,11 @@
 // src/pages/SongPage.js
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import PlayButton from "../components/PlayButton";
 import LikeButton from "../components/LikeButton";
 import PurchaseButton from "../components/PurchaseButton";
+import DownloadLicenseTerms from "../components/DownloadLicenseTerms";
 import { useAuth } from "../context/AuthContext";
 import { useLikes } from '../context/LikesContext';
 import { usePlayer } from "../context/PlayerContext";
@@ -105,6 +106,31 @@ function SongPage() {
     }
   };
 
+  // Facts this record actually carries, in a fixed order.
+  //
+  // A filtered list rather than a column of JSX with `&&` on every row: the emptiness
+  // check and the rendering then cannot disagree, and adding a field is one line here
+  // instead of one in two places.
+  const formatDuration = (seconds) => {
+    const total = Math.floor(Number(seconds));
+    if (!Number.isFinite(total) || total <= 0) return null;
+    return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
+  };
+
+  const details = [
+    { label: 'Duration', value: formatDuration(song.duration) },
+    { label: 'BPM', value: song.bpm || null },
+    { label: 'Genre', value: song.mainGenre || song.genre || null },
+    { label: 'Mood', value: Array.isArray(song.mood) ? song.mood.join(', ') : song.mood || null },
+    { label: 'Released', value: song.releaseDate || null },
+    { label: 'ISRC', value: song.isrc || null },
+    { label: 'Label', value: song.recordLabel || null },
+    // Stated because the Copyright Office guidance requires it, not as a selling point.
+    // The ingest writes aiDisclosure on every production-library record.
+    { label: 'Production', value: song.aiDisclosure === 'ai-assisted' ? 'AI-assisted' : song.aiDisclosure || null },
+    { label: 'Explicit', value: song.explicit === true ? 'Yes' : song.explicit === false ? 'No' : null }
+  ].filter((row) => row.value !== null && row.value !== undefined && row.value !== '');
+
   // Generate SEO meta tags and Schema.org markup
   const metaTags = generateSongMetaTags(song);
   const songSchema = generateSongSchema(song);
@@ -127,50 +153,98 @@ function SongPage() {
         </Helmet>
       )}
 
-      <div className="p-6 text-white">
-        <h1 className="text-3xl font-bold mb-4">{song.title}</h1>
-        <p className="text-gray-400 mb-4">by {song.artist}</p>
+      {/* TWO COLUMNS ON DESKTOP, STACKED ON A PHONE.
+        *
+        * This was a single narrow stack: title, artist, three buttons, a 280px cover,
+        * then "Lyrics / Details" reading "No lyrics available." On a 1280px screen the
+        * bottom 40% was empty while the one decision a buyer came to make -- which
+        * licence to take -- sat behind a modal.
+        *
+        * The base rule is the phone, one column, and the grid widens at md. Scaling up
+        * with min-width, never walking a desktop layout back with max-width.
+        */}
+      <div className="p-4 sm:p-6 text-white max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)] gap-6 lg:gap-10">
 
-      <div className="flex items-center space-x-4 mb-6">
-        <PlayButton
-          isPlaying={isThisPlaying}
-          onClick={handlePlay}
-          size={32}
-        />
-        <LikeButton
-          item={song}
-          isLiked={isLiked}
-          onToggleFavorite={handleToggle}
-          size={24}
-        />
-        <PurchaseButton
-          itemId={id}
-          itemType="song"
-          price={song.price || SONG_PRICE}
-          track={song}
-          artistId={song.artistId}
-          uploadedBy={song.uploadedBy}
-        />
+          <div>
+            <img
+              src={artworkUrl(song)}
+              alt={song.title}
+              className="rounded-lg w-full max-w-[320px] aspect-square object-cover"
+              onError={(e) => { e.target.onerror = null; e.target.src = getPlaceholderImage(300, 300); }}
+            />
 
+            <div className="flex items-center gap-4 mt-4">
+              <PlayButton isPlaying={isThisPlaying} onClick={handlePlay} size={32} />
+              <LikeButton
+                item={song}
+                isLiked={isLiked}
+                onToggleFavorite={handleToggle}
+                size={24}
+              />
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <h1 className="text-3xl sm:text-4xl font-bold">{song.title}</h1>
+            <p className="text-gray-400 mt-1">by {song.artist || song.artistName}</p>
+
+            {/* The collection is a LINK, not a label -- the one element on this page
+                that leads somewhere a buyer wants to go: the rest of the set this cue
+                was cut from. */}
+            {song.collectionId && (
+              <p className="mt-2 text-sm">
+                <span className="text-gray-500">From </span>
+                <Link to={`/collection/${song.collectionId}`} className="text-green-500 hover:underline">
+                  {song.collectionTitle || song.album}
+                </Link>
+              </p>
+            )}
+
+            <div className="mt-6">
+              <PurchaseButton
+                itemId={id}
+                itemType="song"
+                price={song.price || SONG_PRICE}
+                track={song}
+                artistId={song.artistId}
+                uploadedBy={song.uploadedBy}
+              />
+            </div>
+
+            {/* FACTS ONLY, AND ONLY THOSE PRESENT.
+              *
+              * Replaces a section headed "Lyrics / Details" whose entire body was the
+              * string "No lyrics available." above a TODO. No record in the catalogue
+              * holds lyrics, so the heading promised something nothing could keep.
+              *
+              * Rows render only where a value exists, for the same reason the browse
+              * facets are derived rather than declared: a blank row states a fact we do
+              * not have. A library cue has a duration and a collection; a commercial
+              * release has an ISRC and a release date. Neither should show the other's
+              * empty cells. */}
+            {details.length > 0 && (
+              <dl className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                {details.map(({ label, value }) => (
+                  <div key={label}>
+                    <dt className="text-xs uppercase tracking-wide text-gray-500">{label}</dt>
+                    <dd className="text-sm text-gray-200 mt-1 break-words">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+
+            {/* The licence on the page, not only inside the modal.
+                DownloadLicenseTerms already owns this text and already has a compact
+                mode. Restating it here would be a second copy, free to drift from the
+                one the buyer actually accepts at checkout. */}
+            <div className="mt-8 border-t border-gray-800 pt-6">
+              <h2 className="text-lg font-semibold mb-3">What a licence covers</h2>
+              <DownloadLicenseTerms compact />
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div className="mt-6">
-        <img
-          src={artworkUrl(song)}
-          alt={song.title}
-          className="rounded-lg w-full max-w-[280px] aspect-square object-cover"
-          onError={(e) => { e.target.onerror = null; e.target.src = getPlaceholderImage(300, 300); }}
-        />
-      </div>
-
-      <div className="mt-6">
-        <h2 className="text-2xl font-semibold">Lyrics / Details</h2>
-        <p className="text-gray-300 mt-2">
-          {/* TODO: Populate with actual lyrics or additional metadata */}
-          No lyrics available.
-        </p>
-      </div>
-    </div>
 
     </>
   );
