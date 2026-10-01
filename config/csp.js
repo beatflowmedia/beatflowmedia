@@ -38,6 +38,19 @@ const DIRECTIVES = {
     "https://analytics.tiktok.com",
     "https://pagead2.googlesyndication.com",
     "https://*.googleadservices.com",
+    // AdSense loads ep2.adtrafficquality.google/sodar/sodar2.js -- its ad-traffic
+    // quality check. Blocking it did not stop the ad; it made show_ads_impl.js reject
+    // a promise with `undefined`, which surfaced on every page as
+    // "Uncaught (in promise) undefined" with a stack pointing into Google's bundle
+    // and nothing of ours. An error with no reason and no owner is the hardest kind
+    // to ignore and the hardest to chase.
+    //
+    // It was already in connect-src and already in public/index.html's meta tag --
+    // someone had fixed the symptom in one copy. That changed nothing, because a
+    // browser enforces the INTERSECTION of every policy present, so the stricter
+    // header in public/_headers kept blocking it while the meta tag looked correct.
+    // Exactly the drift verify:csp exists to catch, and it had been reporting it.
+    "https://*.adtrafficquality.google",
   ],
   "style-src": [
     "'self'",
