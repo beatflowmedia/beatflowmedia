@@ -101,6 +101,10 @@ const DIRECTIVES = {
     "https://*.doubleclick.net",
     "https://*.adtrafficquality.google",
     "https://ep1.adtrafficquality.google",
+    // AdSense's rum.js posts timing beacons to csi.gstatic.com. Blocked, it logs a
+    // CSP violation on every page load -- not fatal like the sodar block above, but
+    // the same thing: noise in the console that belongs to Google and reads like ours.
+    "https://csi.gstatic.com",
   ],
   "frame-src": [
     "'self'",
