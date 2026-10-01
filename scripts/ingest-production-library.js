@@ -115,7 +115,20 @@ const SKIP_FOLDERS = new Set([
   // Skipping is the right answer while the folder's content is already catalogued. If
   // a 13th track is ever added there it will be skipped too, which is the cost of this
   // being a skip rather than a folder->album alias. Worth revisiting then, not now.
-  'I Should of Shown up For You'
+  'I Should of Shown up For You',
+  // PULLED BY PERCY, 2026-09-30: "not ready yet. I will re-add once I get it sorted
+  // out." The collection and its 26 songs were deleted from Firestore (no purchases
+  // and no licences referenced them; backed up first).
+  //
+  // Listed here because deleting the records alone does not hold. The source folder is
+  // still on disk, so the next full `ingest:library --apply` would restore all 26
+  // without a word -- a removal that silently undoes itself is worse than one that
+  // never happened, because nobody checks twice.
+  //
+  // TO PUT IT BACK: delete this line and re-run the ingest for the folder. The known
+  // gap is that "Arabic Deep House Vol 1 23" is absent from the source -- 26 files on
+  // disk, numbered 1-25 with 23 missing, plus two named tracks.
+  'Arabic Deep House #1'
 ]);
 
 /**
