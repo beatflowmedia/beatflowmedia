@@ -158,8 +158,8 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = true, maxDuration = 30, o
                 className="w-12 h-12 object-cover rounded mr-3"
               />
               <div className="leading-tight">
-                <p className="font-bold text-sm">No song playing</p>
-                <p className="text-xs text-gray-400">Select a song to play</p>
+                <p className="font-bold text-sm">Nothing playing</p>
+                <p className="text-xs text-gray-400">Choose a track</p>
               </div>
             </>
           )}

@@ -352,7 +352,7 @@ export default function MiniPlayer({
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-6">
-                  Select a song to start playing
+                  Choose a track
                 </p>
               </>
             </div>
