@@ -128,7 +128,27 @@ const SKIP_FOLDERS = new Set([
   // TO PUT IT BACK: delete this line and re-run the ingest for the folder. The known
   // gap is that "Arabic Deep House Vol 1 23" is absent from the source -- 26 files on
   // disk, numbered 1-25 with 23 missing, plus two named tracks.
-  'Arabic Deep House #1'
+  'Arabic Deep House #1',
+  // PULLED BY PERCY, 2026-09-30: "it too is not ready yet."
+  //
+  // All 10 source files are corrupt -- ffprobe returns `moov atom not found` on every
+  // .m4a, meaning the downloads were truncated, not that the codec is unsupported.
+  // Only "First Light" was ever catalogued, because it alone also has a good mp3 and
+  // wav, so the album stood at 1 of 10 tracks. That song and the albums/ document are
+  // deleted (0 purchases, 0 licences, backed up first).
+  //
+  // Skipped for the same reason as the folder above: the source is still on disk, so a
+  // full re-run would restore the one deliverable track and present a 1-track album
+  // again.
+  //
+  // It stays in ALBUM_FOLDERS below. SKIP_FOLDERS is tested first so that entry cannot
+  // fire, and removing it would mean remembering to put it back -- this IS a release,
+  // and that fact does not change because the files are broken.
+  //
+  // TO PUT IT BACK: re-download all 10 from Suno, confirm with
+  // `ffprobe -v error -show_entries format=duration -of csv=p=0 <file>`, then delete
+  // this line and re-run.
+  'Memphis Love'
 ]);
 
 /**
