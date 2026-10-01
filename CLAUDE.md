@@ -1327,3 +1327,88 @@ Songs with album "testing" — **0**.
 Library songs without a `collectionId` — **0** of 768.
 Tracks lost to a cross-collection title collision — **0**.
 Audio files in Downloads/Music outside a collection folder — **0** of 1007.
+
+## One store for masters, and the file that was doing two jobs — 2026-10-01
+
+906 masters now live in **beatflow-masters**, private, keyed `masters/<ISRC>.<ext>` or
+`masters/id/<docId>.<ext>`. Firebase Storage is out of the delivery path. 834 streamed
+out of GCS, 72 copied across from `beatflow-assets`, ~6.2GB, zero failures.
+
+**R2 over Firebase**, decided while there are no clients, because the cost of the
+decision only rises: zero egress against ~$0.12/GB under tiers that promise "unlimited
+downloads while active"; and keys that a quoting bug cannot touch.
+
+### The near-miss worth keeping
+
+After migrating, the obvious tidy-up was to delete `audio/` from `beatflow-assets` —
+the objects were verified byte-identical in the new bucket, so it looked provably safe.
+Percy asked whether it would affect the station. It would have taken it off the air:
+
+```
+our migrated keys (audio/...)      : 72
+referenced by the radio playlist   : 72 of 72
+```
+
+**The same object was a paid master AND a radio broadcast source** — one contract
+requiring privacy, the other requiring public access. That is why a master was fetchable
+at `pub-….r2.dev/audio/What We Don't Say.mp3`, 200, 7.6MB, no credentials. Not a
+misconfigured bucket: one file serving two incompatible contracts.
+
+The migration fixed it by making them independent copies. `audio/` stays, forever, until
+the radio stops pointing at it.
+
+**The verification was true and the conclusion was wrong.** "These files exist elsewhere"
+is not "nothing else uses these files". Before deleting shared storage, ask who READS it,
+not only whether the bytes are safe. The listing also held `LiteraryGemShopJingle1.mp3`
+and two 100MB+ DJ mixes — a third business and the station's own content in the same
+prefix.
+
+### Duplication, three more times
+
+- **`resolveMasterSource()`** — `download-master.js` knew two backends, `verify-masters.js`
+  knew one, and the verifier WRITES: it blocked 120 deliverable records and turned whole
+  albums into "Preview only". A guard that models the system differently from the code it
+  guards does not merely miss faults, it invents them.
+- **`r2Config()`** existed three times, and writing the migration was about to make a
+  fourth — with `R2_ENDPOINT` where the variable is `R2_MASTERS_ENDPOINT`. Now in
+  `lib/r2-presign.js`. The env var names are the contract, so the contract gets one home.
+- **`.env` held two `R2_ACCESS_KEY_ID` lines**, the new pair appended rather than
+  substituted. Which duplicate wins is a parser detail, not a decision. It also meant the
+  old read-only credentials were still present, which is how the cross-bucket copy ran
+  without a new token.
+
+### Things that failed open
+
+- `initAdmin({storageBucket: process.env.FIREBASE_PROJECT_ID + '...'})` evaluates its
+  argument BEFORE initAdmin loads .env, so the bucket resolved to `.firebasestorage.app`
+  and every existence probe was meaningless. Read lazily now, and the run prints which
+  bucket it used.
+- `args().value` only accepted `--name=value`, so `--limit 1 --apply` meant "no limit"
+  and began migrating all 834. **A safety parameter that silently does nothing when
+  mistyped reads as a seatbelt and is not fastened.** Both forms now.
+- `verify:masters` printed "master found at masters/<ISRC>.wav" for files in Firebase
+  that 404 in R2 — right verdict, invented reason. A correct tool reporting a false
+  reason is how it loses the reader.
+
+### 14 masters that were never lost
+
+`audio/What We Don&apos;t Say.mp3` — an HTML entity in a storage key, pointing at
+nothing, while the object sat there under its real name. All 14 recovered. The verifier
+now warns on any entity it finds. **Whatever wrote them is still upstream and unfound.**
+
+### Secrets
+
+`netlify env:list --json` printed live values into the transcript — `STRIPE_SECRET_KEY`,
+`SMTP_PASSWORD`, `STRIPE_WEBHOOK_SECRET`, `NETLIFY_PRERENDER_AUTH_TOKEN`. My error, and
+against the standing rule to read back names, lengths and prefixes only. **Never
+`--json` on an env listing; filter to names, or format to prefix and length.** Rotation
+outstanding; the R2 key among them was deleted rather than rotated.
+
+### Ratchets
+
+Delivery backends — **1** (was 2).
+Implementations of "where is this master" — **1** (was 2).
+Copies of `r2Config()` — **1** (was 3).
+Duplicate variable definitions in `.env` — **0** (was 1 pair).
+Masters fetchable without credentials — **0** (was 72).
+Live tokens nothing uses — **0**.
