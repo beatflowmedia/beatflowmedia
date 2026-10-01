@@ -147,4 +147,29 @@ function r2Config() {
   return cfg;
 }
 
-module.exports = { presignGetObject, r2Config, encodeRfc3986, encodePath, amzDate };
+
+/**
+ * Credentials for READING the bucket a migration is moving away from.
+ *
+ * Separate from r2Config() on purpose. A cross-bucket move needs read THERE and write
+ * HERE, and Cloudflare cannot express "read-only on bucket A, read-write on bucket B"
+ * in one token. The alternative was widening the write token to cover beatflow-assets,
+ * which holds the radio station's public intros/ and spots/ -- and keeping paid masters
+ * out of that blast radius is the entire reason the masters bucket exists.
+ *
+ * So the write credential never gains reach over the radio's bucket. The source token
+ * is read-only, temporary, and revoked once the migration reports zero absent.
+ *
+ * Falls back to the main config when unset, so every normal caller is unaffected.
+ */
+function r2SourceConfig() {
+  if (!process.env.R2_SOURCE_ACCESS_KEY_ID) return r2Config();
+  return {
+    accessKeyId: process.env.R2_SOURCE_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SOURCE_SECRET_ACCESS_KEY,
+    endpoint: process.env.R2_MASTERS_ENDPOINT,
+    bucket: process.env.R2_SOURCE_BUCKET || 'beatflow-assets'
+  };
+}
+
+module.exports = { presignGetObject, r2Config, r2SourceConfig, encodeRfc3986, encodePath, amzDate };

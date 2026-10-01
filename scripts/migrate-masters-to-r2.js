@@ -61,7 +61,7 @@ const {
   masterKeyFor,
   firebaseMasterBucket
 } = require(path.join(ROOT, 'netlify', 'functions', 'lib', 'masters.js'));
-const { presignGetObject, r2Config } = require(path.join(ROOT, 'netlify', 'functions', 'lib', 'r2-presign.js'));
+const { presignGetObject, r2Config, r2SourceConfig } = require(path.join(ROOT, 'netlify', 'functions', 'lib', 'r2-presign.js'));
 
 /** HEAD a presigned url. Returns {ok, size} — size is null when not reported. */
 function headObject(url) {
@@ -133,19 +133,38 @@ async function mapLimit(items, limit, fn) {
   const songs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
   const plan = [];
-  const skipped = { alreadyR2: 0, noMaster: 0 };
+  const skipped = { alreadyDone: 0, noMaster: 0 };
+
+  const destBucket = r2Config().bucket;
+  const srcCfg = r2SourceConfig();
 
   songs.forEach((song) => {
     const source = resolveMasterSource(song);
     if (!source) { skipped.noMaster += 1; return; }
-    if (source.backend === 'r2') { skipped.alreadyR2 += 1; return; }
 
     const ext = (source.key.split('.').pop() || 'mp3').toLowerCase();
-    plan.push({ song, from: source.key, to: masterKeyFor(song, ext) });
+    const to = masterKeyFor(song, ext);
+
+    // ALREADY DONE means already at the canonical key in the DESTINATION bucket, not
+    // merely "backend is r2". 72 records point into beatflow-assets/audio/ -- the
+    // radio's bucket, under title-derived names. Treating those as finished would
+    // leave the catalogue split across two buckets with the write token able to read
+    // only one of them, which is this morning's outage with a different cause.
+    if (source.backend === 'r2' && source.key === to) { skipped.alreadyDone += 1; return; }
+
+    plan.push({
+      song,
+      from: source.key,
+      to,
+      // Where to READ from. R2 sources are copied bucket-to-bucket with the read-only
+      // source credential; Firebase sources stream out of Cloud Storage.
+      via: source.backend,
+      fromBucket: source.backend === 'r2' ? srcCfg.bucket : null
+    });
   });
 
   console.log('  songs            : ' + songs.length);
-  console.log('  already on R2    : ' + skipped.alreadyR2);
+  console.log('  already correct  : ' + skipped.alreadyDone);
   console.log('  no master at all : ' + skipped.noMaster);
   console.log('  TO MIGRATE       : ' + plan.length);
   console.log('');
@@ -166,17 +185,43 @@ async function mapLimit(items, limit, fn) {
   let copied = 0, repointed = 0, failed = 0;
   const failures = [];
 
-  await mapLimit(work, CONCURRENCY, async ({ song, from, to }) => {
+  await mapLimit(work, CONCURRENCY, async ({ song, from, to, via }) => {
     const label = (song.title || song.id);
     try {
-      const file = bucket.file(from);
-      const [meta] = await file.getMetadata();
-      const size = Number(meta.size || 0);
+      let readStream;
+      let size;
+      let contentType;
+
+      if (via === 'r2') {
+        // R2 -> R2, across buckets, streamed. Read with the SOURCE credential, which
+        // is read-only on the old bucket; write with the destination credential, which
+        // has no reach into it at all.
+        const srcCfg = r2SourceConfig();
+        const getUrl = presignGetObject({ ...srcCfg, key: from, expiresIn: 900, method: 'GET' });
+        const res = await new Promise((resolve, reject) => {
+          https.get(getUrl, resolve).on('error', reject);
+        });
+        if (res.statusCode !== 200) {
+          res.resume();
+          throw new Error('source GET ' + res.statusCode +
+            (res.statusCode === 403 ? ' — R2_SOURCE_* credentials cannot read ' + srcCfg.bucket : ''));
+        }
+        readStream = res;
+        size = res.headers['content-length'] ? Number(res.headers['content-length']) : 0;
+        contentType = res.headers['content-type'];
+      } else {
+        const file = bucket.file(from);
+        const [meta] = await file.getMetadata();
+        size = Number(meta.size || 0);
+        contentType = meta.contentType;
+        readStream = file.createReadStream();
+      }
+
       if (!size) throw new Error('source reports zero bytes');
 
       const cfg = r2Config();
       const putUrl = presignGetObject({ ...cfg, key: to, expiresIn: 900, method: 'PUT' });
-      await uploadStream(putUrl, file.createReadStream(), meta.contentType, size);
+      await uploadStream(putUrl, readStream, contentType, size);
       copied += 1;
 
       // Confirm it is really there, and really whole, BEFORE repointing the record.
@@ -194,7 +239,7 @@ async function mapLimit(items, limit, fn) {
         // Kept so a revert needs no archaeology. The Firebase object is not deleted,
         // so this plus masterBackend:'firebase' restores the previous state exactly.
         previousMasterPath: from,
-        previousMasterBackend: 'firebase'
+        previousMasterBackend: via
       });
       repointed += 1;
       console.log('  OK    ' + label + '  (' + (size / 1048576).toFixed(1) + 'MB)');
