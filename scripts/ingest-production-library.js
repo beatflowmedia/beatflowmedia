@@ -96,7 +96,26 @@ const SKIP_FOLDERS = new Set([
   // "Test Card Themes".
   'The Silicon Baobab Final Audio Mastered',
   'FullYutubeStreamVErsion',
-  'jazzy neo-soul'
+  'jazzy neo-soul',
+  // ALREADY IN THE CATALOGUE UNDER A DIFFERENT NAME, and ingesting it would have done
+  // real damage.
+  //
+  // The folder is "I Should of Shown up For You". The album in Firestore is "Should of
+  // Shown Up", and it holds all 12 of these tracks already -- Broke but Happy,
+  // Detectives in the Dark, Five Minutes Away, and the rest, matched title for title.
+  //
+  // A disk-versus-database audit keyed on folder name reported all 12 as missing, and
+  // the dry run duly planned to ingest them. It would NOT have attached them to the
+  // existing album: albumIdByTitle matches on normalised title, and
+  // "ishouldofshownupforyou" does not equal "shouldofshownup". The folder is also not
+  // in ALBUM_FOLDERS, so the 12 would have been written as PRODUCTION-MUSIC cues --
+  // Percy's commercial release duplicated into the library, at library prices, under a
+  // second name.
+  //
+  // Skipping is the right answer while the folder's content is already catalogued. If
+  // a 13th track is ever added there it will be skipped too, which is the cost of this
+  // being a skip rather than a folder->album alias. Worth revisiting then, not now.
+  'I Should of Shown up For You'
 ]);
 
 /**
