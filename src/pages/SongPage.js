@@ -53,52 +53,31 @@ function SongPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // 2) Warm the browser cache with this track's audio, so pressing play is instant.
+  // 2) Load this track into the player as soon as it is fetched.
   //
-  // DELIBERATELY ONLY ON THIS PAGE, and written inline rather than as a hook for that
-  // reason. Somebody at /song/:id came to hear this one recording -- intent is about as
-  // certain as it gets. The same behaviour on /browse/library would fetch 500 previews
-  // at 481KB each, roughly 240MB on page load. Extracting it to src/hooks/ would invite
-  // exactly that import. The constraint is the point, so it lives where it applies.
+  // Opening /song/:id left the transport reading "Nothing playing / Choose a track"
+  // while the page above it showed one specific recording. The visitor had already
+  // chosen; the player was the only thing that did not know.
   //
-  // It does NOT touch PlayerContext. That would mean a new action in the reducer and a
-  // change to the engine load path -- the code that plays everything, whose test suites
-  // (GaplessEngine, CrossfadeEngine, ProductionMseEngine) are currently failing. A
-  // detached Audio element needs none of that: the player later requests the SAME url
-  // and the browser serves it from cache.
+  // LOAD_SONG selects and loads it WITHOUT playing, so the bar shows the title, the
+  // artist, the artwork and the duration, with the audio buffered and ready. Pressing
+  // play then starts immediately instead of beginning a fetch -- which is the preload
+  // this page actually needed. A detached Audio element only warmed the HTTP cache and
+  // left the player empty, so it fixed the second-order problem and not the visible
+  // one.
   //
-  // Measured, which is what makes this worth doing at all:
-  //   preview         481,115 bytes, audio/mpeg
-  //   Cache-Control   public, max-age=31536000   + ETag, Accept-Ranges
-  //   fetch           0.31s to first byte, 0.52s total on a fast connection
-  //
-  // The long max-age is what makes the warm-up land in cache rather than being
-  // re-fetched on play. Without it this would double the bytes instead of hiding them.
+  // GUARDED, because the player is global. Someone auditioning a cue while reading
+  // another track's page is still listening to it, and replacing what is playing
+  // because a page mounted would be the storefront taking the transport off them.
   useEffect(() => {
-    const url = song?.audioUrl;
-    if (!url) return;
-
-    // Someone else's mobile data, spent before they asked for anything. Data Saver is
-    // an explicit instruction not to, and on a slow connection 481KB of speculation
-    // competes with the page they are actually reading.
-    const conn = navigator.connection;
-    if (conn?.saveData) return;
-    if (conn?.effectiveType && /(^|-)2g$/.test(conn.effectiveType)) return;
-
-    const warmer = new Audio();
-    warmer.preload = 'auto';
-    warmer.crossOrigin = 'anonymous'; // match PlayerContext, or it caches under a different key
-    warmer.muted = true;
-    warmer.src = url;
-
-    return () => {
-      // Cancel an in-flight fetch when the visitor leaves. Clearing src and calling
-      // load() is what actually aborts it -- dropping the reference alone leaves the
-      // request running until it completes.
-      warmer.src = '';
-      warmer.load();
-    };
-  }, [song?.audioUrl]);
+    if (!song) return;
+    if (isPlaying) return;                 // never interrupt playback in progress
+    if (currentSong?.id === song.id) return; // already loaded; re-dispatch would reload
+    dispatch({ type: actions.LOAD_SONG, payload: song });
+    // currentSong/isPlaying are read as guards, not reacted to: adding them would
+    // re-run this the moment the load lands and set up a dispatch loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [song, dispatch, actions]);
 
   // 3) Track song view for conversion tracking (2026 Hybrid Strategy)
   useEffect(() => {

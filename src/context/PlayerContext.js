@@ -30,13 +30,24 @@ const initialState = {
   repeatMode: RepeatMode.OFF,
   currentTime: 0,
   duration: 0,
-  volume: 1
+  volume: 1,
+  // True once something has ASKED for a specific track -- a play, or a page opening
+  // that track. False while the queue is merely restored from storage.
+  //
+  // The load effect refuses to load on mount, so a returning visitor is not made to
+  // wait for audio nobody requested. That guard could not tell a restored queue from a
+  // deliberate request, so an explicit "load this, do not play it" was skipped too and
+  // the transport sat on "Nothing playing" with a track page open above it.
+  trackRequested: false
 };
 
 // Actions
 const actions = {
   SET_QUEUE: "SET_QUEUE",
   PLAY_SONG: "PLAY_SONG",
+  // Select a track and load it, WITHOUT starting playback. Same shape as PLAY_SONG,
+  // minus the one thing that makes it play.
+  LOAD_SONG: "LOAD_SONG",
   PLAY_AT: "PLAY_AT",
   TOGGLE_PLAY: "TOGGLE_PLAY",
   SKIP_NEXT: "SKIP_NEXT",
@@ -91,7 +102,35 @@ function reducer(state = initialState, action) {
         ...state,
         queue: newQueue,
         currentIndex: newIndex,
-        isPlaying: true
+        isPlaying: true,
+        trackRequested: true
+      };
+    }
+    // Load a track into the player without playing it.
+    //
+    // Opening a track's page should leave the player holding that track -- title,
+    // artist, artwork, duration, scrubber -- not "Nothing playing". The visitor
+    // navigated to one specific recording; the transport saying it has nothing is a
+    // control contradicting the page around it.
+    //
+    // The load effect already does the right thing from here: it loads through the
+    // engine and only calls play() when state.isPlaying is true. So this needs to
+    // differ from PLAY_SONG by exactly one field, and does.
+    case actions.LOAD_SONG: {
+      const song = action.payload;
+      const existingIndex = state.queue.findIndex((i) => i?.id === song.id);
+      let newQueue = state.queue;
+      let newIndex = existingIndex;
+      if (existingIndex === -1) {
+        newIndex = newQueue.length;
+        newQueue = [...newQueue, song];
+      }
+      return {
+        ...state,
+        queue: newQueue,
+        currentIndex: newIndex,
+        isPlaying: false,
+        trackRequested: true
       };
     }
     case actions.SET_QUEUE:
@@ -279,8 +318,8 @@ export const PlayerProvider = ({ children }) => {
 
     // Don't load tracks on page mount unless user wants to play
     // This prevents slow initial loads
-    if (!state.isPlaying && lastLoadedIndexRef.current === -1) {
-      console.log('[PlayerContext] Skipping initial load until user clicks play');
+    if (!state.isPlaying && !state.trackRequested && lastLoadedIndexRef.current === -1) {
+      console.log('[PlayerContext] Skipping initial load — queue restored, nothing requested');
       return;
     }
 
@@ -332,7 +371,7 @@ export const PlayerProvider = ({ children }) => {
       console.error('[PlayerContext] Error loading track:', error);
       lastLoadedIndexRef.current = -1; // Reset on error to allow retry
     });
-  }, [state.currentIndex, state.isPlaying, state.queue]); // Depend on both currentIndex AND isPlaying
+  }, [state.currentIndex, state.isPlaying, state.queue, state.trackRequested]);
 
   // Control play/pause when user toggles (but track is already loaded)
   useEffect(() => {
