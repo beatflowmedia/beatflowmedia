@@ -69,13 +69,79 @@ function masterDownloadFilename(title, isrc) {
   return safe + ' [' + normaliseIsrc(isrc) + '].' + MASTER_EXTENSION;
 }
 
+/**
+ * Default Firebase Storage bucket, in one place rather than in every caller.
+ *
+ * READ LAZILY, and that is not a style choice. As a module-level constant it was
+ * evaluated at require() time, which in the scripts is BEFORE lib/admin.js loads .env.
+ * The name came out as the empty project id plus a suffix -- ".firebasestorage.app" --
+ * an invalid bucket against which every existence probe is meaningless. A verifier
+ * that writes, pointed at a bucket that cannot exist, is how a correction becomes the
+ * next outage.
+ */
+function firebaseMasterBucket() {
+  return process.env.FIREBASE_STORAGE_BUCKET
+    || (process.env.FIREBASE_PROJECT_ID ? process.env.FIREBASE_PROJECT_ID + '.firebasestorage.app' : '')
+    || 'beatflowmedia.firebasestorage.app';
+}
+
+/**
+ * WHERE A RECORD'S MASTER LIVES. The single answer to that question.
+ *
+ * WHY THIS EXISTS
+ * The rule was implemented twice. download-master.js resolved a master from either
+ * backend; verify-masters.js had its own version that knew only about R2 and ISRCs.
+ * The verifier therefore judged every Firebase-backed record undeliverable, and
+ * because it writes, it set previewOnly on 62 perfectly sellable tracks -- whole
+ * albums turned "Preview only" on the storefront while their masters sat untouched in
+ * admin-uploads/station-recovered/ and artist-uploads/full/.
+ *
+ * A guard that models the system differently from the code it guards does not just
+ * miss faults. It invents them, and this one invented them with a write.
+ *
+ * So the resolution order is stated once, here, and both the delivery path and the
+ * verifier read it. Adding a third backend is one edit, and nothing can be taught
+ * about it in only half the places.
+ *
+ *   1. masterPath + masterBackend 'r2'  -> R2 at that exact key
+ *   2. masterPath                       -> Firebase Storage at that exact path
+ *   3. isrc                             -> R2 at masters/<ISRC>.wav, by convention
+ *
+ * An explicit pointer beats a derived one whenever both exist: it says WHICH file,
+ * not which file we would expect. And an absent masterBackend means firebase, never
+ * "guess" -- the records linked before R2 existed carry no discriminator, and that
+ * was the only possibility at the time.
+ *
+ * @param {object} song
+ * @returns {{backend:'r2'|'firebase', key:string, derived:boolean, bucket?:string}|null}
+ *          null when the record names no master at all.
+ */
+function resolveMasterSource(song) {
+  if (!song || typeof song !== 'object') return null;
+
+  const storedPath = typeof song.masterPath === 'string' ? song.masterPath.trim() : '';
+  const backend = song.masterBackend === 'r2' ? 'r2' : 'firebase';
+
+  if (storedPath) {
+    return backend === 'r2'
+      ? { backend: 'r2', key: storedPath, derived: false }
+      : { backend: 'firebase', key: storedPath, derived: false, bucket: firebaseMasterBucket() };
+  }
+
+  // No explicit pointer: fall back to the seeded convention, which needs a valid ISRC.
+  if (!isValidIsrc(normaliseIsrc(song.isrc))) return null;
+  return { backend: 'r2', key: masterObjectKey(song.isrc), derived: true };
+}
+
 module.exports = {
   MASTER_PREFIX,
   MASTER_EXTENSION,
   MASTER_URL_TTL_SECONDS,
+  firebaseMasterBucket,
   ISRC_PATTERN,
   normaliseIsrc,
   isValidIsrc,
   masterObjectKey,
-  masterDownloadFilename
+  masterDownloadFilename,
+  resolveMasterSource
 };

@@ -18,6 +18,8 @@ const { presignGetObject } = require('./lib/r2-presign');
 const { resolveMasterEntitlement } = require('./lib/entitlement');
 const {
   masterObjectKey,
+  firebaseMasterBucket,
+  resolveMasterSource,
   masterDownloadFilename,
   MASTER_URL_TTL_SECONDS
 } = require('./lib/masters');
@@ -154,11 +156,16 @@ exports.handler = async (event) => {
     let filename;
     let url;
 
-    const storedPath = typeof song.masterPath === 'string' ? song.masterPath.trim() : '';
-    // Which store the path refers to. Defaults to firebase so the 33 records linked
-    // before R2 existed keep working without a backfill -- an absent discriminator
-    // must never mean "guess", and firebase was the only possibility at the time.
-    const backend = song.masterBackend === 'r2' ? 'r2' : 'firebase';
+    // RESOLVED BY THE SHARED RULE, not derived here.
+    //
+    // These two lines used to live in this file alone, and scripts/verify-masters.js
+    // carried its own partial version that knew only about R2. The verifier therefore
+    // judged every Firebase-backed record undeliverable and, because it writes, set
+    // previewOnly on 62 sellable tracks. One rule, two implementations, and the copy
+    // that drifted was the one holding a pen.
+    const source = resolveMasterSource(song);
+    const storedPath = source && !source.derived ? source.key : '';
+    const backend = source ? source.backend : 'firebase';
 
     if (storedPath && backend === 'r2') {
       // ---- Cloudflare R2, explicit path -------------------------------------

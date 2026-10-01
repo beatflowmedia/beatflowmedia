@@ -134,13 +134,21 @@ async function main() {
   loadEnv();
 
   const { presignGetObject } = require(path.join(ROOT, 'netlify', 'functions', 'lib', 'r2-presign.js'));
-  const { masterObjectKey } = require(path.join(ROOT, 'netlify', 'functions', 'lib', 'masters.js'));
+  const { masterObjectKey, resolveMasterSource, firebaseMasterBucket } =
+    require(path.join(ROOT, 'netlify', 'functions', 'lib', 'masters.js'));
   const { planMasterAvailability, describeMasterPlan } =
     require(path.join(ROOT, 'netlify', 'functions', 'lib', 'master-availability.js'));
 
   console.log('');
   console.log(APPLY ? 'APPLYING previewOnly corrections' : 'DRY RUN - nothing will be written');
 
+  // The storage bucket is needed for the Firebase half of the master check below.
+  // Derived from the project id rather than read from an env var, because no env var
+  // holds it -- and a check that silently skips when a variable is unset would be the
+  // same class of fault this whole block exists to correct.
+  // loadEnv() runs inside initAdmin, so the bucket cannot be computed from
+  // process.env in this argument -- it would be read before .env exists. Hence the
+  // plain init here and firebaseMasterBucket() at the point of use, after env is up.
   const { admin, projectId, via } = initAdmin();
   console.log(`  firebase    : ${via}`);
   console.log(`  project     : ${projectId}`);
@@ -157,17 +165,48 @@ async function main() {
   console.log('');
   console.log('  probing masters...');
 
-  const probeable = songs.filter((s) => {
-    try { return !!masterObjectKey(s.isrc); } catch { return false; }
-  });
+  // WHERE TO LOOK comes from resolveMasterSource, not from this file.
+  //
+  // This used to probe R2 at masters/<ISRC>.wav and nothing else, which is only one of
+  // the two places a master can live. Every Firebase-backed record was therefore judged
+  // absent, and since this script WRITES, it set previewOnly on 62 deliverable tracks
+  // and turned whole albums into "Preview only" on the storefront.
+  //
+  // The rule now has one home, shared with download-master.js. If the verifier and the
+  // delivery path can disagree about where a file is, the verifier will eventually
+  // punish records for the disagreement.
+  const resolved = songs
+    .map((song) => ({ song, source: resolveMasterSource(song) }))
+    .filter((r) => r.source);
 
-  const results = await mapLimit(probeable, CONCURRENCY, async (song) => {
+  const byBackend = resolved.reduce((acc, r) => {
+    acc[r.source.backend] = (acc[r.source.backend] || 0) + 1;
+    return acc;
+  }, {});
+  console.log(`  resolvable  : ${resolved.length}  (` +
+    Object.entries(byBackend).map(([k, v]) => `${k} ${v}`).join(', ') + ')');
+
+  const fbBucket = admin.storage().bucket(firebaseMasterBucket());
+  console.log(`  fb bucket   : ${fbBucket.name}`);
+
+  const results = await mapLimit(resolved, CONCURRENCY, async ({ song, source }) => {
+    if (source.backend === 'firebase') {
+      try {
+        const [exists] = await fbBucket.file(source.key).exists();
+        return { id: song.id, present: exists };
+      } catch {
+        // Undetermined, never "absent". Reading an error as absence is precisely the
+        // mistake that caused this correction.
+        return { id: song.id, present: null };
+      }
+    }
+
     const url = presignGetObject({
       accessKeyId: r2.accessKeyId,
       secretAccessKey: r2.secretAccessKey,
       endpoint: r2.endpoint,
       bucket: r2.bucket,
-      key: masterObjectKey(song.isrc),
+      key: source.key,
       expiresIn: PROBE_TTL,
       method: 'HEAD'
     });
