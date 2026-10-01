@@ -32,7 +32,6 @@
 // invent a sibling for it.
 import { useState, useEffect } from 'react';
 import { Box, Skeleton } from '@mui/material';
-import MusicNote from '@mui/icons-material/MusicNote';
 import { getPlaceholderImage } from '../utils/placeholders';
 
 export default function OptimizedImage({
@@ -76,31 +75,37 @@ export default function OptimizedImage({
         ...sx
       }}
     >
+      {/* ONE placeholder, and it only animates when something is actually loading.
+        *
+        * MEASURED on /browse/library with Playwright, before this change:
+        *
+        *     img elements    503        img broken   0
+        *     img loaded       45        failed       0
+        *     wave skeletons  458        DOM nodes   12,013
+        *
+        * The images were never the problem -- nothing was broken and every request
+        * returned 200. 458 CSS wave animations were running at once, each a moving
+        * gradient the compositor repaints forever.
+        *
+        * They were running for images that had not STARTED. loading="lazy" defers an
+        * off-screen image indefinitely, and `loading` state here only clears on
+        * onLoad, so every off-screen tile shimmered "working on it" while nothing was
+        * in flight. The animation was not just expensive, it was describing something
+        * that was not happening.
+        *
+        * So: animate only when `priority`, which is what an above-the-fold image is
+        * marked with. Everything else gets a still tile until its own load begins.
+        *
+        * The MusicNote block that used to sit here is gone. It rendered at zIndex 1
+        * under a Skeleton at zIndex 2 that filled the box opaquely -- 458 icons mounted
+        * and not one of them visible, on either state of `loading`.
+        */}
       {loading && showPlaceholder && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'grey.900',
-            zIndex: 1
-          }}
-        >
-          <MusicNote sx={{ fontSize: 48, color: 'grey.700' }} />
-        </Box>
-      )}
-
-      {loading && (
         <Skeleton
           variant="rectangular"
           width="100%"
           height="100%"
-          animation="wave"
+          animation={priority ? 'wave' : false}
           sx={{
             position: 'absolute',
             top: 0,
