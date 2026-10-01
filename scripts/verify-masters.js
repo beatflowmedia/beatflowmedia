@@ -44,31 +44,8 @@ const PROBE_TTL = 120; // seconds a probe URL stays valid; short, they are used 
 
 
 
-function r2Config() {
-  const cfg = {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    endpoint: process.env.R2_MASTERS_ENDPOINT,
-    bucket: process.env.R2_MASTERS_BUCKET
-  };
-  const missing = Object.entries(cfg).filter(([, v]) => !v).map(([k]) => k);
-  if (missing.length) {
-    const names = {
-      accessKeyId: 'R2_ACCESS_KEY_ID',
-      secretAccessKey: 'R2_SECRET_ACCESS_KEY',
-      endpoint: 'R2_MASTERS_ENDPOINT',
-      bucket: 'R2_MASTERS_BUCKET'
-    };
-    throw new Error(
-      'R2 is not configured: missing ' + missing.map((m) => names[m]).join(', ') + '\n' +
-      '      Create the private masters bucket and a GetObject-only token, then set\n' +
-      '      these four. Until then this script cannot tell a missing master from an\n' +
-      '      unreachable one, and refuses to guess.'
-    );
-  }
-  return cfg;
-}
-
+// r2Config now lives in netlify/functions/lib/r2-presign.js — see the note there
+// on why three copies of it existed and what that cost.
 /**
  * HEAD one presigned URL.
  * @returns {Promise<true|false|null>} true = exists, false = confirmed absent,
@@ -133,7 +110,7 @@ async function verifyFlags(db, changes, expected) {
 async function main() {
   loadEnv();
 
-  const { presignGetObject } = require(path.join(ROOT, 'netlify', 'functions', 'lib', 'r2-presign.js'));
+  const { presignGetObject, r2Config } = require(path.join(ROOT, 'netlify', 'functions', 'lib', 'r2-presign.js'));
   const { masterObjectKey, resolveMasterSource, firebaseMasterBucket } =
     require(path.join(ROOT, 'netlify', 'functions', 'lib', 'masters.js'));
   const { planMasterAvailability, describeMasterPlan } =

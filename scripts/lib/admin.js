@@ -137,7 +137,21 @@ function args(argv = process.argv.slice(2)) {
     has: (flag) => argv.includes(flag),
     value: (name, dflt) => {
       const hit = argv.find((a) => a.startsWith('--' + name + '='));
-      return hit ? hit.slice(name.length + 3) : dflt;
+      if (hit) return hit.slice(name.length + 3);
+
+      // ALSO ACCEPT THE SPACE-SEPARATED FORM, because only accepting --name=value
+      // makes these flags fail OPEN.
+      //
+      // `migrate:masters -- --limit 1 --apply` was read as "no limit" and started
+      // migrating all 834 records. The flag existed precisely to trial one. A safety
+      // parameter that silently does nothing when mistyped is worse than no parameter:
+      // it reads as a seatbelt and is not fastened.
+      const idx = argv.indexOf('--' + name);
+      if (idx !== -1) {
+        const next = argv[idx + 1];
+        if (next !== undefined && !next.startsWith('--')) return next;
+      }
+      return dflt;
     }
   };
 }

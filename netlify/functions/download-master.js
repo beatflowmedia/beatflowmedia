@@ -14,7 +14,7 @@
 // download anything by typing someone else's id.
 
 const admin = require('firebase-admin');
-const { presignGetObject } = require('./lib/r2-presign');
+const { presignGetObject, r2Config } = require('./lib/r2-presign');
 const { resolveMasterEntitlement } = require('./lib/entitlement');
 const {
   masterObjectKey,
@@ -67,22 +67,8 @@ const fail = (statusCode, message, extra) => ({
   body: JSON.stringify({ error: message, ...(extra || {}) })
 });
 
-/** Refuse loudly at boot rather than presigning with undefined and 403-ing later. */
-function r2Config() {
-  const cfg = {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    endpoint: process.env.R2_MASTERS_ENDPOINT,
-    bucket: process.env.R2_MASTERS_BUCKET
-  };
-  const missing = Object.keys(cfg).filter((k) => !cfg[k]);
-  if (missing.length) {
-    const err = new Error('Master delivery is not configured: missing ' + missing.join(', '));
-    err.statusCode = 503;
-    throw err;
-  }
-  return cfg;
-}
+// r2Config lives in lib/r2-presign.js — one home for the env var contract.
+// It had three copies; see the note there for what that cost.
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {

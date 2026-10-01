@@ -106,4 +106,45 @@ function presignGetObject(options) {
   return url.protocol + '//' + host + canonicalUri + '?' + canonicalQuery + '&X-Amz-Signature=' + signature;
 }
 
-module.exports = { presignGetObject, encodeRfc3986, encodePath, amzDate };
+
+/**
+ * R2 credentials and target, from the environment, in ONE place.
+ *
+ * This function existed three times -- in download-master.js, in verify-masters.js, and
+ * in the migration script that was being written when this was noticed. Each copy named
+ * its own env vars, and one of them got the endpoint variable wrong
+ * (R2_ENDPOINT rather than R2_MASTERS_ENDPOINT), which fails as "missing endpoint" at
+ * the point of use rather than as a typo at the point of writing.
+ *
+ * The same shape as the master-resolution bug it was written alongside: one rule, three
+ * implementations, and nothing to stop them drifting. The env var NAMES are the
+ * contract here, so the contract gets one home.
+ *
+ * Throws rather than returning a half-filled object, because presigning with undefined
+ * produces a URL that 403s later, somewhere far from the cause.
+ */
+function r2Config() {
+  const cfg = {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    endpoint: process.env.R2_MASTERS_ENDPOINT,
+    bucket: process.env.R2_MASTERS_BUCKET
+  };
+  const missing = Object.keys(cfg).filter((k) => !cfg[k]);
+  if (missing.length) {
+    const err = new Error(
+      'R2 is not configured: missing ' +
+      missing.map((k) => ({
+        accessKeyId: 'R2_ACCESS_KEY_ID',
+        secretAccessKey: 'R2_SECRET_ACCESS_KEY',
+        endpoint: 'R2_MASTERS_ENDPOINT',
+        bucket: 'R2_MASTERS_BUCKET'
+      })[k]).join(', ')
+    );
+    err.statusCode = 503;
+    throw err;
+  }
+  return cfg;
+}
+
+module.exports = { presignGetObject, r2Config, encodeRfc3986, encodePath, amzDate };

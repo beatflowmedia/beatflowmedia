@@ -49,7 +49,7 @@
 // from importing outside it. Nothing in the browser needs this -- previewOnly is
 // READ by the UI, but deriving it is tooling.
 
-const { masterObjectKey, isValidIsrc } = require('./masters');
+const { masterObjectKey, isValidIsrc, resolveMasterSource } = require('./masters');
 
 /** The station's rule, stated once. A missing field means sellable. */
 function isSellable(song) {
@@ -111,7 +111,12 @@ function planMasterAvailability(input) {
         id: song.id,
         label,
         isrc: song.isrc,
-        key: masterObjectKey(song.isrc),
+        // The key the master was ACTUALLY resolved from, not a reconstructed
+        // masters/<ISRC>.wav. The reconstruction read 'master found at
+        // masters/QZTB22528026.wav' for a file that lives in Firebase Storage and
+        // is a 404 in R2 -- a true verdict reported with a false reason, which is
+        // how a correct tool still loses the reader's trust.
+        key: (resolveMasterSource(song) || {}).key || masterObjectKey(song.isrc),
         action: CLEAR,
         reason: 'master exists; the blanket previewOnly flag is holding back a deliverable record'
       });
@@ -123,7 +128,7 @@ function planMasterAvailability(input) {
         id: song.id,
         label,
         isrc: song.isrc,
-        key: masterObjectKey(song.isrc),
+        key: (resolveMasterSource(song) || {}).key || masterObjectKey(song.isrc),
         action: SET,
         reason: 'SELLABLE BUT UNDELIVERABLE — a purchase would deliver the 30-second preview'
       });

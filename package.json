@@ -67,6 +67,7 @@
     "test:functions": "jest netlify/functions/",
     "fix:prices": "node scripts/fix-catalog-prices.js",
     "verify:masters": "node scripts/verify-masters.js",
+    "migrate:masters": "node scripts/migrate-masters-to-r2.js",
     "verify:terms": "node scripts/verify-terms.js",
     "verify:sponsor": "node scripts/verify-sponsor-validation.js",
     "verify:featured": "node scripts/verify-featured-artists.js",

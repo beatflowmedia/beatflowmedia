@@ -86,6 +86,44 @@ function firebaseMasterBucket() {
 }
 
 /**
+ * The R2 key a record's master SHOULD live at. One rule, so a migration and a lookup
+ * cannot disagree about where a file was put.
+ *
+ * TWO KEY SHAPES, because the catalogue has two kinds of record:
+ *
+ *   masters/<ISRC>.<ext>       a commercial release. ISRC is an industry identifier
+ *                              that already uniquely names the recording, and it
+ *                              survives a re-import, a retitle and a re-encode.
+ *   masters/id/<docId>.<ext>   everything else. 772 of the 834 Firebase-backed
+ *                              masters are production-library cues with no ISRC and
+ *                              never will have one -- they are not distributed.
+ *
+ * The Firestore document id is the right fallback precisely because it is opaque. The
+ * paths being replaced were built from titles, which is how "What We Don't Say" became
+ * `audio/What We Don&apos;t Say.mp3` -- an HTML entity encoded into a storage key,
+ * pointing at a file that does not exist. A key derived from a display string inherits
+ * every quoting bug that display string ever passes through.
+ *
+ * THE EXTENSION IS CARRIED, NOT ASSUMED. MASTER_EXTENSION is 'wav' and the catalogue's
+ * masters are 822 mp3 to 12 wav, averaging 7.6MB -- a four-minute WAV is nearer 40MB.
+ * Writing them all to `.wav` would put a false statement in the canonical key forever.
+ *
+ * @param {object} song   needs id, and isrc when it has one
+ * @param {string} ext    real extension of the file being stored, without the dot
+ */
+function masterKeyFor(song, ext) {
+  const clean = String(ext || '').replace(/^\./, '').toLowerCase() || MASTER_EXTENSION;
+  const isrc = normaliseIsrc(song && song.isrc);
+  if (isValidIsrc(isrc)) return MASTER_PREFIX + '/' + isrc + '.' + clean;
+  if (!song || !song.id) {
+    const err = new Error('Record has neither a valid ISRC nor an id; its master cannot be keyed.');
+    err.statusCode = 422;
+    throw err;
+  }
+  return MASTER_PREFIX + '/id/' + song.id + '.' + clean;
+}
+
+/**
  * WHERE A RECORD'S MASTER LIVES. The single answer to that question.
  *
  * WHY THIS EXISTS
@@ -143,5 +181,6 @@ module.exports = {
   isValidIsrc,
   masterObjectKey,
   masterDownloadFilename,
+  masterKeyFor,
   resolveMasterSource
 };
