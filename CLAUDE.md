@@ -1249,3 +1249,81 @@ price. In licensing the product is permission and curation, where 754 tracks is 
 | **Public performance right** — playing a recording in a commercial space is a use legally separate from copying or syncing it | A restaurant wanting 25 tracks for business hours | Needs its own product; `Terms.js` already reserves it. Direct licensing could bypass PROs, but only with 100% writer share — unevidenced today |
 | **Delivery vs grant** — what you receive is separable from what you may do | Whether venue subscriptions include downloads | Creator yes, venue no. Stream-only is what makes cancellation mean anything |
 | **Catalogue breadth vs curation** — streaming sells breadth, licensing sells permission | Whether the four tiers should become streaming plans | Keep them as licensing; 169 tracks cannot win a breadth comparison |
+
+## 134 records were taking money for a 30-second preview — 2026-09-30
+
+Found by walking Downloads/Music recursively after Percy asked whether the folders
+needed recursing. They did: the first audit read one level, the real tree holds **1007
+audio files** (697 wav / 300 mp3 / 10 m4a), 5 of them nested two deep.
+
+**`npm run verify:masters` already existed and already reported this. Nobody had run
+it.** 134 of the 169 commercial releases were `previewOnly: false` with no master
+behind them, so the purchase path fell through to `audioUrl` -- the preview. Live, on
+the deployed site, because production reads the same database.
+
+**The lesson is not that the check was missing. It is that a check nobody runs is a
+check that does not exist.** A `verify:*` script earns its keep only when something
+makes it run; until then it is a comment that happens to be executable.
+
+Applied: 134 blocked, re-read and verified. Sellable commercial releases 169 -> 35.
+
+### What the recursion changed
+
+A disk-vs-database audit keyed on FOLDER NAME reported 35 tracks missing. Recursing and
+checking each against the catalogue cut that to 23, and caught a landmine:
+
+**"I Should of Shown up For You" is already catalogued as the album "Should of Shown
+Up"** -- all 12 tracks, title for title. The dry run planned to ingest them, and would
+NOT have attached them to that album: `albumIdByTitle` matches normalised titles, and
+"ishouldofshownupforyou" is not "shouldofshownup". The folder is not in `ALBUM_FOLDERS`
+either, so all 12 would have landed as PRODUCTION-MUSIC cues -- a commercial release
+duplicated into the library, at library prices, under a second name. Added to
+`SKIP_FOLDERS` with the reason.
+
+### Recovered: 14 tracks, and why they had been lost
+
+`ingest-production-library.js` grouped by `slug(collection) + '|' + normTitle(title)`
+-- correctly, since "two tracks called First Light in two collections are two products"
+-- and then checked the catalogue with a GLOBAL title set, undoing it. Fixed to a
+per-collection map.
+
+  10  Party songs          blocked by titles in Percy's own albums -- "Control Room" by
+                           Maps & Moments, "Stay Soft" by Unseen, "What Just Happened"
+                           by the album of that name
+   4  Sunset Chill Vibes   blocked by the "testing" junk album
+
+The 4 junk records (album "testing", created 2026-07-16, no masterPath, **0 purchases
+referencing them**) were backed up and deleted. Four real tracks had been unsellable for
+months because four test records held their titles.
+
+Catalogue: 919 -> **933 songs**, 576 production / 165 commercial / 192 functional.
+Collections reconciled: `verify:collections` FAILED on the 14 new records with no
+`collectionId` -- the guard doing exactly its job one day after being written -- then
+passed at 768/768 after the backfill re-ran.
+
+### Still broken, and only Percy can fix it
+
+**Memphis Love: all 10 `.m4a` files are corrupt.** `ffprobe` returns `moov atom not
+found` on every one -- truncated downloads, not a codec problem. Worse than the 6
+previously recorded. Only "First Light" is catalogued, because it alone also has a good
+mp3 and wav, so a released album stands at 1 of 10 tracks. Re-download from Suno.
+
+**Arabic Deep House #1 is missing track 23 at source.** 26 files on disk, 26 in the
+database -- the ingest is faithful, the download is incomplete. Percy spotted this from
+the track count on the collection page.
+
+### Open
+
+`What She Said` holds 19 records against 18 files. The extra, "Like It's A Game To You",
+carries an **HTML entity inside its storage path** -- `Like It&apos;s A Game To You.mp3`
+-- and no file exists at either the escaped or the unescaped path. It is one of the 134
+now blocked, so it cannot be sold, but whatever wrote `&apos;` into a storage key has
+not been traced.
+
+### Ratchets
+
+Records sellable without a deliverable master — **0** (was 134).
+Songs with album "testing" — **0**.
+Library songs without a `collectionId` — **0** of 768.
+Tracks lost to a cross-collection title collision — **0**.
+Audio files in Downloads/Music outside a collection folder — **0** of 1007.
