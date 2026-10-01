@@ -208,6 +208,29 @@ async function main() {
     );
   }
 
+  // HTML ENTITIES IN A STORAGE KEY. Reported because they have happened, and because
+  // the code that wrote them has not been found.
+  //
+  // 14 records carried `audio/What We Don&apos;t Say.mp3` and
+  // `audio/Maps &amp; Moments (feat. SYNNE).mp3`. The objects existed under their real
+  // names the whole time; only the stored paths were escaped, so every one looked
+  // permanently undeliverable. An apostrophe in a title became an entity in a key.
+  //
+  // The repair was a one-off. This is not: whatever escaped them is still upstream of
+  // masterPath, in whatever UI or importer writes it, and will do it to the next
+  // upload. A check that costs nothing beats remembering.
+  const ENTITY = /&(apos|amp|quot|lt|gt|#39|#x27);/i;
+  const escaped = songs.filter(
+    (s) => typeof s.masterPath === 'string' && ENTITY.test(s.masterPath)
+  );
+  if (escaped.length) {
+    console.log('');
+    console.log('  WARN  ' + escaped.length + ' record(s) have an HTML entity in masterPath:');
+    escaped.slice(0, 8).forEach((s) => console.log('          ' + (s.title || s.id) + '  ->  ' + s.masterPath));
+    console.log('        The object almost certainly exists under the UNESCAPED name.');
+    console.log('        Fix the record, and find what wrote the entity.');
+  }
+
   const plan = planMasterAvailability({ songs, masterPresence });
   const lines = describeMasterPlan(plan);
 
