@@ -285,13 +285,11 @@ export default function AdminDashboard() {
                   <div className="text-sm text-gray-400">Job application inbox</div>
                 </Link>
 
-                <Link
-                  to="/admin/panel"
-                  className="p-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition"
-                >
-                  <div className="font-semibold mb-1">Track Library</div>
-                  <div className="text-sm text-gray-400">Manage licensable content</div>
-                </Link>
+                {/* "Track Library -> /admin/panel" was here. The route does not exist,
+                    so the tile 404'd, and its job -- "Manage licensable content" -- is
+                    already done by the Content Hub tile two above, which works. Two
+                    controls for one job, one of them broken. Deleted rather than
+                    repointed: repointing would leave two tiles doing the same thing. */}
 
 <button
                   onClick={() => setActiveTab("marketing")}

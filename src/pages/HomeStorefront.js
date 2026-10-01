@@ -176,11 +176,19 @@ function HomeStorefront({
   };
 
   const handleLicenseTrack = (track) => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    // Navigate to track page for licensing details
+    // NO AUTH GATE HERE, and removing it is the fix rather than a loosening.
+    //
+    // This used to be `if (!user) navigate('/login')`. There is no /login route and
+    // never has been -- sign-in is a Google popup, not a page -- so a signed-out
+    // visitor clicking "License Track" landed on a 404. At the exact moment of
+    // purchase intent, the storefront threw them off the site.
+    //
+    // The gate was also in the wrong place even if the route had existed. This button
+    // opens the track's DETAIL page: the price, the duration, the licence terms. None
+    // of that needs an account, and demanding one before a buyer can read what they
+    // are buying loses the sale. The real gate is downstream in PurchaseButton, which
+    // is where an identity is actually required, because a licence is recorded against
+    // an account.
     navigate(`/song/${track.id}`);
   };
 

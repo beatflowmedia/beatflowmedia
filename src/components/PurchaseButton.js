@@ -32,9 +32,9 @@ const PurchaseButton = ({
   // would be the wrong shape for it. Songs keep using track.previewOnly.
   previewOnly = false
 }) => {
-  const { user } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const { showAlert } = useModal();
+  const { showAlert, showConfirm } = useModal();
   const [loading, setLoading] = useState(false);
   const [purchased, setPurchased] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -110,11 +110,35 @@ const PurchaseButton = ({
     // ever have been BOUGHT this way. This is about not asking for a promise from
     // someone we cannot yet name.
     if (!user) {
-      await showAlert(
-        'Sign In Required',
-        'Please sign in to license music. Your license is recorded against your account.',
+      // Offer the sign-in rather than announcing the requirement.
+      //
+      // This was showAlert -- "Sign In Required", OK -- which told a buyer what was
+      // wrong and left them to find the remedy themselves. There is no /login page to
+      // send them to, so the only route back was spotting the account control in the
+      // shell. A wall with no door is the same dead end as the 404 this replaced, just
+      // politer about it.
+      const wantsToSignIn = await showConfirm(
+        'Sign in to license this track',
+        'Your licence is recorded against your account, so we need to know who you are before you accept the terms. Sign in with Google to continue.',
         'info'
       );
+      if (!wantsToSignIn) return;
+
+      try {
+        await signInWithGoogle();
+      } catch (error) {
+        // A popup the user closes themselves is a decision, not a failure, so it is
+        // not reported as one.
+        if (error?.code !== 'auth/popup-closed-by-user' &&
+            error?.code !== 'auth/cancelled-popup-request') {
+          await showAlert('Sign In Failed', error.message, 'error');
+        }
+      }
+      // Deliberately returns either way. `user` comes from context and is still stale
+      // in this closure, so continuing here would read null and fall through the rest
+      // of the flow. The buyer is now signed in and presses the button again, which is
+      // one extra click and always correct -- carrying on with a stale identity is how
+      // assent gets recorded against the wrong account.
       return;
     }
 
