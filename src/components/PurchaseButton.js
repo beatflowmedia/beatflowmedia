@@ -284,9 +284,25 @@ const PurchaseButton = ({
           ? { minWidth: '90px', minHeight: 44, fontSize: '0.75rem' }
           : { minHeight: 44 }}
       >
+        {/* THE LABEL HAS TO DESCRIBE WHAT THE CONTROL DOES.
+          *
+          * This always read "License for $1.99" -- but when `offersOptions` is true the
+          * button does not buy anything at that price. It opens PurchaseOptionsDialog,
+          * which offers THREE: the single, the album bundle at its own price, and the
+          * cheapest subscription plan. Quoting one of them on the button advertises a
+          * price the buyer may well not pay, and makes a chooser look like a checkout.
+          *
+          * The code already knew: aria-haspopup="dialog" is set from the same flag, so
+          * a screen reader was told it opens a dialog while the visible label said it
+          * was a purchase. The two now agree.
+          *
+          * Where there is genuinely one price -- albums, and songs rendered without a
+          * track object -- the price stays on the button, because there it is true. */}
         {loading
           ? 'Processing...'
-          : (compact ? formatPrice(displayPrice) : `License for ${formatPrice(displayPrice)}`)}
+          : offersOptions
+            ? (compact ? 'Options' : 'License Options')
+            : (compact ? formatPrice(displayPrice) : `License for ${formatPrice(displayPrice)}`)}
       </Button>
 
       {offersOptions && (

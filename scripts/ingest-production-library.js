@@ -247,10 +247,24 @@ function toMp3(sourcePath) {
     process.exit(1);
   }
 
-  // Existing titles, so a re-run resumes instead of duplicating.
-  const existing = new Set();
-  const snap = await db.collection('songs').select('title').get();
-  snap.forEach((doc) => existing.add(normTitle(doc.get('title'))));
+  // Existing titles PER COLLECTION, so a re-run resumes instead of duplicating.
+  //
+  // This used to be one flat Set of every title in the catalogue, which made a re-run
+  // skip any track whose title existed ANYWHERE -- see the comment at the skip itself.
+  // Keyed on the collection slug, matching the grouping key, so the two agree about
+  // what makes a production-library track unique.
+  //
+  // `collectionId` is read first and `album` is the fallback: records written before
+  // backfill-collections.js ran carry only the folder name in `album`, and a resume
+  // has to recognise its own earlier output or it duplicates everything.
+  const existingByCollection = new Map();
+  const snap = await db.collection('songs').select('title', 'collectionId', 'album').get();
+  snap.forEach((doc) => {
+    const key = slug(doc.get('collectionId') || doc.get('album') || '');
+    if (!key) return;
+    if (!existingByCollection.has(key)) existingByCollection.set(key, new Set());
+    existingByCollection.get(key).add(normTitle(doc.get('title')));
+  });
 
   // Existing albums by normalised title. A folder matching one ATTACHES to it rather
   // than creating a second album with the same name -- three folders already match
@@ -260,7 +274,7 @@ function toMp3(sourcePath) {
   const albumSnap = await db.collection('albums').get();
   albumSnap.forEach((doc) => albumIdByTitle.set(normTitle(doc.get('title')), doc.id));
 
-  console.log('Catalogue already holds ' + existing.size + ' distinct titles and ' +
+  console.log('Catalogue already holds ' + existingByCollection.size + ' collections and ' +
     albumIdByTitle.size + ' albums.');
   console.log('');
 
@@ -312,7 +326,29 @@ function toMp3(sourcePath) {
     const best = group[0];
     skipped.sameTrackOtherFormat += group.length - 1;
 
-    if (existing.has(normTitle(best.title))) { skipped.inCatalogue += 1; continue; }
+    // SCOPED TO THE COLLECTION, like the grouping key above it.
+    //
+    // This read `existing.has(normTitle(best.title))`, where `existing` is every
+    // distinct title in the whole `songs` collection. The grouping key two blocks up
+    // was deliberately made collection-scoped -- "Two tracks called 'First Light' in
+    // two collections are two products" -- and this line then threw that away by
+    // checking globally.
+    //
+    // It cost 14 tracks, silently, counted only as `skipped.inCatalogue`:
+    //
+    //   Party songs         7  blocked by titles in Percy's own albums -- "Control
+    //                          Room" by Maps & Moments, "Stay Soft" by Unseen,
+    //                          "What Just Happened" by the album of that name
+    //   Sunset Chill Vibes  4  blocked by the "testing" junk album
+    //   ...and the rest by other collections entirely.
+    //
+    // A production cue and a commercial release that happen to share a title are not
+    // the same product, and the one that loses is always the one ingested second.
+    const alreadyHere = existingByCollection.get(slug(best.collection));
+    if (alreadyHere && alreadyHere.has(normTitle(best.title))) {
+      skipped.inCatalogue += 1;
+      continue;
+    }
 
     plan.push({ ...best, art: artworkFor(best.file) });
     if (LIMIT && plan.length >= LIMIT) break;
