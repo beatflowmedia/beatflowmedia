@@ -12,6 +12,28 @@ import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
+/* THESE VALUES MUST STAY AS DOUBLE-QUOTED LITERALS. Do not move them to
+ * process.env.REACT_APP_*, however much the lint of it invites you to.
+ *
+ * BeatFlow Radio reads this file. radio/catalog.js does, verbatim:
+ *
+ *     const m = new RegExp(k + '\s*:\s*"([^"]+)"').exec(src);
+ *     const cfg = { projectId: get("projectId"), apiKey: get("apiKey") };
+ *     ... /storageBucket:\s*"([^"]+)"/
+ *
+ * It regexes apiKey, projectId and storageBucket out of the SOURCE TEXT. An env
+ * lookup produces no match, and the station's catalogue sync dies on it.
+ *
+ * It is a shared contract across two repositories with nothing enforcing it, so the
+ * only thing standing between it and a tidy-up is this comment. Changing the shape
+ * means changing catalog.js in the same breath.
+ *
+ * NOT A SECRET, which is the other reason to leave it alone. A Firebase web apiKey
+ * identifies the project and authorises nothing -- it ships inside every client
+ * bundle by necessity, and App Check is what actually stops abuse (see below).
+ * Netlify's scanner pattern-matches AIzaSy... and cannot know that, so the value is
+ * listed in SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES rather than hidden here.
+ */
 const firebaseConfig = {
   apiKey: "AIzaSyCoXc1YonnH1uW3P4OlAO6eAi911DdyHgs",
   authDomain: "beatflowmedia.firebaseapp.com",
