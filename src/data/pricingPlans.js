@@ -1,3 +1,4 @@
+import { LICENSE_TERM } from '../utils/licenseTerms';
 // src/data/pricingPlans.js
 // Centralized pricing plan configuration for /explore-premium
 // This file is the single source of truth for all pricing data
@@ -96,7 +97,7 @@ export const PRICING_PLANS = {
     description: 'Educational discount with commercial licensing',
 
     // License Type
-    licenseType: 'time-bound', // Licenses valid during active subscription + published content
+    licenseType: LICENSE_TERM.TIME_BOUND, // Licenses valid during active subscription + published content
 
     // Subscriber Discount
     perTrackDiscount: 0.20, // 20% off perpetual licenses
@@ -144,7 +145,7 @@ export const PRICING_PLANS = {
     description: 'For active content creators publishing regularly',
 
     // License Type
-    licenseType: 'time-bound', // Licenses valid during active subscription + published content
+    licenseType: LICENSE_TERM.TIME_BOUND, // Licenses valid during active subscription + published content
 
     // Subscriber Discount
     perTrackDiscount: 0.30, // 30% off perpetual licenses
@@ -192,7 +193,7 @@ export const PRICING_PLANS = {
     description: 'For professional productions, broadcast, and client work',
 
     // License Type
-    licenseType: 'time-bound', // Licenses valid during active subscription + published content
+    licenseType: LICENSE_TERM.TIME_BOUND, // Licenses valid during active subscription + published content
 
     // Subscriber Discount
     perTrackDiscount: 0.40, // 40% off perpetual licenses
@@ -240,7 +241,7 @@ export const PRICING_PLANS = {
     description: 'For teams managing multiple client projects',
 
     // License Type
-    licenseType: 'time-bound', // Licenses valid during active subscription + published content
+    licenseType: LICENSE_TERM.TIME_BOUND, // Licenses valid during active subscription + published content
 
     // Subscriber Discount
     perTrackDiscount: 0.50, // 50% off perpetual licenses

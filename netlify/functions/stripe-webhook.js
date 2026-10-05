@@ -4,6 +4,8 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 const { sendEmail } = require('./lib/send-email');
+// Canonical licence vocabulary, shared with the app in the manner of utils/pricing.js.
+const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
 
 /**
  * The contract half of a purchase record: which license version the buyer accepted,
@@ -444,7 +446,12 @@ async function handleCheckoutSessionCompleted(session) {
               trackId: trackId,
               purchaseId: purchaseRef.id,
               tier: subscriberTier,
-              licenseType: 'perpetual',
+              // Was `licenseType: 'perpetual'` beside a purchase row writing
+              // `licenseType: 'personal'`. Those never contradicted each other -- one
+              // named the TERM and the other the SCOPE, under one field name, which is
+              // worse than a contradiction because nothing can detect it. Both axes are
+              // now written explicitly from one definition.
+              ...licenseFields(ONE_OFF_DOWNLOAD),
               status: 'active',
               purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
               validWhileSubscribed: false,
@@ -570,7 +577,7 @@ async function handleCheckoutSessionCompleted(session) {
         trackId: itemId,
         purchaseId: purchaseRef.id,
         tier: subscriberTier,
-        licenseType: 'perpetual',
+        ...licenseFields(ONE_OFF_DOWNLOAD),
         status: 'active',
         purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
         validWhileSubscribed: false,
