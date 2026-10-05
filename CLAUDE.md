@@ -1751,3 +1751,35 @@ ignore the result.
   string `setCustomUserClaims` in its own source, so the scan found itself. Fixed by
   excluding the file and requiring a call, not a mention. Third time this class of bug
   has appeared in a verifier here, after `verify-links` and `verify-domains`.
+
+### Scope: artist join is deferred — 2026-10-05
+
+Percy parked the artist-join side of the platform (artist signup, submissions, Stripe
+Connect onboarding, payouts) until BFMG is established on its own catalogue sales.
+**Deferred, not cancelled** — the `config/comingSoon.js` doctrine applies: hidden, so
+launching it is one edit rather than archaeology.
+
+No coming-soon flag was added, because there is no entry point to gate. The artist-side
+UI is already dark: `StripeConnectOnboarding`, `ContentIngestionDashboard` and
+`ContentUpload` are imported nowhere. They are part of the 186 unreachable modules.
+
+That is the uncomfortable part, and it is the lesson worth keeping: those four functions
+were **deployed and addressable with no UI pointing at them**. An endpoint nobody can
+reach through the product is not an endpoint nobody can reach — and it is the one nobody
+is watching. Deployment decides reachability; hiding a feature never closes an endpoint.
+
+- **Buyer-side subscriptions are NOT deferred.** `SubscriptionManager` is live via
+  `/profile`, so `update-subscription` and the student/creator/pro/agency tiers stay.
+- **The four artist endpoints stay deployed**, now behind `requireSelf`/`requireAdmin`.
+  Netlify has no per-function exclude, so suppressing them means moving files out of the
+  functions directory — churn now and archaeology later, for a surface that is already
+  authenticated and tested.
+- **Weight correction on the exposure figure.** `artistBalances` holds $217.12 across 10
+  docs, but `revenueAllocations` and `payouts` are **empty** and `totalPaidOut` is 0
+  everywhere. Nothing has ever paid out. That is dormant seed data, not money owed to
+  real artists. The hole was real — `request-payout` would have transferred against
+  those balances — but it was not $217 of obligation, and the earlier framing implied
+  more than the data supports.
+- **De-prioritised by this:** the 25 `firestore.rules` lines needing an ungranted
+  `token.admin` claim guard mostly artist-side collections, as does the rejected service
+  account that blocks granting it. Neither gates catalogue sales.
