@@ -49,26 +49,31 @@ const CATALOGUES = [
   }
 ];
 
-// Only meaningful inside the Production Library.
-const LIBRARY_FACETS = [
-  { id: 'usecase', label: 'By Use Case', icon: FaBriefcase, path: '/browse/usecase' },
-  { id: 'mood', label: 'By Mood', icon: FaHeart, path: '/browse/mood' },
-  { id: 'genre', label: 'By Genre', icon: FaMusic, path: '/browse/genre' },
-  // All three platform tabs removed -- TikTok, Instagram and YouTube. Each filtered on
-  // song.platforms, present on 0 of 562 library records, so each showed the same set as
-  // /browse/library. See config/browseCategories.js for the measurement and for why
-  // renaming to "Social Media" was rejected. They return when there are short edits.
-];
-
-const LIBRARY_PATHS = new Set(LIBRARY_FACETS.map((f) => f.path).concat('/browse/library'));
+// THE SECOND TIER IS GONE. "By Use Case", "By Mood" and "By Genre" lived here.
+//
+// None of them filtered anything. Measured across the 742 library tracks:
+//
+//     genre 0    mood 0    useCase 0    styleTags 0    duration 742
+//
+// and none of the three entries carried a `match` predicate, so all three rendered
+// the same 742 tracks as /browse/library under a different heading. Four tabs, one
+// answer -- the platform tabs again, one tier up.
+//
+// It also BROKE THE LAYOUT. The shell reserves a fixed height for one nav row; a
+// second tier ran to 171px over a main area starting at 112, so it covered the top of
+// the filter sidebar. The "Filters" heading sat underneath it.
+//
+// Narrowing belongs in BrowseFilters, which already derives its facets from the data
+// and offers one only when there is more than one value to choose between. It shows
+// Duration today because that is the only field with data, and a Genre or Mood section
+// will appear there by itself the day those are tagged -- no nav edit, no second list.
 
 const CategoryNav = () => {
   const location = useLocation();
   const path = location.pathname;
 
-  const inLibrary = LIBRARY_PATHS.has(path);
   const activeCatalogue =
-    path === '/' ? 'music' : path === '/browse/functional' ? 'functional' : inLibrary ? 'library' : null;
+    path === '/' ? 'music' : path === '/browse/functional' ? 'functional' : path === '/browse/library' ? 'library' : null;
 
   return (
     <div className="bg-gray-900 border-b border-gray-800">
@@ -99,31 +104,6 @@ const CategoryNav = () => {
           })}
         </nav>
 
-        {/* Tier 2 — how to narrow it, only where narrowing means something */}
-        {inLibrary && (
-          <nav
-            className="flex items-center gap-1 overflow-x-auto scrollbar-hide border-t border-gray-800 px-2"
-            aria-label="Narrow the library"
-          >
-            {LIBRARY_FACETS.map((facet) => {
-              const Icon = facet.icon;
-              const active = path === facet.path;
-              return (
-                <Link
-                  key={facet.id}
-                  to={facet.path}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex items-center gap-2 px-3 min-h-[44px] text-sm whitespace-nowrap rounded-md transition-colors ${
-                    active ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {facet.label}
-                </Link>
-              );
-            })}
-          </nav>
-        )}
       </div>
     </div>
   );

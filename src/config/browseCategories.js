@@ -58,10 +58,25 @@ export const BROWSE_CATEGORIES = {
     pool: ASSET_POOLS.PRODUCTION_MUSIC,
   },
 
-  // Facet landing pages — the library, narrowed further by the sidebar.
-  mood:    { title: 'Browse by Mood',     description: 'Find the perfect vibe for your content', pool: ASSET_POOLS.PRODUCTION_MUSIC },
-  genre:   { title: 'Browse by Genre',    description: 'Explore music by style and genre',       pool: ASSET_POOLS.PRODUCTION_MUSIC },
-  usecase: { title: 'Browse by Use Case', description: 'Music curated for specific content types', pool: ASSET_POOLS.PRODUCTION_MUSIC },
+  // mood / genre / usecase WERE HERE, and they filtered nothing. None carried a
+  // `match`, and the fields they name are empty across all 742 library tracks:
+  //
+  //     genre 0    mood 0    useCase 0    styleTags 0    duration 742
+  //
+  // So three headings rendered the same 742 tracks as /browse/library. The nav row
+  // carrying them also overflowed the shell's fixed nav height and covered the top of
+  // the filter sidebar -- the control that actually narrows anything.
+  //
+  // Narrowing is BrowseFilters' job. It derives its facets from the data and offers
+  // one only when there is more than one value, so a Genre or Mood section appears
+  // there by itself the day those fields are populated.
+  //
+  // GENRE SPECIFICALLY IS NOT OURS TO FILL. radio/catalog.js writes genre, genreSlug
+  // and styleTags and lists them among the fields it overwrites; the station has the
+  // data for 20 releases and is holding its push until ownership is settled. Writing
+  // it here would make BFMG the second writer of a field another system owns.
+  //
+  // All three 301 to /browse/library in public/_redirects.
 
   // Functional music is its own market -- wellness, clinics, focus and sleep apps --
   // and assetPools.js calls it PRD sub-brand #1. Mixing it into the production grid

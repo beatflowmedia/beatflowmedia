@@ -9,7 +9,22 @@
     "main rightpanel"
     "player player";
   grid-template-columns: 1fr var(--rightpanel-width, 0);
-  grid-template-rows: var(--navbar-height, 64px) var(--categorynav-height, 48px) 1fr var(--player-height, 90px);
+  /* The category-nav row is AUTO, not a fixed height.
+   *
+   * It was var(--categorynav-height, 48px), and the nav actually renders at 62px --
+   * its items carry min-h-[56px] plus padding. So main began 14px above where the nav
+   * ended and the nav sat on top of the content. With a second nav tier it ran to
+   * 171px over a main starting at 112 and covered the whole "Filters" heading.
+   *
+   * The height was DECLARED here and DETERMINED in CategoryNav.js, with nothing
+   * reconciling the two, so every nav change silently moved one and not the other.
+   * `auto` removes the second source: the row is whatever the nav is.
+   *
+   * --categorynav-height survives only for the two fixed-position right-panel calcs
+   * below, which are outside the grid and cannot read a row size. Its fallback is now
+   * 62px so those agree with reality; if the nav height changes, the panel's top drifts
+   * by a few pixels, which is a visible nuisance rather than content being covered. */
+  grid-template-rows: var(--navbar-height, 64px) auto 1fr var(--player-height, 90px);
   height: 100vh;
   width: 100vw;
   overflow: hidden;
@@ -81,7 +96,7 @@
   .rightPanel {
     position: fixed;
     right: 0;
-    top: calc(var(--navbar-height, 64px) + var(--categorynav-height, 48px));
+    top: calc(var(--navbar-height, 64px) + var(--categorynav-height, 62px));
     bottom: var(--player-height, 90px);
     width: 384px;
     max-width: 90vw;
@@ -105,7 +120,7 @@
   .rightPanel {
     position: fixed;
     right: 0;
-    top: calc(var(--navbar-height, 64px) + var(--categorynav-height, 48px));
+    top: calc(var(--navbar-height, 64px) + var(--categorynav-height, 62px));
     bottom: var(--player-height, 90px);
     width: 100vw;
     max-width: 100vw;

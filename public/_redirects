@@ -60,6 +60,9 @@
 /browse/tiktok                       /browse/library         301
 /browse/instagram                    /browse/library         301
 /browse/youtube                      /browse/library         301
+/browse/mood                         /browse/library         301
+/browse/genre                        /browse/library         301
+/browse/usecase                      /browse/library         301
 /resources/help-center               /support                301
 /resources/analytics-help-center     /support                301
 /resources/partners                  /about                  301
