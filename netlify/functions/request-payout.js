@@ -3,6 +3,7 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
+const { requireSelf } = require('./lib/require-auth');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -29,7 +30,18 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { artistId, requestedAmount } = JSON.parse(event.body);
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (err) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Malformed request body.' })
+      };
+    }
+
+    const { artistId, requestedAmount } = body;
 
     if (!artistId) {
       return {
@@ -37,6 +49,12 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({ error: 'Missing artistId' })
       };
     }
+
+    // This endpoint creates a Stripe transfer. `artistId` arrives from the caller, so
+    // it is checked against the verified token before a single balance is read -- the
+    // id in the body is a request, not an identity.
+    const auth = await requireSelf(event, artistId);
+    if (!auth.ok) return auth.response;
 
     console.log(`🎯 Payout request from artist: ${artistId}`);
 

@@ -27,11 +27,16 @@ Automated revenue distribution system that splits payments between BeatFlow Medi
    - Records purchases
    - Triggers revenue split
 
-2. **`process-revenue-split.js`** - Splits and transfers revenue
+2. **`lib/revenue-split.js`** - Splits revenue and credits the artist
    - Calculates 70/30 split
-   - Creates Stripe transfer
-   - Records transfer in Firestore
-   - Updates artist earnings
+   - Records the allocation in Firestore, keyed on the purchase id
+   - Increments the artist's available balance in the same transaction
+   - Does **not** create a Stripe transfer. Funds are held as a balance until the
+     artist requests a payout; `request-payout.js` is what moves money.
+
+   Called in-process by `stripe-webhook.js`. It is deliberately **not** an HTTP
+   endpoint: as `process-revenue-split.js` it was a public unauthenticated POST that
+   credited an artist 70% of an `amount` taken from the request body.
 
 3. **`create-connect-account.js`** - Artist onboarding
    - Creates Stripe Connect Express account
@@ -149,11 +154,14 @@ Response: { accountId, onboardingUrl }
 ```
 
 ### Process Revenue Split
+Not an endpoint. `stripe-webhook.js` calls it directly:
+```js
+const { allocateRevenueForPurchase } = require('./lib/revenue-split');
+await allocateRevenueForPurchase(db, { purchaseId, userId, itemId, itemType, amount });
+// -> { status: 'allocated' | 'already_allocated' | 'held', artistId, artistAmount, platformAmount }
 ```
-POST /.netlify/functions/process-revenue-split
-Body: { purchaseId, userId, itemId, itemType, amount }
-Response: { transferId, artistAmount, platformAmount }
-```
+`purchaseId` is the idempotency key, so a Stripe webhook retry cannot credit the
+artist twice.
 
 ### Get Payout History
 ```

@@ -2,6 +2,7 @@
 // Update user's Stripe subscription to a different plan
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
+const { requireSelf } = require('./lib/require-auth');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -25,7 +26,10 @@ exports.handler = async (event) => {
 
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    // Authorization is listed because the caller now sends a bearer token. The app is
+    // same-origin so no preflight happens today, but omitting it here is the kind of
+    // thing that fails later as a CORS error pointing nowhere near the cause.
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Content-Type': 'application/json'
   };
 
@@ -38,7 +42,18 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { userId, newPriceId } = JSON.parse(event.body);
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (err) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Malformed request body.' })
+      };
+    }
+
+    const { userId, newPriceId } = body;
     console.log('📦 Request:', { userId, newPriceId });
 
     if (!userId || !newPriceId) {
@@ -48,6 +63,11 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: 'Missing userId or newPriceId' })
       };
     }
+
+    // Changing a plan changes what Stripe bills. `userId` is caller-supplied, so it
+    // is checked against the verified token before the subscription is touched.
+    const auth = await requireSelf(event, userId);
+    if (!auth.ok) return auth.response;
 
     // Get user document
     const userDoc = await db.collection('users').doc(userId).get();

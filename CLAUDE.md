@@ -1497,7 +1497,7 @@ docs today because all 906 songs sit at 199 — that is luck, not safety.
 | `update-subscription.js` | `SubscriptionManager.js` | `userId`, `newPriceId` | changes a plan |
 | `approve-submission.js` | `contentIngestionService.js` | `submissionId` | publishes to catalogue |
 | `reject-submission.js` | `contentIngestionService.js` | `submissionId` | rejects a submission |
-| `process-revenue-split.js` | **none** | `purchaseId`, `amount` | writes revenue splits |
+| `process-revenue-split.js` | `stripe-webhook.js`, over HTTP | `purchaseId`, `amount` | credits artist balances |
 
 Grepped for `verifyIdToken`, `Authorization`, `Bearer`, `stripe-signature`,
 `constructEvent`, `requireAdmin`, `customClaims`. **Not one match in any of the six.**
@@ -1507,19 +1507,65 @@ Firestore security rules do not apply — the admin SDK bypasses them by design.
 Measured exposure: **10 `artistBalances` docs totalling $217.12** and **48
 `artistSubmissions`**. Small, but not hypothetical.
 
-**The fix is not six new token checks.**
-`netlify/functions/middleware/securityMiddleware.js` already exports
-`securityMiddleware({ requireAuth: true })` and is already proven in
-`api/admin/security-metrics.js` and `api/admin/user-management.js`. The middleware was
-built and then not applied — half an abstraction, which reads as done. Wrapping the five
-caller-having functions in the existing middleware is the whole change.
+**Two corrections to the above, found while fixing it.** Both were mine, both came from
+grepping too narrow a tree, and they are left visible rather than quietly edited:
 
-- **Fix:** wrap the five in `securityMiddleware({ requireAuth: true })` *and* check the
-  token's `uid` against the id in the body — authentication alone does not stop one
-  signed-in artist passing another's `artistId`.
-- **Percy's call, not mine:** `process-revenue-split` has no caller. Either it is
-  unfinished product (a webhook should call it) or it is dead. Revenue splitting is a
-  product decision, so it is flagged rather than deleted.
+1. **`process-revenue-split` was not uncalled.** `stripe-webhook.js:645` POSTed to it
+   over HTTP. The caller column said "none" because the grep covered only `src/`. A
+   server-to-server caller does not show up in a client-side search.
+2. **`securityMiddleware` is not "already proven".** It is unusable as written:
+   - It is curried through an `async` function, so `securityMiddleware(o)(handler)`
+     evaluates to a **Promise**. Netlify calls `exports.handler(event, context)`, and a
+     Promise is not callable — anything wired to it 500s on the first request. Verified
+     by requiring it and checking the type, not by reading it.
+   - Its only two users live in `netlify/functions/api/admin/`, which Netlify does not
+     pick up as functions at all (a nested directory needs a `dir/dir.js` entry file).
+     `netlify functions:list` does not show them. It has never run in production.
+   - It requires `jsonwebtoken`, which is in neither `dependencies` nor
+     `devDependencies` — it resolves only because firebase-admin pulls it in.
+
+   So it is not half an abstraction that merely went unapplied; it is an abstraction
+   that has never executed. Wiring money paths to 600 lines of never-run middleware
+   that also brings its own rate limiting, CORS and request sanitisation is a large
+   blast radius for a fix that needs twelve lines.
+
+**What was done instead.** `netlify/functions/lib/require-auth.js` extracts the
+verify-the-bearer-token pattern that *is* deployed and working in `create-checkout.js`
+and `download-master.js`, and exposes the two halves separately:
+
+| Helper | Proves | Used by |
+|---|---|---|
+| `requireUser(event)` | who is calling | base for the other two |
+| `requireSelf(event, claimedId)` | caller owns the record | `request-payout`, `create-connect-account`, `update-subscription` |
+| `requireAdmin(event)` | caller is a platform admin | `approve-submission`, `reject-submission` |
+
+`requireSelf` is the half that actually closes the IDOR; authentication alone does not
+stop one signed-in artist posting another's `artistId`. A platform admin may act for
+another account, which is not a loosening invented here — `firestore.rules` already lets
+`isPlatformAdmin()` update and delete records it does not own — and it is logged.
+
+**`process-revenue-split.js` was deleted, not guarded.** It could not take a user token,
+because its caller is a webhook. The logic moved to `lib/revenue-split.js` and
+`stripe-webhook.js` now calls it in-process, which:
+
+- removes the endpoint, so there is nothing to authenticate and no new secret to set,
+  rotate or get wrong;
+- removes the trust problem — `amount` now comes only from the verified Stripe session,
+  where before a caller could POST `{itemId: <any real song>, amount: 100000}` and add
+  $70,000 to that artist's `availableBalance`, which `request-payout` turns into a real
+  transfer. **That was the most severe of the nine: an open endpoint on the money path.**
+- makes it idempotent. The allocation doc id is now the purchase id and the balance is
+  incremented in the same transaction, so a Stripe webhook retry — which happens by
+  design — can no longer credit the artist twice. The old code used `.add()` plus a bare
+  `increment()`.
+- stops it lying. `fetch` does not reject on 4xx/5xx, so the old call logged
+  `✅ Revenue split triggered successfully` even when the call had failed. The single
+  signal that an artist had not been credited was a success message. Failures now land
+  in `failedTransfers`.
+
+**`approve-submission` and `reject-submission` needed no client change.**
+`contentIngestionService.js` was already sending `Authorization: Bearer …` on both. The
+server discarded it. Credentials were being presented and ignored.
 
 ### 2. 42 red suites, 2 real failures — the rest never compiled
 
@@ -1646,14 +1692,62 @@ product; `genreSlug` ownership with radio is unsettled and is a decision, not a 
   the database. Surfaced when assessing whether rules mitigated the six endpoints. They
   do not.
 
+### Found while fixing section 1: 25 rules that grant access to nobody
+
+`npm run verify:admins` (new) reconciles the admin list in `firestore.rules` against
+`src/utils/platformAdmins.js`. The lists agree. The third check does not pass:
+
+**25 lines of `firestore.rules` require `request.auth.token.admin == true`, and
+`setCustomUserClaims` is called nowhere in this repo.** That claim is never true for
+anybody, so those rules do not grant narrow access — they grant none. Lines 173, 188,
+234 and 291–335 are the pure ones (`allow read: if request.auth.token.admin == true`),
+so any client-side admin UI reading those collections is denied today. The rest are
+`uid == owner || token.admin`, which still work for the owner and never for an admin.
+
+This is why `approve-submission.js` existed as a function at all: the rules locked
+submission writes to a claim nobody holds, so the admin SDK was the only way in — and
+it checked nothing. Fixing the function closes the hole; it does not fix the rules.
+
+- **Not fixed here, deliberately.** The repair is either granting the claim to the two
+  canonical admins or changing 25 rule lines to `isPlatformAdmin()`, and both are a
+  Firestore rules deployment that wants testing on its own. Bundling a rules deploy into
+  an auth fix is how one of them gets blamed for the other.
+- **Blocked on credentials either way:** granting the claim needs the service account,
+  which still returns `16 UNAUTHENTICATED`.
+- `verify:admins` is deliberately **not** in `verify:all` while it is red. A known-red
+  check inside an aggregate makes the aggregate ignorable.
+
+Separately, `verify:all` ran 2 of 11 verifiers. It now runs the 8 static ones.
+`verify:masters`, `verify:terms` and `verify:collections` stay out because they need
+Firestore credentials and would fail on a machine that has none, which trains people to
+ignore the result.
+
 ### Ratchets
 
 | Measure | Today | Direction |
 |---|---|---|
-| Unauthenticated write endpoints | 6 (was 9) | to 0 |
+| Unauthenticated write endpoints | **0** (was 9) | hold at 0 |
+| `firestore.rules` lines needing an ungranted claim | 25 | to 0 |
+| Verifiers run by `verify:all` | 8 of 12 | may rise, never fall |
 | Unreachable modules under `src/` | 186 / 386 | may fall, never rise |
 | Duplicate basenames in `src/` | 20 | may fall, never rise |
 | Test suites failing to load | 40 | to 0 |
 | Suites covering only unreachable code | 16 | to 0 |
 | Domain rules with 3+ live copies | 3 | to 0 |
 | Files containing `TODO: Implement` | 14 | may fall, never rise |
+
+### Verified, not assumed
+
+- `require-auth.test.js` — 18 assertions, and the suite was **seen to fail**: planting a
+  `return auth` that skips the ownership check failed 4 tests including the IDOR one.
+  A green suite that has never been observed red is not evidence.
+- `npm run verify:all` — 8/8 pass, including `verify:radio`
+  ("RADIO PARSER OK — catalogue sync unaffected"). Nothing here touched
+  `src/firebaseConfig.js`, which is what radio's `catalog.js` parses by shape.
+- `npx react-scripts build` — exit 0, no new warnings.
+- Full suite: **145 passing, up from 127** (+18 new), with the same 2 pre-existing
+  failures and no new ones. The 42 load failures are unchanged and are section 2.
+- `verify:admins` itself passed on the first run and was **wrong to** — it contains the
+  string `setCustomUserClaims` in its own source, so the scan found itself. Fixed by
+  excluding the file and requiring a call, not a mention. Third time this class of bug
+  has appeared in a verifier here, after `verify-links` and `verify-domains`.

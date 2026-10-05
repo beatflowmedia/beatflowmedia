@@ -3,6 +3,7 @@
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
+const { requireSelf } = require('./lib/require-auth');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -26,12 +27,42 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { userId, email, country = 'US' } = JSON.parse(event.body);
-
-    if (!userId || !email) {
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (err) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Missing userId or email' })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Malformed request body.' })
+      };
+    }
+
+    const { userId, email: claimedEmail, country = 'US' } = body;
+
+    if (!userId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing userId' })
+      };
+    }
+
+    const auth = await requireSelf(event, userId);
+    if (!auth.ok) return auth.response;
+
+    // The body's `email` is a claim; the token's is verified. This account receives
+    // payouts, so the address it is opened against is not taken from the request when
+    // a verified one is available -- otherwise a caller could open a Connect account
+    // under someone else's user id against an address they control.
+    //
+    // The exception is an admin acting for another account: the admin's own address
+    // is verified but wrong for the artist's account, so the body is used there.
+    const email = auth.actingAsAdmin ? claimedEmail : (auth.email || claimedEmail);
+
+    if (!email) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing email' })
       };
     }
 

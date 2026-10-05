@@ -4,6 +4,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 const { sendEmail } = require('./lib/send-email');
+const { allocateRevenueForPurchase } = require('./lib/revenue-split');
 // Canonical licence vocabulary, shared with the app in the manner of utils/pricing.js.
 const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
 
@@ -637,26 +638,51 @@ async function handleCheckoutSessionCompleted(session) {
 
     console.log(`Purchase recorded for user ${userId}: ${itemType} ${itemId}`);
 
-    // Trigger revenue split (async - don't block webhook response)
+    // Credit the artist for this sale.
+    //
+    // This used to POST to /.netlify/functions/process-revenue-split -- an HTTP call
+    // from this site to itself. Two problems, now both gone:
+    //
+    //   1. That endpoint was public and unauthenticated, and it credited the artist
+    //      70% of an `amount` read straight from the request body. Anyone could
+    //      inflate a balance, and request-payout turns a balance into a real transfer.
+    //      Calling lib/revenue-split.js in-process leaves no endpoint to abuse, and
+    //      `amount` now comes only from the verified Stripe session below.
+    //   2. `fetch` does not reject on 4xx/5xx, so the old code logged "✅ Revenue
+    //      split triggered successfully" even when the call had failed. The one signal
+    //      that an artist had not been paid was a success message.
     if (itemType === 'song' || itemType === 'album') {
       try {
-        console.log('🔄 Triggering revenue split...');
-        // Call the revenue split function
-        await fetch(`${process.env.URL || 'https://beatflowmediagroup.com'}/.netlify/functions/process-revenue-split`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const split = await allocateRevenueForPurchase(db, {
+          purchaseId: purchaseRef.id,   // also the idempotency key
+          userId,
+          itemId,
+          itemType,
+          amount: session.amount_total / 100 // Convert to dollars
+        });
+        console.log(`Revenue split for ${purchaseRef.id}: ${split.status}`, {
+          artistId: split.artistId,
+          artistAmount: split.artistAmount
+        });
+      } catch (splitError) {
+        // Still not thrown: the purchase IS recorded and the buyer must not see a
+        // failed checkout because crediting the artist failed. But it is recorded
+        // where it can be found, rather than logged and lost.
+        console.error('Failed to allocate revenue split:', splitError.message);
+        try {
+          await db.collection('failedTransfers').add({
+            error: splitError.message,
+            stack: splitError.stack,
             purchaseId: purchaseRef.id,
             userId,
             itemId,
             itemType,
-            amount: session.amount_total / 100 // Convert to dollars
-          })
-        });
-        console.log('✅ Revenue split triggered successfully');
-      } catch (splitError) {
-        console.error('⚠️ Failed to trigger revenue split (will retry):', splitError.message);
-        // Don't throw - purchase was recorded successfully
+            amount: session.amount_total / 100,
+            failedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (recordError) {
+          console.error('Could not record the failed split:', recordError.message);
+        }
       }
     }
   } catch (error) {

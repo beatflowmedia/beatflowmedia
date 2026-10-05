@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import { Check, TrendingUp, TrendingDown } from '@mui/icons-material';
 import { getActivePlans, formatPrice } from '../data/pricingPlans';
+import { authedHeaders } from '../utils/authedHeaders';
 
 export default function SubscriptionManager({ currentTier, userId, onUpdate }) {
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -40,7 +41,7 @@ export default function SubscriptionManager({ currentTier, userId, onUpdate }) {
     try {
       const response = await fetch('/.netlify/functions/update-subscription', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authedHeaders(),
         body: JSON.stringify({
           userId,
           newPriceId: selectedPlan.stripePriceId

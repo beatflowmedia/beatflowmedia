@@ -3,6 +3,7 @@
 
 const admin = require('firebase-admin');
 const { SONG_PRICE, calculateAlbumPrice } = require('../../src/utils/pricing');
+const { requireAdmin } = require('./lib/require-auth');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -36,7 +37,26 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { submissionId } = JSON.parse(event.body);
+    // Approving publishes a submission into the public catalogue. firestore.rules
+    // already says it above the songs rules -- "Publishing is an admin act, not an
+    // authenticated one" -- and locks client writes to isPlatformAdmin(). This
+    // function uses the admin SDK, so it bypasses that rule entirely; the same
+    // requirement has to be restated on this path or the rule is decorative.
+    const auth = await requireAdmin(event);
+    if (!auth.ok) return auth.response;
+
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (err) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Malformed request body.' })
+      };
+    }
+
+    const { submissionId } = body;
 
     if (!submissionId) {
       return {

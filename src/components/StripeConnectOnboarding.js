@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
+import { authedHeaders } from '../utils/authedHeaders';
 
 export default function StripeConnectOnboarding({ totalRevenue = 0, purchases = [] }) {
   const { user } = useAuth();
@@ -75,9 +76,7 @@ export default function StripeConnectOnboarding({ totalRevenue = 0, purchases = 
     try {
       const response = await fetch('/.netlify/functions/create-connect-account', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: await authedHeaders(),
         body: JSON.stringify({
           userId: user.uid,
           email: user.email
@@ -112,9 +111,7 @@ export default function StripeConnectOnboarding({ totalRevenue = 0, purchases = 
     try {
       const response = await fetch('/.netlify/functions/request-payout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: await authedHeaders(),
         body: JSON.stringify({
           artistId: user.uid,
           requestedAmount: balance.availableBalance // Request full balance

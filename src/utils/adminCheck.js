@@ -1,12 +1,15 @@
 /**
  * Platform admin utilities
- * Only perriceconsulting@gmail.com and percyricemusic@gmail.com have admin access
+ *
+ * The admin list itself lives in ./platformAdmins.js, which is the single origin and
+ * is CommonJS so the Netlify functions can require it too. This module is the client
+ * face of it and exists only to keep the ESM import style the UI already uses.
+ *
+ * Do not add an email address here. Add it to platformAdmins.js, then run
+ * `npm run verify:admins` so firestore.rules is checked against it.
  */
 
-const PLATFORM_ADMINS = [
-  'perriceconsulting@gmail.com',
-  'percyricemusic@gmail.com'
-];
+import { PLATFORM_ADMIN_EMAILS, isAdminEmail as isAdminEmailCanonical, isPlatformAdmin as isPlatformAdminCanonical } from './platformAdmins';
 
 /**
  * Check if user is a platform admin
@@ -14,8 +17,7 @@ const PLATFORM_ADMINS = [
  * @returns {boolean} - True if user is admin
  */
 export function isPlatformAdmin(user) {
-  if (!user || !user.email) return false;
-  return PLATFORM_ADMINS.includes(user.email.toLowerCase());
+  return isPlatformAdminCanonical(user);
 }
 
 /**
@@ -24,8 +26,7 @@ export function isPlatformAdmin(user) {
  * @returns {boolean} - True if email is admin
  */
 export function isAdminEmail(email) {
-  if (!email) return false;
-  return PLATFORM_ADMINS.includes(email.toLowerCase());
+  return isAdminEmailCanonical(email);
 }
 
 /**
@@ -33,5 +34,5 @@ export function isAdminEmail(email) {
  * @returns {Array<string>} - List of admin emails
  */
 export function getPlatformAdmins() {
-  return [...PLATFORM_ADMINS];
+  return [...PLATFORM_ADMIN_EMAILS];
 }

@@ -1,21 +1,20 @@
 // src/services/stripeService.js
 // Stripe payment integration service
 import { loadStripe } from '@stripe/stripe-js';
-import { auth, db } from '../firebaseConfig';
+import { db } from '../firebaseConfig';
 import { collection, addDoc, doc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { calculateTrackPricing } from './licenseService';
 import { SONG_PRICE, calculateAlbumPrice } from '../utils/pricing';
+import { authedHeaders } from '../utils/authedHeaders';
 
 // Build checkout request headers including the caller's Firebase ID token, which
 // create-checkout verifies server-side to derive the authoritative user.
-async function checkoutHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  try {
-    const token = await auth.currentUser?.getIdToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-  } catch (_) { /* unauthenticated -> no token, server falls back to body userId */ }
-  return headers;
-}
+//
+// The previous note here said an unauthenticated call made the server "fall back to
+// body userId". That stopped being true when create-checkout was hardened to require
+// a verified token -- it now refuses with a 401. A comment describing the old
+// behaviour beside the new code is worse than no comment.
+const checkoutHeaders = () => authedHeaders();
 
 // Initialize Stripe with your publishable key - lazy load to prevent blocking
 let stripePromise = null;

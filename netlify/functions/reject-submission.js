@@ -2,6 +2,7 @@
 // Reject artist submission with feedback
 
 const admin = require('firebase-admin');
+const { requireAdmin } = require('./lib/require-auth');
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -35,7 +36,23 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { submissionId, feedback } = JSON.parse(event.body);
+    // Curating a submission queue is an admin act, same as approving one. Left open,
+    // anyone could reject every pending submission in the queue.
+    const auth = await requireAdmin(event);
+    if (!auth.ok) return auth.response;
+
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (err) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Malformed request body.' })
+      };
+    }
+
+    const { submissionId, feedback } = body;
 
     if (!submissionId || !feedback) {
       return {

@@ -134,16 +134,18 @@ Response: {
 }
 ```
 
-### 3. Process Revenue Split (Auto-triggered by webhook)
-```bash
-POST /.netlify/functions/process-revenue-split
-Body: {
-  "purchaseId": "purchase123",
-  "userId": "buyer456",
-  "itemId": "song789",
-  "itemType": "song",
-  "amount": 1.99
-}
+### 3. Process Revenue Split (called in-process by the webhook)
+There is no endpoint for this. `stripe-webhook.js` requires `lib/revenue-split.js`
+and calls it directly, because as a public POST it credited an artist 70% of whatever
+`amount` the caller sent.
+```js
+await allocateRevenueForPurchase(db, {
+  purchaseId: "purchase123",   // idempotency key
+  userId: "buyer456",
+  itemId: "song789",
+  itemType: "song",
+  amount: 1.99                 // from the verified Stripe session, never a request body
+});
 Response: {
   "success": true,
   "artistAmount": 1.39,
@@ -206,7 +208,7 @@ The `StripeConnectOnboarding` component shows:
 
 - [ ] Enable Stripe Connect (Platform Model - Option 2)
 - [ ] Deploy Netlify functions:
-  - `process-revenue-split.js`
+  - `lib/revenue-split.js` (module, not an endpoint)
   - `create-connect-account.js`
   - `request-payout.js`
 - [ ] Update `stripe-webhook.js` to call revenue split
@@ -319,7 +321,7 @@ The `StripeConnectOnboarding` component shows:
 
 ### Balance doesn't update
 - Check webhook logs in Netlify
-- Verify `process-revenue-split` function ran
+- Verify the revenue split ran: look for "Revenue split for <purchaseId>" in the stripe-webhook logs, and check the `failedTransfers` collection
 - Look for errors in Firebase Functions logs
 
 ## Next Steps
