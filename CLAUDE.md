@@ -1463,3 +1463,197 @@ fixture" and "fabricated statistic about a real person on a live site".
 Functions on a decommissioned runtime — **0** of 19.
 Node version pins disagreeing with each other — **0** of 5.
 Netlify functions that cannot load under the pinned runtime — **0** of 21.
+
+---
+
+## Full DOSI review — 2026-10-05
+
+Percy asked for a full review producing something concrete rather than another rolling
+list. Every number below was measured by a script, not asserted. Each finding carries an
+explicit **fix / delete / leave** — including the leaves, because an unexplained absence
+gets "fixed" by the next person.
+
+Ranked by what can take money or publish content, not by line count.
+
+### 1. Nine write endpoints took identity from the caller — S, critically
+
+**Three were deleted outright** (unreferenced, unauthenticated, Firestore writes):
+
+| Endpoint | What it did |
+|---|---|
+| `migrate-song-prices.js` | `where('price','==',299)` then `batch.update({price: 99})` |
+| `migrate-license-ids.js` | rewrote purchase + download licence ids |
+| `migrate-release-dates.js` | two unbounded `doc.ref.update()` passes |
+
+Public POST, no auth, nothing in `src/` called them. `migrate-song-prices` would hit 0
+docs today because all 906 songs sit at 199 — that is luck, not safety.
+
+**Six more are deployed, live, and verify nothing:**
+
+| Function | Caller | Takes from body | Effect |
+|---|---|---|---|
+| `request-payout.js` | `StripeConnectOnboarding.js` | `artistId`, `requestedAmount` | Stripe transfer |
+| `create-connect-account.js` | `StripeConnectOnboarding.js` | `userId`, `email` | creates Connect acct |
+| `update-subscription.js` | `SubscriptionManager.js` | `userId`, `newPriceId` | changes a plan |
+| `approve-submission.js` | `contentIngestionService.js` | `submissionId` | publishes to catalogue |
+| `reject-submission.js` | `contentIngestionService.js` | `submissionId` | rejects a submission |
+| `process-revenue-split.js` | **none** | `purchaseId`, `amount` | writes revenue splits |
+
+Grepped for `verifyIdToken`, `Authorization`, `Bearer`, `stripe-signature`,
+`constructEvent`, `requireAdmin`, `customClaims`. **Not one match in any of the six.**
+They parse `event.body` and act on whatever id arrives. They use `firebase-admin`, so
+Firestore security rules do not apply — the admin SDK bypasses them by design.
+
+Measured exposure: **10 `artistBalances` docs totalling $217.12** and **48
+`artistSubmissions`**. Small, but not hypothetical.
+
+**The fix is not six new token checks.**
+`netlify/functions/middleware/securityMiddleware.js` already exports
+`securityMiddleware({ requireAuth: true })` and is already proven in
+`api/admin/security-metrics.js` and `api/admin/user-management.js`. The middleware was
+built and then not applied — half an abstraction, which reads as done. Wrapping the five
+caller-having functions in the existing middleware is the whole change.
+
+- **Fix:** wrap the five in `securityMiddleware({ requireAuth: true })` *and* check the
+  token's `uid` against the id in the body — authentication alone does not stop one
+  signed-in artist passing another's `artistId`.
+- **Percy's call, not mine:** `process-revenue-split` has no caller. Either it is
+  unfinished product (a webhook should call it) or it is dead. Revenue splitting is a
+  product decision, so it is flagged rather than deleted.
+
+### 2. 42 red suites, 2 real failures — the rest never compiled
+
+```
+Test Suites: 42 failed, 12 passed, 54 total
+Tests:        2 failed, 127 passed, 129 total
+```
+
+40 suites fail to *load*; they never run an assertion. That looked like babel debt. It is
+not. The cause:
+
+```jsx
+render(<TrackRow track={} onPlay={} onAddToPlaylist={} />);   // TrackRow.test.js
+```
+
+`track={}` is an empty JSX expression container — **invalid syntax**. These tests have
+never compiled, not once. And the components they test are generated stubs:
+
+```jsx
+export default function TrackRow({ track, onPlay, onAddToPlaylist }) {
+  return <div>{/* TODO: Implement TrackRow */}</div>;   // 7 lines
+}
+```
+
+Each has a real implementation sitting beside it that the stub shadows by basename:
+
+| Stub (tested) | Real (untested) |
+|---|---|
+| `components/TrackRow/TrackRow.js` — 7 lines | `components/TrackRow.js` — 461 lines |
+| `components/NowPlayingBar/NowPlayingBar.js` — 12 | `components/NowPlayingBar.js` — 470 |
+| `components/QueuePanel/QueuePanel.js` — 7 | `components/QueuePanel.js` — 509 |
+| `components/PlayerProgress/PlayerProgress.js` — 7 | `components/PlayerProgress.js` — 405 |
+
+The tests were written against the copy that is not shipped. Root cause, found by
+grepping `TODO: Implement`: `src/agent/MolecularComponentAgent.js` and
+`src/agent/PageComponentAgent.js` — generators that emitted stub components *and* invalid
+tests. Nothing imports either generator.
+
+- **Delete:** the 5 stub/test pairs, the 2 generators. Fixing babel here would buy
+  coverage of code that does not ship — coverage that reads as coverage, which is exactly
+  the I caveat.
+- **Leave:** the babel/TS config. Once the generated files are gone, re-measure before
+  touching it; the remaining `.test.ts` failures may be a real gap or may be more of the
+  same, and I have not separated them yet.
+
+Of 39 test files: **19 cover at least one live module, 16 cover only unreachable modules,
+4 import no local module at all** (`Button.test.tsx`, `Input.test.tsx`, `Search.test.js`,
+`penetration.test.js` — a penetration suite asserting against nothing is the worst of the
+four, because its name claims the most).
+
+### 3. 186 of 386 modules under `src/` are unreachable — 48%
+
+Walked `import`/`require`/`import()` from `src/index.js`, `src/App.js`,
+`src/AppRoutes.js`. 200 reachable, 186 not. 20 duplicate basenames, including
+`AdminDashboard` three times (`analytics/AdminDashboard.js`, `.tsx`, `pages/`) and
+`SecurityDashboard` twice.
+
+- **Delete:** the subset proven dead in §2.
+- **Leave, deliberately:** the other ~170. A reachability walk misses dynamic `require`,
+  string-built paths and anything a build plugin pulls in. I nearly reported
+  `src/data/artistData.js` as live this week off a filename-shaped grep, and nearly
+  deleted radio's 72 audio files off "these exist elsewhere". **A bulk delete on a crude
+  signal is how that goes wrong at scale.** Recorded as a ratchet instead: the number may
+  fall, never rise.
+
+### 4. `formatPrice` renders the same price two ways — D
+
+```js
+// src/utils/pricing.js:172        -> "$24.00"     (18 importers)
+return `$${(priceInCents / 100).toFixed(2)}`;
+
+// src/data/pricingPlans.js:401    -> "$24"        (4 importers)
+return `$${amount.toFixed(2).replace('.00', '')}`;
+```
+
+Honest scope: **cosmetic, not a money bug.** Both divide by 100 correctly; they disagree
+on trailing zeros. But price presentation is a licensing-product surface, and two
+renderers will drift further.
+
+- **Fix:** `utils/pricing.js` is canonical on weight (18 vs 4) and on being the module the
+  checkout path already trusts. Delete the `pricingPlans` copy; if the compact form is
+  wanted for plan cards, it is an option on the one function.
+
+### 5. Seven domain rules defined more than once in live code
+
+Filtered 126 raw repeated definitions down to rules (not event wiring) that repeat in
+*reachable* modules — duplication inside dead code is a deletion question, not a DRY one.
+
+| Rule | Live copies | Call |
+|---|---|---|
+| `formatDuration` | 4 — `TrackRowCard`, `HomeStorefront`, `Playlist`, `SongPage` | **fix** |
+| `formatDate` | 3 — `StudioInquiriesManager`, `Album`, `Playlist` | **fix** |
+| `formatTime` | 3 — `MiniPlayer`, `MusicPlayer`, `VideoClipGenerator` | **fix** |
+| `formatPrice` | 2, diverging | **fix** (section 4) |
+| `formatFileSize` | 2 — `ContentHub`, `ContentUploadInterface` | **leave** |
+| `slugify` | 2 | **leave** |
+| `slug` | 2 | **leave** |
+
+- **Fix:** the three at 3+ copies into `src/utils/format.js`. `formatDuration` and
+  `formatTime` are the same rule under two names — collapse to one.
+- **Leave:** the three at exactly two copies. Rule-of-three: extract on the third repeat,
+  not the second. `formatFileSize` in an upload UI and a content hub may well drift apart,
+  and two blocks drifting apart are two blocks.
+
+### What this review did not cover
+
+Said plainly so it does not read as a clean bill of health: 371 Dependabot advisories (9
+critical) were not triaged; `playCount` is 0 on all 906 songs, so trending is unsorted
+rather than wrong; the venue/public-performance product still has an enquiry path and no
+product; `genreSlug` ownership with radio is unsettled and is a decision, not a build.
+
+### Concepts covered (continued)
+
+- **IDOR (Insecure Direct Object Reference)** — taking an id from the caller and acting on
+  it without checking the caller owns it. `request-payout` reading `artistId` from the body
+  is the textbook case: a signed-in artist could pass someone else's id. The fix has two
+  halves people routinely conflate — *authentication* proves who is calling,
+  *authorization* proves they may touch this record. The middleware gives the first;
+  comparing `token.uid` to the body's id gives the second. Surfaced when deciding whether
+  wrapping six functions in the existing middleware was sufficient. On its own, it is not.
+- **Admin SDK bypasses security rules** — Firestore rules guard client SDK traffic.
+  `firebase-admin` is privileged by design, so a Netlify function's writes are never
+  rule-checked. Any function using it is the *only* thing standing between a request and
+  the database. Surfaced when assessing whether rules mitigated the six endpoints. They
+  do not.
+
+### Ratchets
+
+| Measure | Today | Direction |
+|---|---|---|
+| Unauthenticated write endpoints | 6 (was 9) | to 0 |
+| Unreachable modules under `src/` | 186 / 386 | may fall, never rise |
+| Duplicate basenames in `src/` | 20 | may fall, never rise |
+| Test suites failing to load | 40 | to 0 |
+| Suites covering only unreachable code | 16 | to 0 |
+| Domain rules with 3+ live copies | 3 | to 0 |
+| Files containing `TODO: Implement` | 14 | may fall, never rise |
