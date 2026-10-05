@@ -42,11 +42,32 @@
 import { Box, Typography, Link as MuiLink, Divider } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
+// MUST MATCH section 4 of Terms.js, which is what actually binds. It listed eight
+// exclusions and this listed four, and the four it dropped are not the harmless ones:
+//
+//   Synchronization   putting it in a video, film, game or advert
+//   Broadcast         radio, television, webcast
+//   AI and ML         training or fine-tuning on the recording
+//   Sublicensing      passing any of the above to someone else
+//
+// SYNC IS THE EXPENSIVE OMISSION. It is the single most likely use for anyone who
+// finds this catalogue from a production directory, and the summary said nothing
+// about it while the checkbox beside it asserted the buyer had read and agreed. A
+// film producer could buy a $11.99 album believing it covered the cut they were
+// scoring, and be in breach of a clause nobody put in front of them.
+//
+// It is also why the price reads as too low. $1.99 looks like a sync price when
+// nothing at the point of sale says it is not one, so the number does the arguing
+// instead of the terms.
 const NOT_INCLUDED = [
+  'Putting it in a video, film, game or advert — that is a sync licence',
   'Playing it to an audience — DJ sets, clubs, bars, restaurants, retail, events',
+  'Radio, television, webcast or any broadcast',
   'Edits, remixes, mashups, or any altered version',
   'Including it in a mix, compilation or playlist you publish or sell',
-  'Reselling, sharing or redistributing the file'
+  'Reselling, sharing or redistributing the file',
+  'Training or fine-tuning an AI model on the recording',
+  'Granting any of the above to anyone else'
 ];
 
 export default function DownloadLicenseTerms({ compact = false }) {
@@ -78,7 +99,11 @@ export default function DownloadLicenseTerms({ compact = false }) {
 
       <Typography sx={{ color: 'grey.400', fontSize: '0.75rem', lineHeight: 1.5, mt: 1.5 }}>
         <Box component="span" sx={{ color: '#1DB954', fontWeight: 700 }}>
-          DJing, or playing music in a business?
+          {/* Video leads, because it is the most common use among people who find
+              this catalogue from a production directory, and the one the old wording
+              left out. The page this links to covers sync AND public performance, so
+              the call-out should name both rather than only the DJ case. */}
+          Putting it in a video, DJing, or playing music in a business?
         </Box>{' '}
         That needs a separate license — a download does not cover it.{' '}
         <MuiLink
