@@ -117,6 +117,11 @@ const DIRECTIVES = {
     "https://accounts.google.com",
     "https://*.firebaseapp.com",
     "https://googleads.g.doubleclick.net",
+    // AdSense iframes ep2.adtrafficquality.google as well as scripting it. Third
+    // directive, same host: script-src, connect-src and now frame-src. Allowing two
+    // and not the third left a CSP violation on every page load -- quieter than the
+    // unhandled rejection the script-src block caused, and the same half-fix.
+    "https://ep2.adtrafficquality.google",
     "https://*.doubleclick.net",
     "https://tpc.googlesyndication.com",
   ],
