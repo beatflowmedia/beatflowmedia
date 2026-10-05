@@ -76,6 +76,7 @@
     "verify:links": "node scripts/verify-links.js",
     "verify:radio": "node scripts/verify-radio-contract.js",
     "verify:domains": "node scripts/verify-domains.js",
+    "cleanup:firebase-masters": "node scripts/delete-firebase-master-copies.js",
     "backfill:collections": "node scripts/backfill-collections.js",
     "ingest:library": "node scripts/ingest-production-library.js",
     "scan:provenance": "node scripts/scan-library-provenance.js",
