@@ -100,6 +100,28 @@ export function facetsOf(tracks) {
   };
 }
 
+/**
+ * How many facets are currently narrowing the results.
+ *
+ * Lived inline in BrowseFilters, which was fine while the sidebar was the only thing
+ * that needed it. The mobile filter button needs the same number on its badge, and a
+ * second copy of this arithmetic is a second answer to "how many filters are on" --
+ * the two would drift the first time a facet is added.
+ *
+ * A multi-select counts once per selected value, a range or a boolean counts once.
+ */
+export function countActiveFilters(filters) {
+  if (!filters) return 0;
+  return (
+    (filters.genres?.length || 0) +
+    (filters.moods?.length || 0) +
+    (filters.duration ? 1 : 0) +
+    (filters.bpm ? 1 : 0) +
+    (filters.explicit !== null && filters.explicit !== undefined ? 1 : 0) +
+    (filters.loopable !== null && filters.loopable !== undefined ? 1 : 0)
+  );
+}
+
 /** True when nothing is being narrowed. */
 export function isEmptyFilter(filters) {
   if (!filters) return true;

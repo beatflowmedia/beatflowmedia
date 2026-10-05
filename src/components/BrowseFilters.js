@@ -26,7 +26,7 @@
 // nothing reconciling them. Deriving removes the second owner.
 import { Box, Typography, Chip, Slider, Checkbox, FormControlLabel, Button, Divider } from '@mui/material';
 import FilterList from '@mui/icons-material/FilterList';
-import { EMPTY_FILTERS } from '../utils/catalogFacets';
+import { EMPTY_FILTERS, countActiveFilters } from '../utils/catalogFacets';
 
 const CHIP_SX = (selected) => ({
   bgcolor: selected ? '#1DB954' : 'rgba(255,255,255,0.08)',
@@ -62,13 +62,9 @@ const BrowseFilters = ({
     });
   };
 
-  const activeCount =
-    (filters.genres?.length || 0) +
-    (filters.moods?.length || 0) +
-    (filters.duration ? 1 : 0) +
-    (filters.bpm ? 1 : 0) +
-    (filters.explicit !== null ? 1 : 0) +
-    (filters.loopable !== null ? 1 : 0);
+  // Shared with the mobile filter button, so the badge on the button and the badge in
+  // here cannot disagree about how many filters are on.
+  const activeCount = countActiveFilters(filters);
 
   const buckets = facets.durationBuckets || [];
   const hasAnything =
