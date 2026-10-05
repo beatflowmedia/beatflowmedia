@@ -15,7 +15,8 @@
  */
 
 const SITE_NAME = 'BeatFlow Media';
-const SITE_URL = process.env.REACT_APP_SITE_URL || 'https://beatflowmedia.com';
+// Fallback is beatflowmediagroup.com, the domain BFMG actually owns.
+const SITE_URL = process.env.REACT_APP_SITE_URL || 'https://beatflowmediagroup.com';
 const LOGO_URL = `${SITE_URL}/logo192.png`;
 
 /**
@@ -39,7 +40,7 @@ export const generateOrganizationSchema = () => ({
     '@type': 'ContactPoint',
     telephone: '+1-XXX-XXX-XXXX', // TODO: Add actual phone
     contactType: 'Customer Service',
-    email: 'support@beatflowmedia.com' // TODO: Add actual email
+    email: 'support@beatflowmediagroup.com'
   }
 });
 

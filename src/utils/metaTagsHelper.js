@@ -15,7 +15,13 @@
  */
 
 const SITE_NAME = 'BeatFlow Media';
-const SITE_URL = process.env.REACT_APP_SITE_URL || 'https://beatflowmedia.com';
+// Fallback is beatflowmediagroup.com, the domain BFMG actually owns.
+// It was beatflowmedia.com, which it does NOT own. A fallback is the worst place
+// for that: it only applies when REACT_APP_SITE_URL is unset -- which it is in
+// production -- so the wrong domain is reached precisely when nobody configured
+// anything. In canonical tags and Schema.org that tells search engines the real
+// page lives on someone else's domain, and whoever owns it decides what is there.
+const SITE_URL = process.env.REACT_APP_SITE_URL || 'https://beatflowmediagroup.com';
 const DEFAULT_IMAGE = `${SITE_URL}/images/default-og-image.jpg`;
 const TWITTER_HANDLE = '@BeatFlowMedia'; // TODO: Replace with actual Twitter handle
 

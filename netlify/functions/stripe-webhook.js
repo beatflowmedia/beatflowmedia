@@ -1017,7 +1017,7 @@ async function handleInvoicePaymentFailed(invoice) {
           </ul>
 
           <p><strong>Update your payment method:</strong></p>
-          <p><a href="https://beatflowmedia.com/settings" style="background: #1DB954; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Update Payment Method</a></p>
+          <p><a href="https://beatflowmediagroup.com/settings" style="background: #1DB954; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Update Payment Method</a></p>
 
           <p>Need help? Reply to this email.</p>
 
