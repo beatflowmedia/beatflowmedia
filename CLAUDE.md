@@ -1412,3 +1412,54 @@ Copies of `r2Config()` — **1** (was 3).
 Duplicate variable definitions in `.env` — **0** (was 1 pair).
 Masters fetchable without credentials — **0** (was 72).
 Live tokens nothing uses — **0**.
+
+## Node 22, and what a load-sweep found — 2026-10-05
+
+Firebase stops accepting `nodejs20` deploys on **2026-10-30**. Done 25 days early,
+because the failure mode is a REFUSED DEPLOY, which arrives while you are trying to ship
+something else rather than when you have time for it.
+
+A pin change, not a port: local node was already v22, `firebase-functions ^7.0.5` and
+`firebase-admin ^13.6.0` both support it. **Five pins, one outside the repo** —
+firebase.json, functions/package.json, netlify.toml, .nvmrc, and `NODE_VERSION` in the
+Netlify environment. Verified from Firebase afterwards: **19 of 19 functions report
+nodejs22**, read back rather than taken from the deploy log.
+
+**Editing firebase.json does not move the live runtime.** `firebase deploy --only
+functions` does. On this machine it needs `$env:FUNCTIONS_DISCOVERY_TIMEOUT=120` in
+PowerShell — the default 10s cannot load 19 functions, and it fails as "User code failed
+to load", which reads like a code fault and is a clock.
+
+### Loading every function is a different test from pinning a version
+
+All 21 Netlify functions and all 19 Firebase exports were required under v22 before
+deploying. The first sweep reported 15 failures — **all of them missing credentials in a
+bare `require`, not incompatibilities.** Re-run with `.env` loaded, every one passed.
+A probe that reports failure has to be read before it is believed; this one would have
+sent the whole migration back for no reason.
+
+### Two dead files it surfaced
+
+**`netlify/functions/updateMonthlyListeners.js`** parsed
+`JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)` at module load. That variable is not
+set in Netlify — the environment carries `FIREBASE_PROJECT_ID`, `CLIENT_EMAIL` and
+`PRIVATE_KEY`. It has thrown on **every invocation since it was written**, on Node 20,
+and nobody noticed because nothing calls it and nothing schedules it. A function that
+cannot start, that nothing invokes, is indistinguishable from one that works.
+
+**`src/data/artistData.js`** was a fixture for *Lalah Hathaway* — a real recording
+artist unconnected to BFMG — carrying her biography, credits naming other real people,
+and `monthlyListeners: 5501001`.
+
+**I nearly reported that as live and was wrong.** `grep -l artistData` matched a
+parameter name in metaTagsHelper.js and a state variable in RightPanel.js, and I read
+those as imports. Checking for actual `import` statements found none, the name appears
+in no other file, and it is absent from the build output. **A filename-shaped grep is
+not an import check**, and the gap between them was the difference between "dead
+fixture" and "fabricated statistic about a real person on a live site".
+
+### Ratchets
+
+Functions on a decommissioned runtime — **0** of 19.
+Node version pins disagreeing with each other — **0** of 5.
+Netlify functions that cannot load under the pinned runtime — **0** of 21.
