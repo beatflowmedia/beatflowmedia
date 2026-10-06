@@ -1987,3 +1987,54 @@ Other:
   without a local `stripe listen`.
 - **Account default API version is 2017-12-14**, which governs the payload shape delivered
   to every endpoint above.
+
+### Correction: the Suno endpoint is load-bearing — 2026-10-06
+
+Percy: the Suno Playlist Downloader is **not associated with BFMG** as a business. That is
+true commercially and **does not make its webhook endpoint safe to remove**, which is what
+the review above implied.
+
+`stripe get /v1/prices --live` lists, among 13 active live products:
+
+```
+Suno Playlist Downloader Pro - Bulk Download MP3/WAV with Lyrics Formatter
+```
+
+**Suno sells through BFMG's Stripe account.** That endpoint is how its customers get
+fulfilled, so deleting it breaks a live revenue-generating product belonging to a
+different business. Same lesson as the radio audio files: *"this isn't ours" is not
+"nothing uses this"*. **Do not delete it.**
+
+The real finding is one level up: **two unrelated businesses share one Stripe account.**
+That is commingling, and it is a business decision rather than a code one:
+
+- One balance and one payout schedule for two businesses, so revenue has to be
+  disentangled after the fact for bookkeeping.
+- Disputes and chargebacks from either product affect the standing of the shared account.
+- **Both webhook endpoints are subscribed to `checkout.session.completed`**, so BFMG's
+  endpoint receives Suno's sales and Suno's endpoint receives BFMG's. Each will meet
+  metadata it cannot interpret. BFMG's handler throws `Missing required metadata` on a
+  session it does not recognise, which returns non-2xx and makes Stripe retry.
+
+Separating them means a second Stripe account and re-creating Suno's product, price and
+webhook there -- ids do not transfer between accounts. Worth costing before committing.
+
+**Live activity, measured:** 4 events in Stripe's retention window, all
+`checkout.session.expired`, newest 2026-09-28. No completed live sales. So the webhook
+rewiring below can be done without disturbing live traffic -- and 4 abandoned checkouts
+with 0 completions is its own thing worth looking at.
+
+### Decision: `webhook.js` is canonical — 2026-10-06
+
+Percy's call: the endpoint registered in production is the correct one. So
+`netlify/functions/webhook.js` stays, and the licence-recording this session built into
+`stripe-webhook.js` has to move into it rather than the other way round. Specifically,
+what `webhook.js` is missing and must gain:
+
+- `licenseId` on the purchase record, and the `licenses` collection write (currently 0)
+- `agreementVersion` / `acceptedAt` from session metadata -- the clickwrap evidence that
+  `create-checkout` already collects and the live endpoint currently discards
+- the idempotent, transactional revenue split in `lib/revenue-split.js`, in place of its
+  own inline `artistBalances` increments
+
+`stripe-webhook.js` retires once that is done, so there is one handler rather than two.
