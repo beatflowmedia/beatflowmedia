@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 
 export default function UserGuidelines() {
+  // min-h-[100dvh], not min-h-screen. Tailwind's min-h-screen is 100vh, which on mobile
+  // excludes the browser chrome and clips the bottom of the page.
+  //
+  // A plain JS comment, not {/* ... */}. A JSX comment here sits BESIDE the root element
+  // rather than inside it, which makes two expressions in one return and fails to parse.
   return (
-    {/* min-h-[100dvh], not min-h-screen. Tailwind's min-h-screen is 100vh, which on
-        mobile excludes the browser chrome and clips the bottom of the page. */}
     <div className="flex flex-col min-h-[100dvh] bg-gray-900 text-white">
       <main className="flex-1 pt-16 px-6">
         <div className="max-w-4xl mx-auto">
