@@ -2081,3 +2081,30 @@ account means its customers pay and receive nothing, and the only symptom is sil
 
 After step 6, BFMG's account holds one business, and the cross-talk goes away: BFMG's
 webhook stops receiving Suno's `checkout.session.completed` events and vice versa.
+
+### Amendment: the Suno runbook's ordering no longer applies — 2026-10-06
+
+Percy, same day: the only Suno purchase and customer is **him** — a test made with a live
+card — and the project is **being re-coded** because Suno's product changed.
+
+That removes the constraint the ordering above existed to satisfy. Steps 1–6 were
+sequenced so paying customers were never left stranded between accounts. There are no
+paying customers:
+
+- the 2 live $14.99 charges were Percy's own test, neither paid-and-unrefunded;
+- the surrounding 19 x $1.00 and 1 x $1.99 charges are the same kind of thing, which is
+  what 22 lifetime charges on a commercial account actually means.
+
+So the two halves are now **independent**, and neither waits on the other:
+
+- **BFMG side, do whenever:** archive the Suno product and price, remove the
+  `sunoplaylistdownloader` webhook endpoint. Nothing downstream breaks, because the only
+  thing it fulfils is a rewrite in progress. Archive rather than delete so the historical
+  charges stay attributable.
+- **Suno side:** the new Stripe account is simply part of the rebuild. A re-coded project
+  takes fresh keys and a fresh price id as a matter of course, so there is no migration —
+  only a new account wired up from scratch.
+
+**The caution that still stands** is the account assertion, not the ordering: whatever
+Suno is rebuilt against, assert the account id with a whoami before trusting it, and keep
+BFMG's keys out of it. One account per business is the point of the exercise.
