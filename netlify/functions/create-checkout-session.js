@@ -1,7 +1,26 @@
 // netlify/functions/create-checkout-session.js
 // Create Stripe checkout session for premium subscriptions
 const Stripe = require('stripe');
+const admin = require('firebase-admin');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const { requireSelf } = require('./lib/require-auth');
+
+// require-auth verifies the caller's ID token through firebase-admin, so the SDK has to
+// be initialised here. This function never needed it before, because it never checked
+// who was calling.
+if (!admin.apps.length) {
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY_BASE64
+    ? Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, 'base64').toString('utf8')
+    : process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey
+    })
+  });
+}
 
 exports.handler = async (event) => {
   console.log('🔔 create-checkout-session invoked');
@@ -10,7 +29,7 @@ exports.handler = async (event) => {
   // Add CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Content-Type': 'application/json'
   };
 
@@ -44,6 +63,18 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({ error: 'Missing priceId' }),
     };
+  }
+
+  // This endpoint took `userId` and `userEmail` straight from the body and verified
+  // nothing, so a caller could open a subscription against someone else's account.
+  //
+  // It also used to accept a request with NO userId at all -- StripeButton omitted it
+  // when signed out. That is worse than it sounds: the subscription webhook activates
+  // premium against a userId, so a signed-out checkout took the money and had no account
+  // to attach it to. Requiring identity fixes the impersonation and that at once.
+  const auth = await requireSelf(event, userId);
+  if (!auth.ok) {
+    return { ...auth.response, headers: { ...headers, ...(auth.response.headers || {}) } };
   }
 
   try {

@@ -4,6 +4,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { useAuth } from "../context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { authedHeaders } from "../utils/authedHeaders";
 import Modal from "./Modal";
 
 export default function StripeButton({ priceId, children, className = "" }) {
@@ -127,19 +128,28 @@ export default function StripeButton({ priceId, children, className = "" }) {
       return;
     }
 
+    // A subscription has to belong to someone. This used to send the request without a
+    // userId when signed out, and the server accepted it -- so the charge succeeded and
+    // the webhook had no account to activate premium against. Asking for sign-in first
+    // is the honest version of what the server now enforces.
+    if (!user) {
+      setModal({
+        isOpen: true,
+        title: 'Sign in to subscribe',
+        message: 'Your subscription is attached to your account, so you need to be signed in before checkout.',
+        type: 'info'
+      });
+      return;
+    }
+
     try {
       const stripe = await stripePromise;
 
-      // Prepare request body
-      const body = { priceId };
-      if (user) {
-        body.userId = user.uid;
-        body.userEmail = user.email;
-      }
+      const body = { priceId, userId: user.uid, userEmail: user.email };
 
       const res = await fetch("/.netlify/functions/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await authedHeaders(),
         body: JSON.stringify(body)
       });
 

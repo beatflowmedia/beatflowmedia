@@ -9,6 +9,7 @@ import {
   formatMonthly
 } from "../data/sponsorshipTiers";
 import { latestApplicationFor, canPay } from "../services/sponsorApplicationService";
+import { authedHeaders } from "../utils/authedHeaders";
 
 // /advertising was linked from /about-ads ("Learn About Advertising") and did not
 // exist -- the route was never registered, so the one call-to-action aimed at
@@ -61,7 +62,7 @@ export default function Advertising() {
     try {
       const res = await fetch("/.netlify/functions/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await authedHeaders(),
         body: JSON.stringify({
           priceId: stripePriceIdFor(tier),
           userId: user.uid,

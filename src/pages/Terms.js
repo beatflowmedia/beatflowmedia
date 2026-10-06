@@ -294,11 +294,22 @@ export default function Terms() {
                 statement within twelve months of its issue.
               </p>
 
-              <h3 className="text-xl font-semibold text-white mt-6">Premium Subscriptions</h3>
+              <h3 className="text-xl font-semibold text-white mt-6">Subscriptions</h3>
               <p>
-                Premium subscriptions provide ad-free listening and other benefits. Subscriptions automatically
-                renew until cancelled. You may cancel at any time through your account settings, and your
-                subscription will remain active until the end of your billing period.
+                We offer monthly licensing subscriptions: Student ($9.99/month), Creator ($24.00/month),
+                Professional ($49.00/month) and Agency ($149.00/month). Each tier grants the download and
+                licensing rights listed for it on our pricing page, for as long as the subscription is active.
+              </p>
+              <p>
+                <strong>Subscriptions renew automatically.</strong> Your payment method is charged the amount
+                above at the start of each monthly billing period, and continues to be charged each month until
+                you cancel. You may cancel at any time from your account page, which opens our payment
+                provider&rsquo;s billing portal. Cancelling stops future renewals; your subscription stays active
+                until the end of the period you have already paid for, and you are not charged again after that.
+              </p>
+              <p>
+                Cancelling a subscription does not affect tracks you bought outright. A one-off download licence
+                is perpetual and survives the end of any subscription you hold.
               </p>
             </div>
           </section>

@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 // Canonical licence vocabulary, shared with the app in the manner of utils/pricing.js.
+const { sendEmail } = require('./lib/send-email');
 const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
 
 /**
@@ -128,6 +129,19 @@ exports.handler = async (event, context) => {
 
       case 'payment_intent.payment_failed':
         await handlePaymentFailed(stripeEvent.data.object);
+        break;
+
+      // The live endpoint is SUBSCRIBED to both of these, and had no case for either,
+      // so they fell through to "Unhandled event type" and were discarded. These are how
+      // a subscription RENEWAL arrives -- the monthly charge after the first one. A
+      // renewal that is received and ignored looks exactly like a renewal that never
+      // happened, which is why this was invisible.
+      case 'invoice.payment_succeeded':
+        await handleInvoicePaymentSucceeded(stripeEvent.data.object);
+        break;
+
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(stripeEvent.data.object);
         break;
 
       default:
@@ -669,5 +683,144 @@ async function handlePaymentFailed(paymentIntent) {
     });
   } catch (error) {
     console.error('Error recording failed payment:', error);
+  }
+}
+
+/**
+ * Handle a successful invoice payment — i.e. a subscription RENEWAL.
+ *
+ * Ported from stripe-webhook.js, which has never run: it is not a registered endpoint.
+ * This endpoint receives the event and, until now, had no case for it.
+ *
+ * Re-activates the buyer's time-bound licences. A renewal that is received and dropped
+ * leaves a paying subscriber with licences that quietly stay inactive, which presents as
+ * "I paid and it still says expired".
+ */
+async function handleInvoicePaymentSucceeded(invoice) {
+  console.log('Invoice payment succeeded:', invoice.id, 'for subscription:', invoice.subscription);
+
+  try {
+    const customerId = invoice.customer;
+    const subscriptionId = invoice.subscription;
+
+    if (!subscriptionId) {
+      console.log('No subscription associated with this invoice');
+      return;
+    }
+
+    const usersSnapshot = await db.collection('users')
+      .where('stripeCustomerId', '==', customerId)
+      .limit(1)
+      .get();
+
+    if (usersSnapshot.empty) {
+      console.log('No user found for customer:', customerId);
+      return;
+    }
+
+    const userId = usersSnapshot.docs[0].id;
+
+    // Only time-bound licences are touched. A perpetual one-off download is not
+    // contingent on a subscription and must never be re-dated by a renewal.
+    const licensesSnapshot = await db.collection('licenses')
+      .where('userId', '==', userId)
+      .where('subscriptionId', '==', subscriptionId)
+      .where('licenseType', '==', 'time-bound')
+      .get();
+
+    if (licensesSnapshot.empty) return;
+
+    const batch = db.batch();
+    let updateCount = 0;
+
+    licensesSnapshot.forEach((doc) => {
+      if (doc.data().status !== 'active') {
+        batch.update(doc.ref, {
+          status: 'active',
+          validWhileSubscribed: true,
+          lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        updateCount++;
+      }
+    });
+
+    if (updateCount > 0) {
+      await batch.commit();
+      console.log(`✓ Ensured ${updateCount} licenses are active for user ${userId}`);
+    } else {
+      console.log(`All ${licensesSnapshot.size} licenses already active for user ${userId}`);
+    }
+  } catch (error) {
+    // Swallowed on purpose. Stripe retries a non-2xx, and a failure to tidy licence rows
+    // must not make it re-deliver a payment event it has already processed.
+    console.error('Error handling invoice payment success:', error);
+  }
+}
+
+/**
+ * Handle a failed invoice payment — a renewal that did not go through.
+ *
+ * Warns the customer and records the failure. Ported from stripe-webhook.js for the same
+ * reason as above: this endpoint receives the event, that one does not.
+ */
+async function handleInvoicePaymentFailed(invoice) {
+  console.log('Invoice payment failed:', invoice.id);
+
+  try {
+    const customerEmail = invoice.customer_email;
+
+    if (customerEmail) {
+      const result = await sendEmail({
+        label: 'webhook/invoice-failed',
+        to: customerEmail,
+        subject: 'Payment Issue - Action Needed to Keep Your BeatFlow Active',
+        html: `
+          <h2>Payment Issue Detected</h2>
+          <p>We tried to process your payment for your BeatFlow subscription, but it didn't go through.</p>
+
+          <h3>What This Means:</h3>
+          <ul>
+            <li>Your subscription is still active (for now)</li>
+            <li>We'll retry payment in 3 days</li>
+            <li>If payment fails again, your subscription will pause</li>
+          </ul>
+
+          <h3>What Happens If Subscription Ends:</h3>
+          <ul>
+            <li>&#10003; Published content stays licensed (safe)</li>
+            <li>&#10007; Can't license new projects</li>
+            <li>&#10007; Can't download new tracks</li>
+          </ul>
+
+          <p><strong>Update your payment method:</strong></p>
+          <p><a href="https://beatflowmediagroup.com/settings" style="background: #1DB954; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Update Payment Method</a></p>
+
+          <p>Need help? Reply to this email.</p>
+
+          <p>Best,<br>BeatFlow Billing Team</p>
+        `
+      });
+
+      // Logged, never thrown. A warning email that cannot send must not fail the
+      // webhook: Stripe would retry the whole event, and the payment problem the email
+      // was about would be buried under delivery retries.
+      if (result.sent) console.log('Payment failure email sent to:', customerEmail);
+      else console.error('[webhook] payment failure email NOT sent:', result.reason);
+    }
+
+    await db.collection('failed_payments').add({
+      invoiceId: invoice.id,
+      customerId: invoice.customer,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      errorMessage: invoice.last_payment_error?.message || 'Unknown error',
+      customerEmail: invoice.customer_email
+    });
+
+    console.log('Failed payment recorded');
+  } catch (error) {
+    console.error('Error handling failed invoice payment:', error);
   }
 }
