@@ -1,5 +1,28 @@
 // netlify/functions/stripe-webhook.js
-// Handle Stripe webhook events for payment completion
+//
+// ⚠️ THIS IS NOT THE LIVE WEBHOOK. It is not a registered endpoint and receives nothing.
+//
+// Stripe calls https://beatflowmediagroup.com/.netlify/functions/**webhook** (registered
+// 2025-05-05). Anything that must run on a real payment belongs in `webhook.js`. Work
+// aimed at the live webhook landed here for months because this file's name matched what
+// people searched for and `webhook.js` carried a header comment naming THIS file.
+//
+// IT IS KEPT ON PURPOSE, for one reason: it holds the payment handling for **BeatFlow
+// Studio** -- artists, managers and producers buying a complete album project -- which is
+// built but stalled, not cancelled. `webhook.js` has no studio branches at all, so
+// deleting this would delete the only implementation of a feature that is coming back.
+// Same call as config/comingSoon.js: a name that matches a domain we have not reached yet
+// gets kept, not deleted.
+//
+// WHEN STUDIO RESUMES: port its handling INTO `webhook.js` and retire this file. Do not
+// register this endpoint with Stripe -- that would silently swap every other handler too,
+// including the licence recording and renewal handling that only `webhook.js` has.
+//
+// Dead branches still inside this file, measured 2026-10-06: `bundle` and
+// `playlist_submission` have never produced a purchase, nothing in src/ creates either,
+// and `bundles` / `playlistSubmissions` hold 0 documents.
+//
+// Handle Stripe webhook events for payment completion.
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');

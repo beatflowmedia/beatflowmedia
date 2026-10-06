@@ -2108,3 +2108,34 @@ So the two halves are now **independent**, and neither waits on the other:
 **The caution that still stands** is the account assertion, not the ordering: whatever
 Suno is rebuilt against, assert the account id with a whoami before trusting it, and keep
 BFMG's keys out of it. One account per business is the point of the exercise.
+
+### Decision: Studio is deferred, bundle and playlist_submission are dead — 2026-10-06
+
+Percy on BeatFlow Studio: **in progress but stalled**. Its purpose is artists, managers
+and producers buying a **complete album project** rather than a single track licence.
+Deferred, not cancelled.
+
+Measured before deciding:
+
+| itemType | created in `src/` | collection | purchases ever |
+|---|---|---|---|
+| `playlist_submission` | no | `playlistSubmissions` 0 | 0 |
+| `bundle` | no | `bundles` 0 | 0 |
+| `studio_sample` | `Downloads.js` reads only | `studioSamples` 0 | 0 |
+
+Every purchase ever recorded is `song` (1) or `album` (1). But `studioProjects` holds 5
+documents and `studioPayments` 1 — exercised, not live.
+
+- **`bundle` and `playlist_submission`: dead.** Nothing creates them, nothing holds them,
+  no sale has ever used them.
+- **Studio: kept.** `handleStudioProjectPayment` and the `studio_sample` branch exist
+  **only** in `stripe-webhook.js`, which is not a registered endpoint. `webhook.js` has no
+  studio branches, so deleting `stripe-webhook.js` would delete the only implementation of
+  a feature that is coming back.
+
+So `stripe-webhook.js` **stays**, and now carries a header saying why, because it sits in
+the gap between two failure modes: someone deletes it and loses Studio, or someone
+registers it with Stripe and silently swaps every other handler — including the licence
+recording and the renewal handling that only `webhook.js` has.
+
+**When Studio resumes:** port its handling into `webhook.js`. Never register this endpoint.
