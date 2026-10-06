@@ -1871,3 +1871,119 @@ process. Stripe treats non-2xx as a failed delivery and retries, and metadata wi
 appear on a retry, so a malformed session produces repeated failures and error noise
 rather than one refusal. Worth deciding what an unprocessable-by-design event should
 return.
+
+---
+
+## DOSI review: Stripe — 2026-10-06
+
+Measured, not asserted. Ranked by what takes money or loses evidence.
+
+### 1. The webhook being maintained is not the webhook Stripe calls — S
+
+Live webhook endpoints on `acct_1Bn3cBAEum2hO0KZ`:
+
+| Endpoint | Events | Registered |
+|---|---|---|
+| `beatflowmediagroup.com/.netlify/functions/**webhook**` | checkout.session.completed, 9 more | 2025-05-05 |
+| `us-central1-**sunoplaylistdownloader**.cloudfunctions.net/handleStripeWebhook` | checkout.session.completed, charge.refunded | 2026-02-16 |
+| `us-central1-beatflowmedia.cloudfunctions.net/stripeWebhook` | 5 subscription/invoice events | — |
+
+**`/.netlify/functions/stripe-webhook` is not registered at all.** That is the 1128-line
+handler this project has been maintaining: licence ids, the clickwrap acceptance stamp,
+`licenseFields`, and the in-process revenue split wired in earlier today. In production it
+receives nothing. The registered Netlify endpoint is `webhook.js`, 582 lines, from
+2025-05-05.
+
+What the live handler does *not* write, measured by grep:
+
+| | `webhook.js` (live) | `stripe-webhook.js` (not registered) |
+|---|---|---|
+| `collection('licenses')` writes | **0** | 5 |
+| `licenseId` on the purchase | **no** | yes |
+| `agreementVersion` / `acceptedAt` | **no** | yes |
+| duplicate-purchase guard | yes (queries `purchases` first) | yes (idempotent by purchase id) |
+
+So `create-checkout` collects a clickwrap acceptance, stamps the version and timestamp
+into session metadata, and the endpoint that actually receives the event **drops them**.
+The evidence that a buyer accepted a specific licence version is gathered and discarded.
+That is the part to care about: it is not a missing feature, it is a missing record of
+something the product asserts happened. See [[project-clickwrap-acceptance]].
+
+**A second project is on the live account.** `sunoplaylistdownloader` has received BFMG's
+live `checkout.session.completed` and `charge.refunded` since 2026-02-16. Whatever it does
+with them, every BFMG sale is being delivered to a codebase that is not this one.
+
+Small mercy on blast radius: `purchases` holds **2** documents. Both carry a `licenseId`,
+which the live endpoint does not write — so they did not come from it. Conclusions from
+two records are weak; the configuration finding stands on its own and does not need them.
+
+- **Decide, do not guess:** which endpoint is canonical. If it is `stripe-webhook`,
+  register it and retire `webhook.js`. If it is `webhook.js`, then this session's
+  hardening went into the wrong file and should be moved.
+- **Then:** confirm whether `sunoplaylistdownloader` should still be receiving BFMG events.
+
+### 2. Two checkout paths, one of them unauthenticated — S / I
+
+Both deployed, both called from `StripeButton.js` and `pages/Advertising.js`:
+
+| | `create-checkout.js` (449 lines) | `create-checkout-session.js` (121) |
+|---|---|---|
+| Purpose | one-off licence sales | subscriptions + sponsorships |
+| Identity | verified ID token (`verifyIdToken`) | **`userId`, `userEmail` from the request body** |
+| Auth refs in file | several | **0** |
+| Price source | server-side, from `utils/pricing.js` | Stripe `priceId` |
+| Licence acceptance | **required**, current version enforced | none |
+
+**Not simple duplication** — they genuinely serve different products, so collapsing them
+would be the wrong call. The finding is narrower and real: one path verifies who is buying
+and records what they agreed to, the other does neither. `priceId` means amounts still come
+from Stripe, so this is **not** the arbitrary-amount bug that was fixed previously.
+
+### 3. Three revenue-split implementations — D
+
+`webhook.js` splits inline and writes `artistBalances` directly; `lib/revenue-split.js` is
+the extracted, idempotent, transactional one; `src/utils/revenueSplit.js` is a third. The
+live endpoint uses its own inline copy, so the idempotent one added today is not the one
+running. The Stripe client is constructed **12** times across the codebase.
+
+### 4. `netlify/functions/api/stripe/*` is not deployed — I
+
+`onboard.js`, `payouts.js`, `requestPayout.js` sit in a nested directory, which Netlify
+does not pick up as functions (a nested dir needs a `dir/dir.js` entry file). Same trap as
+`api/admin/`. They are not endpoints; they are files that look like endpoints.
+
+### Stripe compliance — what was checked, and the line
+
+**This names requirements and shows where the implementation falls short. It does not
+certify compliance.** Payments, consumer disclosure and money transmission are exactly
+where that distinction matters; get this reviewed by someone qualified for the
+jurisdiction.
+
+Verified clean:
+
+- **No raw card data anywhere.** No `cardNumber`, `cvc` or `card[number]` in `src/` or
+  `netlify/functions`. Card details stay with Stripe, which is what keeps PCI scope small.
+
+Gaps found on the live account:
+
+| Setting | State | Why it matters |
+|---|---|---|
+| `statement_descriptor` | **not set** | What the cardholder sees on their statement. Unrecognised descriptors are a leading cause of disputes |
+| `business_profile.support_email` | not set | Stripe surfaces it on receipts and in disputes |
+| `business_profile.support_url` | not set | same |
+| `business_profile.url` | not set | same |
+
+Gaps found on the site:
+
+- **No auto-renewal disclosure.** Searched the legal pages for "auto-renew" and
+  "automatically renew": **0 hits**, while the product sells four monthly subscription
+  tiers. Recurring-billing disclosure is both a card-network expectation and a common
+  consumer-protection requirement.
+- "refund" appears on 1 legal page, "cancel" on 2. Present, but not verified as adequate.
+
+Other:
+
+- **The sandbox has 0 enabled webhook endpoints**, so nothing there exercises a webhook
+  without a local `stripe listen`.
+- **Account default API version is 2017-12-14**, which governs the payload shape delivered
+  to every endpoint above.
