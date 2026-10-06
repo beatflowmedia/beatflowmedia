@@ -1783,3 +1783,36 @@ is watching. Deployment decides reachability; hiding a feature never closes an e
 - **De-prioritised by this:** the 25 `firestore.rules` lines needing an ungranted
   `token.admin` claim guard mostly artist-side collections, as does the rejected service
   account that blocks granting it. Neither gates catalogue sales.
+
+### Stripe: the canonical account, asserted — 2026-10-06
+
+| | |
+|---|---|
+| Account | **BeatFlowMediaGroup** |
+| Account id | `acct_1Bn3cBAEum2hO0KZ` |
+| Asserted by | `MSYS_NO_PATHCONV=1 stripe get /v1/account` (and `--live`), confirmed against the dashboard |
+
+The id is the same in test and live mode — one account, two data sets — so a mode is
+proved by the key in use, never by the account id.
+
+**The CLI was on the wrong account.** Before `stripe login` ran on 2026-10-06 it resolved
+to `acct_1U4GfpQ56HLchPg8`, display name **"NewDevBuild"**. Anything previously derived
+from the CLI — a webhook signing secret, a `stripe listen` session, a triggered fixture —
+belonged to that account, not to BFMG, and would have failed by doing nothing visible.
+That is the documented failure mode: the CLI is a second source of truth and nothing warns
+you when it drifts.
+
+**Assert, do not infer.** `stripe get /v1/account` before any CLI work that matters, and
+check the id against the table above.
+
+**Git Bash mangles the path.** `stripe get /v1/account` becomes
+`GET /v1/C:/Program%20Files/Git/v1/account` under MSYS path conversion, and the error
+reads like a bad endpoint rather than a shell problem. Prefix `MSYS_NO_PATHCONV=1`.
+
+**A probe created a live Connect account.** `acct_1UNSkGA5zLGnrJnj`, created
+2026-10-06T07:25:05Z with email `a@b.c`, from POSTing create-connect-account against
+production before the auth fix was published. Nothing onboarded, no charges, no payouts.
+The lesson is the ordering, not the account: **prove a deploy is live before probing an
+endpoint that creates resources, and probe read-only paths first.** The published deploy
+was still 18ddbcb1 from 2026-10-01 because production was `locked: true`, so the probe hit
+the old unauthenticated code.

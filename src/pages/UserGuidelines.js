@@ -4,11 +4,13 @@ import Footer from "../components/Footer";
 
 export default function UserGuidelines() {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+    {/* min-h-[100dvh], not min-h-screen. Tailwind's min-h-screen is 100vh, which on
+        mobile excludes the browser chrome and clips the bottom of the page. */}
+    <div className="flex flex-col min-h-[100dvh] bg-gray-900 text-white">
       <main className="flex-1 pt-16 px-6">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl font-bold mb-4">User Guidelines</h1>
-          <p className="text-sm text-gray-400 mb-8">Last updated: January 1, 2025</p>
+          <p className="text-sm text-gray-400 mb-8">Last updated: October 6, 2026</p>
 
           {/* Introduction */}
           <section className="mb-8">
@@ -223,6 +225,19 @@ export default function UserGuidelines() {
             <h2 className="text-3xl font-bold mb-4">7. Role-Specific Guidelines</h2>
             <div className="text-gray-300 space-y-4">
 
+              {/* Artist onboarding and curator submissions are not open yet: the only
+                  reachable upload path in the app is AdminDashboard -> ContentHub, which
+                  is internal. These rules are kept because the capability is deferred,
+                  not cancelled -- same call as config/comingSoon.js -- but the page must
+                  not read as though an artist can act on them today. */}
+              <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4">
+                <p>
+                  Artist accounts and curator submissions are not open yet. The rules below
+                  apply from the moment they are, and are published in advance so nobody
+                  finds out the terms after signing up.
+                </p>
+              </div>
+
               <h3 className="text-2xl font-semibold text-white">For Artists</h3>
               <div className="bg-gray-800 rounded-lg p-6">
                 <ul className="list-disc list-inside space-y-2 ml-4">
@@ -271,15 +286,26 @@ export default function UserGuidelines() {
 
               <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-6">
                 <h3 className="text-xl font-semibold text-white mb-3">How to Report:</h3>
+                {/* The first item used to read: Use the "Report" button on content or
+                    user profiles. There is no Report button anywhere in the product --
+                    the only occurrence of the word in src/ was this sentence. Telling
+                    someone to click a control that does not exist is worse than giving
+                    them one route, because they look for it, fail, and stop. */}
                 <ul className="list-disc list-inside space-y-2 ml-4">
-                  <li>Use the "Report" button on content or user profiles</li>
-                  <li>Email <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">support@beatflowmediagroup.com</a> with details</li>
+                  <li>
+                    Email <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">support@beatflowmediagroup.com</a>{" "}
+                    with the track or page link and what you saw
+                  </li>
                   <li>For copyright issues, email <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">legal@beatflowmediagroup.com</a></li>
-                  <li>For urgent safety concerns, contact us immediately</li>
+                  <li>
+                    For urgent safety concerns, email{" "}
+                    <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">support@beatflowmediagroup.com</a>{" "}
+                    with "URGENT" in the subject line
+                  </li>
                 </ul>
                 <p className="mt-4">
-                  All reports are reviewed by our moderation team. We may request additional information
-                  to investigate. False reports or abuse of the reporting system may result in account penalties.
+                  We review every report we receive and may come back to you for more detail.
+                  Abuse of the reporting system may result in account penalties.
                 </p>
               </div>
             </div>
