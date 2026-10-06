@@ -2038,3 +2038,46 @@ what `webhook.js` is missing and must gain:
   own inline `artistBalances` increments
 
 `stripe-webhook.js` retires once that is done, so there is one handler rather than two.
+
+### Runbook: giving Suno its own Stripe account — 2026-10-06
+
+Percy's decision. Measured first, because the numbers decide how hard this is:
+
+| | |
+|---|---|
+| Suno price | `price_1T1RsIAEum2hO0KZSb4Wcmse` on `prod_TzQjigN8dRYde8` |
+| Amount | **$14.99, ONE-TIME** — not a subscription |
+| Suno charges, ever | **2**, on 2026-02-16 and 2026-02-17, **none paid-and-unrefunded** |
+| All live charges on the account, ever | 22 (19 x $1.00, 2 x $14.99, 1 x $1.99), newest 2026-02-17 |
+
+**One-time pricing is what makes this easy.** There are no active subscriptions to carry
+over, and subscriptions are the thing that cannot be moved between accounts. With two
+charges, both already settled out and ~8 months old, there is also nothing left inside the
+dispute window, so BFMG's account does not need to stay refund-capable for Suno.
+
+**Order matters — these steps break Suno if run out of sequence.** The old product keeps
+working until step 6, which is the point.
+
+1. **Percy** creates the new Stripe account (identity and bank verification — not
+   something this project can do).
+2. In the **new** account, create the product and a **$14.99 one-time** price. Record the
+   new price id. **Ids do not transfer between accounts**; the old one is meaningless there.
+3. In the **new** account, create the webhook endpoint pointing at
+   `https://us-central1-sunoplaylistdownloader.cloudfunctions.net/handleStripeWebhook`,
+   subscribed to `checkout.session.completed` and `charge.refunded` to match what it
+   receives today. **Re-derive** its signing secret; never carry the BFMG one across.
+4. Update Suno's config with the **whole set from the new account**: secret key,
+   publishable key, webhook signing secret, price id. A mismatched pair fails with errors
+   that point nowhere near the cause. Suno's code is **not** under `C:\BeatFlowMedia`, so
+   this happens wherever that project lives.
+5. Deploy Suno and **put one real purchase through it**, end to end, in the new account —
+   not a dashboard click. Assert the account id with a whoami before trusting any of it.
+6. **Only then**, on BFMG's account: archive the Suno product and price, and remove the
+   `sunoplaylistdownloader` webhook endpoint. Archive rather than delete, so the two
+   historical charges stay attributable.
+
+**Do not reorder 6 before 5.** Removing the endpoint while Suno still points at BFMG's
+account means its customers pay and receive nothing, and the only symptom is silence.
+
+After step 6, BFMG's account holds one business, and the cross-talk goes away: BFMG's
+webhook stops receiving Suno's `checkout.session.completed` events and vice versa.
