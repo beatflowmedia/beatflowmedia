@@ -1816,3 +1816,58 @@ The lesson is the ordering, not the account: **prove a deploy is live before pro
 endpoint that creates resources, and probe read-only paths first.** The published deploy
 was still 18ddbcb1 from 2026-10-01 because production was `locked: true`, so the probe hit
 the old unauthenticated code.
+
+### Local Stripe webhook testing — 2026-10-06
+
+Proven end to end against the sandbox on `acct_1Bn3cBAEum2hO0KZ`:
+
+```
+--> checkout.session.completed [evt_1UNTwOAEum2hO0KZpu543Dwi]
+<-- [500] POST http://localhost:8899/.netlify/functions/stripe-webhook
+    handler reached, stopped at stripe-webhook.js:181 "Missing required metadata"
+```
+
+**`netlify dev` does not work on this machine.** It dies installing the `prerender`
+extension -- a tar extraction failure under `.netlify/plugins`
+(`TAR_ENTRY_ERROR UNKNOWN ... @shikijs/langs/README.md`). Nothing to do with the app.
+Use `netlify functions:serve --port 8899`, which skips the extension pipeline and loads
+all 17 functions.
+
+**Restricted-key permissions for the CLI.** Discovered one 403 at a time, so the whole
+set is written down here:
+
+| Permission | Needed by |
+|---|---|
+| **Debugging Tools — Write** (`stripecli_session_write`) | `stripe listen`. Not a resource permission; easy to miss |
+| **Payment Methods — Write** | `stripe trigger checkout.session.completed` fixture chain |
+| Checkout Sessions, Customers, PaymentIntents, Products, Prices — Write | the rest of the fixture chain |
+| Events — Read | receiving forwarded events |
+
+Deliberately left OFF: Connect, Transfers, Payouts, Balance, and everything live-mode.
+The webhook credits artist balances, so a key that cannot reach transfers or payouts
+means a mistake cannot move money.
+
+**The signing secret is stable, not per-session.** `stripe listen` re-minted exactly the
+value already in `.env`, so the local secret was never the problem. Worth knowing before
+"re-derive the webhook secret" is reached for as a fix.
+
+**The local functions write to PRODUCTION Firestore.** `FIREBASE_PROJECT_ID` is
+`beatflowmedia`. A `checkout.session.completed` carrying real metadata would put live
+`purchases`, `licenses` and `users` records in. The generic Stripe fixture carries
+`metadata: {}`, so the handler throws before any write -- which is what makes it safe to
+fire, and is why it stays the default way to test delivery here. Verified by checking
+`purchases`, `licenses`, `downloads` and `revenueAllocations` for writes in the window:
+none. **Exercising the real purchase path locally needs a separate Firebase project
+first.**
+
+**Signature verification was tested both ways.** A correctly signed payload is accepted
+and routed; one with a bad signature is refused 400. A pass only means something next to
+a fail -- the first probe "failed" because the HMAC key had its `whsec_` prefix stripped,
+and the endpoint's complaint ("No signatures found matching...") reads like a raw-body
+problem rather than a key one. **The whole secret, prefix included, is the key.**
+
+**Open question, not a finding yet:** the handler returns **500** on an event it can never
+process. Stripe treats non-2xx as a failed delivery and retries, and metadata will not
+appear on a retry, so a malformed session produces repeated failures and error noise
+rather than one refusal. Worth deciding what an unprocessable-by-design event should
+return.
