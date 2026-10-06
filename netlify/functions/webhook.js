@@ -1,8 +1,44 @@
-// netlify/functions/stripe-webhook.js
-// Handle Stripe webhook events for payment completion
+// netlify/functions/webhook.js
+//
+// THIS is the handler Stripe actually calls. The endpoint registered on the live
+// account is https://beatflowmediagroup.com/.netlify/functions/webhook, created
+// 2025-05-05. `stripe-webhook.js` is NOT registered and receives nothing.
+//
+// The header on this file used to read "netlify/functions/stripe-webhook.js", which is
+// how the two drifted: work aimed at the live webhook kept landing in the file whose
+// name matched the comment rather than the one matching the Stripe configuration.
+//
+// Handle Stripe webhook events for payment completion.
 
+const crypto = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
+// Canonical licence vocabulary, shared with the app in the manner of utils/pricing.js.
+const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
+
+/**
+ * The contract half of a purchase record: which license version the buyer accepted,
+ * and when they accepted it.
+ *
+ * Both values were stamped by create-checkout at the moment of the click -- the version
+ * it verified against src/utils/agreements.js, and its own server clock -- and Stripe
+ * has held them unchanged since. Nothing here re-derives either one: a webhook firing
+ * minutes later must not decide what someone agreed to.
+ *
+ * NULLS ARE WRITTEN EXPLICITLY, not omitted. Firestore excludes a document from any
+ * query that mentions a field the document lacks, so an omitted field would make
+ * unaccepted purchases invisible to exactly the query that looks for them. An explicit
+ * null is findable, and finding them is the point -- this returns nulls for the purchase
+ * types that have no published agreement yet (subscriptions, memberships) rather than
+ * pretending they were accepted.
+ */
+function licenseAcceptanceFields(session) {
+  const meta = (session && session.metadata) || {};
+  return {
+    acceptedAgreement: meta.acceptedAgreement || null,
+    acceptedAt: meta.acceptedAt || null
+  };
+}
 
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
@@ -206,6 +242,7 @@ async function handleCheckoutSessionCompleted(session) {
         price: session.amount_total / 100,
         currency: session.currency,
         status: 'completed',
+        ...licenseAcceptanceFields(session),
         stripeSessionId: session.id,
         stripeSubscriptionId: session.subscription,
         customerEmail: session.customer_email,
@@ -254,6 +291,7 @@ async function handleCheckoutSessionCompleted(session) {
         price: session.amount_total / 100,
         currency: session.currency,
         status: 'completed',
+        ...licenseAcceptanceFields(session),
         stripeSessionId: session.id,
         stripeSubscriptionId: session.subscription,
         customerEmail: session.customer_email,
@@ -318,6 +356,13 @@ async function handleCheckoutSessionCompleted(session) {
     const artistPayout = netAmount * 0.70;
     const platformFee = netAmount * 0.30;
 
+    // The licence id and the acceptance stamp were the whole gap between this handler
+    // and the unregistered one. create-checkout refuses a download sale without a
+    // recorded acceptance of the CURRENT agreement version and puts it in the session
+    // metadata; until now this endpoint read the event and dropped it, so the product
+    // asserted that buyers accepted a specific licence while keeping no evidence of it.
+    const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+
     const purchaseData = {
       userId,
       itemId,
@@ -325,6 +370,8 @@ async function handleCheckoutSessionCompleted(session) {
       itemName: itemData.title || 'Unknown',
       artistName: itemData.artistName || itemData.artist || 'Unknown Artist',
       artistId: itemData.uploadedBy || itemData.artistId || null, // Artist's user ID
+      licenseId,
+      ...licenseAcceptanceFields(session),
       price: grossAmount, // Gross amount customer paid
       stripeFee: stripeFee, // Stripe processing fee
       netAmount: netAmount, // Amount after Stripe fees
@@ -343,7 +390,51 @@ async function handleCheckoutSessionCompleted(session) {
     console.log('Purchase data:', JSON.stringify(purchaseData, null, 2));
 
     const purchaseRef = await db.collection('purchases').add(purchaseData);
-    console.log(`✅ Purchase document created with ID: ${purchaseRef.id}`);
+    console.log(`✅ Purchase document created with ID: ${purchaseRef.id}, License: ${licenseId}`);
+
+    // Perpetual licence for this purchase. These survive subscription cancellation,
+    // which is the point of the hybrid model: a one-off download stays licensed whether
+    // or not the buyer keeps paying a monthly tier.
+    //
+    // Deliberately NOT fatal. A purchase that was taken and recorded must not be undone
+    // because the licence row failed to write -- that would turn a bookkeeping failure
+    // into a refund dispute. It is logged loudly instead, and the purchase carries the
+    // same licenseId, so a missing row is recoverable rather than lost.
+    try {
+      const perpetualLicenseId = `lic_perp_${userId}_${itemId}_${Date.now()}`;
+      const subscriberTier = session.metadata.subscriberTier || 'none';
+      const originalPrice = session.metadata.originalPrice ? parseInt(session.metadata.originalPrice, 10) : null;
+      const discountApplied = session.metadata.discountApplied === 'true';
+
+      await db.collection('licenses').doc(perpetualLicenseId).set({
+        licenseId: perpetualLicenseId,
+        purchaseLicenseId: licenseId, // the id stamped on the purchase row
+        userId,
+        trackId: itemId,
+        purchaseId: purchaseRef.id,
+        tier: subscriberTier,
+        // licenseFields writes the three axes from one definition -- SCOPE, TERM and
+        // GRANT -- rather than a single `licenseType` string that silently conflates
+        // them. See src/utils/licenseTerms.js.
+        ...licenseFields(ONE_OFF_DOWNLOAD),
+        ...licenseAcceptanceFields(session),
+        status: 'active',
+        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        validWhileSubscribed: false,
+        pricePaid: session.amount_total, // In cents
+        originalPrice,
+        discountApplied,
+        note: discountApplied
+          ? `Perpetual license purchased with ${subscriberTier} subscriber discount`
+          : 'Perpetual license purchased at regular price',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ Created perpetual license ${perpetualLicenseId} for ${itemType} ${itemId}`);
+    } catch (licenseError) {
+      console.error('⚠️ Failed to create perpetual license (purchase still valid):', licenseError);
+    }
 
     // Update artist balance - handle multi-writer splits
     if (purchaseData.artistId) {
