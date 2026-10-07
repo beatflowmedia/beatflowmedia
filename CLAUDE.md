@@ -2189,3 +2189,83 @@ wants deciding alongside how popularity is actually computed.
 `songLikes` holds 4 documents and 2 likers; `likes` holds **0** and nothing writes it.
 Running either script would delete the live data in favour of an empty collection. Same
 class as the `clear-songs.js` script deleted earlier.
+
+---
+
+## Revenue streams: what actually works — 2026-10-07
+
+Percy asked whether the platform can process every transaction type. Measured against the
+live account and the **deployed bundle**, not the source.
+
+### THE FINDING: the live pricing page quotes one price and would bill another
+
+`/explore-premium` returns HTTP 200 and advertises Student $9.99, Creator $24, Pro $49,
+Agency $149. `ExplorePremium.js` carried
+`process.env.REACT_APP_STRIPE_*_PRICE_ID || "price_1RPG…"`.
+
+**Those env vars do not exist in Netlify's project settings.** Confirmed twice: they appear
+in neither the "Injected project settings env vars" nor the "Ignored project settings env
+var" lists in a `netlify dev` run, and `netlify env:get --context production` returns unset
+for all four. CRA inlines `REACT_APP_*` at build time, so the build baked the fallbacks in
+— **verified in the deployed chunk `609.2b7c7a1d.chunk.js`**, which contains all four. Of
+111 chunks scanned, it is the only one holding any price id.
+
+Resolved against the live account, those fallbacks are a different product line:
+
+| Page advertises | Would actually charge |
+|---|---|
+| Student $9.99 | $9.99 — **Beat Campus** (amount coincides, wrong product) |
+| Creator $24.00 | **$11.99 — Beat Solo** |
+| Pro $49.00 | **$16.99 — Beat Duo** |
+| Agency $149.00 | **$18.00 — Beat Household** |
+
+Correct live prices for all four **exist and were simply unused**:
+`price_1T10Pv…` $9.99, `price_1T10Qh…` $24, `price_1T10RE…` $49, `price_1T10Rh…` $149.
+
+Direction matters: this **undercharges**, so it is lost revenue rather than a customer
+overcharge, and no one has been affected — the account has 22 lifetime charges, newest
+2026-02-17, and no live subscriptions. It was live and functional all the same.
+
+**Root cause is the fallback, not the missing env var.** A missing configuration value
+silently became a wrong price instead of an error. Same shape as `args().value` accepting
+`--limit 1` and meaning "no limit": it reads as a seatbelt and is not fastened.
+
+**Fixed:**
+- Fallback ids deleted. A tier with no configured price id now yields `null`.
+- `StripeButton` refuses to open checkout without a price id and says the plan is
+  unavailable. The guard is in the button, so every caller is covered.
+- `ExplorePremium` no longer carries its own copy of the tier prices. The displayed string
+  is derived from `pricingPlans.js` via `getPlanById` + `formatPrice`, so the page and the
+  charge cannot drift apart again.
+- `verify:stripe` gained the check that would have caught it: it resolves the id the app is
+  **configured with** and compares what it would charge against what the app advertises.
+  The existing tier check only proved a correctly-priced price *existed* — which it did,
+  unused, the whole time.
+
+**Proven both ways.** With the fallback ids against live it exits 1 and names all three
+mispricings; with the correct ids it exits 0. It also surfaced that the `pro` product is
+named "Professional" in the sandbox and "Pro" in live, which had made the check report "no
+active price" for a price sitting right there — fixed by matching a list of names.
+
+**Still needed, and only Percy can do it:** set the four
+`REACT_APP_STRIPE_*_PRICE_ID` in Netlify production to the `price_1T10…` ids above. Until
+then the plans show as unavailable — which is the correct failure, but it is still a
+failure.
+
+### Status of every revenue stream
+
+| Stream | Path | Production |
+|---|---|---|
+| Song purchase | `create-checkout` → `webhook` | **works** — price computed server-side from `utils/pricing.js` via `price_data`, no Stripe price id needed |
+| Album purchase | same | **works** |
+| Subscriptions ×4 | `create-checkout-session` → `webhook` | **broken until the env vars are set** (above) |
+| Sponsorships ×3 | `create-checkout-session` | **cannot be sold** — price ids unset, `canPay()` returns false so the UI hides payment. No sponsor id appears in any deployed chunk |
+| Studio album projects | handler only in `stripe-webhook.js` | **not wired** — that endpoint is unregistered; Studio is deferred |
+| Submission credits | `submissionCreditsService.js` | no purchase path found |
+| Artist payouts (out) | `request-payout` | authenticated now; artist join deferred |
+
+Two structural notes. `create-checkout-session` hardcodes `mode: 'subscription'`, so it
+cannot sell a one-time product — the live account holds one-time Personal ($29) and
+Commercial ($58) Licence products that nothing in the app currently sells. And the live
+account carries two subscription families, Student/Creator/Pro/Agency alongside
+Beat Solo/Duo/Campus/Household; the second is what the stale fallbacks pointed at.

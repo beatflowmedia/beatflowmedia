@@ -62,6 +62,24 @@ export default function StripeButton({ priceId, children, className = "" }) {
   const handleClick = async () => {
     console.log('StripeButton clicked', { user, loading, hasSubscription });
 
+    // No price id means this tier is not configured for sale. Refuse here rather than
+    // POST `priceId: undefined` and let the server answer "Missing priceId".
+    //
+    // This button used to be handed a hardcoded fallback id when the env var was absent,
+    // which is how the live site came to advertise Agency at $149 and bill $18 for a
+    // product called "Beat Household". An unconfigured plan must be visibly unbuyable,
+    // never quietly buyable at some other price.
+    if (!priceId) {
+      console.error('StripeButton: no priceId configured for this plan');
+      setModal({
+        isOpen: true,
+        title: 'Plan unavailable',
+        message: 'This plan is not available for purchase right now. Please contact support and we will sort it out.',
+        type: 'error'
+      });
+      return;
+    }
+
     // If not logged in, show modal prompting to log in
     if (!user) {
       console.log('No user found, prompting to log in');

@@ -4,10 +4,43 @@ import { FaCcVisa, FaCcMastercard, FaCcStripe } from "react-icons/fa";
 import StripeButton from "./StripeButton";
 import Footer from "./Footer";
 
+// The displayed price comes from pricingPlans.js, which is the single origin for what a
+// tier costs. It used to be a hardcoded string here as well, so the page and the checkout
+// could disagree -- and did.
+import { getPlanById, formatPrice } from "../data/pricingPlans";
+
+/** The tier's price id, or null. NEVER a fallback -- see the note below. */
+const priceIdFor = (id) => (getPlanById(id) || {}).stripePriceId || null;
+
+/** What the page may charge, read from the one place that defines it. */
+const priceTextFor = (id) => {
+  const plan = getPlanById(id);
+  return plan ? `${formatPrice(plan.price)}/month` : "";
+};
+
+// WHY THERE ARE NO FALLBACK PRICE IDS HERE ANY MORE
+//
+// Each of these carried `process.env.REACT_APP_STRIPE_*_PRICE_ID || "price_1RPG..."`.
+// Those env vars are not set in Netlify's project settings, so the production build baked
+// the fallbacks in -- verified in the deployed chunk 609.2b7c7a1d.chunk.js on 2026-10-07.
+// Resolved against the LIVE account, they are not this product line at all:
+//
+//   page showed Creator $24   -> price_1RPFZu... is "Beat Solo"      $11.99
+//   page showed Pro     $49   -> price_1RPGGG... is "Beat Duo"       $16.99
+//   page showed Agency  $149  -> price_1RPGOL... is "Beat Household" $18.00
+//
+// A customer clicking Agency would have been billed $18 for a different product. The
+// fallback is the whole cause: a missing configuration value silently became a wrong
+// price instead of an error. Same shape as a safety flag that does nothing when mistyped
+// -- it reads as a seatbelt and is not fastened.
+//
+// Now a missing price id yields null, `canSubscribe` is false, and the button says so.
+// Unconfigured and loud beats configured-wrong and silent.
 const plans = [
   {
+    id: "student",
     title: "Student",
-    price: "$9.99/month",
+    price: priceTextFor("student"),
     details: [
       "Commercial licensing included",
       "Unlimited downloads",
@@ -18,11 +51,12 @@ const plans = [
     label: "Get Student Plan",
     note: "Educational discount with commercial licensing. Requires verification.",
     tag: "🎓 Student Deal",
-    priceId: process.env.REACT_APP_STRIPE_STUDENT_PRICE_ID || "price_1RPG6sAEum2hO0KZGTDZIqOr"
+    priceId: priceIdFor("student")
   },
   {
+    id: "creator",
     title: "Creator",
-    price: "$24/month",
+    price: priceTextFor("creator"),
     details: [
       "Unlimited downloads",
       "Published content licensed perpetually",
@@ -33,11 +67,12 @@ const plans = [
     label: "Get Creator Plan",
     note: "Perfect for content creators. Keep licenses forever after publishing.",
     tag: "⭐ Most Popular",
-    priceId: process.env.REACT_APP_STRIPE_CREATOR_PRICE_ID || "price_1RPFZuAEum2hO0KZ6R9hDDBS"
+    priceId: priceIdFor("creator")
   },
   {
+    id: "pro",
     title: "Pro",
-    price: "$49/month",
+    price: priceTextFor("pro"),
     details: [
       "Everything in Creator, plus:",
       "Film & TV distribution rights",
@@ -48,11 +83,12 @@ const plans = [
     label: "Get Pro Plan",
     note: "For professional video producers and agencies working with clients.",
     tag: "Professional",
-    priceId: process.env.REACT_APP_STRIPE_PRO_PRICE_ID || "price_1RPGGGAEum2hO0KZbsLLd4x1"
+    priceId: priceIdFor("pro")
   },
   {
+    id: "agency",
     title: "Agency",
-    price: "$149/month",
+    price: priceTextFor("agency"),
     details: [
       "Everything in Pro, plus:",
       "3 team member accounts",
@@ -63,7 +99,7 @@ const plans = [
     label: "Get Agency Plan",
     note: "For agencies and teams managing multiple client projects.",
     tag: "Enterprise",
-    priceId: process.env.REACT_APP_STRIPE_AGENCY_PRICE_ID || "price_1RPGOLAEum2hO0KZ7tHXcspp"
+    priceId: priceIdFor("agency")
   },
 ];
 

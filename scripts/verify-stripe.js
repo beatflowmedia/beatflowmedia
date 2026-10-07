@@ -21,6 +21,7 @@
 // It shells out to the Stripe CLI rather than taking an API key, so no secret is read,
 // written or printed here. execFile is used instead of a shell, which also sidesteps
 // the Git Bash path mangling that turns /v1/account into C:/Program Files/Git/v1/....
+require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
 const { execFileSync } = require('child_process');
 const path = require('path');
 
@@ -108,23 +109,31 @@ if (declaredTiers.length !== 4) {
   );
 }
 
-// Dashboard names for the tiers. `pro` is listed as "Professional" in Stripe, which is
-// the kind of mismatch that makes a lookup silently return nothing.
-const TIER_PRODUCT_NAME = { student: 'Student', creator: 'Creator', pro: 'Professional', agency: 'Agency' };
+// Dashboard names for the tiers, as a LIST per tier, because the two environments do not
+// agree: the `pro` product is named "Professional" in the sandbox and "Pro" in live. A
+// single expected name made this check report "no active price" for a price that was
+// sitting right there -- the lookup silently returning nothing is exactly the failure
+// mode this file is supposed to catch, not produce.
+const TIER_PRODUCT_NAMES = {
+  student: ['Student'],
+  creator: ['Creator'],
+  pro: ['Pro', 'Professional'],
+  agency: ['Agency']
+};
 
 const prices = stripeGet('/v1/prices', { limit: 100, 'expand[]': 'data.product', active: 'true' });
 const priceList = prices.data || [];
 
 declaredTiers.forEach((tier) => {
-  const wantName = TIER_PRODUCT_NAME[tier.id];
+  const wantNames = TIER_PRODUCT_NAMES[tier.id] || [];
   const matches = priceList.filter((p) => {
     const prod = p.product && typeof p.product === 'object' ? p.product : null;
-    return prod && prod.name === wantName;
+    return prod && wantNames.includes(prod.name);
   });
 
   if (!matches.length) {
     failures.push(
-      'Tier "' + tier.id + '" (' + wantName + ', $' + (tier.amount / 100).toFixed(2) +
+      'Tier "' + tier.id + '" (' + wantNames.join('/') + ', $' + (tier.amount / 100).toFixed(2) +
       '/month) has no active price in this environment.\n' +
       '      The app offers this plan. Checkout for it cannot succeed here.'
     );
@@ -142,6 +151,54 @@ declaredTiers.forEach((tier) => {
     failures.push(
       'Tier "' + tier.id + '" is priced at the right amount but is not monthly ' +
       '(interval: ' + (exact.recurring?.interval || 'one-off') + ').'
+    );
+  }
+});
+
+// ------------------------------------------- 2b. the id the app would actually send
+//
+// The tier check above proves a correctly-priced price EXISTS. It does not prove the app
+// would send that one, and on 2026-10-07 it did not: the REACT_APP_STRIPE_*_PRICE_ID vars
+// were unset in Netlify, ExplorePremium.js carried hardcoded fallbacks, and the deployed
+// bundle billed "Beat Household" $18.00 for a plan advertised at $149.
+//
+// So this resolves the id the app is configured with and checks what it charges. An
+// existing-but-unused correct price is exactly the gap that hid this for months.
+const configuredIds = {
+  student: process.env.REACT_APP_STRIPE_STUDENT_PRICE_ID,
+  creator: process.env.REACT_APP_STRIPE_CREATOR_PRICE_ID,
+  pro: process.env.REACT_APP_STRIPE_PRO_PRICE_ID,
+  agency: process.env.REACT_APP_STRIPE_AGENCY_PRICE_ID
+};
+
+declaredTiers.forEach((tier) => {
+  const configured = configuredIds[tier.id];
+  if (!configured) {
+    // Not a failure by itself -- this is how a dev machine looks, and the UI now refuses
+    // to offer an unconfigured plan rather than inventing one. It is reported so a
+    // production run says so out loud.
+    notes.push(
+      `No price id configured for tier "${tier.id}" (REACT_APP_STRIPE_${tier.id.toUpperCase()}_PRICE_ID). ` +
+      'The plan will show as unavailable rather than being sold at the wrong price.'
+    );
+    return;
+  }
+  const match = priceList.find((p) => p.id === configured);
+  if (!match) {
+    failures.push(
+      'Tier "' + tier.id + '" is configured with ' + configured + ', which is not an active price\n' +
+      '      in this environment. Checkout would fail, or bill from the wrong mode.'
+    );
+    return;
+  }
+  if (match.unit_amount !== tier.amount) {
+    const prodName = match.product && typeof match.product === 'object' ? match.product.name : '?';
+    failures.push(
+      'Tier "' + tier.id + '" ADVERTISES $' + (tier.amount / 100).toFixed(2) +
+      ' and would CHARGE $' + ((match.unit_amount || 0) / 100).toFixed(2) + ' (' + prodName + ').\n' +
+      '      The configured price id is ' + configured + '.\n' +
+      '      A page that quotes one amount and bills another is the worst of the failures this\n' +
+      '      script exists to catch -- it looks like it is working.'
     );
   }
 });
