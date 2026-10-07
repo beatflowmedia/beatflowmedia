@@ -2139,3 +2139,53 @@ registers it with Stripe and silently swaps every other handler — including th
 recording and the renewal handling that only `webhook.js` has.
 
 **When Studio resumes:** port its handling into `webhook.js`. Never register this endpoint.
+
+### Station saves, popularity, and the chart boundary — 2026-10-07
+
+Percy: communicate the design to the station, keep the codebases apart, and be ready for
+chart registration. The station's half is written up in `RadioStation/radio/SAVES.md`;
+this is BFMG's half.
+
+**The station's heart is "Save to your list", not a like and not a vote.** It writes to
+`localStorage` and nothing leaves the browser today. BFMG's own `songLikes` is a different
+act on a different surface. They stay separate fields: a save from a passive listener and a
+deliberate like on a product page are different evidence and will want different weights.
+
+**Saving currently has no payoff**, which is the actual problem — `paintSaved()` lists the
+track and offers no way to buy it, while `releases.json` already carries the absolute
+`/album/<id>` store URL that `catalog.js pull` wrote. Fixing that turns the save into a
+**revealed preference**: the listener acts for their own benefit, so inflating it gains a
+faker nothing. That is a better signal than a vote *and* it needs none of the anti-Sybil
+weighting a vote would, because there is no prize.
+
+**The chart boundary, because this is what "being prepared for Billboard" actually means.**
+Saves do not feed charts. Billboard derives from Luminate, which is built from **sales** and
+**streams reported by registered parties**; a proprietary engagement count is not
+chart-eligible data in any form. Preparing is therefore work on the **sales** side here:
+
+- ISRCs and UPCs correct and stable — the ISRC is already the station↔BFMG join
+- purchase records carrying what a report requires
+- pricing that satisfies the unit rules, including the known collision between the $4.99
+  album floor and the "n x $1.99" album-unit rule, which has to be settled **before**
+  registration rather than after
+
+Two lanes, kept apart in the data as well as the words: **internal popularity** (saves,
+likes, plays → "top songs" shelves) and **chart reporting** (verified sales, reported
+streams). "Most saved this week" is honest. The same number presented as a chart position
+is not.
+
+Related: [[project-dsp-prd-chart-eligibility]] already records the pricing collision.
+
+**Found while reading the like path:** `src/services/engagementMetrics.js:435` counts likes
+with `where('songId','==',itemId)`, but `songLikes` documents are **keyed by** songId and
+hold only a `likers` array — there is no `songId` field, so that query matches nothing and
+the count is permanently 0. Same shape as the `purchases.where('songId')` bug in
+`lib/entitlement.js`. Meanwhile `src/services/adminAnalytics.js:395` orders by `likeCount`,
+so something is already ranking on this. **Not fixed here** — it is a separate change and
+wants deciding alongside how popularity is actually computed.
+
+**Landmine:** `src/utils/minimalCleanup.js` and `src/utils/purgeFirebase.js` both list
+`songLikes` as deprecated in favour of a unified `likes` collection. Measured 2026-10-07:
+`songLikes` holds 4 documents and 2 likers; `likes` holds **0** and nothing writes it.
+Running either script would delete the live data in favour of an empty collection. Same
+class as the `clear-songs.js` script deleted earlier.
