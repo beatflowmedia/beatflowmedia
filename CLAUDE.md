@@ -2269,3 +2269,45 @@ cannot sell a one-time product — the live account holds one-time Personal ($29
 Commercial ($58) Licence products that nothing in the app currently sells. And the live
 account carries two subscription families, Student/Creator/Pro/Agency alongside
 Beat Solo/Duo/Campus/Household; the second is what the stale fallbacks pointed at.
+
+### Station corrections mirrored — 2026-10-09
+
+The station (`radiostation-24`) asked BFMG to mirror two catalogue decisions. Both
+checked against live data; one needed a fix, one did not.
+
+**1. Boom Bap Soul, Vol. 1 is not explicit — CORRECTED.** A DistroKid error the station
+had already fixed on its side. All **10 tracks** on album `BxzJN6Q8NgrHZcF9XyW0` carried
+`explicit: true`; the album document itself carried no flag at all. `TrackRowCard` renders
+a badge straight off `track.explicit`, so the advisory was showing on a release that does
+not warrant one — wrong metadata on a product page, and the kind that propagates outward
+to DSPs.
+
+Set to `false` rather than deleted, which matches the catalogue: of 300 songs sampled,
+**298 carry `explicit: false` and none omit the field**. Firestore excludes a document
+from any query naming a field it lacks, so deleting it would have hidden these tracks from
+the explicit facet instead of marking them clean. Read back after the batch: 0 true, 10
+false.
+
+**2. Style tags shaped `<name>-style` — NOT PRESENT, nothing to do.** Percy does not want
+artist names used as descriptors. Scanned every `styleTags`, `tags`, `styles`, `mood`,
+`moods`, `genre`, `genres` and `keywords` value across all 906 songs for anything ending
+`-style`: **zero**. Then searched the full JSON of all 906 songs and 15 albums for
+`babyface|teddy swims|timbaland|neptunes` in any field: **zero**. The problem was
+station-side only.
+
+Recorded because an absence is worth writing down: the next person asked to "remove the
+style tags from BFMG" should know they were never there, rather than going looking.
+
+**Still open from the station**, none of it started:
+
+- the art handoff in `C:\BeatFlowMedia\docs\STATION-ART-HANDOFF.md` — 12 wide 16:9 album
+  masters, a traced logo SVG, brand green `#4DE94C`, IBM Plex. All 12 BFMG album ids in
+  its table resolve in Firestore and the UPCs match; **0 of the 12 currently have wide
+  art**. Per-album `og:image` cards need BFMG's own call to action, not the station's
+  "LISTEN ON BEATFLOW RADIO" — today every album shares one generic share image
+- exposing the plain-language licence summary + `/terms` and `/sync-licensing` in
+  `src/utils/licenseTerms.js`, so `catalog.js` pulls it like `storeUrl` rather than the
+  station keeping a copy that can drift from the binding text
+- reconciling **164 sellable BFMG commercial songs against the station's 134** before
+  anything is marked sellable. Could be 30 the station does not carry, or a broken ISRC
+  join; not yet established which
