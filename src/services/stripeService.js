@@ -303,55 +303,18 @@ class StripeService {
     }
   }
 
-  /**
-   * Generate a temporary download link for a purchased song
-   */
-  async getDownloadLink(userId, songId) {
-    try {
-      // Verify user has permission to download
-      const canDownload = await this.canDownloadSong(userId, songId);
-      if (!canDownload) {
-        throw new Error('You must purchase this song before downloading');
-      }
-
-      // Get song details
-      const songDoc = await getDoc(doc(db, 'songs', songId));
-      if (!songDoc.exists()) {
-        throw new Error('Song not found');
-      }
-
-      const songData = songDoc.data();
-
-      // Determine which URL to use for download
-      // Priority: downloadUrl (full track) > audioUrl (might be sample) > fileUrl (legacy)
-      const downloadUrl = songData.downloadUrl || songData.fullTrackUrl || songData.audioUrl || songData.fileUrl;
-
-      if (!downloadUrl) {
-        throw new Error('Download URL not available for this song');
-      }
-
-      console.log('[stripeService] Download link generated:', {
-        songId,
-        title: songData.title,
-        downloadUrl,
-        hasDownloadUrl: !!songData.downloadUrl,
-        hasFullTrackUrl: !!songData.fullTrackUrl,
-        hasAudioUrl: !!songData.audioUrl,
-        hasFileUrl: !!songData.fileUrl
-      });
-
-      // Return the download URL (this could be a Cloud Storage signed URL)
-      // For now, return the file URL directly
-      return {
-        url: downloadUrl,
-        filename: `${songData.title}.mp3`,
-        expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes
-      };
-    } catch (error) {
-      console.error('Error getting download link:', error);
-      throw error;
-    }
-  }
+  // getDownloadLink() was removed on 2026-10-09.
+  //
+  // It resolved a purchased download as
+  //   songData.downloadUrl || fullTrackUrl || audioUrl || fileUrl
+  // and no song carries the first two, so every buyer was handed the 470 KB preview
+  // instead of the master they paid for. It also decided entitlement client-side and
+  // then read a URL off a public document, so the permission check and the file were
+  // independent of each other.
+  //
+  // Use getMasterDownload() from src/services/masterDownload.js, which calls
+  // netlify/functions/download-master.js: that verifies the ID token, checks the
+  // purchase record server-side, and presigns the private R2 object.
 
   /**
    * Record a download event

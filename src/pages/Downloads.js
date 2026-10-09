@@ -38,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { stripeService } from '../services/stripeService';
+import { getMasterDownload } from '../services/masterDownload';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
@@ -163,8 +164,12 @@ export default function Downloads() {
       setDownloading(purchase.id);
 
       if (purchase.itemType === 'song') {
-        // Download single song
-        const downloadData = await stripeService.getDownloadLink(user.uid, purchase.itemId);
+        // getMasterDownload, not stripeService.getDownloadLink. The old call resolved
+        // `downloadUrl || fullTrackUrl || audioUrl` off the song document, and since no
+        // song carries the first two, every buyer was handed the 470 KB preview instead
+        // of the master they paid for. Entitlement is now checked server-side and the
+        // file is a presigned R2 object.
+        const downloadData = await getMasterDownload(purchase.itemId);
         await stripeService.recordDownload(user.uid, purchase.itemId);
 
         // Fetch and download as blob to force download instead of opening in browser
@@ -218,8 +223,10 @@ export default function Downloads() {
         setDownloadProgress({ current: i + 1, total: songs.length });
 
         try {
-          // Get download link for each song
-          const downloadData = await stripeService.getDownloadLink(user.uid, song.id);
+          // Same correction as the single-song path: the master, not the preview.
+          // Each track is authorised separately, so a buyer who owns the album gets
+          // every track and one they do not own fails that track rather than the zip.
+          const downloadData = await getMasterDownload(song.id);
           await stripeService.recordDownload(user.uid, song.id);
 
           // Fetch the song file as blob

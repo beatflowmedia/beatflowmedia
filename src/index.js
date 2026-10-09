@@ -3,6 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { applyAdConsent } from "./utils/adConsent";
+import { UPDATE_AVAILABLE_EVENT } from "./components/AppUpdatePrompt";
 
 // Before render, not after. index.html pauses every ad request until this runs, so
 // the sooner it runs the smaller the delay to the first ad -- and until it runs, no
@@ -36,11 +37,11 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
               console.log('New service worker activated!');
-              // Optionally reload the page to use the new service worker
-              // eslint-disable-next-line no-restricted-globals
-              if (window.confirm('A new version is available. Reload to update?')) {
-                window.location.reload();
-              }
+              // Ask in the app's own modal, not window.confirm(). This code runs
+              // outside React -- it must fire once per page load whatever route is
+              // mounted -- so it cannot render one itself. AppUpdatePrompt listens for
+              // this event and shows the modal; see src/components/AppUpdatePrompt.js.
+              window.dispatchEvent(new CustomEvent(UPDATE_AVAILABLE_EVENT));
             }
           });
         });

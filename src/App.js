@@ -6,6 +6,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { AuthProvider } from "./context/AuthContext";
 import { LikesProvider } from "./context/LikesContext";
+import AppUpdatePrompt from "./components/AppUpdatePrompt";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import { PlayerProvider } from "./context/PlayerContext";
 import { ModalProvider } from "./context/ModalContext";
@@ -74,6 +75,11 @@ export default function App() {
                 <PlayerProvider>
                   <BrowserRouter>
                     <AppRoutes />
+                    {/* Listens for the service worker's `bfmg:update-available` event
+                        and offers the reload in our own modal rather than a native
+                        window.confirm. Mounted once, inside the router so it survives
+                        navigation, and renders nothing until the event fires. */}
+                    <AppUpdatePrompt />
                   </BrowserRouter>
                 </PlayerProvider>
               </FavoritesProvider>

@@ -1,7 +1,26 @@
 // src/components/Modal.js
 import { useEffect } from 'react';
 
-export default function Modal({ isOpen, onClose, title, message, type = 'info' }) {
+/**
+ * @param {object}   props
+ * @param {Function} [props.onConfirm]    Supply this to make the modal a CHOICE rather
+ *                                        than an acknowledgement: a second button
+ *                                        appears and `onClose` becomes the decline.
+ *                                        Without it the modal keeps its single OK
+ *                                        button, so every existing caller is unchanged.
+ * @param {string}   [props.confirmLabel]
+ * @param {string}   [props.cancelLabel]
+ */
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
+  message,
+  type = 'info',
+  onConfirm = null,
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel'
+}) {
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
@@ -61,14 +80,34 @@ export default function Modal({ isOpen, onClose, title, message, type = 'info' }
           </p>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 bg-gray-800 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-          >
-            OK
-          </button>
+        {/* Footer.
+            min-h-[44px] on every button: px-6 py-2 renders about 36px, below the 44px
+            touch target a fingertip needs. gap-3 keeps two adjacent buttons from
+            misfiring into each other. */}
+        <div className="px-6 py-4 bg-gray-800 flex justify-end gap-3">
+          {onConfirm ? (
+            <>
+              <button
+                onClick={onClose}
+                className="px-6 py-2 min-h-[44px] bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              >
+                {cancelLabel}
+              </button>
+              <button
+                onClick={onConfirm}
+                className="px-6 py-2 min-h-[44px] bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              >
+                {confirmLabel}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onClose}
+              className="px-6 py-2 min-h-[44px] bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+            >
+              OK
+            </button>
+          )}
         </div>
       </div>
     </div>

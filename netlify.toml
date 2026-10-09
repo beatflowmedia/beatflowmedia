@@ -26,10 +26,14 @@
   SECRETS_SCAN_OMIT_KEYS = "REACT_APP_FIREBASE_API_KEY,REACT_APP_FIREBASE_APP_ID,REACT_APP_FIREBASE_AUTH_DOMAIN,REACT_APP_FIREBASE_MEASUREMENT_ID,REACT_APP_FIREBASE_MESSAGING_SENDER_ID,REACT_APP_FIREBASE_PROJECT_ID,REACT_APP_FIREBASE_STORAGE_BUCKET,REACT_APP_STRIPE_PUBLISHABLE_KEY,REACT_APP_STRIPE_STUDENT_PRICE_ID,REACT_APP_STRIPE_CREATOR_PRICE_ID,REACT_APP_STRIPE_PRO_PRICE_ID,REACT_APP_STRIPE_AGENCY_PRICE_ID,REACT_APP_SITE_URL,REACT_APP_ANALYTICS_ID"
 
 [dev]
-  # Serve on 8899. 8888 is Netlify Dev's own default and another of Percy's
-  # projects uses it, so this one stays off it. Was briefly 3005, which collided with the `dev` script's own
-  # PORT=3005 -- Netlify wanted the same port as the app it was proxying.
-  port = 8899
+  # Serve on 8888, Netlify Dev's own default, at Percy's instruction (2026-10-09).
+  #
+  # This said 8899 and gave the reason: 8888 is the default and another of Percy's
+  # projects used it. That project is no longer holding the port. If both ever run at
+  # once again the symptom is a bind failure on startup, which is loud -- unlike the
+  # earlier 3005 collision, where Netlify wanted the same port as the app it was
+  # proxying and simply waited forever for a port nothing was serving.
+  port = 8888
   targetPort = 3006
 
   # Name the script explicitly. Auto-detection picks `npm run dev` (PORT=3005), which

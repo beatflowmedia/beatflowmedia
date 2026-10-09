@@ -63,10 +63,19 @@ function masterObjectKey(isrc) {
   return MASTER_PREFIX + '/' + normalised + '.' + MASTER_EXTENSION;
 }
 
-/** Filename the buyer sees. Title is cosmetic; the ISRC is what makes it unique. */
+/**
+ * Filename the buyer sees. Title is cosmetic; the ISRC is what makes it unique.
+ *
+ * The bracket is only added when there IS an ISRC. It used to be unconditional, so a
+ * song without one downloaded as "Shelter in the Storm [].mp3" -- seen in the first
+ * end-to-end purchase test on 2026-10-09. Not every record carries an ISRC (those are
+ * the ones whose master lives at masters/id/<id>), and an empty bracket on a paid
+ * download looks like the file is damaged.
+ */
 function masterDownloadFilename(title, isrc) {
   const safe = String(title || 'master').replace(/[^A-Za-z0-9 ._-]/g, '').trim() || 'master';
-  return safe + ' [' + normaliseIsrc(isrc) + '].' + MASTER_EXTENSION;
+  const code = normaliseIsrc(isrc);
+  return safe + (code ? ' [' + code + ']' : '') + '.' + MASTER_EXTENSION;
 }
 
 /**
