@@ -107,6 +107,39 @@ function licenseFields({ scope, term, grant }) {
   };
 }
 
+/**
+ * Plain-language summary of the one-off download licence, for surfaces OUTSIDE the
+ * checkout that have to tell someone what they are about to license.
+ *
+ * It exists so there is one wording rather than several. BeatFlow Radio needs it for a
+ * terms-confirmation popup before a listener leaves for BFMG, and the alternative --
+ * the station keeping its own copy -- drifts the moment the licence changes here. The
+ * failure is silent and only surfaces in a dispute, which is the worst time to discover
+ * that two systems described the same licence differently.
+ *
+ * `catalog.js` pulls this with the rest of the catalogue, the same way it already pulls
+ * storeUrl. Consumers should render it and link `termsUrl`; they must not paraphrase it.
+ *
+ * It is a SUMMARY. `termsUrl` section 4 is what binds, and every exclusion listed in
+ * DownloadLicenseTerms.js is represented here by category -- synchronisation, public
+ * performance, broadcast, alteration, compilation, redistribution, AI/ML training and
+ * sublicensing. Checked against Terms.js section 4 on 2026-10-09; AI training included.
+ *
+ * NOT LEGAL ADVICE and not a substitute for the Terms. Needs a lawyer's review.
+ */
+const DOWNLOAD_LICENSE_SUMMARY = {
+  agreement: ONE_OFF_DOWNLOAD,
+  headline: 'A personal download licence, kept for good.',
+  summary:
+    'You are licensing a personal download: you may keep the recording permanently and ' +
+    'it does not expire. It does not cover putting the music in a video, film, game or ' +
+    'advert, playing it to an audience, broadcasting it, remixing or editing it, ' +
+    'including it in a compilation, resharing the file, or using it to train an AI ' +
+    'model. Anything beyond personal listening needs a separate licence.',
+  termsUrl: 'https://beatflowmediagroup.com/terms',
+  syncUrl: 'https://beatflowmediagroup.com/sync-licensing'
+};
+
 // CommonJS, matching utils/pricing.js and utils/agreements.js -- the two files the
 // Netlify functions already import. Webpack interops this fine for the app side; the
 // reverse is not reliably true inside a function bundle, and a module that resolves
@@ -116,6 +149,7 @@ module.exports = {
   LICENSE_TERM,
   LICENSE_GRANT,
   ONE_OFF_DOWNLOAD,
+  DOWNLOAD_LICENSE_SUMMARY,
   isValidScope,
   isValidTerm,
   isValidGrant,

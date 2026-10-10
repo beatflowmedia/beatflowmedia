@@ -2311,3 +2311,60 @@ style tags from BFMG" should know they were never there, rather than going looki
 - reconciling **164 sellable BFMG commercial songs against the station's 134** before
   anything is marked sellable. Could be 30 the station does not carry, or a broken ISRC
   join; not yet established which
+
+### ISRC join: BFMG 164 vs the station's 134 — 2026-10-10
+
+The station asked which of its 134 tracks map to BFMG's 164 sellable commercial releases.
+Joined on ISRC, which is the documented join between the two systems and the only
+identifier here assigned by a standards body rather than by either platform.
+
+```
+station tracks (releases.json) : 134   (all 134 carry an ISRC)
+BFMG commercial, deliverable   : 164   (134 with an ISRC, 30 without)
+MATCHED on ISRC                : 134
+on BFMG only                   : 0
+on the station only            : 0
+```
+
+**A clean 1:1. There is no broken join and nothing is orphaned** — the station's whole
+catalogue maps onto BFMG, so all 134 can be marked sellable together once production is
+verified.
+
+**The 30 are not a gap; they are records that were never distributed.** Every one lacks
+an ISRC, and they group precisely:
+
+| Count | Album | UPC |
+|---|---|---|
+| 12 | Eternal Flame | **none** |
+| 9 | From Pain to Light | **none** |
+| 6 | It's Christmas Time Again | **none** |
+| 3 | *no album* | — |
+
+Three albums with no UPC and no ISRCs never went through a distributor, which is exactly
+why the station does not carry them. The station's own 12 albums all have UPCs.
+
+**Two findings fall out of this:**
+
+1. **The 3 orphans look miscategorised.** "Championship Round Flourish", "Classic Variety
+   Show Theme", "Correct Answer Victory Stinger" are cue-library names sitting in
+   `assetPool: 'commercial-release'` with no album. They read as production music in the
+   wrong pool. Not changed — that is a catalogue call, not a cleanup.
+2. **27 sellable tracks cannot ever be chart-reported.** Luminate needs ISRC and UPC.
+   These are on sale with neither, so they are invisible to the sales lane described in
+   the chart-boundary section above. Either they get identifiers before registration, or
+   they are knowingly outside it. See [[project-dsp-prd-chart-eligibility]].
+
+### `DOWNLOAD_LICENSE_SUMMARY` in `utils/licenseTerms.js` — 2026-10-10
+
+Added so the licence has one wording. The station needs a plain-language summary for the
+terms-confirmation popup Percy asked for before a listener leaves for BFMG, and the
+alternative — the station keeping its own copy — drifts the moment the licence changes
+here. That failure is silent and surfaces in a dispute.
+
+`catalog.js` pulls it like `storeUrl`. It carries the headline, the summary, `termsUrl`
+and `syncUrl`. Verified by assertion that every exclusion category in
+`DownloadLicenseTerms.js` is represented: synchronisation, public performance, broadcast,
+alteration, compilation, redistribution and AI/ML training. Checked against Terms.js
+section 4, which is what actually binds.
+
+It is a summary and says so. Not legal advice; wants a lawyer's review.
