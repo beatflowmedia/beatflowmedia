@@ -1,6 +1,37 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, orderBy, limit as firestoreLimit } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { ASSET_POOLS } from '../utils/assetPools';
+
+/**
+ * The storefront's shelves are the COMMERCIAL RELEASE catalogue. Only albums belong here.
+ *
+ * None of the eight queries in this file filtered by pool, so "Best of Percy Rice" could
+ * serve game-show stingers from the production library beside front-line releases, and
+ * "Made For You" could mix all three sub-brands. Home already filters its own Trending
+ * and New Releases shelves on ASSET_POOLS.COMMERCIAL_RELEASE; these shelves render on the
+ * same page and did not.
+ *
+ * FILTERED IN JS, NOT IN THE QUERY, and that is deliberate. These queries combine
+ * `where('genre','in',…)` or `where('artist','in',…)` with an `orderBy`, so adding an
+ * `assetPool` clause needs a new composite index for each combination -- and Firestore
+ * does not degrade when an index is missing, it FAILS the query. A shelf that throws is
+ * worse than one that was showing the wrong pool. Limits are raised where filtering could
+ * otherwise starve a shelf.
+ */
+const commercialOnly = (songs = []) =>
+  songs.filter(
+    (s) =>
+      s &&
+      s.assetPool === ASSET_POOLS.COMMERCIAL_RELEASE &&
+      // Tracks FROM ALBUMS, which is narrower than the pool and is the actual rule.
+      // Three records sit in commercial-release with no album and no ISRC --
+      // "Championship Round Flourish", "Classic Variety Show Theme", "Correct Answer
+      // Victory Stinger" -- game-show cues that belong to the production library. The
+      // pool check alone would still serve them here. Requiring an album also means a
+      // shelf can never show something there is no album page to open.
+      Boolean(s.albumId)
+  );
 
 /**
  * Hook to generate all personalized music sections for a user
@@ -210,7 +241,7 @@ const fetchRecommendedForToday = async (user) => {
 
     // Shuffle and return subset
     const songs = shuffleArray(recommendations).slice(0, 12);
-    return await enrichSongsWithAlbumCovers(songs);
+    return await enrichSongsWithAlbumCovers(commercialOnly(songs));
   } catch (error) {
     console.error('Error fetching recommended for today:', error);
     return [];
@@ -226,14 +257,14 @@ const fetchYourFavoriteArtists = async (followedArtists) => {
       collection(db, 'songs'),
       where('artist', 'in', followedArtists.slice(0, 10)),
       orderBy('releaseDate', 'desc'),
-      firestoreLimit(12)
+      firestoreLimit(36)   // over-fetch: commercialOnly() filters below
     );
 
     const snapshot = await getDocs(songsQuery);
     const songs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     // Fetch album cover for each song
-    return await enrichSongsWithAlbumCovers(songs);
+    return await enrichSongsWithAlbumCovers(commercialOnly(songs));
   } catch (error) {
     console.error('Error fetching favorite artists songs:', error);
     return [];
@@ -263,7 +294,7 @@ const fetchYouMightLike = async (user) => {
       .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
       .slice(0, 12);
 
-    return await enrichSongsWithAlbumCovers(songs);
+    return await enrichSongsWithAlbumCovers(commercialOnly(songs));
   } catch (error) {
     console.error('Error fetching you might like:', error);
     return [];
@@ -292,7 +323,7 @@ const fetchMoreOfWhatYouLike = async (user) => {
       .filter(song => !(user.likes || []).includes(song.id))
       .slice(0, 12);
 
-    return await enrichSongsWithAlbumCovers(songs);
+    return await enrichSongsWithAlbumCovers(commercialOnly(songs));
   } catch (error) {
     console.error('Error fetching more of what you like:', error);
     return [];
@@ -308,7 +339,7 @@ const fetchBestOfArtist = async (artistName, excludeIds = []) => {
       collection(db, 'songs'),
       where('artist', '==', artistName),
       orderBy('playCount', 'desc'),
-      firestoreLimit(12)
+      firestoreLimit(36)   // over-fetch: commercialOnly() filters below
     );
 
     const snapshot = await getDocs(songsQuery);
@@ -316,7 +347,7 @@ const fetchBestOfArtist = async (artistName, excludeIds = []) => {
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(song => !excludeIds.includes(song.id));
 
-    return await enrichSongsWithAlbumCovers(songs);
+    return await enrichSongsWithAlbumCovers(commercialOnly(songs));
   } catch (error) {
     console.error('Error fetching best of artist:', error);
     return [];
@@ -351,7 +382,7 @@ const fetchMadeForYou = async (user) => {
       recommendations.filter(song => !(user.likes || []).includes(song.id))
     ).slice(0, 12);
 
-    return await enrichSongsWithAlbumCovers(songs);
+    return await enrichSongsWithAlbumCovers(commercialOnly(songs));
   } catch (error) {
     console.error('Error fetching made for you:', error);
     return [];

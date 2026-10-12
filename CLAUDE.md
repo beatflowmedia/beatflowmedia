@@ -2368,3 +2368,54 @@ alteration, compilation, redistribution and AI/ML training. Checked against Term
 section 4, which is what actually binds.
 
 It is a summary and says so. Not legal advice; wants a lawyer's review.
+
+### The storefront shelves served the wrong catalogue — 2026-10-12
+
+Percy, looking at the live site: *"I also see Production Library assets in Best Of… only
+albums should be there"*, then sharper: *"tracks from albums only"*.
+
+`src/hooks/usePersonalizedSections.js` runs **8 song queries and not one filtered
+`assetPool`**. Home filters its own Trending and New Releases shelves on
+`COMMERCIAL_RELEASE`; these seven shelves render on the same page and did not. So
+"Best of Percy Rice" could serve game-show stingers from the production library beside
+front-line releases, and "Made For You" could mix all three sub-brands — the exact
+undifferentiated storefront the asset-pool discriminator exists to prevent (PRD §14).
+
+**Filtered in JS, not in the query, and deliberately.** These combine
+`where('genre','in',…)` or `where('artist','in',…)` with an `orderBy`, so an `assetPool`
+clause needs a new composite index per combination, and Firestore **fails** a query whose
+index is missing rather than degrading. A shelf that throws is worse than one showing the
+wrong pool. Two limits raised 12 → 36 so filtering cannot starve a shelf.
+
+**The rule is "tracks from albums", not "the commercial pool"** — Percy's correction, and
+it is the better rule. It also means a shelf can never show something with no album page
+to open. Measured after: 906 songs → **161** eligible.
+
+### Three game-show cues were in the wrong pool — 2026-10-12
+
+"Championship Round Flourish", "Classic Variety Show Theme", "Correct Answer Victory
+Stinger" sat in `commercial-release` with no album and no ISRC. They are production-library
+cues. Moved to `production-music` and into the **Game Show Walk-On** collection, which
+already existed and already held 27 of exactly this material.
+
+Each was re-verified immediately before the write — still `commercial-release`, still no
+album, still no ISRC — with the batch refusing if any had changed. Game Show Walk-On
+27 → 30; commercial-release 164 → 161. Every remaining commercial release now has an
+album, so the pool and "tracks from albums" are the same set.
+
+### "Most popular tracks" sorts on a field that is zero everywhere
+
+Percy: *"perhaps this is where the station votes persist, maybe because it mentions Most
+popular tracks"*. He is right, and it is worse than he put it.
+
+"Most popular tracks" is the description under the **Best of {artist}** shelf, which is
+ordered by `orderBy('playCount','desc')`. Measured: **playCount is 0 or absent on all 161**
+eligible songs. The shelf asserts a ranking that does not exist — the order is whatever
+Firestore returns.
+
+That is exactly where a station signal would land. A save on the station is a *revealed*
+preference (see the station-save section above), so it is a better popularity input than
+a play count would be, and it is the one signal BFMG could actually have. **Not built** —
+it needs the station emitting the signal and a decision on weighting first. Recorded so
+the connection is not lost: the shelf is already there, already labelled, and already
+sorting on nothing.
