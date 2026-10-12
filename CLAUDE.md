@@ -2419,3 +2419,74 @@ a play count would be, and it is the one signal BFMG could actually have. **Not 
 it needs the station emitting the signal and a decision on weighting first. Recorded so
 the connection is not lost: the shelf is already there, already labelled, and already
 sorting on nothing.
+
+### Chart eligibility: what it would actually take — 2026-10-12
+
+Percy asked to be clearly informed before deciding what to do about the 27 sellable tracks
+with no ISRC or UPC. Researched against Luminate's own knowledge base, plus press
+reporting for the 2025 D2C changes. **Confidence is flagged per item; some of this is
+reported rather than published.**
+
+#### Selling is not reporting
+
+The thing that actually surprised: **a store does not report to Luminate by existing.** It
+has to be an approved reporter, and the bar is operational rather than technical
+(Luminate, *Become a Data Provider* — authoritative):
+
+- eligible sellers are "retailers approved by Luminate"; you apply, Partnerships confirms
+  eligibility, and you sign a sales provider agreement
+- **four weeks of consecutive test data** before you are live, reported **daily**
+- reporting is daily by **1:00 PM EST**, on a Tuesday–Monday tracking week
+- lapse more than four weeks without notice and you go inactive and repeat the trial
+- **"must report daily on multiple artists"** — stated plainly, and BFMG is effectively one
+  artist. This reads as a structural barrier, not a hurdle
+- no fee and no volume threshold stated
+
+#### D2C is the most restricted channel there is
+
+A direct-to-consumer store — "purchases made directly from artists and labels, not through
+another retail entity" — is exactly what BFMG is, and it is the channel Billboard has spent
+2025 tightening (reported via Chart Data and trade press; Billboard has not published all
+of it, and dates conflict between sources):
+
+- a digital album bought from an artist webstore counts **only once the buyer redeems it**,
+  not when it is paid for
+- **hCaptcha** required at purchase
+- **$7.99 minimum** for D2C-exclusive digital albums
+- only **four digital exclusive versions** per album, for its lifetime, deluxe included
+- no mid-first-week drops; pre-order or wait
+- three submissions of illegitimate data in 12 months → **minimum 90-day suspension**
+- separately reported: D2C digital download singles **no longer count toward the Hot 100**
+  at all
+
+#### What this means for BFMG's numbers
+
+| | BFMG today | Chart requirement |
+|---|---|---|
+| Track price | $1.99 | D2C digital singles reportedly excluded from Hot 100 entirely |
+| Album floor | $4.99 | **$7.99** for a D2C-exclusive digital album |
+| Identifiers | 27 tracks with no ISRC/UPC | both required before anything counts |
+| Reporter status | none | application, agreement, 4-week daily trial, multiple artists |
+
+The $4.99 floor already collided with the n × $1.99 album-unit rule
+([[project-dsp-prd-chart-eligibility]]). It now also sits **$3.00 below** the D2C digital
+album floor.
+
+#### The conclusion worth acting on
+
+**BFMG does not need to become a Luminate reporter. It needs its releases distributed.**
+
+A distributor already reports to Luminate, so sales through DSPs and retailers count
+without BFMG qualifying as anything. The three undistributed albums — From Pain to Light
+(9), Eternal Flame (12), It's Christmas Time Again (6) — are the real blocker, and they are
+27 of the 161 sellable tracks. The other 134 already carry ISRCs and UPCs because they went
+through a distributor.
+
+So the chart question is not "how do we report our own sales". It is "do we distribute
+those three albums". Direct sales from beatflowmediagroup.com are a **margin** decision —
+no distributor cut — not a chart strategy, and the two should not be confused.
+
+**Not a compliance opinion.** Chart rules are Billboard's and change by announcement
+rather than schedule; several items above are reported rather than published. Verify
+against Billboard's chart rules and Luminate's chart-eligibility articles before acting,
+and take advice on anything contractual.
