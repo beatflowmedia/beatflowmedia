@@ -2490,3 +2490,37 @@ no distributor cut — not a chart strategy, and the two should not be confused.
 rather than schedule; several items above are reported rather than published. Verify
 against Billboard's chart rules and Luminate's chart-eligibility articles before acting,
 and take advice on anything contractual.
+
+### The live account's own settings cannot be set over the API — 2026-10-12
+
+`scripts/stripe-business-profile.sh` is **deleted**. It asserted the account, applied
+nothing, and printed a read-back showing everything still unset. Running the POST visibly
+gives Stripe's reason:
+
+> "You cannot use this method on your own account: you may only use it on connected
+> accounts."
+
+`POST /v1/accounts/{id}` is for **Connect connected accounts**. A platform's own account is
+edited in the Dashboard and nowhere else. So that script could never have worked, and the
+commit that added it was wrong to say Percy could just run it.
+
+Replaced by `npm run verify:stripe-profile`, which reads the live account, reports what is
+missing, and says where to set it. It does not pretend it can write.
+
+Still missing on the live account as of today, all four:
+
+| Setting | Suggested | Where |
+|---|---|---|
+| `statement_descriptor` | `BEATFLOWMEDIAGROUP` | Settings → Payments |
+| `business_profile.url` | `https://beatflowmediagroup.com` | Settings → Business |
+| `business_profile.support_email` | `support@beatflowmediagroup.com` | Settings → Business |
+| `business_profile.support_url` | `https://beatflowmediagroup.com/support` | Settings → Business |
+
+The descriptor is the one that costs money. It is the text on a cardholder's bank
+statement, and an unrecognised charge is a leading cause of disputes — which cost the
+amount plus the fee, and whose *rate* threatens the account itself.
+
+**The general lesson, which is why this is written down:** a script that performs an action
+must be watched performing it once. This one was committed on the strength of a read-back
+that said "unset" for every field, and that read-back was reported as if it were the
+before-state rather than the after-state.

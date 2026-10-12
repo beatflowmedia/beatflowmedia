@@ -130,7 +130,7 @@
     "verify:admins": "node scripts/verify-admins.js",
     "verify:stripe": "node scripts/verify-stripe.js",
     "stripe:listen": "stripe listen --forward-to http://localhost:8899/.netlify/functions/stripe-webhook",
-    "stripe:profile": "bash scripts/stripe-business-profile.sh"
+    "verify:stripe-profile": "node scripts/verify-stripe-profile.js"
   },
   "browserslist": {
     "production": [
