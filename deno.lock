@@ -82,6 +82,7 @@
         "npm:sharp@~0.34.5",
         "npm:storybook@^9.1.7",
         "npm:stripe@^18.5.0",
+        "npm:tailwindcss@3.4.19",
         "npm:typescript@^5.9.3",
         "npm:web-vitals@^2.1.4",
         "npm:webpack@^5.101.3",

@@ -403,7 +403,27 @@ async function handleCheckoutSessionCompleted(session) {
 
     console.log('Purchase data:', JSON.stringify(purchaseData, null, 2));
 
-    const purchaseRef = await db.collection('purchases').add(purchaseData);
+    // The Stripe session id IS the document id, and `create()` fails if it already
+    // exists. That makes a second delivery of the same event impossible to record twice,
+    // atomically, in Firestore itself.
+    //
+    // The `existingPurchase` query above is still useful -- it stops a buyer paying twice
+    // for the same track on two separate sessions -- but it CANNOT stop this: it is a read
+    // followed by a write, and two concurrent deliveries both read "no purchase" before
+    // either writes. Demonstrated on 2026-10-07, when two `stripe listen` processes were
+    // forwarding at once and a single $1.99 payment produced two purchase rows and two
+    // licence documents 14ms apart. Stripe retries failed deliveries by design, so this is
+    // not only a test artefact.
+    const purchaseRef = db.collection('purchases').doc(session.id);
+    try {
+      await purchaseRef.create(purchaseData);
+    } catch (err) {
+      if (err && err.code === 6) { // ALREADY_EXISTS
+        console.log(`⚠️ Session ${session.id} already recorded as a purchase, skipping`);
+        return;
+      }
+      throw err;
+    }
     console.log(`✅ Purchase document created with ID: ${purchaseRef.id}, License: ${licenseId}`);
 
     // Perpetual licence for this purchase. These survive subscription cancellation,
