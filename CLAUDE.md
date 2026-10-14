@@ -2524,3 +2524,44 @@ amount plus the fee, and whose *rate* threatens the account itself.
 must be watched performing it once. This one was committed on the strength of a read-back
 that said "unset" for every field, and that read-back was reported as if it were the
 before-state rather than the after-state.
+
+### "License for $11.99" was selling a consumer download in licensing language — 2026-10-13
+
+Percy, on a 19-track album priced at $11.99: *"how is the license price for this album
+correct?"* Then, honestly: *"I still don't know what to do… I have not had any
+transactional experience yet to make the correct determination."*
+
+**The price is right. The word was wrong.**
+
+`calculateAlbumPrice` is `clamp(tracks × $1.99, $4.99, $11.99)`. 19 × $1.99 = $37.81,
+capped to $11.99. Measured across the catalogue, **14 of 15 albums hit the cap**, so it is
+effectively a flat album price: a 9-track and a 19-track album both cost $11.99, and the
+per-track rate runs $1.33 down to $0.63.
+
+That is correct *for what is actually granted* — `scope: personal, term: perpetual,
+grant: download`. A personal download licence benchmarked against iTunes and Bandcamp,
+both $9.99–$11.99 for an album, is market rate.
+
+The label was not. **"License for $11.99" invites a licensing buyer to price it against
+sync and library rates**, which are orders of magnitude higher, so a correctly-priced
+consumer download read as an absurdly cheap commercial licence. That is the same failure
+already recorded beside `NOT_INCLUDED` in `DownloadLicenseTerms.js`: *the number does the
+arguing instead of the terms*. It is also the likeliest reason ProductionHub made the
+prices look low — those buyers were pricing a word that was not meant.
+
+Changed to **`Buy · $11.99`**, and `License Options` → `Buying options`. Commercial
+licensing on this platform lives in the subscription tiers and in sync enquiries, both of
+which say so. Deliberately left alone: `CategoryNav`'s "License for your project" (the
+Production Library — genuinely licensing), the sync line on `Album.js`, and the tier
+feature copy.
+
+**Why only the label changed, and nothing about the price.** There have been 22 lifetime
+charges, all tests. A price moved now is a guess that teaches nothing — if sales stay at
+zero there is no way to tell whether the price was wrong or nobody arrived. Removing the
+ambiguity is the only change that pays before the first real sale, because it makes the
+first sales *mean* something.
+
+**What the first real transactions should answer**, recorded now so the question is ready:
+do buyers arrive expecting a consumer download or a commercial licence? If downloads sell
+and subscriptions do not, this is a storefront. If the enquiries are all sync and
+commercial use, the $1.99 download is a sample of the real business, not the business.

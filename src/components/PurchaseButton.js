@@ -298,11 +298,27 @@ const PurchaseButton = ({
           *
           * Where there is genuinely one price -- albums, and songs rendered without a
           * track object -- the price stays on the button, because there it is true. */}
+        {/* "Buy", not "License for".
+          *
+          * What this actually grants is scope PERSONAL, term perpetual, grant download --
+          * a personal download licence, priced against iTunes and Bandcamp, which both
+          * sit in the $9.99-$11.99 band for an album. That price is right for that
+          * product.
+          *
+          * "License" is not. A licensing buyer reads the word and prices it against sync
+          * and library rates, which are orders of magnitude higher, so the label made a
+          * correctly-priced consumer download look like an absurdly cheap commercial
+          * licence. The same note already sits beside NOT_INCLUDED in
+          * DownloadLicenseTerms.js: the number does the arguing instead of the terms.
+          *
+          * Commercial licensing on this platform lives in the subscription tiers and in
+          * sync enquiries, which say so. This button does not, so it should not imply it.
+          * The clickwrap beside it still states the licence in full. */}
         {loading
           ? 'Processing...'
           : offersOptions
-            ? (compact ? 'Options' : 'License Options')
-            : (compact ? formatPrice(displayPrice) : `License for ${formatPrice(displayPrice)}`)}
+            ? (compact ? 'Options' : 'Buying options')
+            : (compact ? formatPrice(displayPrice) : `Buy · ${formatPrice(displayPrice)}`)}
       </Button>
 
       {offersOptions && (
