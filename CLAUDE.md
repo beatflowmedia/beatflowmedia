@@ -2565,3 +2565,45 @@ first sales *mean* something.
 do buyers arrive expecting a consumer download or a commercial licence? If downloads sell
 and subscriptions do not, this is a storefront. If the enquiries are all sync and
 commercial use, the $1.99 download is a sample of the real business, not the business.
+
+### Correction: it is a licence, and the terms do not say it can be revoked — 2026-10-13
+
+Percy: *"we are licensing the music to the personal buyer too, not selling it to them… if
+we license it then we can revoke it if they step outside the terms of usage."*
+
+He is right, and the previous entry's fix was wrong in the other direction. "Buy" promises
+ownership the buyer does not get.
+
+**Revocation is real, not aspirational.** `lib/entitlement.js` calls `isRevoked()` on every
+delivery, refuses a revoked licence, and deliberately distinguishes "revoked" from "never
+bought" so the two can be answered differently. `scripts/revoke-license.js` performs it.
+`download-master` therefore stops serving a revoked licence. That is a genuine
+differentiator: an iTunes download cannot be withdrawn, and a CD certainly cannot.
+
+Label is now **`Personal license · $11.99`**. The missing word was always the SCOPE, never
+the licence — a bare "License for $11.99" let a sync buyer price it against library rates,
+while "Buy" denied the model outright. Naming the scope fixes the anchoring without
+pretending anything is sold.
+
+#### The exposure, which is the part that matters
+
+**Nothing tells the buyer the licence can be revoked.** Measured: zero mentions of
+revoke/revocation in `DownloadLicenseTerms.js` and zero in `Terms.js`. Worse, the clickwrap
+says the opposite:
+
+> "A personal license to download and keep this recording. **It does not expire.**"
+
+So the product is a revocable licence, the buyer is asked to tick a box saying they have
+read terms that do not mention revocation, and the summary they are shown promises they
+can *keep* it and that it *does not expire*. If a licence is ever revoked, the buyer can
+point at the sentence they accepted.
+
+"Does not expire" and "may be revoked for breach" are not actually contradictory — a
+perpetual licence can still terminate on breach, which is ordinary in licensing. But the
+terms have to SAY so, and these do not.
+
+**Not fixed here, and deliberately.** Adding a termination clause is drafting, not
+labelling: it decides what counts as breach, what notice is given, and whether anything is
+refunded. That wants a lawyer for the jurisdiction, and it is the single highest-value
+thing to get reviewed, because the whole revocation model rests on it. What this project
+can do is describe real behaviour accurately; it cannot decide the clause.

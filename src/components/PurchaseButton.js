@@ -298,27 +298,29 @@ const PurchaseButton = ({
           *
           * Where there is genuinely one price -- albums, and songs rendered without a
           * track object -- the price stays on the button, because there it is true. */}
-        {/* "Buy", not "License for".
+        {/* "Personal license", not "License for" and not "Buy".
           *
-          * What this actually grants is scope PERSONAL, term perpetual, grant download --
-          * a personal download licence, priced against iTunes and Bandcamp, which both
-          * sit in the $9.99-$11.99 band for an album. That price is right for that
-          * product.
+          * THE SCOPE IS THE MISSING WORD, not the licence. This briefly read "Buy", which
+          * was wrong in the opposite direction: nothing here is sold. What is granted is
+          * scope PERSONAL, term perpetual, grant download -- and it is REVOCABLE.
+          * lib/entitlement.js checks isRevoked() on every delivery and refuses a revoked
+          * licence, distinguishing it from never having bought. scripts/revoke-license.js
+          * is how it is done. Calling that a purchase would promise a buyer something
+          * they do not get.
           *
-          * "License" is not. A licensing buyer reads the word and prices it against sync
-          * and library rates, which are orders of magnitude higher, so the label made a
-          * correctly-priced consumer download look like an absurdly cheap commercial
-          * licence. The same note already sits beside NOT_INCLUDED in
-          * DownloadLicenseTerms.js: the number does the arguing instead of the terms.
+          * "License for $11.99" alone was the real problem: a licensing buyer reads the
+          * bare word and prices it against sync and library rates, orders of magnitude
+          * higher, so a correctly-priced personal licence looked absurdly cheap. Naming
+          * the scope fixes that without pretending this is a sale. The same note sits
+          * beside NOT_INCLUDED in DownloadLicenseTerms.js: the number does the arguing
+          * instead of the terms.
           *
-          * Commercial licensing on this platform lives in the subscription tiers and in
-          * sync enquiries, which say so. This button does not, so it should not imply it.
-          * The clickwrap beside it still states the licence in full. */}
+          * Commercial use lives in the subscription tiers and in sync enquiries. */}
         {loading
           ? 'Processing...'
           : offersOptions
-            ? (compact ? 'Options' : 'Buying options')
-            : (compact ? formatPrice(displayPrice) : `Buy · ${formatPrice(displayPrice)}`)}
+            ? (compact ? 'Options' : 'License options')
+            : (compact ? formatPrice(displayPrice) : `Personal license · ${formatPrice(displayPrice)}`)}
       </Button>
 
       {offersOptions && (
