@@ -2607,3 +2607,68 @@ labelling: it decides what counts as breach, what notice is given, and whether a
 refunded. That wants a lawyer for the jurisdiction, and it is the single highest-value
 thing to get reviewed, because the whole revocation model rests on it. What this project
 can do is describe real behaviour accurately; it cannot decide the clause.
+
+### Subscriptions as terminable licences, and the ISRC on the licence — 2026-10-14
+
+Percy: *"this is where in my mind the subscription(s) and the ISRC kick-in"* — as the
+answer to a perpetual licence that can be revoked but whose terms never say so.
+
+The instinct is right and the design already existed. **A subscription licence terminates
+by structure**: stop paying and it ends, so the awkward "we may revoke your perpetual
+licence" clause is never needed for commercial use. It was only half-wired.
+
+**What was missing: cancellation never ended anything.** All four tiers are declared
+`licenseType: TIME_BOUND`, renewal re-activated licences (ported earlier), but
+`handleSubscriptionCancelled` only set the user's membership flag. Licence rows stayed
+`active` for ever — the money stopped and the licence did not. The logic existed in
+`stripe-webhook.js`, which Stripe does not call. The same gap, in the same place, as the
+licence recording.
+
+Ported. Time-bound licences for that subscription become **`published-only`**, not
+revoked — the design is deliberate and worth keeping: *work already published keeps its
+licence; what ends is the right to use the track in anything new.* Pulling a licence out
+from under published work would make the product unusable for the professionals it is
+sold to. Perpetual one-off licences are excluded from the query because they are not
+contingent on any subscription.
+
+**ISRC is now written on the licence row.** `trackId` is a Firestore document id — it
+identifies a recording inside this database and nowhere else, and enforcement runs the
+other way: a recording turns up where it should not, and the question is which licence
+covers it. ISRC is the only identifier here assigned by a standards body, so it is the one
+that survives leaving the platform. Written as explicit `null` when absent, because
+Firestore drops a document from any query naming a field it lacks — an omitted ISRC would
+hide exactly the licences worth finding.
+
+#### Verified, both of them
+
+Cancellation was tested with a signed `customer.subscription.deleted` carrying a
+subscription id we control. `stripe trigger` cannot be used: it invents its own id and the
+handler looks the user up **by** that id, so a triggered event can never match a fixture.
+The test plants a time-bound **and** a perpetual licence for the same user and only passes
+if the first ends and the second survives:
+
+```
+time-bound licence : published-only, validWhileSubscribed false
+perpetual licence  : still active          <- the one that must not break
+user membership    : false
+```
+
+ISRC was verified through a real test-mode purchase of a distributed track:
+`licence.isrc = QZRP42560757`, matching the song. Test data removed; purchases and
+licenses back to 2 and 2.
+
+#### Still open, and it is the one that matters
+
+The terms still do not mention termination. For subscriptions this is now easy to write —
+"your licence runs while your subscription does" is ordinary and uncontroversial. For the
+perpetual one-off licence it is still a drafting question about breach, notice and refunds,
+and still wants a lawyer.
+
+#### Running the local stack, since this cost three restarts
+
+`netlify dev` OWNS CRA. Pre-start CRA and it dies with *"Something is already running on
+port 3006"*; let it start CRA and it dies with *"Timed out waiting for port 3006"*, because
+CRA takes 2–4 minutes here and Netlify's wait is shorter. For testing functions, neither is
+needed: **`npx netlify functions:serve --port 8888`** serves them over http, starts in
+seconds, and has been reliable every time. Use `netlify dev --offline` only when the React
+app is actually needed, and kill every BeatFlow node process first.

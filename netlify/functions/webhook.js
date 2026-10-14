@@ -445,6 +445,20 @@ async function handleCheckoutSessionCompleted(session) {
         purchaseLicenseId: licenseId, // the id stamped on the purchase row
         userId,
         trackId: itemId,
+        // The ISRC, recorded on the licence itself.
+        //
+        // `trackId` is a Firestore document id: it identifies the recording inside this
+        // database and nowhere else. Enforcement runs the other way — a recording turns
+        // up somewhere it should not, and the question is which licence covers it. ISRC
+        // is the only identifier here assigned by a standards body rather than by this
+        // platform, so it is the one that survives leaving it. It is already the
+        // documented join with the station for the same reason.
+        //
+        // Written explicitly as null when absent rather than omitted: Firestore excludes
+        // a document from any query naming a field it lacks, so an omitted ISRC would
+        // hide exactly the licences worth finding. 27 sellable tracks have none — the
+        // three albums that were never distributed.
+        isrc: itemData.isrc || null,
         purchaseId: purchaseRef.id,
         tier: subscriberTier,
         // licenseFields writes the three axes from one definition -- SCOPE, TERM and
@@ -669,6 +683,49 @@ async function handleSubscriptionCancelled(subscription) {
 
     const userDoc = usersSnapshot.docs[0];
     const userId = userDoc.id;
+
+    // END THE LICENCES THE SUBSCRIPTION GRANTED.
+    //
+    // This handler only deactivated the user's membership flag. The licence rows it had
+    // granted stayed `active` for ever, so cancelling a subscription took the money away
+    // and left the licence behind — the opposite of the model, where a subscription
+    // licence is time-bound precisely so it ends with the subscription. The logic existed
+    // in stripe-webhook.js, which Stripe does not call. Same gap as the licence recording.
+    //
+    // NOT a hard revocation, deliberately: status becomes `published-only`. Work the
+    // subscriber already published keeps its licence; what ends is the right to use the
+    // track in anything new. Pulling a licence out from under already-published work
+    // would make the product unusable for the professionals it is sold to.
+    //
+    // Perpetual one-off licences are untouched — they are not contingent on a
+    // subscription and the query is restricted to time-bound rows for that reason.
+    try {
+      const licensesSnapshot = await db.collection('licenses')
+        .where('userId', '==', userId)
+        .where('subscriptionId', '==', subscription.id)
+        .where('licenseType', '==', 'time-bound')
+        .get();
+
+      if (!licensesSnapshot.empty) {
+        const batch = db.batch();
+        licensesSnapshot.forEach((doc) => {
+          batch.update(doc.ref, {
+            status: 'published-only',
+            validWhileSubscribed: false,
+            subscriptionEndedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            note: 'Subscription cancelled. Published projects retain license. Cannot use in new projects.'
+          });
+        });
+        await batch.commit();
+        console.log(`✓ ${licensesSnapshot.size} time-bound licences set to published-only for ${userId}`);
+      }
+    } catch (licenseError) {
+      // Logged, not thrown. The membership update below must still run: leaving someone
+      // marked as an active subscriber after they cancelled is worse than a stale licence
+      // row, and Stripe would retry the whole event over a failure in this block.
+      console.error('Error updating licences on cancellation:', licenseError);
+    }
 
     // Deactivate membership
     await db.collection('users').doc(userId).update({
