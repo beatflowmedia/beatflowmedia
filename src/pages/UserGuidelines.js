@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
+import LegalContact from "../components/LegalContact";
 
 export default function UserGuidelines() {
   // min-h-[100dvh], not min-h-screen. Tailwind's min-h-screen is 100vh, which on mobile
@@ -380,19 +381,7 @@ export default function UserGuidelines() {
               <p>
                 If you have questions about these User Guidelines or need clarification, please contact us:
               </p>
-              <div className="bg-gray-800 rounded-lg p-6">
-                <p><strong className="text-white">BeatFlow Media Group</strong></p>
-                <p>Community Team</p>
-                <p>478 Cubhouse Dr.</p>
-                <p>Middletown, NJ 07748</p>
-                <p>United States</p>
-                <p className="pt-4">
-                  Email:{" "}
-                  <a href="mailto:support@beatflowmediagroup.com" className="text-green-500 hover:underline">
-                    support@beatflowmediagroup.com
-                  </a>
-                </p>
-              </div>
+              <LegalContact department="Community Team" mailbox="support" />
             </div>
           </section>
 

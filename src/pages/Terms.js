@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
 import { currentAgreementVersion, parseAgreementVersion, DOWNLOAD_LICENSE } from "../utils/agreements";
+import LegalContact from "../components/LegalContact";
 
 // The version identifier this page is, read from the canonical registry rather than
 // written here. Falls back to a plain label if the agreement is ever unpublished, so
@@ -466,24 +467,11 @@ export default function Terms() {
           {/* Contact */}
           <section className="mb-8">
             <h2 className="text-3xl font-bold mb-4">15. Contact Information</h2>
-            <div className="text-gray-300 space-y-4">
-              <p>
-                If you have questions about these Terms, please contact us at:
-              </p>
-              <div className="bg-gray-800 rounded-lg p-6">
-                <p><strong className="text-white">BeatFlow Media Group</strong></p>
-                <p>Legal Department</p>
-                <p>478 Cubhouse Dr.</p>
-                <p>Middletown, NJ 07748</p>
-                <p>United States</p>
-                <p className="pt-4">
-                  Email:{" "}
-                  <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
-                    legal@beatflowmediagroup.com
-                  </a>
-                </p>
-              </div>
-            </div>
+            <LegalContact
+              department="Legal Department"
+              mailbox="legal"
+              intro="If you have questions about these Terms, please contact us:"
+            />
           </section>
 
           {/* Agreement */}

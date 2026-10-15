@@ -1,5 +1,6 @@
 import React from "react";
 import Footer from "../components/Footer";
+import LegalContact from "../components/LegalContact";
 
 // When this policy first took effect. It does not change.
 const EFFECTIVE_DATE = "January 1, 2025";
@@ -211,18 +212,7 @@ export default function PrivacyPolicy() {
                 If you have questions about this Privacy Policy or wish to exercise your privacy rights,
                 please contact us:
               </p>
-              <div className="bg-gray-800 rounded-lg p-6 text-gray-300">
-                <p><strong className="text-white">BeatFlow Media Group</strong></p>
-                <p>Privacy Department</p>
-                <p>478 Cubhouse Dr.</p>
-                <p>Middletown, NJ 07748</p>
-                <p>United States</p>
-                <p className="mt-4">
-                  Email: <a href="mailto:privacy@beatflowmediagroup.com" className="text-green-500 hover:underline">
-                    privacy@beatflowmediagroup.com
-                  </a>
-                </p>
-              </div>
+              <LegalContact department="Privacy Department" mailbox="privacy" />
             </div>
           </div>
         </div>

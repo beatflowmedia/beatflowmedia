@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
+import LegalContact from "../components/LegalContact";
 
 export default function Legal() {
   return (
@@ -127,21 +128,7 @@ export default function Legal() {
           {/* Contact */}
           <div className="bg-gray-800 rounded-lg p-8 mb-12">
             <h2 className="text-2xl font-bold mb-4">Legal Contact Information</h2>
-            <div className="text-gray-400 space-y-2">
-              <p>
-                <strong className="text-white">BeatFlow Media Group</strong>
-              </p>
-              <p>Legal Department</p>
-              <p>478 Cubhouse Dr.</p>
-              <p>Middletown, NJ 07748</p>
-              <p>United States</p>
-              <p className="pt-4">
-                Email:{" "}
-                <a href="mailto:legal@beatflowmediagroup.com" className="text-green-500 hover:underline">
-                  legal@beatflowmediagroup.com
-                </a>
-              </p>
-            </div>
+            <LegalContact department="Legal Department" mailbox="legal" boxed={false} />
           </div>
 
           {/* Updates */}

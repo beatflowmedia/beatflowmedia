@@ -1,5 +1,6 @@
 import React from "react";
 import Footer from "../components/Footer";
+import LegalContact from "../components/LegalContact";
 
 export default function NoticeAtCollection() {
   return (
@@ -260,19 +261,12 @@ export default function NoticeAtCollection() {
             <p className="text-gray-300 mb-4">
               If you have questions about this Notice at Collection or our privacy practices:
             </p>
-            <div className="text-gray-400">
-              <p><strong className="text-white">BeatFlow Media Inc.</strong></p>
-              <p>Privacy Department</p>
-              <p>478 Cubhouse Dr.</p>
-              <p>Middletown, NJ 07748</p>
-              <p>United States</p>
-              <p className="mt-4">
-                Email: <a href="mailto:privacy@beatflowmediagroup.com" className="text-green-500 hover:underline">
-                  privacy@beatflowmediagroup.com
-                </a>
-              </p>
-              <p>Phone: 1-800-BEATFLOW</p>
-            </div>
+            {/* Was "BeatFlow Media Inc." here and "BeatFlow Media Group" on the other
+              * four legal pages, plus "Phone: 1-800-BEATFLOW" -- which cannot be dialled,
+              * since BEATFLOW is eight letters and a US number takes seven after the 800.
+              * A privacy notice naming a different entity than the terms, and listing a
+              * number that does not connect, are both answerable questions. */}
+            <LegalContact department="Privacy Department" mailbox="privacy" boxed={false} />
           </div>
           </div>
       </main>
