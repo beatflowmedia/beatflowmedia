@@ -72,7 +72,7 @@ echo "📁 Checking $(echo "$STAGED_FILES" | wc -l) staged file(s)..."
 FILE_LIST=$(echo "$STAGED_FILES" | tr '
 ' ',' | sed 's/,$//')
 
-node agents/cli.js uiux review   --files "$FILE_LIST"   --profile pre-commit   --exit-on-critical   --auto-fix
+node agents/cli.js uiux review   --files "$FILE_LIST"   --profile pre-commit   --exit-on-critical
 
 UIUX_EXIT_CODE=$?
 

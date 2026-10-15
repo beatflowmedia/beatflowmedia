@@ -590,7 +590,10 @@ uiuxCmd
       if (options.autoFix) {
         console.log('\n🔧 Attempting auto-remediation...');
         const fixResults = await agent.autoFix();
-        console.log(`✅ Auto-fixed: ${fixResults.fixed}`);
+        // `suggested` is what generateAutoFix() produced; `fixed` is what was written
+        // to disk, which is currently always 0 -- see the note in UIUXExpertAgent.autoFix.
+        console.log(`✍️  Fixes suggested (not written): ${fixResults.suggested || 0}`);
+        console.log(`✅ Actually applied: ${fixResults.fixed}`);
         console.log(`❌ Failed: ${fixResults.failed}`);
       }
 
@@ -685,7 +688,10 @@ uiuxCmd
       if (options.autoFix) {
         console.log('\n🔧 Attempting auto-remediation...');
         const fixResults = await agent.autoFix();
-        console.log(`✅ Auto-fixed: ${fixResults.fixed}`);
+        // `suggested` is what generateAutoFix() produced; `fixed` is what was written
+        // to disk, which is currently always 0 -- see the note in UIUXExpertAgent.autoFix.
+        console.log(`✍️  Fixes suggested (not written): ${fixResults.suggested || 0}`);
+        console.log(`✅ Actually applied: ${fixResults.fixed}`);
         console.log(`❌ Failed: ${fixResults.failed}`);
       }
 

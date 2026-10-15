@@ -480,7 +480,8 @@ class UIUXExpertAgent extends AgentBase {
     this.logger.info('🔧 Attempting auto-fix...');
 
     const fixResults = {
-      fixed: 0,
+      fixed: 0,       // actually written to disk. Nothing sets this yet.
+      suggested: 0,   // a replacement was generated but NOT applied
       failed: 0,
       details: []
     };
@@ -493,12 +494,21 @@ class UIUXExpertAgent extends AgentBase {
         const fix = this.designSystemValidator.generateAutoFix(violation);
 
         if (fix) {
-          // Apply fix (simplified - would need actual file modification)
-          fixResults.fixed++;
+          // NOTHING IS WRITTEN. generateAutoFix() returns a suggested replacement and
+          // this loop counts it. No file is modified, here or anywhere below.
+          //
+          // It previously counted these as `fixed` and logged "✅ Auto-fixed: 93",
+          // which was a report of work that did not happen -- the same failure as the
+          // 100/100 score over zero files, and harder to catch because the number was
+          // large and plausible. A tool that claims to have changed your code and has
+          // not is worse than one that does nothing, because you stop looking.
+          //
+          // Counted as `suggested` until someone implements the write.
+          fixResults.suggested++;
           fixResults.details.push({
             file: violation.file,
             type: violation.type,
-            status: 'fixed'
+            status: 'suggested'
           });
         }
       } catch (error) {
@@ -512,7 +522,8 @@ class UIUXExpertAgent extends AgentBase {
       }
     }
 
-    this.logger.info(`✅ Auto-fixed: ${fixResults.fixed}`);
+    this.logger.info(`✍️  Fixes suggested (none written): ${fixResults.suggested}`);
+    this.logger.info(`✅ Actually applied: ${fixResults.fixed}`);
     this.logger.info(`❌ Failed: ${fixResults.failed}`);
 
     return fixResults;
