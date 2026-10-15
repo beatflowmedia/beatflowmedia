@@ -126,12 +126,13 @@
     "agents:notify": "node agents/cli.js notify send",
     "prepare": "husky install",
     "husky:install": "sh .husky/install.sh",
-    "verify:all": "npm run verify:assets && npm run verify:csp && npm run verify:sponsor && npm run verify:featured && npm run verify:facets && npm run verify:links && npm run verify:radio && npm run verify:domains",
+    "verify:all": "npm run verify:assets && npm run verify:csp && npm run verify:sponsor && npm run verify:featured && npm run verify:facets && npm run verify:links && npm run verify:radio && npm run verify:domains && npm run verify:published",
     "verify:admins": "node scripts/verify-admins.js",
     "verify:stripe": "node scripts/verify-stripe.js",
     "stripe:listen": "stripe listen --forward-to http://localhost:8899/.netlify/functions/stripe-webhook",
     "verify:stripe-profile": "node scripts/verify-stripe-profile.js",
-    "verify:price-units": "node scripts/verify-price-units.js"
+    "verify:price-units": "node scripts/verify-price-units.js",
+    "verify:published": "node scripts/verify-published.js"
   },
   "browserslist": {
     "production": [
