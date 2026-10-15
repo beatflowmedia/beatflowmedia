@@ -4,7 +4,13 @@
  * Last updated: 2026-01-03
  */
 
-const CACHE_NAME = 'beatflow-media-v7';
+// v7 -> v8 on 2026-10-15. The license agreement version changed, and create-checkout
+// REFUSES a stale one with a 409. A byte-identical service worker is never reinstalled,
+// so without this bump the cached /index.html keeps serving the old bundle, which keeps
+// offering the old agreement version, which keeps being refused on the payment path.
+//
+// Bump this whenever a change must reach returning visitors promptly, not eventually.
+const CACHE_NAME = 'beatflow-media-v8';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

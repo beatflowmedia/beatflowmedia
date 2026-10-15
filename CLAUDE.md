@@ -3256,3 +3256,56 @@ replace silently misses `LICENCE_KINDS`.
 `functions/node_modules/bignumber.js`, where `LICENCE.md` is the dependency's own correct
 British filename. Reverted. `node_modules` is gitignored so nothing would have been
 committed, but a repo-wide replace should name its directories rather than trust a glob.
+
+## What the double-check found — 2026-10-15
+
+Percy asked whether the work had been double-checked. It had not been, fully, and the
+check found four things. Recorded because "I verified it" is worth nothing without saying
+what was verified and what was not.
+
+**1. The version bump would have broken checkout for anyone with a cached page.**
+`create-checkout.js` refuses a stale agreement with a 409. A returning visitor holding the
+old bundle sends `download-license@2026-09-19`, gets refused, re-ticks the SAME stale
+checkbox, and is refused again — a loop on the payment path with no exit the buyer could
+guess at. Fixed in `stripeService.js`: a 409 carrying `currentAgreement` now refreshes the
+service worker, clears its caches and reloads ONCE (one-shot flag, because a reload loop is
+worse than the bug). The buyer returns on the current bundle and accepts the current text,
+which is the point — silently accepting a stale version server-side would defeat the whole
+reason the version is recorded.
+
+**2. The service worker would not have fetched the new bundle.** A byte-identical
+service-worker.js is never reinstalled, and it serves `/index.html` from cache. `CACHE_NAME`
+bumped v7 → v8. Bump it whenever a change must reach returning visitors promptly rather
+than eventually.
+
+**3. Editing Terms.js overwrote text that is still in force for somebody.**
+`npm run verify:terms` already said so in as many words — *"the old version must stay
+readable, not be overwritten"* — and nothing implemented it. The superseded text is now at
+`docs/terms-archive/download-license-2026-09-19.md`, with a table of what changed, and
+`/terms` tells a buyer on an older version how to obtain the text they actually agreed to.
+
+**4. `payment-reversal.js` revokes regardless of which terms version the buyer accepted.**
+The reversal-termination clause exists only in `@2026-10-15`. A buyer on `@2026-09-19`
+would have a license revoked under a clause they never agreed to. Both affected purchases
+are Percy's own accounts, so there is no live exposure — but the mismatch is real and
+should be settled before any third party is on a superseded version. Options when that
+happens: gate the auto-revoke on the accepted version, or treat reversal as breach under
+the older text, which is arguable rather than clear.
+
+**`verify:terms` exiting non-zero is BY DESIGN, not a regression.** Its own comment says
+every existing buyer lands in the superseded bucket the moment a new version publishes. It
+is a notification gate, not a health check, and reading its exit code as a failure would be
+a misreading.
+
+### What was verified, and what was not
+
+Verified: 47 assertions across three suites; production build exit 0 with zero compile
+failures; `verify:csp` and `verify:price-units` pass; the a11y detector tested against four
+labelling patterns; the catalogue feed exercised against real Firestore; `/r/` exercised in
+production against all 134 station ISRCs.
+
+**Not verified: anything rendered in a browser.** The clickwrap wording, the new Terms
+sections and the 409 recovery path have been type-checked and built, not *seen*. The build
+proves the JSX compiles, not that the checkbox is still tappable at 44px or that the
+recovery reload behaves on a real stale cache. That gap is the same shape as the CSP bug —
+tests that ran in Node proved the URL worked and never that the page could fetch it.

@@ -186,9 +186,7 @@ class StripeService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Server error response:', errorData);
-        throw new Error(errorData.error || 'Failed to create checkout session');
+        await handleCheckoutError(response);
       }
 
       const { sessionId } = await response.json();
@@ -259,9 +257,7 @@ class StripeService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Server error response:', errorData);
-        throw new Error(errorData.error || 'Failed to create checkout session');
+        await handleCheckoutError(response);
       }
 
       const { sessionId } = await response.json();
@@ -331,6 +327,74 @@ class StripeService {
       console.error('Error recording download:', error);
     }
   }
+}
+
+
+/**
+ * The server refused the license version this page is offering.
+ *
+ * This is not a user error and the buyer cannot fix it by re-reading anything. It means
+ * the page they are looking at was built against an older version of the license text
+ * than the one create-checkout now requires -- a cached bundle, usually held by the
+ * service worker, which serves /index.html from cache.
+ *
+ * Without this, the message "please accept the current license terms" sends the buyer
+ * back to the SAME stale checkbox, which produces the SAME 409, forever. A loop with no
+ * exit they could ever guess at, on the payment path.
+ *
+ * So: refresh the worker, drop its caches, and reload once. They come back on the current
+ * bundle, see the current checkbox -- which now also carries the statutory
+ * immediate-supply acknowledgement -- and accept THAT. Re-accepting the current text is
+ * the point; silently accepting a stale version server-side would defeat the reason the
+ * version is recorded at all.
+ *
+ * One-shot, because a reload loop is worse than the bug it fixes: if the flag is already
+ * set we stop and let the message through.
+ */
+const STALE_RELOAD_FLAG = 'bfmg:stale-agreement-reload';
+
+async function recoverFromStaleAgreement() {
+  try {
+    if (sessionStorage.getItem(STALE_RELOAD_FLAG)) return false; // already tried
+    sessionStorage.setItem(STALE_RELOAD_FLAG, String(Date.now()));
+  } catch (err) {
+    return false; // private mode / blocked storage: fall through to the message
+  }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    }
+    if (window.caches && caches.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch (err) {
+    // Best effort. A plain reload still usually picks up a new index.html.
+  }
+
+  window.location.reload();
+  return true;
+}
+
+/** Shared by both checkout paths -- one place that knows what a 409 here means. */
+async function handleCheckoutError(response) {
+  const errorData = await response.json().catch(() => ({}));
+  console.error('Server error response:', errorData);
+
+  if (response.status === 409 && errorData.currentAgreement) {
+    const reloading = await recoverFromStaleAgreement();
+    if (reloading) {
+      throw new Error('Updating to the current license terms...');
+    }
+    throw new Error(
+      'This page is showing an out-of-date version of the license terms. ' +
+      'Please refresh the page and try again.'
+    );
+  }
+
+  throw new Error(errorData.error || 'Failed to create checkout session');
 }
 
 export const stripeService = new StripeService();

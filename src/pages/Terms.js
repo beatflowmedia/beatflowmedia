@@ -251,6 +251,14 @@ export default function Terms() {
                 Licenses are non-transferable and subject to the specific terms presented at the time of
                 purchase.
               </p>
+              <p>
+                Because of that, superseded versions stay in force for the people who accepted them, and we
+                keep their text. If you bought under an earlier version and want to read the terms you
+                actually agreed to, ask us through the{" "}
+                <Link to="/contact" className="text-green-500 hover:underline">contact form</Link> and we
+                will send you that version. Knowing your deal should not require trusting our summary of
+                it.
+              </p>
             </div>
           </section>
 
