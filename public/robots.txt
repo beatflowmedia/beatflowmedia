@@ -8,5 +8,9 @@ Disallow: /downloads
 Disallow: /settings
 Disallow: /profile
 
+# Licence QR short links. These are redirects, not content -- crawl budget spent
+# following them is budget not spent on the pillar pages they point at.
+Disallow: /r/
+
 # Sitemaps
 Sitemap: https://beatflowmediagroup.com/sitemap.xml

@@ -111,6 +111,16 @@
   status = 200
   methods = ["DELETE"]
 
+# Licence QR short links: /r/<ISRC> -> the record's page.
+#
+# These back the Roku and Fire TV licence QR codes. The code encodes a URL we control
+# and can repoint forever, because a viewer can photograph it and that photo outlives
+# any deploy. Never a Firestore doc id, and never a 404 -- see the function header.
+[[redirects]]
+  from = "/r/*"
+  to   = "/.netlify/functions/redirect-isrc/:splat"
+  status = 200
+
 # Stripe webhook
 [[redirects]]
   from = "/api/stripe-webhook"
