@@ -33,8 +33,15 @@ module.exports = {
   // Email Templates Configuration
   templates: {
     footer: {
-      companyName: 'BeatFlow Media',
-      address: '478 Clubhouse Dr, Middletown, NJ 07748',
+      companyName: 'BeatFlow Media Group',
+      // NO POSTAL ADDRESS. There is no brick-and-mortar location, and what was here
+      // was a private residence being mailed to artists and third parties.
+      //
+      // The CAN-SPAM postal-address requirement applies to COMMERCIAL email -- messages
+      // whose primary purpose is advertising or promotion. Every email carrying this
+      // footer is transactional or relational: a takedown notice, an appeal decision,
+      // an application outcome. Those are exempt. Confirm with a lawyer before sending
+      // anything promotional, because that message WOULD need a valid postal address.
       year: new Date().getFullYear()
     }
   }

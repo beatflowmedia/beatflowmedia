@@ -114,7 +114,7 @@ const decisionEmailHtml = `
     </div>
 
     <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
-      <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+      <p>© ${new Date().getFullYear()} BeatFlow Media Group</p>
       <p>
         <a href="https://beatflowmediagroup.com/curator-pricing" style="color: #1DB954; text-decoration: none;">Curator Program</a> |
         <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |

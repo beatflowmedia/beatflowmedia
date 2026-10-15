@@ -312,7 +312,7 @@ exports.onContentTakedown = onDocumentUpdated('songs/{songId}', async (event) =>
         </div>
 
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
-          <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+          <p>© ${new Date().getFullYear()} BeatFlow Media Group</p>
           <p>
             <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
             <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
@@ -453,7 +453,7 @@ exports.onAlbumTakedown = onDocumentUpdated('albums/{albumId}', async (event) =>
         </div>
 
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
-          <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+          <p>© ${new Date().getFullYear()} BeatFlow Media Group</p>
           <p>
             <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
             <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
@@ -585,7 +585,7 @@ exports.onAppealDecision = onDocumentUpdated('appeals/{appealId}', async (event)
         </div>
 
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
-          <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+          <p>© ${new Date().getFullYear()} BeatFlow Media Group</p>
           <p>
             <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
             <a href="https://beatflowmediagroup.com/user-guidelines" style="color: #1DB954; text-decoration: none;">Community Guidelines</a> |
@@ -735,7 +735,7 @@ exports.onCuratorApplicationDecision = onDocumentUpdated('curatorApplications/{a
         </div>
 
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
-          <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+          <p>© ${new Date().getFullYear()} BeatFlow Media Group</p>
           <p>
             <a href="https://beatflowmediagroup.com/curator-pricing" style="color: #1DB954; text-decoration: none;">Curator Program</a> |
             <a href="https://beatflowmediagroup.com/terms" style="color: #1DB954; text-decoration: none;">Terms of Service</a> |
@@ -995,7 +995,7 @@ exports.onInvestorRequest = onDocumentCreated('investorRequests/{requestId}', as
         </div>
 
         <div style="padding: 20px; text-align: center; background: #333; color: #999; font-size: 12px;">
-          <p>© 2025 BeatFlow Media | 478 Clubhouse Dr, Middletown, NJ 07748</p>
+          <p>© ${new Date().getFullYear()} BeatFlow Media Group</p>
           <p>
             <a href="https://beatflowmediagroup.com/investors" style="color: #1DB954; text-decoration: none;">Investor Portal</a> |
             <a href="https://beatflowmediagroup.com/nda" style="color: #1DB954; text-decoration: none;">NDA Terms</a> |
