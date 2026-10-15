@@ -5,6 +5,15 @@
 /api/stripe-webhook  /.netlify/functions/stripe-webhook  200
 /api/create-checkout  /.netlify/functions/create-checkout  200
 
+# Licence QR short links: /r/<ISRC> -> the record's page.
+#
+# MUST stay above the SPA catch-all. This rule exists in netlify.toml too, and that
+# copy alone did nothing: the catch-all below matched first and served index.html, so
+# /r/ANYTHING returned 200 with no Location while the function itself was deployed and
+# working. Same failure shape as the CSP copies -- a config in two files where one
+# silently wins, and the one that wins is missing the entry.
+/r/*  /.netlify/functions/redirect-isrc/:splat  200
+
 # ---------------------------------------------------------------------------
 # Routes removed by the business-model cleanup (103 routes -> 58).
 #
