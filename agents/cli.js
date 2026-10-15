@@ -556,6 +556,9 @@ uiuxCmd
   .option('--auto-fix', 'Attempt automatic remediation', false)
   .option('--save', 'Save detailed report', true)
   .option('--exit-on-critical', 'Exit with error code if critical issues found', false)
+  // Comma-separated explicit file list. A pre-commit hook must judge the files
+  // being committed, not the whole tree -- see the note in UIUXExpertAgent.
+  .option('--files <list>', 'Comma-separated files to analyze (overrides --path)')
   .option('--components', 'Analyze components', true)
   .option('--pages', 'Analyze pages', true)
   .option('--design-system', 'Analyze design system files', true)
@@ -577,7 +580,10 @@ uiuxCmd
         targetPath: options.path,
         includeComponents: options.components,
         includePages: options.pages,
-        includeDesignSystem: options.designSystem
+        includeDesignSystem: options.designSystem,
+        files: options.files
+          ? options.files.split(',').map((f) => f.trim()).filter(Boolean)
+          : null
       });
 
       // Auto-fix if requested

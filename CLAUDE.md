@@ -3052,3 +3052,56 @@ entity name, or the phone number in main or any linked chunk.
   $1.99 into $199. Untouched deliberately: it is money data with historical rows.
 - **`licenses.trackId` holds an ALBUM id for album purchases.** Not a broken record, but a
   field name that lies, and it made an album licence look like an orphan during this audit.
+
+## The pre-commit UI/UX hook was checking nothing — 2026-10-15
+
+**Three bugs stacked, and the outcome was three screens of green per commit that read not
+one line of code.**
+
+1. **`.husky/pre-commit` wrote the staged file list to a temp file and never passed it to
+   the CLI.** The temp file was created, written, and deleted unused. The CLI fell back to
+   its default `--path src`.
+2. **`gatherFiles()` built its glob pattern with `path.join()`**, which emits BACKSLASHES
+   on Windows. glob v9+ reads a backslash as an escape character, not a separator, on every
+   platform — so `C:\…\src/**/*.{js,jsx}` matched **0 files** where the forward-slash form
+   matches **456**. Platform-specific: correct on Linux CI, broken on the only machine
+   anyone actually commits from.
+3. **`--exit-on-critical` was never passed and defaults to `false`.** Even a real critical
+   finding would have exited 0, so the hook's own `if [ $UIUX_EXIT_CODE -ne 0 ]` could
+   never fire.
+
+Any one of these alone would have been visible. Together they produced a check that
+reported `Composite Score: 100/100`, `Files Analyzed: 0` and exited 0, forever. It is the
+same empty-log trap that once had a build reported as passing from a log containing
+nothing: **a perfect score over zero inputs is not a pass, it is an absence.**
+
+**Fixed:** basePath normalised to forward slashes once in `gatherFiles()`; a `--files`
+option added to `agents/cli.js` and threaded into `analyzeDesignSystem()`; the hook now
+passes the staged files and `--exit-on-critical`.
+
+**Why staged files and not the whole tree.** With the glob fixed, a full `src` scan reports
+2287 issues, so pointing the hook at everything would fail every commit on pre-existing
+debt — and a hook that always fails is bypassed within a day, which is exactly how
+`--no-verify` becomes the normal way to commit in a repo. The hook judges what is being
+committed. Existing debt is a ratchet to work down, not a wall across every commit.
+
+**Verified by planting a failure**, not by watching it pass: a component with an unlabelled
+image, a click handler on a div, an 11px input and a 20px button exits **1**; the files in
+this commit exit **0**. A gate is not trusted here until it has been seen to refuse
+something.
+
+### Baseline — the ratchet
+
+Full `src` scan, 2026-10-15, immediately after the fix. **Never raise these to make a
+build pass.**
+
+| Measure | Baseline |
+|---|---|
+| Files analysed | 234 |
+| Total issues | 2287 |
+| Accessibility issues | 594 |
+| Composite score | 0/100 |
+
+The accessibility number is the one that matters against the project's mobile-first,
+thumb-first standard: 44px targets, 16px inputs, no hover-only affordances. It was 594 the
+whole time the hook was reporting 100/100.

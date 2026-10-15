@@ -92,7 +92,13 @@ class UIUXExpertAgent extends AgentBase {
       targetPath = 'src',
       includeComponents = true,
       includePages = true,
-      includeDesignSystem = true
+      includeDesignSystem = true,
+      // An explicit file list, which takes precedence over discovery. This is what a
+      // pre-commit hook needs: judge the files being committed, not the whole tree.
+      // Scanning everything would mean the hook either passes always (useless) or fails
+      // always on pre-existing debt (bypassed within a day, which is how --no-verify
+      // becomes the normal way to commit here).
+      files: explicitFiles = null
     } = options;
 
     this.logger.info(`🔍 Analyzing UI/UX for: ${targetPath}`);
@@ -101,11 +107,13 @@ class UIUXExpertAgent extends AgentBase {
 
     try {
       // Gather files to analyze
-      const files = this.gatherFiles(targetPath, {
-        includeComponents,
-        includePages,
-        includeDesignSystem
-      });
+      const files = (explicitFiles && explicitFiles.length)
+        ? explicitFiles.map((f) => path.resolve(this.config.projectRoot, f).split(path.sep).join('/'))
+        : this.gatherFiles(targetPath, {
+          includeComponents,
+          includePages,
+          includeDesignSystem
+        });
 
       this.logger.info(`📁 Found ${files.length} files to analyze`);
 
@@ -157,7 +165,22 @@ class UIUXExpertAgent extends AgentBase {
    */
   gatherFiles(targetPath, options) {
     const files = [];
-    const basePath = path.join(this.config.projectRoot, targetPath);
+
+    // glob v9+ treats a BACKSLASH as an escape character, not a path separator, on
+    // every platform -- patterns must use forward slashes. path.join() returns
+    // backslashes on Windows, so `C:\...\src/**/*.js` matched NOTHING and the analysis
+    // silently reported 0 files and a perfect 100/100 score on every run.
+    //
+    // It failed open rather than loudly, so the pre-commit hook that calls this had
+    // been passing for months without reading a single line of code. Three screens of
+    // green per commit, all of it meaningless. Worse, it is platform-specific: this
+    // works correctly on Linux CI, so the one machine it is broken on is the developer's.
+    //
+    // Normalised once here rather than at each of the four glob calls below.
+    const basePath = path
+      .join(this.config.projectRoot, targetPath)
+      .split(path.sep)
+      .join('/');
 
     // Check if targetPath already points to a specific directory
     const isComponentsDir = targetPath.includes('components');

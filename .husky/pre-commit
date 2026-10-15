@@ -49,24 +49,36 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-# Run quick UI/UX check on staged files only
-echo "📁 Checking $(echo "$STAGED_FILES" | wc -l) files..."
+# Run the UI/UX check on the STAGED files only.
+#
+# This block used to write the staged file list to a temp file and then never pass it
+# to the CLI, which fell back to scanning `src`. Two bugs stacked on top of that:
+#
+#   1. gatherFiles() built its glob pattern with path.join(), which emits BACKSLASHES
+#      on Windows, and glob v9+ reads a backslash as an escape character. The pattern
+#      matched nothing, so every run analysed 0 files and scored a perfect 100/100.
+#   2. --exit-on-critical was never passed, and it defaults to false -- so even a real
+#      critical finding would have exited 0 and the check below could never fire.
+#
+# Net effect: three screens of green on every commit, reading not one line of code.
+# With the glob fixed, a full `src` scan reports 2287 issues, so pointing this at the
+# whole tree would block every commit on pre-existing debt -- and a hook that always
+# fails gets bypassed within a day, which is how --no-verify becomes normal here.
+#
+# So it judges exactly what is being committed. New code is held to the line; existing
+# debt is a ratchet to work down, recorded in CLAUDE.md, not a wall across every commit.
+echo "📁 Checking $(echo "$STAGED_FILES" | wc -l) staged file(s)..."
 
-# Create temporary file list
-TEMP_FILE=$(mktemp)
-echo "$STAGED_FILES" > "$TEMP_FILE"
+FILE_LIST=$(echo "$STAGED_FILES" | tr '
+' ',' | sed 's/,$//')
 
-# Run UI/UX analysis with pre-commit profile
-node agents/cli.js uiux review --profile pre-commit --auto-fix
+node agents/cli.js uiux review   --files "$FILE_LIST"   --profile pre-commit   --exit-on-critical   --auto-fix
 
 UIUX_EXIT_CODE=$?
 
-# Clean up
-rm -f "$TEMP_FILE"
-
 if [ $UIUX_EXIT_CODE -ne 0 ]; then
   echo "❌ UI/UX check failed with critical issues"
-  echo "💡 Fix critical issues or use 'git commit --no-verify' to bypass"
+  echo "💡 Fix the critical issues. Do NOT reach for --no-verify: a failing hook is a finding."
   exit 1
 fi
 
