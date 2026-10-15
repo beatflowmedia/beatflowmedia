@@ -90,9 +90,50 @@ for (const file of CONSUMERS) {
   }
 }
 
+// --- the hosts this app actually talks to must be IN the policy ---------------------
+//
+// Copy-drift was only half the problem. On 2026-10-15 all three copies agreed perfectly
+// and the download was still blocked in production, because connect-src never listed
+// Cloudflare R2 -- where every master lives. /downloads fetches the presigned URL as a
+// blob, a blob fetch is connect-src, and the browser refused it. The buyer paid and saw
+// "Failed to fetch".
+//
+// Nothing caught it because every test of that path ran in Node, which has no CSP. So
+// this checks the policy against the endpoint the app is CONFIGURED to use, which is the
+// one thing a Node test can assert about a browser rule.
+const envPath = path.join(ROOT, '.env');
+if (fs.existsSync(envPath)) {
+  const env = fs.readFileSync(envPath, 'utf8');
+  const required = [
+    ['R2_MASTERS_ENDPOINT', 'connect-src', 'masters are fetched from here by /downloads']
+  ];
+  for (const [key, directive, why] of required) {
+    const m = env.match(new RegExp('^' + key + '=(.+)$', 'm'));
+    if (!m) continue;
+    let host;
+    try { host = new URL(m[1].trim()).hostname; } catch { continue; }
+
+    const allowed = (DIRECTIVES[directive] || []).some((entry) => {
+      const v = entry.replace(/^https?:\/\//, '').replace(/^wss?:\/\//, '');
+      if (v === host) return true;
+      if (v.startsWith('*.')) return host.endsWith(v.slice(1)); // *.foo.com matches a.foo.com
+      return false;
+    });
+
+    if (!allowed) {
+      console.error(`\n  ${key} resolves to ${host}`);
+      console.error(`      which no ${directive} entry permits — ${why}.`);
+      console.error('      The browser will refuse the request even though every copy agrees.');
+      problems++;
+    } else {
+      console.log(`  ${directive} permits ${host}  (${key})`);
+    }
+  }
+}
+
 if (problems) {
   console.error(
-    `\nverify:csp — ${problems} drift(s) from config/csp.js.\n` +
+    `\nverify:csp — ${problems} problem(s).\n` +
     'A browser enforces the INTERSECTION of every policy present, so a value missing\n' +
     'from one copy blocks the request while the others look correct. Update the copy\n' +
     'to match config/csp.js, or change config/csp.js and update every copy.'
@@ -100,4 +141,4 @@ if (problems) {
   process.exit(1);
 }
 
-console.log('\nverify:csp — all copies reconcile with config/csp.js.');
+console.log('\nverify:csp — all copies reconcile, and the configured hosts are permitted.');

@@ -2672,3 +2672,45 @@ CRA takes 2–4 minutes here and Netlify's wait is shorter. For testing function
 needed: **`npx netlify functions:serve --port 8888`** serves them over http, starts in
 seconds, and has been reliable every time. Use `netlify dev --offline` only when the React
 app is actually needed, and kill every BeatFlow node process first.
+
+### The download was blocked by CSP in the browser — 2026-10-15
+
+Percy, from the production console on `/downloads`:
+
+```
+Refused to connect to 'https://…r2.cloudflarestorage.com/beatflow-masters/…'
+because it violates the document's Content Security Policy.
+Download error: TypeError: Failed to fetch.
+```
+
+**`connect-src` never listed Cloudflare R2.** `downloadFileAsBlob` fetches the presigned
+URL as a blob so the file downloads rather than opening in a tab, and a blob fetch is
+`connect-src` — so the browser refused it outright. The buyer paid and got "Failed to
+fetch". Added `https://*.r2.cloudflarestorage.com` to all three copies; `verify:csp`
+reconciles.
+
+Wildcarded rather than pinned to the account host on purpose: the hostname is not the
+security boundary, the short-lived SigV4 signature is. Pinning would put the account id in
+the repo and break silently if the bucket moved.
+
+#### Why nothing caught it, which is the part worth keeping
+
+**Every test of the new download path ran in Node, and Node has no CSP.** The end-to-end
+purchase test fetched the presigned URL and measured 7.70 MB of real mp3, so it proved the
+URL returns the file — and said nothing about whether the *page* may fetch it. A presigned
+URL is useless if the document cannot connect to it.
+
+That is a whole class of bug a Node harness cannot see: CSP, CORS, mixed content, cookie
+and storage policy. The lesson is not "test in a browser" as a slogan; it is that **a test
+run outside the environment the code runs in cannot answer questions about that
+environment**, and I reported the feature working on exactly that evidence.
+
+`verify:csp` now also checks the policy against the hosts the app is **configured** to use,
+which is the one thing a Node script can usefully assert about a browser rule. It reads
+`R2_MASTERS_ENDPOINT` from `.env` and fails if no `connect-src` entry permits that
+hostname. Copy-drift was only ever half the problem — this time all three copies agreed
+perfectly and the request was still blocked.
+
+Proven by planting the failure: with the R2 entry removed, `verify:csp` exits 1 and names
+the host; restored, it exits 0 and prints
+`connect-src permits 209a85bc…r2.cloudflarestorage.com (R2_MASTERS_ENDPOINT)`.

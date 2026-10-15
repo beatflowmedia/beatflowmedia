@@ -105,6 +105,21 @@ const DIRECTIVES = {
     // CSP violation on every page load -- not fatal like the sodar block above, but
     // the same thing: noise in the console that belongs to Google and reads like ours.
     "https://csi.gstatic.com",
+    // Cloudflare R2, where the masters live. /downloads fetches the presigned URL as a
+    // blob so the file downloads instead of opening in a tab, and a blob fetch is
+    // connect-src -- so without this the browser refuses it outright and the buyer sees
+    // "Failed to fetch" after paying.
+    //
+    // Found in production on 2026-10-15, after the download path was switched from the
+    // preview on Firebase Storage to the R2 master. Every test of that change ran in
+    // Node, which has no CSP, so they proved the URL returns the file and never that
+    // the PAGE could fetch it. A presigned URL is useless if the document cannot
+    // connect to it.
+    //
+    // Wildcarded rather than pinned to the account host: the hostname is not the
+    // security boundary -- the SigV4 signature is, and it is short-lived. Pinning would
+    // put the account id in the repo and break silently if the bucket moved.
+    "https://*.r2.cloudflarestorage.com",
   ],
   "frame-src": [
     "'self'",
