@@ -184,7 +184,7 @@ function SongPage() {
         * This was a single narrow stack: title, artist, three buttons, a 280px cover,
         * then "Lyrics / Details" reading "No lyrics available." On a 1280px screen the
         * bottom 40% was empty while the one decision a buyer came to make -- which
-        * licence to take -- sat behind a modal.
+        * license to take -- sat behind a modal.
         *
         * The base rule is the phone, one column, and the grid widens at md. Scaling up
         * with min-width, never walking a desktop layout back with max-width.
@@ -260,12 +260,12 @@ function SongPage() {
               </dl>
             )}
 
-            {/* The licence on the page, not only inside the modal.
+            {/* The license on the page, not only inside the modal.
                 DownloadLicenseTerms already owns this text and already has a compact
                 mode. Restating it here would be a second copy, free to drift from the
                 one the buyer actually accepts at checkout. */}
             <div className="mt-8 border-t border-gray-800 pt-6">
-              <h2 className="text-lg font-semibold mb-3">What a licence covers</h2>
+              <h2 className="text-lg font-semibold mb-3">What a license covers</h2>
               <DownloadLicenseTerms compact />
             </div>
           </div>

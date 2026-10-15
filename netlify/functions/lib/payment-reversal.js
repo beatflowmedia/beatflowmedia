@@ -1,6 +1,6 @@
 // netlify/functions/lib/payment-reversal.js
 //
-// When the money goes back, the licence goes with it.
+// When the money goes back, the license goes with it.
 //
 // THE ATTACK THIS CLOSES
 // Pay $1.99 -> download the master -> ask the bank to reverse the charge -> keep the
@@ -44,7 +44,7 @@ const {
 const SYSTEM_ACTOR = 'system:stripe-webhook';
 
 /**
- * Revoke every licence bought with a payment that has been reversed.
+ * Revoke every license bought with a payment that has been reversed.
  *
  * Idempotent, because Stripe redelivers. A purchase already revoked for the same
  * reason is left completely alone rather than re-stamped -- re-stamping would move
@@ -62,7 +62,7 @@ const SYSTEM_ACTOR = 'system:stripe-webhook';
  * @param {string} input.reason          - REVOCATION_REASONS.REFUND or .CHARGEBACK
  * @param {string} [input.note]          - free text for the record
  * @param {*} input.at                   - server timestamp value
- * @returns {Promise<{revoked: number, skipped: number, licencesEnded: number, purchases: Array}>}
+ * @returns {Promise<{revoked: number, skipped: number, licensesEnded: number, purchases: Array}>}
  */
 async function revokeForPaymentReversal(db, input) {
   const { paymentIntentId, reason, note, at } = input || {};
@@ -83,7 +83,7 @@ async function revokeForPaymentReversal(db, input) {
     .limit(25)
     .get();
 
-  const result = { revoked: 0, skipped: 0, licencesEnded: 0, purchases: [] };
+  const result = { revoked: 0, skipped: 0, licensesEnded: 0, purchases: [] };
 
   if (matches.empty) {
     // Not an error. A refund on a subscription invoice, a sponsorship, or a payment
@@ -125,17 +125,17 @@ async function revokeForPaymentReversal(db, input) {
     // `purchases` is what the entitlement check reads, so the write above is what
     // actually closes the download. The `licenses` collection is the buyer-facing
     // record of the grant, and leaving it `active` next to a revoked purchase would
-    // show the buyer a live licence for a file they can no longer fetch. Two stores
+    // show the buyer a live license for a file they can no longer fetch. Two stores
     // for one concept is the Single Source problem already flagged in
     // lib/entitlement.js; this reconciles them rather than pretending it is solved.
     if (purchase.licenseId) {
-      const licences = await db
+      const licenses = await db
         .collection('licenses')
         .where('purchaseLicenseId', '==', purchase.licenseId)
         .limit(50)
         .get();
 
-      for (const lic of licences.docs) {
+      for (const lic of licenses.docs) {
         if (lic.data().status === 'revoked') continue;
         await lic.ref.update({
           status: 'revoked',
@@ -144,7 +144,7 @@ async function revokeForPaymentReversal(db, input) {
           revokedAt: at,
           validWhileSubscribed: false
         });
-        result.licencesEnded++;
+        result.licensesEnded++;
       }
     }
   }
@@ -152,7 +152,7 @@ async function revokeForPaymentReversal(db, input) {
   console.log(
     '[payment-reversal] ' + reason + ' on ' + paymentIntentId + ': ' +
     result.revoked + ' revoked, ' + result.skipped + ' already revoked, ' +
-    result.licencesEnded + ' licence rows ended'
+    result.licensesEnded + ' license rows ended'
   );
   return result;
 }
@@ -164,7 +164,7 @@ async function revokeForPaymentReversal(db, input) {
  *
  * 1. PARTIAL REFUND. `charge.refunded` fires for a partial refund too. Giving back
  *    $2 of a $12 album is a price adjustment or a goodwill gesture, not the end of
- *    the licence, and ending it would punish a customer being made whole.
+ *    the license, and ending it would punish a customer being made whole.
  *
  * 2. AN EXPLICIT KEEP. src/utils/licenseRevocation.js documents four independent
  *    states, one of which is "refunded + licensed — a refund given while leaving the
@@ -187,14 +187,14 @@ function shouldRevokeOnRefund(charge) {
   if (!fullyRefunded) {
     return {
       revoke: false,
-      why: 'partial refund (' + charge.amount_refunded + ' of ' + charge.amount + ') — licence stands'
+      why: 'partial refund (' + charge.amount_refunded + ' of ' + charge.amount + ') — license stands'
     };
   }
 
   const refunds = (charge.refunds && charge.refunds.data) || [];
   const keep = refunds.some((r) => r && r.metadata && String(r.metadata.keep_license) === 'true');
   if (keep) {
-    return { revoke: false, why: 'refund metadata keep_license=true — deliberate refund-with-licence-intact' };
+    return { revoke: false, why: 'refund metadata keep_license=true — deliberate refund-with-license-intact' };
   }
 
   return { revoke: true, why: 'full refund' };
@@ -205,7 +205,7 @@ function shouldRevokeOnRefund(charge) {
  *
  * Firestore excludes a document from any query naming a field it lacks, so a purchase
  * written without `stripePaymentIntent` cannot be found by a chargeback and would keep
- * its licence forever with nobody noticing. This is the check that makes that
+ * its license forever with nobody noticing. This is the check that makes that
  * condition visible; scripts/verify-reversal.js runs it across the collection.
  */
 function assertReversalJoinable(purchase) {

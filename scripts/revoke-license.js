@@ -34,7 +34,7 @@ const { has, value: valueOf } = args();
 const APPLY = has('--apply');
 const LIST = has('--list');
 const REINSTATE = has('--reinstate');
-const LICENCE = valueOf('license', valueOf('license', null));
+const LICENSE = valueOf('license', valueOf('license', null));
 const PURCHASE_ID = valueOf('purchase', null);
 const REASON = valueOf('reason', null);
 const BY = valueOf('by', null);
@@ -63,7 +63,7 @@ async function main() {
     console.log('  project: ' + projectId);
     console.log('  purchases: ' + rows.length);
     console.log('');
-    console.log('  LICENCE ID              STATE      ITEM');
+    console.log('  LICENSE ID              STATE      ITEM');
     rows.forEach((r) => {
       console.log('  ' + String(r.licenseId || '(none)').padEnd(24)
         + describeRevocation(r).padEnd(11).slice(0, 11)
@@ -77,7 +77,7 @@ async function main() {
   }
 
   // ---- locate the purchase ------------------------------------------------
-  if (!LICENCE && !PURCHASE_ID) {
+  if (!LICENSE && !PURCHASE_ID) {
     console.error('  need --license=LIC-... or --purchase=<docId>, or --list');
     return 2;
   }
@@ -95,12 +95,12 @@ async function main() {
     const d = await db.collection('purchases').doc(PURCHASE_ID).get();
     if (d.exists) doc = { id: d.id, ...d.data() };
   } else {
-    const snap = await db.collection('purchases').where('licenseId', '==', LICENCE).limit(5).get();
+    const snap = await db.collection('purchases').where('licenseId', '==', LICENSE).limit(5).get();
     if (!snap.empty) doc = { id: snap.docs[0].id, ...snap.docs[0].data() };
     if (snap.size > 1) console.warn('  WARNING: ' + snap.size + ' purchases share that license id; acting on the first');
   }
   if (!doc) {
-    console.error('  no purchase found for ' + (LICENCE || PURCHASE_ID));
+    console.error('  no purchase found for ' + (LICENSE || PURCHASE_ID));
     return 1;
   }
 

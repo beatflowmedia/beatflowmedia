@@ -16,7 +16,7 @@
 //
 // WHEN STUDIO RESUMES: port its handling INTO `webhook.js` and retire this file. Do not
 // register this endpoint with Stripe -- that would silently swap every other handler too,
-// including the licence recording and renewal handling that only `webhook.js` has.
+// including the license recording and renewal handling that only `webhook.js` has.
 //
 // Dead branches still inside this file, measured 2026-10-06: `bundle` and
 // `playlist_submission` have never produced a purchase, nothing in src/ creates either,
@@ -28,7 +28,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 const { sendEmail } = require('./lib/send-email');
 const { allocateRevenueForPurchase } = require('./lib/revenue-split');
-// Canonical licence vocabulary, shared with the app in the manner of utils/pricing.js.
+// Canonical license vocabulary, shared with the app in the manner of utils/pricing.js.
 const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
 
 /**

@@ -118,7 +118,7 @@ const SKIP_FOLDERS = new Set([
   'I Should of Shown up For You',
   // PULLED BY PERCY, 2026-09-30: "not ready yet. I will re-add once I get it sorted
   // out." The collection and its 26 songs were deleted from Firestore (no purchases
-  // and no licences referenced them; backed up first).
+  // and no licenses referenced them; backed up first).
   //
   // Listed here because deleting the records alone does not hold. The source folder is
   // still on disk, so the next full `ingest:library --apply` would restore all 26
@@ -135,7 +135,7 @@ const SKIP_FOLDERS = new Set([
   // .m4a, meaning the downloads were truncated, not that the codec is unsupported.
   // Only "First Light" was ever catalogued, because it alone also has a good mp3 and
   // wav, so the album stood at 1 of 10 tracks. That song and the albums/ document are
-  // deleted (0 purchases, 0 licences, backed up first).
+  // deleted (0 purchases, 0 licenses, backed up first).
   //
   // Skipped for the same reason as the folder above: the source is still on disk, so a
   // full re-run would restore the one deliverable track and present a 1-track album
@@ -156,7 +156,7 @@ const SKIP_FOLDERS = new Set([
  *
  * COVERS AND REMIXES are the important half. A cover is someone else's COMPOSITION.
  * The platform's whole proposition is one-stop clearance -- BFMG holds the recording
- * and the composition, so a single licence covers both -- and on a cover it does not.
+ * and the composition, so a single license covers both -- and on a cover it does not.
  * Listing one would make /terms untrue for that record and would grant rights BFMG
  * does not hold. Percy has not confirmed these individually, so they stay out; some
  * may well be his own work remixed, and each can be added back deliberately.

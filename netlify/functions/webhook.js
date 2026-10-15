@@ -13,10 +13,10 @@
 const crypto = require('crypto');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
-// Canonical licence vocabulary, shared with the app in the manner of utils/pricing.js.
+// Canonical license vocabulary, shared with the app in the manner of utils/pricing.js.
 const { sendEmail } = require('./lib/send-email');
 const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
-// When the money goes back, the licence goes with it. See lib/payment-reversal.js for
+// When the money goes back, the license goes with it. See lib/payment-reversal.js for
 // why this is the trigger for policy that was already written and already enforced.
 const { revokeForPaymentReversal, shouldRevokeOnRefund } = require('./lib/payment-reversal');
 const { buildDisputeEvidence, recordDisputeEvidence } = require('./lib/dispute-evidence');
@@ -152,7 +152,7 @@ exports.handler = async (event, context) => {
       // The friendly-fraud pair. Without these, the attack is: pay $1.99, download the
       // master, have the bank reverse the charge, keep the file -- and the purchase row
       // stays `completed` forever, so /downloads keeps serving it. The money leaves and
-      // the licence does not.
+      // the license does not.
       case 'charge.refunded':
         await handleChargeRefunded(stripeEvent.data.object);
         break;
@@ -387,11 +387,11 @@ async function handleCheckoutSessionCompleted(session) {
     const artistPayout = netAmount * 0.70;
     const platformFee = netAmount * 0.30;
 
-    // The licence id and the acceptance stamp were the whole gap between this handler
+    // The license id and the acceptance stamp were the whole gap between this handler
     // and the unregistered one. create-checkout refuses a download sale without a
     // recorded acceptance of the CURRENT agreement version and puts it in the session
     // metadata; until now this endpoint read the event and dropped it, so the product
-    // asserted that buyers accepted a specific licence while keeping no evidence of it.
+    // asserted that buyers accepted a specific license while keeping no evidence of it.
     const licenseId = `LIC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
 
     const purchaseData = {
@@ -429,7 +429,7 @@ async function handleCheckoutSessionCompleted(session) {
     // followed by a write, and two concurrent deliveries both read "no purchase" before
     // either writes. Demonstrated on 2026-10-07, when two `stripe listen` processes were
     // forwarding at once and a single $1.99 payment produced two purchase rows and two
-    // licence documents 14ms apart. Stripe retries failed deliveries by design, so this is
+    // license documents 14ms apart. Stripe retries failed deliveries by design, so this is
     // not only a test artefact.
     const purchaseRef = db.collection('purchases').doc(session.id);
     try {
@@ -443,12 +443,12 @@ async function handleCheckoutSessionCompleted(session) {
     }
     console.log(`✅ Purchase document created with ID: ${purchaseRef.id}, License: ${licenseId}`);
 
-    // Perpetual licence for this purchase. These survive subscription cancellation,
+    // Perpetual license for this purchase. These survive subscription cancellation,
     // which is the point of the hybrid model: a one-off download stays licensed whether
     // or not the buyer keeps paying a monthly tier.
     //
     // Deliberately NOT fatal. A purchase that was taken and recorded must not be undone
-    // because the licence row failed to write -- that would turn a bookkeeping failure
+    // because the license row failed to write -- that would turn a bookkeeping failure
     // into a refund dispute. It is logged loudly instead, and the purchase carries the
     // same licenseId, so a missing row is recoverable rather than lost.
     try {
@@ -462,18 +462,18 @@ async function handleCheckoutSessionCompleted(session) {
         purchaseLicenseId: licenseId, // the id stamped on the purchase row
         userId,
         trackId: itemId,
-        // The ISRC, recorded on the licence itself.
+        // The ISRC, recorded on the license itself.
         //
         // `trackId` is a Firestore document id: it identifies the recording inside this
         // database and nowhere else. Enforcement runs the other way — a recording turns
-        // up somewhere it should not, and the question is which licence covers it. ISRC
+        // up somewhere it should not, and the question is which license covers it. ISRC
         // is the only identifier here assigned by a standards body rather than by this
         // platform, so it is the one that survives leaving it. It is already the
         // documented join with the station for the same reason.
         //
         // Written explicitly as null when absent rather than omitted: Firestore excludes
         // a document from any query naming a field it lacks, so an omitted ISRC would
-        // hide exactly the licences worth finding. 27 sellable tracks have none — the
+        // hide exactly the licenses worth finding. 27 sellable tracks have none — the
         // three albums that were never distributed.
         isrc: itemData.isrc || null,
         purchaseId: purchaseRef.id,
@@ -701,20 +701,20 @@ async function handleSubscriptionCancelled(subscription) {
     const userDoc = usersSnapshot.docs[0];
     const userId = userDoc.id;
 
-    // END THE LICENCES THE SUBSCRIPTION GRANTED.
+    // END THE LICENSES THE SUBSCRIPTION GRANTED.
     //
-    // This handler only deactivated the user's membership flag. The licence rows it had
+    // This handler only deactivated the user's membership flag. The license rows it had
     // granted stayed `active` for ever, so cancelling a subscription took the money away
-    // and left the licence behind — the opposite of the model, where a subscription
-    // licence is time-bound precisely so it ends with the subscription. The logic existed
-    // in stripe-webhook.js, which Stripe does not call. Same gap as the licence recording.
+    // and left the license behind — the opposite of the model, where a subscription
+    // license is time-bound precisely so it ends with the subscription. The logic existed
+    // in stripe-webhook.js, which Stripe does not call. Same gap as the license recording.
     //
     // NOT a hard revocation, deliberately: status becomes `published-only`. Work the
-    // subscriber already published keeps its licence; what ends is the right to use the
-    // track in anything new. Pulling a licence out from under already-published work
+    // subscriber already published keeps its license; what ends is the right to use the
+    // track in anything new. Pulling a license out from under already-published work
     // would make the product unusable for the professionals it is sold to.
     //
-    // Perpetual one-off licences are untouched — they are not contingent on a
+    // Perpetual one-off licenses are untouched — they are not contingent on a
     // subscription and the query is restricted to time-bound rows for that reason.
     try {
       const licensesSnapshot = await db.collection('licenses')
@@ -735,13 +735,13 @@ async function handleSubscriptionCancelled(subscription) {
           });
         });
         await batch.commit();
-        console.log(`✓ ${licensesSnapshot.size} time-bound licences set to published-only for ${userId}`);
+        console.log(`✓ ${licensesSnapshot.size} time-bound licenses set to published-only for ${userId}`);
       }
     } catch (licenseError) {
       // Logged, not thrown. The membership update below must still run: leaving someone
-      // marked as an active subscriber after they cancelled is worse than a stale licence
+      // marked as an active subscriber after they cancelled is worse than a stale license
       // row, and Stripe would retry the whole event over a failure in this block.
-      console.error('Error updating licences on cancellation:', licenseError);
+      console.error('Error updating licenses on cancellation:', licenseError);
     }
 
     // Deactivate membership
@@ -786,8 +786,8 @@ async function handlePaymentFailed(paymentIntent) {
  * Ported from stripe-webhook.js, which has never run: it is not a registered endpoint.
  * This endpoint receives the event and, until now, had no case for it.
  *
- * Re-activates the buyer's time-bound licences. A renewal that is received and dropped
- * leaves a paying subscriber with licences that quietly stay inactive, which presents as
+ * Re-activates the buyer's time-bound licenses. A renewal that is received and dropped
+ * leaves a paying subscriber with licenses that quietly stay inactive, which presents as
  * "I paid and it still says expired".
  */
 async function handleInvoicePaymentSucceeded(invoice) {
@@ -814,7 +814,7 @@ async function handleInvoicePaymentSucceeded(invoice) {
 
     const userId = usersSnapshot.docs[0].id;
 
-    // Only time-bound licences are touched. A perpetual one-off download is not
+    // Only time-bound licenses are touched. A perpetual one-off download is not
     // contingent on a subscription and must never be re-dated by a renewal.
     const licensesSnapshot = await db.collection('licenses')
       .where('userId', '==', userId)
@@ -846,7 +846,7 @@ async function handleInvoicePaymentSucceeded(invoice) {
       console.log(`All ${licensesSnapshot.size} licenses already active for user ${userId}`);
     }
   } catch (error) {
-    // Swallowed on purpose. Stripe retries a non-2xx, and a failure to tidy licence rows
+    // Swallowed on purpose. Stripe retries a non-2xx, and a failure to tidy license rows
     // must not make it re-deliver a payment event it has already processed.
     console.error('Error handling invoice payment success:', error);
   }
@@ -923,7 +923,7 @@ async function handleInvoicePaymentFailed(invoice) {
 // PAYMENT REVERSALS — refunds and chargebacks
 // ============================================================================
 //
-// Both of these end the licence, and the difference between them is money:
+// Both of these end the license, and the difference between them is money:
 //
 //   refund      we chose to give it back.  Cost: the Stripe fee (~$0.36 on $1.99).
 //   chargeback  the bank took it back.     Cost: the sale PLUS a ~$15 dispute fee.
@@ -946,7 +946,7 @@ async function handleChargeRefunded(charge) {
   try {
     const decision = shouldRevokeOnRefund(charge);
     if (!decision.revoke) {
-      console.log('[webhook] charge.refunded ' + charge.id + ': licence left intact — ' + decision.why);
+      console.log('[webhook] charge.refunded ' + charge.id + ': license left intact — ' + decision.why);
       return;
     }
 
@@ -959,11 +959,11 @@ async function handleChargeRefunded(charge) {
     });
 
     console.log('[webhook] charge.refunded ' + charge.id + ': ' +
-      result.revoked + ' licence(s) revoked, ' + result.licencesEnded + ' licence row(s) ended');
+      result.revoked + ' license(s) revoked, ' + result.licensesEnded + ' license row(s) ended');
   } catch (error) {
     // Rethrown so the handler returns 500 and Stripe RETRIES. A refund that fails to
     // revoke must not be acknowledged -- a 200 here tells Stripe the job is done and the
-    // buyer keeps a licence they have been refunded for, permanently and silently.
+    // buyer keeps a license they have been refunded for, permanently and silently.
     console.error('[webhook] charge.refunded failed for ' + (charge && charge.id) + ':', error);
     throw error;
   }
@@ -973,7 +973,7 @@ async function handleChargeRefunded(charge) {
  * The cardholder disputed the charge with their bank.
  *
  * Three jobs, in this order, because the first two must happen even if the third fails:
- *   1. Revoke the licence       — they no longer hold any right to the recording.
+ *   1. Revoke the license       — they no longer hold any right to the recording.
  *   2. Snapshot the evidence    — assembled NOW, while the logs are untouched.
  *   3. Flag it for a human      — submitting evidence is a judgement call, not automatic.
  *
@@ -1009,7 +1009,7 @@ async function handleDisputeCreated(dispute) {
     });
 
     console.log('[webhook] charge.dispute.created ' + dispute.id +
-      ': ' + result.revoked + ' licence(s) revoked; evidence captured' +
+      ': ' + result.revoked + ' license(s) revoked; evidence captured' +
       ' (downloads=' + diagnostics.downloadsFound +
       ', clickwrap=' + diagnostics.hasClickwrap + ')');
 
@@ -1036,8 +1036,8 @@ async function handleDisputeCreated(dispute) {
             ' ' + String(dispute.currency || '').toUpperCase(),
           'Respond by   : ' + due,
           '',
-          'Licences revoked   : ' + result.revoked,
-          'Licence rows ended : ' + result.licencesEnded,
+          'Licenses revoked   : ' + result.revoked,
+          'License rows ended : ' + result.licensesEnded,
           'Downloads on record: ' + diagnostics.downloadsFound,
           'Clickwrap on record: ' + diagnostics.hasClickwrap,
           diagnostics.missing.length ? 'Evidence gaps: ' + diagnostics.missing.join('; ') : 'No evidence gaps found.',

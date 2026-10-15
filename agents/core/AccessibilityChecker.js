@@ -545,7 +545,7 @@ class AccessibilityChecker {
 
       if (!input.includes('aria-label') &&
           !input.includes('aria-labelledby') &&
-          !this.hasAssociatedLabel(content, match.index)) {
+          !this.hasAssociatedLabel(content, match.index, input)) {
 
         issues.push({
           type: 'INPUT_WITHOUT_LABEL',
@@ -568,13 +568,61 @@ class AccessibilityChecker {
   /**
    * Check if input has associated label
    */
-  hasAssociatedLabel(content, inputIndex) {
-    const context = content.substring(
-      Math.max(0, inputIndex - 200),
-      Math.min(content.length, inputIndex + 200)
-    );
+  /**
+   * @param {string} content   whole file
+   * @param {number} inputIndex  where the <input ...> tag starts
+   * @param {string} [inputTag]  the matched tag itself, so its id can be read
+   *
+   * This used to scan a +/-200 CHARACTER window for the substring '<label' or 'htmlFor'
+   * and call that an association. Two ways it was wrong, in opposite directions:
+   *
+   *   FALSE POSITIVE on a real bug -- any unrelated label anywhere within 200 characters
+   *   satisfied it, so a genuinely unlabelled input sitting next to a labelled one passed.
+   *
+   *   FALSE NEGATIVE on correct code -- which is what was actually caught. In
+   *   SyncLicensing.js every input is properly labelled, but the "Company / Organization
+   *   (optional)" label spans three JSX lines with deep indentation, pushing its <label>
+   *   past the 200-character window. A correct input was reported CRITICAL.
+   *
+   * That matters more than an ordinary false positive because this rule is CRITICAL, and
+   * CRITICAL is what the pre-commit hook refuses commits on. A gate that blocks correct
+   * code is a gate people learn to bypass, and bypassing becomes the habit -- which is
+   * precisely how --no-verify became normal in this repo once before.
+   *
+   * Now it checks the association HTML actually defines: the input's id against a
+   * htmlFor/for that names it, anywhere in the file. Falls back to a wrapping-label
+   * heuristic with a window sized in lines rather than characters.
+   */
+  hasAssociatedLabel(content, inputIndex, inputTag) {
+    const tag = inputTag || content.substring(inputIndex, inputIndex + 400);
 
-    return context.includes('<label') || context.includes('htmlFor');
+    // id={"name"} / id='name' / id={name} — take the inner token either way.
+    const idMatch = tag.match(/\bid\s*=\s*(?:["']([^"']+)["']|\{\s*["']?([^"'}\s]+)["']?\s*\})/);
+    const id = idMatch ? (idMatch[1] || idMatch[2] || '').trim() : null;
+
+    if (id) {
+      const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // htmlFor="id" (JSX) or for="id" (plain HTML), quoted or braced.
+      const assoc = new RegExp(
+        '\\b(?:htmlFor|for)\\s*=\\s*(?:["\']' + escaped + '["\']|\\{\\s*["\']?' + escaped + '["\']?\\s*\\})'
+      );
+      if (assoc.test(content)) return true;
+    }
+
+    // No id, or no matching htmlFor. The input may still be WRAPPED by a label, which
+    // is equally valid HTML: <label>Email <input /></label>.
+    //
+    // "Is there a <label> nearby" is NOT the test -- that was the original bug, and a
+    // first attempt at this fix reproduced it: an orphan input sitting two lines below
+    // a correctly labelled one passed, because the other field's label was in range.
+    //
+    // The real question is whether the input sits INSIDE an open label element. So:
+    // find the last <label before the input and the last </label> before it. If a label
+    // was opened more recently than any was closed, the input is inside one.
+    const before = content.slice(0, inputIndex);
+    const lastOpen = before.lastIndexOf('<label');
+    const lastClose = before.lastIndexOf('</label>');
+    return lastOpen > lastClose;
   }
 
   /**

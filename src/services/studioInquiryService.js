@@ -218,7 +218,7 @@ export const INQUIRY_SOURCES = {
   // Public performance -- playing a recording to an audience or in a commercial
   // space. A SEPARATE RIGHT from sync, not a variety of it: sync pairs music with
   // moving image, performance plays it in a room. Terms.js already excludes
-  // performance from every download licence and promises "a separate license from
+  // performance from every download license and promises "a separate license from
   // us", and this is the inbox that promise arrives in.
   PERFORMANCE: 'performance',
   SPONSOR: 'sponsor'

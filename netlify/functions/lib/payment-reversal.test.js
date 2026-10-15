@@ -4,9 +4,9 @@
 // Tests for the refund/chargeback revocation path.
 //
 // Runs against an in-memory Firestore fake rather than the real database, for one
-// reason that matters more than speed: these assertions are about REVOKING LICENCES,
+// reason that matters more than speed: these assertions are about REVOKING LICENSES,
 // and a test that writes to production to prove it can revoke things is a test that can
-// revoke a real buyer's licence when someone runs it on the wrong day.
+// revoke a real buyer's license when someone runs it on the wrong day.
 //
 // The fake implements only what this module uses -- collection().where().limit().get(),
 // doc.ref.update() -- and deliberately reproduces the one Firestore behaviour that
@@ -83,7 +83,7 @@ function makeDb(seed) {
   return { collection, _data: data };
 }
 
-/** One paid purchase with a licence row hanging off it. */
+/** One paid purchase with a license row hanging off it. */
 function seedPaidPurchase(overrides) {
   return {
     purchases: {
@@ -154,19 +154,19 @@ function seedPaidPurchase(overrides) {
     // This is the documented hazard, asserted so it cannot be mistaken for working.
     assert.strictEqual(r.revoked, 0, 'should find nothing to revoke');
     assert.strictEqual(db._data.purchases.cs_live_abc.licenseRevoked, undefined,
-      'the row is unreachable, so it keeps its licence — this is why verify:reversal exists');
+      'the row is unreachable, so it keeps its license — this is why verify:reversal exists');
   });
 
   // === revocation ==================================================================
 
-  await check('a chargeback revokes the purchase AND ends the licence row', async () => {
+  await check('a chargeback revokes the purchase AND ends the license row', async () => {
     const db = makeDb(seedPaidPurchase());
     const r = await revokeForPaymentReversal(db, {
       paymentIntentId: 'pi_1', reason: REVOCATION_REASONS.CHARGEBACK, note: 'dispute dp_1', at: SERVER_TS
     });
 
     assert.strictEqual(r.revoked, 1, 'one purchase revoked');
-    assert.strictEqual(r.licencesEnded, 1, 'one licence row ended');
+    assert.strictEqual(r.licensesEnded, 1, 'one license row ended');
 
     const p = db._data.purchases.cs_live_abc;
     assert.strictEqual(p.licenseRevoked, true);
@@ -192,7 +192,7 @@ function seedPaidPurchase(overrides) {
 
   await check('an UNPAID purchase is still revoked if its payment is reversed', async () => {
     // The query does not filter on status, deliberately: a pending or failed purchase
-    // whose payment was reversed should not be left holding a licence either.
+    // whose payment was reversed should not be left holding a license either.
     const db = makeDb(seedPaidPurchase({ status: 'pending' }));
     const r = await revokeForPaymentReversal(db, {
       paymentIntentId: 'pi_1', reason: REVOCATION_REASONS.REFUND, at: SERVER_TS
@@ -253,7 +253,7 @@ function seedPaidPurchase(overrides) {
     assert.strictEqual(db._data.licenses.lic_perp_1.status, 'active');
   });
 
-  await check('another buyer\'s licence row is not ended', async () => {
+  await check('another buyer\'s license row is not ended', async () => {
     const seed = seedPaidPurchase();
     seed.licenses.lic_other = {
       userId: 'buyer-2', status: 'active', purchaseLicenseId: 'LIC-ZZZ'
@@ -262,7 +262,7 @@ function seedPaidPurchase(overrides) {
     const r = await revokeForPaymentReversal(db, {
       paymentIntentId: 'pi_1', reason: REVOCATION_REASONS.CHARGEBACK, at: SERVER_TS
     });
-    assert.strictEqual(r.licencesEnded, 1, 'only the matching licence');
+    assert.strictEqual(r.licensesEnded, 1, 'only the matching license');
     assert.strictEqual(db._data.licenses.lic_other.status, 'active');
   });
 

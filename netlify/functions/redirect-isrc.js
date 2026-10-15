@@ -3,7 +3,7 @@
 // /r/<ISRC> -> the page for that recording.
 //
 // WHY A REDIRECT AND NOT A DIRECT LINK
-// This exists for the licence QR codes on the Roku and Fire TV apps. A QR code is the
+// This exists for the license QR codes on the Roku and Fire TV apps. A QR code is the
 // one artefact here that cannot be recalled: the TV app regenerates it on every deploy,
 // but a viewer can photograph it, and that photograph outlives the deploy, the app
 // release, and any id we might change. So the code encodes a short URL WE control and
@@ -154,17 +154,17 @@ exports.handler = async (event) => {
     }
 
     // --- the record is gone -------------------------------------------------------
-    // Album, then artist, then catalogue. Checked against the licences we have sold,
-    // because a withdrawn record that someone holds a licence for still has an album
+    // Album, then artist, then catalogue. Checked against the licenses we have sold,
+    // because a withdrawn record that someone holds a license for still has an album
     // worth landing on.
-    const licence = await firestore
+    const license = await firestore
       .collection('licenses')
       .where('isrc', '==', isrc)
       .limit(1)
       .get();
 
-    if (!licence.empty) {
-      const l = licence.docs[0].data();
+    if (!license.empty) {
+      const l = license.docs[0].data();
       if (l.albumId) {
         console.log('[r]', isrc, '-> album (record withdrawn)');
         return redirect(destination('/album/' + l.albumId, attribution), 302);

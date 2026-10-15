@@ -4,7 +4,7 @@
 //
 // The tracks come from HomeStorefront with a collectionId, rather than from a second
 // query written here. That component already knows how to skip records with no audio,
-// refuse previewOnly ones, apply the sidebar filter and render the licence buttons --
+// refuse previewOnly ones, apply the sidebar filter and render the license buttons --
 // a copy of it would drift from the original the first time either changed, which is
 // the fault the PRD calls out as "shared backend, independent surfaces" (S84).
 import { useEffect, useState } from 'react';

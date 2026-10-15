@@ -18,7 +18,7 @@
 //
 // REVOCATION IS NOT A PAYMENT STATE, and keeping them apart is the point.
 // A purchase already has `status: 'completed'`, which describes MONEY. Revocation
-// describes the LICENCE. They move independently:
+// describes the LICENSE. They move independently:
 //
 //   paid + licensed      normal
 //   paid + revoked       abuse; the money stays, the right ends

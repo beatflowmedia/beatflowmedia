@@ -189,7 +189,7 @@ exports.handler = async (event) => {
     }
 
     // ---- how many times has this already been taken? ----------------------
-    // A licence is for one buyer's use, not an unlimited tap on the master. Without a
+    // A license is for one buyer's use, not an unlimited tap on the master. Without a
     // cap, one account is a distribution channel: the entitlement check says yes every
     // time, so a script can pull the same master repeatedly, and an account shared
     // between twenty people looks identical to a buyer who changed laptops.
@@ -231,7 +231,7 @@ exports.handler = async (event) => {
           return fail(
             429,
             'You have reached the download limit for this track (' + DOWNLOAD_CAP + '). ' +
-            'Your licence is still valid — contact support and we will reset it.',
+            'Your license is still valid — contact support and we will reset it.',
             { limit: DOWNLOAD_CAP, taken: counted, licenseId: entitlement.licenseId }
           );
         }

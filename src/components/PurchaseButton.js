@@ -119,7 +119,7 @@ const PurchaseButton = ({
       // politer about it.
       const wantsToSignIn = await showConfirm(
         'Sign in to license this track',
-        'Your licence is recorded against your account, so we need to know who you are before you accept the terms. Sign in with Google to continue.',
+        'Your license is recorded against your account, so we need to know who you are before you accept the terms. Sign in with Google to continue.',
         'info'
       );
       if (!wantsToSignIn) return;
@@ -300,17 +300,17 @@ const PurchaseButton = ({
           * track object -- the price stays on the button, because there it is true. */}
         {/* "Personal license", not "License for" and not "Buy".
           *
-          * THE SCOPE IS THE MISSING WORD, not the licence. This briefly read "Buy", which
+          * THE SCOPE IS THE MISSING WORD, not the license. This briefly read "Buy", which
           * was wrong in the opposite direction: nothing here is sold. What is granted is
           * scope PERSONAL, term perpetual, grant download -- and it is REVOCABLE.
           * lib/entitlement.js checks isRevoked() on every delivery and refuses a revoked
-          * licence, distinguishing it from never having bought. scripts/revoke-license.js
+          * license, distinguishing it from never having bought. scripts/revoke-license.js
           * is how it is done. Calling that a purchase would promise a buyer something
           * they do not get.
           *
           * "License for $11.99" alone was the real problem: a licensing buyer reads the
           * bare word and prices it against sync and library rates, orders of magnitude
-          * higher, so a correctly-priced personal licence looked absurdly cheap. Naming
+          * higher, so a correctly-priced personal license looked absurdly cheap. Naming
           * the scope fixes that without pretending this is a sale. The same note sits
           * beside NOT_INCLUDED in DownloadLicenseTerms.js: the number does the arguing
           * instead of the terms.

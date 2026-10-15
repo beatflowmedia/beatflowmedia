@@ -13,7 +13,7 @@
 // That version hand-rolled its own row with a Play button and nothing else, on a site
 // that exists to LICENSE music. Twelve tracks a buyer could hear and not buy, which is
 // the same defect as a page that looks like it does something and does not. The shared
-// row brings the licence button, like, favourite and options, and it means this page
+// row brings the license button, like, favourite and options, and it means this page
 // cannot drift from how every other track list behaves.
 //
 // WHY IT READS THE WHOLE COLLECTION
@@ -183,7 +183,7 @@ export default function FeaturedArtist() {
           {!loading && songs.length > 0 && (
             <Typography variant="body2" sx={{ color: 'grey.500', mt: 4 }}>
               {displayName} is a featured artist on releases produced by Percy Rice.
-              Licences are issued by BeatFlow Media Group, which holds both the
+              Licenses are issued by BeatFlow Media Group, which holds both the
               recording and the composition — see our{' '}
               <RouterLink to="/terms" style={{ color: '#9ca3af' }}>
                 terms

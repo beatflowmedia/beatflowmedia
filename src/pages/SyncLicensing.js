@@ -12,7 +12,7 @@ import {
 // opposite answers -- and the wrong one was on the page the buyer actually lands on.
 //
 // Sync licensing is not coming: it WORKS, and has all along. BFMG holds both the
-// recording and the composition, so a sync licence can be granted with one signature
+// recording and the composition, so a sync license can be granted with one signature
 // today. What does not exist is SELF-SERVICE sync -- instant quotes, a rate card, a
 // project dashboard. That is a real distinction and the page now draws it, rather
 // than describing an unbuilt product while hiding the working one.
@@ -40,12 +40,12 @@ import {
 //   space. It is what a restaurant, a gym, a spa, a shop or a DJ needs.
 //
 // They are different rights and Terms.js already treats them as such: public
-// performance is in the "not granted" list of every download licence, with the promise
+// performance is in the "not granted" list of every download license, with the promise
 // of "a separate license from us". A restaurant owner who read that, clicked through,
 // and landed on a page about advertising campaigns had been answered with a different
 // question. Both are quoted rather than sold from a rate card, so they share one form
 // -- but the visitor has to be able to say which one they are asking about.
-const LICENCE_KINDS = [
+const LICENSE_KINDS = [
   {
     id: "sync",
     label: "Sync — film, TV, advertising, games",
@@ -66,7 +66,7 @@ const LICENCE_KINDS = [
     id: "performance",
     label: "Public performance — business premises, DJ sets, events",
     blurb:
-      "Playing recordings to an audience or in a commercial space. A download licence does not cover this, whoever you bought it from.",
+      "Playing recordings to an audience or in a commercial space. A download license does not cover this, whoever you bought it from.",
     types: [
       "Restaurant / café",
       "Bar / club / nightlife",
@@ -83,13 +83,13 @@ const LICENCE_KINDS = [
   }
 ];
 
-// What a sync licence from BFMG actually includes. Every line is checkable against
-// the catalogue and the licence terms; nothing here describes an intention.
+// What a sync license from BFMG actually includes. Every line is checkable against
+// the catalogue and the license terms; nothing here describes an intention.
 const WHAT_YOU_GET = [
   {
     title: "One-stop clearance",
     body:
-      "We hold the recording and the composition. One licence covers both, so there is no publisher to clear separately."
+      "We hold the recording and the composition. One license covers both, so there is no publisher to clear separately."
   },
   {
     title: "Quoted per project",
@@ -108,7 +108,7 @@ const WHAT_YOU_GET = [
   }
 ];
 
-const EMPTY = { name: "", email: "", company: "", projectType: "", message: "", licenceKind: "sync" };
+const EMPTY = { name: "", email: "", company: "", projectType: "", message: "", licenseKind: "sync" };
 
 export default function SyncLicensing() {
   const [formData, setFormData] = useState(EMPTY);
@@ -120,13 +120,13 @@ export default function SyncLicensing() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const activeKind =
-    LICENCE_KINDS.find((k) => k.id === formData.licenceKind) || LICENCE_KINDS[0];
+    LICENSE_KINDS.find((k) => k.id === formData.licenseKind) || LICENSE_KINDS[0];
 
   // Switching the right CLEARS the project type. The two lists share no values, so
   // keeping the old one would submit "Video Game" against a public performance
   // enquiry -- a lead that reads as a mistake and has to be chased to mean anything.
   const handleKindChange = (e) =>
-    setFormData((prev) => ({ ...prev, licenceKind: e.target.value, projectType: "" }));
+    setFormData((prev) => ({ ...prev, licenseKind: e.target.value, projectType: "" }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -222,7 +222,7 @@ export default function SyncLicensing() {
             </p>
           </div>
 
-          {/* What a licence includes */}
+          {/* What a license includes */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
             {WHAT_YOU_GET.map((item) => (
               <div key={item.title} className="bg-gray-800 rounded-lg p-5">
@@ -240,7 +240,7 @@ export default function SyncLicensing() {
               <li>Tell us about the project below — what it is, where it runs, for how long.</li>
               <li>We come back with terms and a quote, usually within two business days.</li>
               <li>
-                On agreement we issue the licence and deliver the master. One signature
+                On agreement we issue the license and deliver the master. One signature
                 covers both the recording and the composition.
               </li>
             </ol>
@@ -252,14 +252,14 @@ export default function SyncLicensing() {
               <Link to="/browse/library" className="text-gray-300 hover:underline">
                 browse the library
               </Link>{" "}
-              — those licences are issued at checkout.
+              — those licenses are issued at checkout.
             </p>
             {/* Stated here rather than left for the quote, because it is the single
                 most common misunderstanding this page exists to correct: a download
-                licence is not a performance licence, from us or from anyone. */}
+                license is not a performance license, from us or from anyone. */}
             <p className="text-sm text-gray-500 mt-3">
               Playing music in a business is a <strong className="text-gray-300">public
-              performance</strong>, which no download licence covers — ours or any
+              performance</strong>, which no download license covers — ours or any
               other seller&rsquo;s. It is a separate right, and this is where you ask
               for it.
             </p>
@@ -356,17 +356,17 @@ export default function SyncLicensing() {
                     in, so it cannot be inferred from a project type -- "Other" means
                     nothing without it. */}
                 <div>
-                  <label htmlFor="licenceKind" className="block text-sm font-semibold mb-2">
+                  <label htmlFor="licenseKind" className="block text-sm font-semibold mb-2">
                     What do you need? <span className="text-green-500">*</span>
                   </label>
                   <select
-                    id="licenceKind"
-                    name="licenceKind"
-                    value={formData.licenceKind}
+                    id="licenseKind"
+                    name="licenseKind"
+                    value={formData.licenseKind}
                     onChange={handleKindChange}
                     className={field}
                   >
-                    {LICENCE_KINDS.map((kind) => (
+                    {LICENSE_KINDS.map((kind) => (
                       <option key={kind.id} value={kind.id}>
                         {kind.label}
                       </option>

@@ -33,7 +33,7 @@ export default function About() {
             </p>
             <p className="text-gray-400 mb-6">
               Every release is cleared at source. Because we hold both the recording and the
-              composition, a single licence covers both — no separate publisher to chase, no
+              composition, a single license covers both — no separate publisher to chase, no
               split rights to reconcile. We call that one-stop clearance, and it is the
               reason this catalogue exists.
             </p>
@@ -45,7 +45,7 @@ export default function About() {
               generated. We say so plainly because you deserve to know what you are
               licensing, and because the law in this area is still settling. Our{" "}
               <a href="/terms" className="text-white hover:underline">
-                licence terms
+                license terms
               </a>{" "}
               set out exactly what a purchase grants you and what it does not.
             </p>
@@ -119,7 +119,7 @@ export default function About() {
                   <a href="/support" className="text-white hover:underline">
                     Help centre
                   </a>{" "}
-                  — account, downloads and licence questions.
+                  — account, downloads and license questions.
                 </li>
               </ul>
 

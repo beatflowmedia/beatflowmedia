@@ -44,7 +44,7 @@ export default function AboutAds() {
             <p className="text-gray-300 mb-4">
               We do not run audio ads, video ads or sponsored playlists, and there is no
               advertising in the catalogue, in checkout, or on any page where you manage
-              your account or licences.
+              your account or licenses.
             </p>
             <p className="text-gray-400 text-sm">
               Ads are served by Google, which means Google — not BeatFlow Media Group —
