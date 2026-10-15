@@ -2933,3 +2933,122 @@ and with no ISRC metadata.
 - **Minor units** — prices are stored in cents (`199` = $1.99), caught when generating the
   station list where rendering raw would have shown $199. Call: expose both `priceCents` and
   `priceDisplay` across any boundary.
+
+## Redirects live in TWO files, and `_redirects` wins — 2026-10-15
+
+**A landmine, found the expensive way.** `/r/<ISRC>` shipped in 61fbe49, deployed green,
+and did nothing. Every request returned **200 with no Location header** while the function
+itself was deployed and correct — calling
+`/.netlify/functions/redirect-isrc/QZMEQ2609274` directly returned the right 301 the whole
+time.
+
+`public/_redirects` carries its own copy of the function routes and ends with the SPA
+catch-all `/*  /index.html  200`. It had no `/r/` rule, so the catch-all matched first and
+served index.html. The rule added to `netlify.toml` was never reached.
+
+**The rule to remember: a route added only to `netlify.toml` is dead.** Put it in
+`public/_redirects`, above the catch-all, or it will look deployed and do nothing.
+
+This is the same failure shape already recorded for the Content Security Policy: one
+configuration living in two files, where a value present in one and missing from the other
+produces a silent wrong answer instead of an error. The build was green, the function was
+right, and the feature was dead. `verify:csp` exists because of the CSP version of this;
+there is no equivalent reconciler for redirects yet, and that is the obvious next ratchet.
+
+**It is also why "deployed" was not reported as "working".** The deploy went ready, the
+unit tests passed, and the feature was broken. Production was the only thing that could
+have said so.
+
+## `/r/<ISRC>` — the licence QR short links — 2026-10-15
+
+`netlify/functions/redirect-isrc.js`. Backs the licence QR codes beside the playing record
+on the Roku and Fire TV apps.
+
+**Why a redirect rather than a direct link.** The TV app regenerates the code on every
+deploy, so it is less frozen than a printed sticker — but a viewer can photograph it, and
+the photograph outlives the deploy, the app release, and any id we might change. That
+residual permanence is the whole argument: the code encodes a URL we control and can
+repoint forever.
+
+The codes previously encoded `album/<firestoreDocId>` with UTM parameters baked in. Two
+problems, and the second cannot be undone: a doc id is opaque and changes if a record is
+re-imported, so a photographed link to a dead id is a URL nobody can fix; and the
+attribution scheme was welded into an artefact that needs an app release to change. An
+ISRC is permanent by definition and is already the station join key.
+
+**Never 404s.** Not sellable falls back to the album; a withdrawn record goes album, then
+artist, then catalogue; malformed input, unknown ISRCs and a bare `/r/` all go to
+`/browse`. Every failure path — bad credentials, a lookup error, an unparseable segment —
+lands somewhere real. Someone scanned this off a television; an error page is the one
+outcome with no recovery.
+
+**301 on a hit, 302 on every fallback, and the asymmetry is deliberate.** An ISRC to its
+track page is a permanent mapping and the destination should accumulate the link signal
+rather than the hop. "Not available right now" is temporary, and a cached-forever 301 would
+strand an ISRC on the album page even after the record came back — so fallbacks are
+`no-store`.
+
+`?src=tv` expands to utm_source/medium/campaign **server-side**, so campaign naming can
+change without touching a code already in the wild. The ISRC shape is validated before any
+database read, so a scanner artefact or a crawler probing `/r/` cannot become a Firestore
+query.
+
+`Disallow: /r/` in robots.txt plus `X-Robots-Tag: noindex` on the response — it is a hop,
+not content, and crawl budget spent following it is budget not spent on the pages it points
+at.
+
+**Verified twice, independently.** All 134 station ISRCs route to their own track page, 0
+fall back. The station then checked production itself and confirmed 134 of 134 resolve to
+the exact `/song/<id>` already recorded in its `releases.json`, which is a stronger result
+than either check alone.
+
+## The legal contact block — one component, no postal address — 2026-10-15
+
+`src/components/LegalContact.js` replaces five copy-pasted blocks in Terms, PrivacyPolicy,
+NoticeAtCollection, Legal and UserGuidelines. The copies had drifted exactly as copies do:
+
+- Four pages said "BeatFlow Media Group"; NoticeAtCollection said **"BeatFlow Media Inc.",
+  an entity that does not exist.** On a privacy notice the named entity is the data
+  controller — the party legally answerable for the data — so naming a non-existent one
+  means nobody is identified as answerable.
+- It also listed "Phone: 1-800-BEATFLOW", which cannot be dialled: BEATFLOW is eight
+  letters and a US number takes seven after the 800.
+- The street was spelled "Cubhouse" on all five pages against "Clubhouse" in the email
+  templates. Five copies of an address, none correct.
+
+**The address is gone rather than corrected.** There is no brick-and-mortar location, and
+what was published was a private residence. A home address on five public legal pages is
+not a contact detail, it is a disclosure that cannot be withdrawn once crawled. Contact
+runs through `/contact`, which is also the only channel producing a tracked record. When
+there is a real business address, and when the company is incorporated, both go in
+`LegalContact.js` once — `LEGAL_ENTITY` and the address — and all five pages follow.
+
+**Deliberately NOT changed: the email footers in `functions/index.js`.** US commercial
+email has a postal-address requirement that a website page does not, so removing it there
+is a legal question, not a cleanup. Open, and it is a lawyer item.
+
+Verified in the deployed JS bundles rather than the page HTML — these are client-rendered
+routes, so fetching the HTML would have proved nothing. 0 occurrences of the address, the
+entity name, or the phone number in main or any linked chunk.
+
+## Open findings not yet acted on — 2026-10-15
+
+- **The UI/UX pre-commit hook cannot fail.** Every commit prints `Checking N files`, then
+  `Found 0 files to analyze`, then 100/100 across every category. It targets `src` but
+  receives no file list. A gate that always passes is not a gate, and it produces three
+  screens of green that mean nothing — the same empty-log trap that once had a build
+  reported as passing from a log containing nothing.
+- **`schemaMarkup.js:41` publishes `telephone: '+1-XXX-XXX-XXXX'`** to search engines.
+  Placeholder data in structured markup is what the project SEO standard warns against:
+  schema describes the page as it is, never as we wish it were.
+- **A $29 purchase from 2026-03-09 is orphaned.** `qFSPQRRkgYnyaS4sAs7n` exists as neither
+  song nor album, so `download-master.js` returns "Track not found" and that buyer cannot
+  download what they paid for. $29 was the correct catalogue price at the time —
+  `SONG_PRICE` was 2900 until Percy's own 2bdcb7d on 2026-09-18 — so this is a real sale,
+  not a mispricing. Restore the record or refund.
+- **Money is stored in two different units.** `songs.price` and `licenses.pricePaid` are
+  CENTS; `purchases.price` is DOLLARS (`webhook.js` divides by 100). Three stores, two
+  conventions, and nothing in the field names warns a reader. A reader assuming cents turns
+  $1.99 into $199. Untouched deliberately: it is money data with historical rows.
+- **`licenses.trackId` holds an ALBUM id for album purchases.** Not a broken record, but a
+  field name that lies, and it made an album licence look like an orphan during this audit.
