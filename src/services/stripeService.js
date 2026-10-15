@@ -379,7 +379,7 @@ async function recoverFromStaleAgreement() {
 }
 
 /** Shared by both checkout paths -- one place that knows what a 409 here means. */
-async function handleCheckoutError(response) {
+export async function handleCheckoutError(response) {
   const errorData = await response.json().catch(() => ({}));
   console.error('Server error response:', errorData);
 

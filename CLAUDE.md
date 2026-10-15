@@ -3309,3 +3309,65 @@ sections and the 409 recovery path have been type-checked and built, not *seen*.
 proves the JSX compiles, not that the checkbox is still tappable at 44px or that the
 recovery reload behaves on a real stale cache. That gap is the same shape as the CSP bug —
 tests that ran in Node proved the URL worked and never that the page could fetch it.
+
+## The click-through, and the test infrastructure that did not exist — 2026-10-15
+
+Asked to verify the legal changes in a browser rather than by compiling them. Doing so
+turned up that **no component in `src/` had ever been unit-tested**, and the reason was
+quiet: `jest.config.js` was EMPTY, so jest had no JSX transform. Every existing suite
+(agreements, require-auth, payment-reversal) is plain CommonJS with no JSX, so nothing
+ever hit the gap.
+
+Three obstacles, each of which pointed somewhere other than its cause:
+
+1. **No JSX transform.** Configured in `jest.config.js` rather than by filling in the
+   equally-empty `babel.config.js` — CRA supplies its own Babel config for the production
+   build and can pick up a root one, and changing how the shipped bundle compiles in order
+   to run a test is a trade nobody should make.
+
+2. **`react-router-dom`'s exports resolved to `undefined`.** jest's jsdom environment
+   resolves package `exports` under the BROWSER condition, which for v7 selects an ESM
+   build that node_modules transforms do not touch. Fixed with
+   `customExportConditions: ['node']`. The tell was that the same `require()` works in
+   plain node.
+
+3. **A manual mock nobody remembered.** `src/__mocks__/react-router-dom.js` is applied
+   AUTOMATICALLY with no `jest.mock()` call anywhere, and exported only BrowserRouter,
+   Routes and Route. Anything importing `Link` got `undefined`, and React reports that as
+   *"Element type is invalid ... got: undefined"* — a message that points at the component
+   under test, not at the mock. Extended to a superset of what components import, with
+   `Link` as a real `<a>` so a test asserting that clicking it does NOT toggle the
+   wrapping checkbox is not vacuous.
+
+### What the click-through actually proved
+
+- **`LicenseAcceptance.test.js`** — 9 assertions, rendered through the real component
+  tree. Both statutory elements reach the DOM, inside the label the checkbox governs;
+  unchecked by default; the label toggles it; the terms link does not. A grep proves words
+  exist in a file, a render proves they reach the buyer.
+- **`e2e/terms-render.spec.js`** — 9 assertions in Chrome against the built `build/`
+  artefact, which is what deploys. Every new clause renders, no postal address survives,
+  the contact link is a real 44px target, and the page does not scroll sideways at 390px.
+  This exists because of the CSP failure: node tests proved the R2 URL returned the file
+  and never that the PAGE could fetch it, and a buyer paid before anyone noticed.
+- **`stripeService.checkoutError.test.js`** — 8 assertions on the 409 recovery, including
+  that it reloads exactly ONCE, clears the service worker caches, and degrades to a
+  readable message when sessionStorage is blocked.
+
+Each suite was then verified by planting a failure rather than by watching it pass:
+removing the statutory acknowledgement fails 3 of 9; removing the one-shot reload guard
+fails 3 of 8.
+
+### Ratchet
+
+| Measure | Value |
+|---|---|
+| jest assertions (4 suites) | 48 |
+| node assertions (payment-reversal) | 16 |
+| Playwright assertions (terms render) | 9 |
+| Component suites in `src/` before today | 0 |
+
+**Still not covered:** the purchase dialog itself, because reaching it needs a signed-in
+Firebase session and no browser-auth fixture exists. The clickwrap is covered as a
+component and the 409 branch as a unit; the two have not been exercised together through a
+real checkout. That is the honest remaining gap.
