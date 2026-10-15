@@ -138,25 +138,44 @@ export default function Downloads() {
     }
   };
 
-  const downloadFileAsBlob = async (url, filename) => {
-    // Fetch the file as a blob to force download instead of opening in browser
+  /**
+   * Download one file by navigating to it, NOT by fetching it.
+   *
+   * The blob version of this was the whole problem. It fetched the presigned R2 URL in
+   * JavaScript, and a cross-origin fetch needs the bucket to return
+   * `access-control-allow-origin`. R2 has no CORS policy, so the browser took the bytes
+   * (HTTP 206) and refused to let the page read them — surfacing as a bare
+   * "TypeError: Failed to fetch" after the buyer had already paid.
+   *
+   * The fetch was never needed for a single file. Its stated purpose was "force download
+   * instead of opening in browser", and download-master already achieves that
+   * server-side: the presigned URL carries
+   * `response-content-disposition: attachment; filename="…"`. A plain anchor navigation
+   * honours that, downloads with the right name, and is NOT subject to CORS at all,
+   * because the page never reads the response.
+   *
+   * The album ZIP genuinely does need the bytes in JS — JSZip has to hold each track —
+   * so that path still fetches and still needs a CORS policy on the bucket.
+   */
+  const downloadFile = (url, filename) => {
+    const link = document.createElement('a');
+    link.href = url;
+    // Advisory only on a cross-origin URL; the server's Content-Disposition is what
+    // actually names the file. Set anyway for the same-origin case.
+    link.download = filename || '';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  /** Fetch bytes for the ZIP path. Requires CORS on the bucket. */
+  const fetchFileAsBlob = async (url) => {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch file');
     }
-
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Clean up the blob URL
-    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+    return response.blob();
   };
 
   const handleDownload = async (purchase) => {
@@ -173,7 +192,7 @@ export default function Downloads() {
         await stripeService.recordDownload(user.uid, purchase.itemId);
 
         // Fetch and download as blob to force download instead of opening in browser
-        await downloadFileAsBlob(downloadData.url, downloadData.filename);
+        downloadFile(downloadData.url, downloadData.filename);
 
         toast.success('Download started!');
       } else if (purchase.itemType === 'album') {
@@ -183,7 +202,7 @@ export default function Downloads() {
         // Download studio sample
         if (purchase.itemDetails?.audioUrl) {
           const filename = `${purchase.itemDetails.title || 'sample'}.wav`;
-          await downloadFileAsBlob(purchase.itemDetails.audioUrl, filename);
+          downloadFile(purchase.itemDetails.audioUrl, filename);
           toast.success('Download started!');
         } else {
           toast.error('Sample file not available');
@@ -229,12 +248,11 @@ export default function Downloads() {
           const downloadData = await getMasterDownload(song.id);
           await stripeService.recordDownload(user.uid, song.id);
 
-          // Fetch the song file as blob
-          const response = await fetch(downloadData.url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch ${song.title}`);
-          }
-          const blob = await response.blob();
+          // Fetch the bytes, because JSZip has to hold them. Unlike the single-track
+          // path this CANNOT navigate instead, so it depends on the R2 bucket allowing
+          // cross-origin reads. Until a CORS policy is set, every track here fails with
+          // "Failed to fetch" and the catch below reports it per track.
+          const blob = await fetchFileAsBlob(downloadData.url);
 
           // Add to ZIP with track number prefix
           const trackNumber = String(song.trackNumber || i + 1).padStart(2, '0');

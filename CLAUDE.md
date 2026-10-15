@@ -2714,3 +2714,53 @@ perfectly and the request was still blocked.
 Proven by planting the failure: with the R2 entry removed, `verify:csp` exits 1 and names
 the host; restored, it exits 0 and prints
 `connect-src permits 209a85bc…r2.cloudflarestorage.com (R2_MASTERS_ENDPOINT)`.
+
+### CSP was only the first of two: R2 has no CORS policy — 2026-10-15
+
+After the CSP fix deployed, a browser check against production showed the R2 fetch
+**still failing** — and this time **no CSP violation was raised**. The control request to
+a disallowed host was still refused, so the policy was working; something else was
+blocking it.
+
+```
+GET presigned URL with Origin: https://beatflowmediagroup.com
+  -> HTTP 206
+  access-control-allow-origin : ABSENT
+```
+
+**The bucket has no CORS policy.** R2 serves the bytes and the browser refuses to let the
+page read them, surfacing as a bare `TypeError: Failed to fetch`. Two different failures,
+identical symptom, and the first fix revealed the second rather than resolving it.
+
+#### The single-track path never needed the fetch
+
+`downloadFileAsBlob` existed to "force download instead of opening in browser" — but
+`download-master` already does that server-side: the presigned URL carries
+`response-content-disposition: attachment; filename="…"`. A plain anchor navigation
+honours it, downloads with the right filename, and **is not subject to CORS at all**,
+because the page never reads the response.
+
+So the single-track download now navigates (`downloadFile`), and works with no
+infrastructure change. The album ZIP still fetches (`fetchFileAsBlob`) because JSZip must
+hold each track's bytes — that one genuinely requires CORS.
+
+**Album downloads remain broken until a CORS policy is set on `beatflow-masters`:**
+
+```json
+[ { "AllowedOrigins": ["https://beatflowmediagroup.com"],
+    "AllowedMethods": ["GET"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["Content-Length", "Content-Disposition"],
+    "MaxAgeSeconds": 3600 } ]
+```
+
+Cloudflare dashboard → R2 → `beatflow-masters` → Settings → CORS policy. Not done from
+here: there is no AWS SDK in the project and hand-rolling a signed `PutBucketCors` is
+error-prone for a one-off on live infrastructure.
+
+#### The method lesson, continued
+
+The previous entry recorded that a Node test cannot see CSP. This is the same lesson
+charging twice: the browser check that found this one was written *because* of that
+entry, and it immediately found a second browser-only failure the Node tests had also
+missed. One round of "test it where it runs" was not enough — there were two layers.
