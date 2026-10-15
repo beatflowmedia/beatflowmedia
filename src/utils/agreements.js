@@ -106,7 +106,19 @@ const AGREEMENTS = { DOWNLOAD_LICENSE, CONTRIBUTOR_UPLOAD, SYNC_LICENSE };
  * Every consumer must treat null as a hard stop rather than as a check to skip.
  */
 const CURRENT_VERSIONS = {
-  [DOWNLOAD_LICENSE]: '2026-09-19',
+  // Bumped from '2026-09-19' on 2026-10-15. The acceptance text changed materially:
+  // the checkbox now captures express consent to immediate supply AND acknowledgement
+  // that this loses the 14-day cancellation right (UK CCR 2013 reg.37, EU CRD art.16(m)),
+  // and the Terms gained a clause terminating a license when payment is reversed.
+  //
+  // The version MUST move whenever that text changes. The whole value of recording
+  // `download-license@<version>` against a purchase is being able to say which words a
+  // given buyer agreed to. Leaving the version still while the words change destroys
+  // that, silently, and the loss is only discovered when someone asks.
+  //
+  // Buyers before this date accepted the older text and did not give the statutory
+  // acknowledgement. Their records are correct as they stand and must not be rewritten.
+  [DOWNLOAD_LICENSE]: '2026-10-15',
   [CONTRIBUTOR_UPLOAD]: null,
   [SYNC_LICENSE]: null
 };

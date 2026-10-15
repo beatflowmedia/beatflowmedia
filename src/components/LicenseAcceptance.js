@@ -59,6 +59,32 @@ export default function LicenseAcceptance({ accepted, onChange, id = 'accept-dow
           onChange={(e) => onChange(e.target.checked)}
           sx={{ p: 0.5, color: 'grey.500', '&.Mui-checked': { color: ACCENT } }}
         />
+        {/* TWO SEPARATE STATEMENTS, AND THE SECOND ONE IS THE LOAD-BEARING ONE.
+          *
+          * The first is ordinary clickwrap assent to the terms.
+          *
+          * The second exists because of a specific statutory mechanic. For digital
+          * content delivered without a physical medium, UK Consumer Contracts
+          * Regulations 2013 reg.37 and EU Consumer Rights Directive art.16(m) give the
+          * buyer a 14-day right to cancel, and let a seller exclude it ONLY if the buyer
+          * (a) expressly consents to supply starting immediately, and (b) acknowledges
+          * that this loses the cancellation right. Both, before supply begins.
+          *
+          * Without both, reg.37(4) says the consumer bears NO COST for digital content
+          * supplied in the cancellation window. In plain terms: download the master,
+          * cancel inside 14 days, pay nothing, keep the file -- the exact friendly-fraud
+          * scenario the revocation work was built to answer, except this version is
+          * backed by statute and no amount of terms drafting defeats it. The obligations
+          * cannot be excluded by terms and conditions; they have to be CAPTURED here.
+          *
+          * This was previously not captured at all. The box said only "I agree to the
+          * terms", which is assent but is neither of the two required elements.
+          *
+          * Worth knowing what this does NOT cover: the CJEU held in C-234/25 (2026) that
+          * streaming SUBSCRIPTIONS are digital services, not digital content, so art.16(m)
+          * does not apply to them at all and a subscriber keeps the cancellation right
+          * regardless of what they tick. This control is for one-off downloads only.
+          */}
         <Typography sx={{ fontSize: '0.8125rem', lineHeight: 1.5, pt: 0.5 }}>
           I have read and agree to the{' '}
           <MuiLink
@@ -76,6 +102,12 @@ export default function LicenseAcceptance({ accepted, onChange, id = 'accept-dow
           </MuiLink>
           , including that this license does not cover public performance, DJ use,
           remixes or redistribution.
+          <Box component="span" sx={{ display: 'block', mt: 1 }}>
+            <strong>
+              I ask for my download to be made available immediately, and I accept that
+              once it is, I lose my right to cancel this purchase.
+            </strong>
+          </Box>
         </Typography>
       </Box>
     </>

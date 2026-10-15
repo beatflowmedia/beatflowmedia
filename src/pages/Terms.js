@@ -146,8 +146,10 @@ export default function Terms() {
               <p>
                 Licensing a single track or an album grants you a <strong>non-exclusive, worldwide,
                 non-transferable, perpetual license</strong> to download one copy of the recording and to listen
-                to it privately, for your own personal enjoyment. The license does not expire, and it survives
-                the end of any subscription you may hold.
+                to it privately, for your own personal enjoyment. The license has no time limit and survives
+                the end of any subscription you may hold. It can still be terminated — see{' '}
+                <strong className="text-white">Termination of a License</strong> below for the two cases:
+                breach of these terms, and reversal of your payment.
               </p>
               <p>
                 You may keep personal backup copies on devices you own. You may not give, sell, lend, or
@@ -216,6 +218,28 @@ export default function Terms() {
                 possession. Termination for breach does not entitle you to a refund and does not limit any
                 other remedy available to us.
               </p>
+              <p>
+                <strong className="text-white">Termination when payment is reversed.</strong> A download
+                license is granted in exchange for payment. If the payment for a recording is reversed —
+                whether by a full refund, or by a chargeback or payment dispute raised with your card
+                issuer or payment provider — the license granted by that purchase terminates automatically
+                and immediately on the reversal. On termination you must stop using the recording and
+                delete all copies in your possession, and we may decline to supply that recording to you
+                again.
+              </p>
+              <p>
+                A partial refund does not terminate a license. Where we issue a refund and tell you in
+                writing that your license continues, it continues.
+              </p>
+              <p className="text-sm text-gray-400">
+                Nothing in this section affects your right to dispute a charge with your card issuer or
+                bank. That right is yours by law and we do not ask you to give it up.
+              </p>
+              <p className="text-sm text-gray-400">
+                Because recordings are delivered as files, we cannot recover a file you have already
+                downloaded. Termination ends your right to use the recording; any use of it after
+                termination is unlicensed.
+              </p>
 
               <h3 className="text-xl font-semibold text-white mt-6">Acceptance and Versioning</h3>
               <p>
@@ -261,6 +285,34 @@ export default function Terms() {
               <p className="text-sm text-gray-400">
                 Nothing in this section limits any statutory right you have that cannot be waived under the law
                 of your country or state.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">
+                Cancellation Rights and Immediate Delivery
+              </h3>
+              <p>
+                If you are a consumer in the United Kingdom or the European Union, you normally have 14 days
+                to cancel a distance purchase. For digital content delivered as a download, that right does
+                not survive delivery once you have asked for it.
+              </p>
+              <p>
+                At checkout you are asked to confirm two things before any payment is taken: that you want
+                your download made available <strong>immediately</strong>, and that you understand doing so
+                means you <strong>lose the right to cancel</strong>. You cannot complete a purchase without
+                confirming both, and we record which version of these terms you confirmed and when.
+              </p>
+              <p>
+                If you would rather keep your cancellation right, do not complete the purchase — contact us
+                instead and we will arrange it.
+              </p>
+              <p className="text-sm text-gray-400">
+                This applies to one-off downloads. A subscription is treated differently: it is an ongoing
+                service rather than a single piece of digital content, and your statutory cancellation
+                rights for it are not affected by this section.
+              </p>
+              <p className="text-sm text-gray-400">
+                None of this affects your rights where a recording is faulty, is not as described, or where
+                we fail to deliver it.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6">Artist Revenue</h3>
@@ -309,7 +361,7 @@ export default function Terms() {
                 until the end of the period you have already paid for, and you are not charged again after that.
               </p>
               <p>
-                Cancelling a subscription does not affect tracks you bought outright. A one-off download licence
+                Cancelling a subscription does not affect tracks you bought outright. A one-off download license
                 is perpetual and survives the end of any subscription you hold.
               </p>
             </div>

@@ -14,6 +14,10 @@
 # silently wins, and the one that wins is missing the entry.
 /r/*  /.netlify/functions/redirect-isrc/:splat  200
 
+# Public catalogue feed: what is licensable, at what price, under which licence version.
+# BeatFlow Radio fetches this at build time instead of holding a copy that drifts.
+/api/catalog.json  /.netlify/functions/catalog-feed  200
+
 # ---------------------------------------------------------------------------
 # Routes removed by the business-model cleanup (103 routes -> 58).
 #

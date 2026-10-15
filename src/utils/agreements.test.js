@@ -21,7 +21,7 @@ const {
 describe('currentAgreementVersion', () => {
   test('gives the buyer license a dated identifier', () => {
     const id = currentAgreementVersion(DOWNLOAD_LICENSE);
-    expect(id).toBe('download-license@2026-09-19');
+    expect(id).toBe('download-license@2026-10-15');
   });
 
   test('every published version is an ISO date, not a semver', () => {
@@ -63,8 +63,8 @@ describe('parseAgreementVersion', () => {
     // than as invalid.
     [
       null, undefined, 42, {}, [],
-      '', '@', 'download-license', 'download-license@', '@2026-09-19',
-      'bogus@2026-09-19'
+      '', '@', 'download-license', 'download-license@', '@2026-10-15',
+      'bogus@2026-10-15'
     ].forEach((input) => {
       expect(parseAgreementVersion(input)).toBeNull();
     });
@@ -73,7 +73,7 @@ describe('parseAgreementVersion', () => {
 
 describe('isCurrentAgreementVersion', () => {
   test('accepts the version in force', () => {
-    expect(isCurrentAgreementVersion('download-license@2026-09-19')).toBe(true);
+    expect(isCurrentAgreementVersion('download-license@2026-10-15')).toBe(true);
   });
 
   test('rejects a superseded version of a real agreement', () => {

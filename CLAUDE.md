@@ -897,8 +897,8 @@ repeat it. (`download-master.js` keeps its own copy: a Netlify function cannot r
 `scripts/`.)
 
 **I — invented vocabulary the product does not use.** The domain says `license` 201
-times; this session introduced `licence` 46 times *including Firestore field names*,
-so a purchase would have carried `licenseId` and `licenceRevoked` in one document.
+times; this session introduced `license` 46 times *including Firestore field names*,
+so a purchase would have carried `licenseId` and `licenseRevoked` in one document.
 Renamed across 27 files while nothing had yet been written with those fields. The
 caveat is explicit: a name matching the UI, the DB column and how the team talks
 beats a more elegant one matching nothing.
@@ -908,7 +908,7 @@ beats a more elegant one matching nothing.
 one takes as an argument. `node --check` passed on all five scripts; executing them
 found it. Syntax is not behaviour.
 
-**Ratchets:** 123 tests across 9 suites. `licence` spelling in identifiers: **0**.
+**Ratchets:** 123 tests across 9 suites. `license` spelling in identifiers: **0**.
 Hand-written copies of `loadEnv`/`initAdmin` outside `scripts/lib/`: **0**.
 
 ---
@@ -1094,7 +1094,7 @@ Tagging will not fix it. Duration across the production library:
 **511 of 562 are 1-5 minutes.** The library is beds and cues, not short-form hooks, and
 "platform" here is a property of the *cut*, not of the track — which duration and
 loopable already describe, from data that exists. `/browse/youtube` is also headed
-*"Tracks licensed for YouTube monetization"*, a licence claim over an unfiltered list.
+*"Tracks licensed for YouTube monetization"*, a license claim over an unfiltered list.
 
 **Resolved: all three removed**, and the route to that answer is the part worth keeping.
 The first pass kept YouTube -- a 3-minute bed genuinely is YouTube music -- and Percy
@@ -1116,8 +1116,8 @@ what created three pages for a field nothing populated.
 
 ### Licensing, as it actually stands
 
-There is **no per-platform licence**. `pricingPlans.js` sells "License for all major
-social platforms" as one grant, and a licence record carries `userId`, `trackId` and
+There is **no per-platform license**. `pricingPlans.js` sells "License for all major
+social platforms" as one grant, and a license record carries `userId`, `trackId` and
 `licenseType` — no platform field. `platform` appears once, in
 `registerPublishedProject`, derived from a URL the customer supplies: it records where
 they *did* use a track, not where they *may*. That is self-reported usage for locking in
@@ -1136,7 +1136,7 @@ Unlaunched surfaces gated outside `config/comingSoon.js` — **0**.
 
 | Concept | Decision that surfaced it | Call |
 |---|---|---|
-| **Scope of grant** — a licence is cut along media/platform, territory, term and exclusivity; price is a function of width | Whether to sell per-platform licences | Keep the bundle; price *use type* and *term*, the axes already modelled. Grant wording is a lawyer question, not settled here |
+| **Scope of grant** — a license is cut along media/platform, territory, term and exclusivity; price is a function of width | Whether to sell per-platform licenses | Keep the bundle; price *use type* and *term*, the axes already modelled. Grant wording is a lawyer question, not settled here |
 | **Composite index as a hard precondition** | Adding `where` + `orderBy` on different fields | Firestore fails the query rather than degrading — so the index ships with the query, and the listener needs an error handler or the failure looks like an empty catalogue |
 
 ### The collection survived the import — and is a string nothing joins on
@@ -1195,7 +1195,7 @@ granted** list, requiring "a separate license from us" **which does not exist**.
 position is correct and the product is missing.
 
 The tangle is that there are THREE answers to "what does a plan grant", and none is on
-the licence:
+the license:
 
 | Where | Says | Live |
 |---|---|---|
@@ -1215,7 +1215,7 @@ the licence:
 | Product | Delivery | Grant | Scope |
 |---|---|---|---|
 | Creator tiers (existing 4) | download | sync | while subscribed + published-perpetual |
-| One-off track licence | download | sync | perpetual |
+| One-off track license | download | sync | perpetual |
 | Venue (not built) | **stream only** | performance | per location, while subscribed |
 
 **Delivery follows from use, and that is the enforcement.** A creator needs the file
@@ -1230,7 +1230,7 @@ That needs a narrow download bound to the on-hold grant, or a stream URL if the 
 supports one. Not solved, not pretended to be.
 
 **The landmine on "PRO-free".** Controlling both the recording and the composition would
-let BFMG licence a venue directly and let it skip ASCAP/BMI — which is the entire pitch
+let BFMG license a venue directly and let it skip ASCAP/BMI — which is the entire pitch
 of the competitors above, at $27-70 per location per month. It holds only with 100% of
 the writer share on every track in the package. Measured: of 754 library tracks, **zero**
 carry any writer, publisher, PRO, split or ISWC field. Nothing in the data supports the
@@ -1482,7 +1482,7 @@ Ranked by what can take money or publish content, not by line count.
 | Endpoint | What it did |
 |---|---|
 | `migrate-song-prices.js` | `where('price','==',299)` then `batch.update({price: 99})` |
-| `migrate-license-ids.js` | rewrote purchase + download licence ids |
+| `migrate-license-ids.js` | rewrote purchase + download license ids |
 | `migrate-release-dates.js` | two unbounded `doc.ref.update()` passes |
 
 Public POST, no auth, nothing in `src/` called them. `migrate-song-prices` would hit 0
@@ -1889,7 +1889,7 @@ Live webhook endpoints on `acct_1Bn3cBAEum2hO0KZ`:
 | `us-central1-beatflowmedia.cloudfunctions.net/stripeWebhook` | 5 subscription/invoice events | — |
 
 **`/.netlify/functions/stripe-webhook` is not registered at all.** That is the 1128-line
-handler this project has been maintaining: licence ids, the clickwrap acceptance stamp,
+handler this project has been maintaining: license ids, the clickwrap acceptance stamp,
 `licenseFields`, and the in-process revenue split wired in earlier today. In production it
 receives nothing. The registered Netlify endpoint is `webhook.js`, 582 lines, from
 2025-05-05.
@@ -1905,7 +1905,7 @@ What the live handler does *not* write, measured by grep:
 
 So `create-checkout` collects a clickwrap acceptance, stamps the version and timestamp
 into session metadata, and the endpoint that actually receives the event **drops them**.
-The evidence that a buyer accepted a specific licence version is gathered and discarded.
+The evidence that a buyer accepted a specific license version is gathered and discarded.
 That is the part to care about: it is not a missing feature, it is a missing record of
 something the product asserts happened. See [[project-clickwrap-acceptance]].
 
@@ -1928,11 +1928,11 @@ Both deployed, both called from `StripeButton.js` and `pages/Advertising.js`:
 
 | | `create-checkout.js` (449 lines) | `create-checkout-session.js` (121) |
 |---|---|---|
-| Purpose | one-off licence sales | subscriptions + sponsorships |
+| Purpose | one-off license sales | subscriptions + sponsorships |
 | Identity | verified ID token (`verifyIdToken`) | **`userId`, `userEmail` from the request body** |
 | Auth refs in file | several | **0** |
 | Price source | server-side, from `utils/pricing.js` | Stripe `priceId` |
-| Licence acceptance | **required**, current version enforced | none |
+| License acceptance | **required**, current version enforced | none |
 
 **Not simple duplication** — they genuinely serve different products, so collapsing them
 would be the wrong call. The finding is narrower and real: one path verifies who is buying
@@ -2027,7 +2027,7 @@ with 0 completions is its own thing worth looking at.
 ### Decision: `webhook.js` is canonical — 2026-10-06
 
 Percy's call: the endpoint registered in production is the correct one. So
-`netlify/functions/webhook.js` stays, and the licence-recording this session built into
+`netlify/functions/webhook.js` stays, and the license-recording this session built into
 `stripe-webhook.js` has to move into it rather than the other way round. Specifically,
 what `webhook.js` is missing and must gain:
 
@@ -2112,7 +2112,7 @@ BFMG's keys out of it. One account per business is the point of the exercise.
 ### Decision: Studio is deferred, bundle and playlist_submission are dead — 2026-10-06
 
 Percy on BeatFlow Studio: **in progress but stalled**. Its purpose is artists, managers
-and producers buying a **complete album project** rather than a single track licence.
+and producers buying a **complete album project** rather than a single track license.
 Deferred, not cancelled.
 
 Measured before deciding:
@@ -2135,7 +2135,7 @@ documents and `studioPayments` 1 — exercised, not live.
 
 So `stripe-webhook.js` **stays**, and now carries a header saying why, because it sits in
 the gap between two failure modes: someone deletes it and loses Studio, or someone
-registers it with Stripe and silently swaps every other handler — including the licence
+registers it with Stripe and silently swaps every other handler — including the license
 recording and the renewal handling that only `webhook.js` has.
 
 **When Studio resumes:** port its handling into `webhook.js`. Never register this endpoint.
@@ -2266,7 +2266,7 @@ failure.
 
 Two structural notes. `create-checkout-session` hardcodes `mode: 'subscription'`, so it
 cannot sell a one-time product — the live account holds one-time Personal ($29) and
-Commercial ($58) Licence products that nothing in the app currently sells. And the live
+Commercial ($58) License products that nothing in the app currently sells. And the live
 account carries two subscription families, Student/Creator/Pro/Agency alongside
 Beat Solo/Duo/Campus/Household; the second is what the stale fallbacks pointed at.
 
@@ -2305,7 +2305,7 @@ style tags from BFMG" should know they were never there, rather than going looki
   its table resolve in Firestore and the UPCs match; **0 of the 12 currently have wide
   art**. Per-album `og:image` cards need BFMG's own call to action, not the station's
   "LISTEN ON BEATFLOW RADIO" — today every album shares one generic share image
-- exposing the plain-language licence summary + `/terms` and `/sync-licensing` in
+- exposing the plain-language license summary + `/terms` and `/sync-licensing` in
   `src/utils/licenseTerms.js`, so `catalog.js` pulls it like `storeUrl` rather than the
   station keeping a copy that can drift from the binding text
 - reconciling **164 sellable BFMG commercial songs against the station's 134** before
@@ -2356,9 +2356,9 @@ why the station does not carry them. The station's own 12 albums all have UPCs.
 
 ### `DOWNLOAD_LICENSE_SUMMARY` in `utils/licenseTerms.js` — 2026-10-10
 
-Added so the licence has one wording. The station needs a plain-language summary for the
+Added so the license has one wording. The station needs a plain-language summary for the
 terms-confirmation popup Percy asked for before a listener leaves for BFMG, and the
-alternative — the station keeping its own copy — drifts the moment the licence changes
+alternative — the station keeping its own copy — drifts the moment the license changes
 here. That failure is silent and surfaces in a dispute.
 
 `catalog.js` pulls it like `storeUrl`. It carries the headline, the summary, `termsUrl`
@@ -2539,12 +2539,12 @@ effectively a flat album price: a 9-track and a 19-track album both cost $11.99,
 per-track rate runs $1.33 down to $0.63.
 
 That is correct *for what is actually granted* — `scope: personal, term: perpetual,
-grant: download`. A personal download licence benchmarked against iTunes and Bandcamp,
+grant: download`. A personal download license benchmarked against iTunes and Bandcamp,
 both $9.99–$11.99 for an album, is market rate.
 
 The label was not. **"License for $11.99" invites a licensing buyer to price it against
 sync and library rates**, which are orders of magnitude higher, so a correctly-priced
-consumer download read as an absurdly cheap commercial licence. That is the same failure
+consumer download read as an absurdly cheap commercial license. That is the same failure
 already recorded beside `NOT_INCLUDED` in `DownloadLicenseTerms.js`: *the number does the
 arguing instead of the terms*. It is also the likeliest reason ProductionHub made the
 prices look low — those buyers were pricing a word that was not meant.
@@ -2562,11 +2562,11 @@ ambiguity is the only change that pays before the first real sale, because it ma
 first sales *mean* something.
 
 **What the first real transactions should answer**, recorded now so the question is ready:
-do buyers arrive expecting a consumer download or a commercial licence? If downloads sell
+do buyers arrive expecting a consumer download or a commercial license? If downloads sell
 and subscriptions do not, this is a storefront. If the enquiries are all sync and
 commercial use, the $1.99 download is a sample of the real business, not the business.
 
-### Correction: it is a licence, and the terms do not say it can be revoked — 2026-10-13
+### Correction: it is a license, and the terms do not say it can be revoked — 2026-10-13
 
 Percy: *"we are licensing the music to the personal buyer too, not selling it to them… if
 we license it then we can revoke it if they step outside the terms of usage."*
@@ -2575,31 +2575,31 @@ He is right, and the previous entry's fix was wrong in the other direction. "Buy
 ownership the buyer does not get.
 
 **Revocation is real, not aspirational.** `lib/entitlement.js` calls `isRevoked()` on every
-delivery, refuses a revoked licence, and deliberately distinguishes "revoked" from "never
+delivery, refuses a revoked license, and deliberately distinguishes "revoked" from "never
 bought" so the two can be answered differently. `scripts/revoke-license.js` performs it.
-`download-master` therefore stops serving a revoked licence. That is a genuine
+`download-master` therefore stops serving a revoked license. That is a genuine
 differentiator: an iTunes download cannot be withdrawn, and a CD certainly cannot.
 
 Label is now **`Personal license · $11.99`**. The missing word was always the SCOPE, never
-the licence — a bare "License for $11.99" let a sync buyer price it against library rates,
+the license — a bare "License for $11.99" let a sync buyer price it against library rates,
 while "Buy" denied the model outright. Naming the scope fixes the anchoring without
 pretending anything is sold.
 
 #### The exposure, which is the part that matters
 
-**Nothing tells the buyer the licence can be revoked.** Measured: zero mentions of
+**Nothing tells the buyer the license can be revoked.** Measured: zero mentions of
 revoke/revocation in `DownloadLicenseTerms.js` and zero in `Terms.js`. Worse, the clickwrap
 says the opposite:
 
 > "A personal license to download and keep this recording. **It does not expire.**"
 
-So the product is a revocable licence, the buyer is asked to tick a box saying they have
+So the product is a revocable license, the buyer is asked to tick a box saying they have
 read terms that do not mention revocation, and the summary they are shown promises they
-can *keep* it and that it *does not expire*. If a licence is ever revoked, the buyer can
+can *keep* it and that it *does not expire*. If a license is ever revoked, the buyer can
 point at the sentence they accepted.
 
 "Does not expire" and "may be revoked for breach" are not actually contradictory — a
-perpetual licence can still terminate on breach, which is ordinary in licensing. But the
+perpetual license can still terminate on breach, which is ordinary in licensing. But the
 terms have to SAY so, and these do not.
 
 **Not fixed here, and deliberately.** Adding a termination clause is drafting, not
@@ -2608,60 +2608,60 @@ refunded. That wants a lawyer for the jurisdiction, and it is the single highest
 thing to get reviewed, because the whole revocation model rests on it. What this project
 can do is describe real behaviour accurately; it cannot decide the clause.
 
-### Subscriptions as terminable licences, and the ISRC on the licence — 2026-10-14
+### Subscriptions as terminable licenses, and the ISRC on the license — 2026-10-14
 
 Percy: *"this is where in my mind the subscription(s) and the ISRC kick-in"* — as the
-answer to a perpetual licence that can be revoked but whose terms never say so.
+answer to a perpetual license that can be revoked but whose terms never say so.
 
-The instinct is right and the design already existed. **A subscription licence terminates
+The instinct is right and the design already existed. **A subscription license terminates
 by structure**: stop paying and it ends, so the awkward "we may revoke your perpetual
-licence" clause is never needed for commercial use. It was only half-wired.
+license" clause is never needed for commercial use. It was only half-wired.
 
 **What was missing: cancellation never ended anything.** All four tiers are declared
-`licenseType: TIME_BOUND`, renewal re-activated licences (ported earlier), but
-`handleSubscriptionCancelled` only set the user's membership flag. Licence rows stayed
-`active` for ever — the money stopped and the licence did not. The logic existed in
+`licenseType: TIME_BOUND`, renewal re-activated licenses (ported earlier), but
+`handleSubscriptionCancelled` only set the user's membership flag. License rows stayed
+`active` for ever — the money stopped and the license did not. The logic existed in
 `stripe-webhook.js`, which Stripe does not call. The same gap, in the same place, as the
-licence recording.
+license recording.
 
-Ported. Time-bound licences for that subscription become **`published-only`**, not
+Ported. Time-bound licenses for that subscription become **`published-only`**, not
 revoked — the design is deliberate and worth keeping: *work already published keeps its
-licence; what ends is the right to use the track in anything new.* Pulling a licence out
+license; what ends is the right to use the track in anything new.* Pulling a license out
 from under published work would make the product unusable for the professionals it is
-sold to. Perpetual one-off licences are excluded from the query because they are not
+sold to. Perpetual one-off licenses are excluded from the query because they are not
 contingent on any subscription.
 
-**ISRC is now written on the licence row.** `trackId` is a Firestore document id — it
+**ISRC is now written on the license row.** `trackId` is a Firestore document id — it
 identifies a recording inside this database and nowhere else, and enforcement runs the
-other way: a recording turns up where it should not, and the question is which licence
+other way: a recording turns up where it should not, and the question is which license
 covers it. ISRC is the only identifier here assigned by a standards body, so it is the one
 that survives leaving the platform. Written as explicit `null` when absent, because
 Firestore drops a document from any query naming a field it lacks — an omitted ISRC would
-hide exactly the licences worth finding.
+hide exactly the licenses worth finding.
 
 #### Verified, both of them
 
 Cancellation was tested with a signed `customer.subscription.deleted` carrying a
 subscription id we control. `stripe trigger` cannot be used: it invents its own id and the
 handler looks the user up **by** that id, so a triggered event can never match a fixture.
-The test plants a time-bound **and** a perpetual licence for the same user and only passes
+The test plants a time-bound **and** a perpetual license for the same user and only passes
 if the first ends and the second survives:
 
 ```
-time-bound licence : published-only, validWhileSubscribed false
-perpetual licence  : still active          <- the one that must not break
+time-bound license : published-only, validWhileSubscribed false
+perpetual license  : still active          <- the one that must not break
 user membership    : false
 ```
 
 ISRC was verified through a real test-mode purchase of a distributed track:
-`licence.isrc = QZRP42560757`, matching the song. Test data removed; purchases and
+`license.isrc = QZRP42560757`, matching the song. Test data removed; purchases and
 licenses back to 2 and 2.
 
 #### Still open, and it is the one that matters
 
 The terms still do not mention termination. For subscriptions this is now easy to write —
-"your licence runs while your subscription does" is ordinary and uncontroversial. For the
-perpetual one-off licence it is still a drafting question about breach, notice and refunds,
+"your license runs while your subscription does" is ordinary and uncontroversial. For the
+perpetual one-off license it is still a drafting question about breach, notice and refunds,
 and still wants a lawyer.
 
 #### Running the local stack, since this cost three restarts
@@ -2765,7 +2765,7 @@ charging twice: the browser check that found this one was written *because* of t
 entry, and it immediately found a second browser-only failure the Node tests had also
 missed. One round of "test it where it runs" was not enough — there were two layers.
 
-## Friendly fraud — when the money goes back, the licence goes with it — 2026-10-15
+## Friendly fraud — when the money goes back, the license goes with it — 2026-10-15
 
 **The attack.** Pay $1.99, download the master, have the bank reverse the charge, keep the
 file. The purchase row stayed `status: 'completed'` forever, so the entitlement check kept
@@ -2808,7 +2808,7 @@ refund. Redelivery of the same event is a no-op rather than a re-stamp: moving
 on.
 
 **Payment status is left alone, on purpose.** `status` describes MONEY; revocation
-describes the LICENCE. `entitlement.js` tests for exactly `'completed'`, so overloading
+describes the LICENSE. `entitlement.js` tests for exactly `'completed'`, so overloading
 `status` would silently break every other purchase path. Asserted in the tests.
 
 **Evidence is a snapshot, not a view.** Written to `disputes/<disputeId>` when the dispute
@@ -2819,7 +2819,7 @@ submitting closes the response window, and a bundle with no delivery proof is be
 withheld — `diagnostics.missing` says which case you are in.
 
 **Both branches rethrow so Stripe retries.** A 200 tells Stripe the job is done. A refund
-that failed to revoke and returned 200 leaves the buyer holding a licence they were
+that failed to revoke and returned 200 leaves the buyer holding a license they were
 refunded for, permanently and silently.
 
 ### Download cap, and the measurement that changed it
@@ -2854,7 +2854,7 @@ browser.
 
 The whole path joins on `purchases.stripePaymentIntent`. **Firestore excludes a document
 from any query naming a field it lacks**, so a purchase written without that field cannot
-be found by a refund or chargeback and keeps its licence forever with nothing logged.
+be found by a refund or chargeback and keeps its license forever with nothing logged.
 `assertReversalJoinable()` exists to make that visible, and a test asserts the hazard so it
 cannot be mistaken for working. All 3 current purchases carry the field.
 
@@ -2862,8 +2862,8 @@ cannot be mistaken for working. All 3 current purchases carry the field.
 
 `netlify/functions/lib/payment-reversal.test.js` — 16 assertions, in-memory Firestore fake.
 A fake rather than the real database for one reason that matters more than speed: these
-assertions revoke licences, and a test that writes to production to prove it can revoke
-things can revoke a real buyer's licence when run on the wrong day. The fake reproduces the
+assertions revoke licenses, and a test that writes to production to prove it can revoke
+things can revoke a real buyer's license when run on the wrong day. The fake reproduces the
 field-absence rule above; a fake that returned every document on any `where` would pass a
 test the real database fails.
 
@@ -2873,7 +2873,7 @@ a test is not trusted here until it has been seen to fail.
 
 ### Still open
 
-- `/terms` terminates a licence on breach of a **usage** restriction, so a refund or
+- `/terms` terminates a license on breach of a **usage** restriction, so a refund or
   chargeback does not trip it. One sentence is needed. **Lawyer item** — statutory refund
   rights vary and some cannot be waived.
 - Stripe Dashboard: `statement_descriptor`, business URL and support email are unset. A
@@ -2907,7 +2907,7 @@ Two constraints recorded for whoever builds it:
 
 ### Trend declined
 
-No DRM, and the reason is arithmetic rather than taste: a Widevine/FairPlay licence server is
+No DRM, and the reason is arithmetic rather than taste: a Widevine/FairPlay license server is
 roughly $200-1,000+/month and the platform has 3 purchases. Paying a four-figure annual fee to
 protect revenue that has not started is the O caveat — optimize where instrumented. Revisit when
 subscription volume justifies it. What protects the master meanwhile is **quality tiering**,
@@ -2924,7 +2924,7 @@ and with no ISRC metadata.
   policing refunds.
 - **Tethered offline playback** — Percy asked whether offline access could replace downloads.
   Call: it solves revocation for listening and cannot solve it for licensing, because a
-  usable file is the deliverable; parked on licence-server cost.
+  usable file is the deliverable; parked on license-server cost.
 - **Quality tiering** — named when Percy asked about stream-only access. Call: the protection
   is that a captured stream is not a licensable master, not that capture is prevented.
 - **Forensic watermarking** — surfaced when Percy asked about embedding our own DRM. Call:
@@ -2959,9 +2959,9 @@ there is no equivalent reconciler for redirects yet, and that is the obvious nex
 unit tests passed, and the feature was broken. Production was the only thing that could
 have said so.
 
-## `/r/<ISRC>` — the licence QR short links — 2026-10-15
+## `/r/<ISRC>` — the license QR short links — 2026-10-15
 
-`netlify/functions/redirect-isrc.js`. Backs the licence QR codes beside the playing record
+`netlify/functions/redirect-isrc.js`. Backs the license QR codes beside the playing record
 on the Roku and Fire TV apps.
 
 **Why a redirect rather than a direct link.** The TV app regenerates the code on every
@@ -3051,7 +3051,7 @@ entity name, or the phone number in main or any linked chunk.
   conventions, and nothing in the field names warns a reader. A reader assuming cents turns
   $1.99 into $199. Untouched deliberately: it is money data with historical rows.
 - **`licenses.trackId` holds an ALBUM id for album purchases.** Not a broken record, but a
-  field name that lies, and it made an album licence look like an orphan during this audit.
+  field name that lies, and it made an album license look like an orphan during this audit.
 
 ## The pre-commit UI/UX hook was checking nothing — 2026-10-15
 
@@ -3105,3 +3105,154 @@ build pass.**
 The accessibility number is the one that matters against the project's mobile-first,
 thumb-first standard: 44px targets, 16px inputs, no hover-only affordances. It was 594 the
 whole time the hook was reporting 100/100.
+
+## Best-effort legal protection, no lawyer available — 2026-10-15
+
+Percy cannot afford counsel at this stage and asked for a researched best effort. What
+follows is what the research changed, what was implemented, and — importantly — what is
+still exposed. **None of this is legal advice and none of it certifies compliance.**
+
+### The finding that reordered everything
+
+The asked-for job was a Terms clause saying a refund or chargeback ends a license. The
+research turned up something worth far more, and it was not in the Terms at all.
+
+For digital content delivered as a download, **UK Consumer Contracts Regulations 2013
+reg.37** and **EU Consumer Rights Directive art.16(m)** give a consumer 14 days to cancel,
+and let a seller exclude that right **only** if the buyer both:
+
+1. expressly consents to supply starting immediately, and
+2. acknowledges that this loses the cancellation right,
+
+before supply begins. Miss either and **reg.37(4) says the consumer bears no cost** for
+digital content supplied in the cancellation window.
+
+In plain terms: download the master, cancel inside 14 days, pay nothing, keep the file.
+That is the friendly-fraud scenario the whole revocation effort was built to answer —
+except this version is backed by statute, and **no amount of Terms drafting defeats it**.
+The guidance is explicit that these obligations cannot be excluded by terms and conditions.
+They have to be captured at the point of sale.
+
+The checkout was capturing neither. The box said only "I have read and agree to the
+Download License Terms", which is assent to the terms and is not either required element.
+
+So the highest-value protection available was free, mechanical, and nothing to do with the
+clause originally requested.
+
+### What was implemented
+
+- **`src/components/LicenseAcceptance.js`** — the clickwrap now carries both statutory
+  elements as an explicit second statement: *"I ask for my download to be made available
+  immediately, and I accept that once it is, I lose my right to cancel this purchase."*
+- **`src/utils/agreements.js`** — `DOWNLOAD_LICENSE` version bumped `2026-09-19` →
+  `2026-10-15`. The version MUST move when the accepted words change; the entire value of
+  storing `download-license@<version>` against a purchase is being able to say which words
+  a given buyer agreed to. Buyers before this date did not give the statutory
+  acknowledgement, and their records must not be rewritten to pretend otherwise.
+- **`src/pages/Terms.js`** — a "Termination when payment is reversed" clause, and a new
+  "Cancellation Rights and Immediate Delivery" section disclosing the waiver up front,
+  which the EU/UK guidance requires separately from capturing it.
+- **`src/utils/licenseTerms.js` and `src/components/DownloadLicenseTerms.js`** — both said
+  the license "does not expire" / is "kept for good". That became false on the day
+  revocation shipped. The second of those sits *directly above the checkbox*, which makes
+  it the exact wording produced in a dispute. Both now state the two ways a license ends.
+
+### What the research says NOT to do
+
+- **Never add a "no chargeback" clause.** A clause purporting to waive the cardholder's
+  right to dispute is not enforceable — the Fair Credit Billing Act makes the issuer
+  subject to claims and defenses arising from the transaction, and a merchant contract
+  cannot remove a statutory right. Terminating the license is defensible; barring the
+  dispute is not. The Terms now say explicitly that we do not ask buyers to give up that
+  right, which is both honest and the stronger position.
+- **Do not expect termination to reverse a chargeback.** Card network rules decide that,
+  and a bank may approve a dispute where the terms did not match what the buyer reasonably
+  expected. That is the practical argument for the clickwrap and the evidence bundle
+  rather than for clever drafting.
+
+### Still exposed — read this before assuming the matter is closed
+
+- **Subscriptions are not covered by the waiver.** CJEU C-234/25 (2026) held that
+  streaming subscriptions are digital *services*, not digital *content*, so art.16(m) does
+  not apply and a subscriber keeps the cancellation right regardless of what they tick.
+  The new Terms section says so. If subscription plans are sold into the EU/UK, that right
+  is live and nothing here removes it.
+- **US state disclosure rules are unverified.** No federal law compels refunds, and a
+  no-refund policy is generally defensible for digital goods *if disclosed before
+  purchase*, which the checkout now does. But several states (California Civil Code §1723
+  is the usual starting point) have their own conspicuous-display requirements that were
+  not checked against statute text.
+- **The clause wording has not been reviewed by anyone qualified.** It was drafted to
+  describe the software's real behaviour accurately, which is the part that can be
+  verified. Whether it is enforceable in New Jersey, or survives contact with an EU
+  consumer, is not something this process can answer.
+- **`docs/terms-revocation-clause-draft.md`** holds the longer draft and five specific
+  questions for whoever reviews this when that becomes affordable.
+
+### Research sources
+
+CJEU C-234/25 and art.16(m) conditions; UK CCR 2013 reg.37 and reg.37(4); Fair Credit
+Billing Act limits on no-chargeback clauses; FTC position that no federal law mandates
+refunds. Full URLs are in the session transcript.
+
+## Catalogue feed — one origin for price and sellability — 2026-10-15
+
+`netlify/functions/catalog-feed.js`, served at `/api/catalog.json`.
+
+BeatFlow Radio needed `sellable` and `price` per recording and was holding its own copy,
+which had drifted to 2900 cents — correct when `SONG_PRICE` was 2900, a 14x overcharge
+after the move to $1.99. This is the origin that copy reconciles to.
+
+**Every price crosses the boundary with its unit attached.** `priceCents` (integer,
+authoritative), `priceDisplay` (formatted, for anything a human sees), and a top-level
+`priceUnits: "minor"`. A consumer that renders `priceDisplay` cannot get it wrong. This is
+not theoretical: the first draft of the station's interim file published `199` as a dollar
+price and would have shown **$199 per track on a television**.
+
+`sellable` is derived, never a stored flag taken on trust — it requires a positive price,
+not-previewOnly, and a master key. A buyer who pays and cannot download is worse than a
+record that was never listed.
+
+The license block carries `version` and `identifier` so a consumer can detect that the
+terms changed instead of hearing about it from a customer.
+
+**A bug worth recording, found by testing rather than review:** the first run emitted
+`identifier: "[object Object]@null"`. Two constants look like "the agreement" and are not:
+`DOWNLOAD_LICENSE` is the key `'download-license'`, while
+`DOWNLOAD_LICENSE_SUMMARY.agreement` is the licence *shape* `{scope, term, grant}`. And
+`currentAgreementVersion()` returns the full identifier despite its name, not the bare
+version — `CURRENT_VERSIONS` is what gives the date alone.
+
+## verify:price-units — 2026-10-15
+
+`npm run verify:price-units`. Read-only, safe against production.
+
+Checks that `songs.price` and `licenses.pricePaid` hold positive integers (cents), reports
+whole numbers ≥ 100 in `purchases.price` (dollars) as ambiguous rather than failing them,
+and asserts the catalogue feed still carries explicit units.
+
+A fractional value in a cents field undercharges 100x; an integer rendered as dollars
+overcharges 100x. Neither throws, and **both look plausible while every price is $1.99** —
+which is exactly why this needs a check rather than attention.
+
+Current state: 906 songs, 3 licenses, 3 purchases — all consistent.
+
+## Spelling: "license", not "licence" — 2026-10-15
+
+Normalised across source, docs and CLAUDE.md. US spelling, and in US English "license" is
+both the noun and the verb.
+
+Settled by counting rather than preference: 9,533 occurrences of license/License against
+102 of licence/Licence, user-facing Terms already at 33 to 2, and the Firestore fields are
+`licenseId`, `licenseType`, `licenseRevoked` — data that cannot be renamed without
+rewriting every stored document. The I-caveat decides it: a name matching the UI, the DB
+column and how the team talks beats a more elegant one matching nothing.
+
+Identifiers moved with the prose (`licenceKind` → `licenseKind`, `licencesEnded` →
+`licensesEnded`), and all-caps constants needed a separate pass — a `licence`/`Licence`
+replace silently misses `LICENCE_KINDS`.
+
+**One mistake worth recording:** the first pass also rewrote two files inside
+`functions/node_modules/bignumber.js`, where `LICENCE.md` is the dependency's own correct
+British filename. Reverted. `node_modules` is gitignored so nothing would have been
+committed, but a repo-wide replace should name its directories rather than trust a glob.

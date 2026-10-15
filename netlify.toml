@@ -121,6 +121,13 @@
   to   = "/.netlify/functions/redirect-isrc/:splat"
   status = 200
 
+# Public catalogue feed. Also in public/_redirects -- that file is the one that WINS,
+# so a rule added only here is dead. See the ledger entry on the /r/ deploy.
+[[redirects]]
+  from = "/api/catalog.json"
+  to   = "/.netlify/functions/catalog-feed"
+  status = 200
+
 # Stripe webhook
 [[redirects]]
   from = "/api/stripe-webhook"

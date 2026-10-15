@@ -1,6 +1,6 @@
 // src/utils/licenseTerms.js
 //
-// The vocabulary for what a licence IS. Canonical for both the app and the Netlify
+// The vocabulary for what a license IS. Canonical for both the app and the Netlify
 // functions, in the manner of utils/pricing.js.
 //
 // WHY THIS EXISTS
@@ -19,7 +19,7 @@
 // 'perpetual' cannot tell whether the system disagrees with itself or they simply are
 // not comparable.
 //
-// Three axes, three names. A licence is a point in all three, and any product -- a
+// Three axes, three names. A license is a point in all three, and any product -- a
 // $1.99 download, a Creator subscription, a venue tier -- is defined by naming one
 // value from each.
 //
@@ -30,7 +30,7 @@
 // GRANT is the axis the catalogue has never modelled, and it is the one the money
 // turns on. A download and a sync of the same recording are different products at
 // different prices; Terms.js already excludes sync, performance and broadcast from
-// every download licence, so the exclusions exist and the vocabulary did not.
+// every download license, so the exclusions exist and the vocabulary did not.
 
 /** How wide the permitted use is. */
 const LICENSE_SCOPE = {
@@ -38,7 +38,7 @@ const LICENSE_SCOPE = {
   COMMERCIAL: 'commercial'
 };
 
-/** How long the licence lasts. */
+/** How long the license lasts. */
 const LICENSE_TERM = {
   /** Does not expire. What a one-off download purchase buys. */
   PERPETUAL: 'perpetual',
@@ -85,11 +85,11 @@ const isValidTerm = (v) => TERMS.includes(v);
 const isValidGrant = (v) => GRANTS.includes(v);
 
 /**
- * The fields to persist for a licence, given a product definition.
+ * The fields to persist for a license, given a product definition.
  *
  * `licenseType` is still written, and deliberately: existing records carry it and
  * stripe-webhook queries `where('licenseType','==','time-bound')` to find expiring
- * subscription licences. It is set to the TERM, because that is what every stored
+ * subscription licenses. It is set to the TERM, because that is what every stored
  * value means today -- the two records in `licenses` both read 'perpetual'. The
  * 'personal' that create-checkout wrote to `purchases` was the odd one out, and it
  * appears in zero stored documents.
@@ -108,14 +108,14 @@ function licenseFields({ scope, term, grant }) {
 }
 
 /**
- * Plain-language summary of the one-off download licence, for surfaces OUTSIDE the
+ * Plain-language summary of the one-off download license, for surfaces OUTSIDE the
  * checkout that have to tell someone what they are about to license.
  *
  * It exists so there is one wording rather than several. BeatFlow Radio needs it for a
  * terms-confirmation popup before a listener leaves for BFMG, and the alternative --
- * the station keeping its own copy -- drifts the moment the licence changes here. The
+ * the station keeping its own copy -- drifts the moment the license changes here. The
  * failure is silent and only surfaces in a dispute, which is the worst time to discover
- * that two systems described the same licence differently.
+ * that two systems described the same license differently.
  *
  * `catalog.js` pulls this with the rest of the catalogue, the same way it already pulls
  * storeUrl. Consumers should render it and link `termsUrl`; they must not paraphrase it.
@@ -127,15 +127,25 @@ function licenseFields({ scope, term, grant }) {
  *
  * NOT LEGAL ADVICE and not a substitute for the Terms. Needs a lawyer's review.
  */
+// "kept for good" and "it does not expire" were promises the software stopped keeping
+// on 2026-10-15, when refunds and chargebacks began terminating a license automatically
+// (netlify/functions/lib/payment-reversal.js). A summary that says a license cannot end,
+// shown on the screen where the buyer gives their assent, next to code that ends it, is
+// the worst version of this mistake: it is the exact document produced in a dispute.
+//
+// "Does not expire" is still true and is a real distinction worth keeping -- there is no
+// clock on it, unlike a subscription license. What is now stated alongside is that it can
+// be ENDED, and the two conditions under which it is.
 const DOWNLOAD_LICENSE_SUMMARY = {
   agreement: ONE_OFF_DOWNLOAD,
-  headline: 'A personal download licence, kept for good.',
+  headline: 'A personal download license, yours to keep.',
   summary:
-    'You are licensing a personal download: you may keep the recording permanently and ' +
-    'it does not expire. It does not cover putting the music in a video, film, game or ' +
-    'advert, playing it to an audience, broadcasting it, remixing or editing it, ' +
-    'including it in a compilation, resharing the file, or using it to train an AI ' +
-    'model. Anything beyond personal listening needs a separate licence.',
+    'You are licensing a personal download: there is no time limit on it and it does ' +
+    'not expire. It can end in two cases — if you breach these terms, or if the payment ' +
+    'is later reversed by a refund or a chargeback. It does not cover putting the music ' +
+    'in a video, film, game or advert, playing it to an audience, broadcasting it, ' +
+    'remixing or editing it, including it in a compilation, resharing the file, or using ' +
+    'it to train an AI model. Anything beyond personal listening needs a separate license.',
   termsUrl: 'https://beatflowmediagroup.com/terms',
   syncUrl: 'https://beatflowmediagroup.com/sync-licensing'
 };

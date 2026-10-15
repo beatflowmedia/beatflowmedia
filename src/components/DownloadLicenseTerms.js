@@ -60,7 +60,7 @@ import { Link as RouterLink } from 'react-router-dom';
 // nothing at the point of sale says it is not one, so the number does the arguing
 // instead of the terms.
 const NOT_INCLUDED = [
-  'Putting it in a video, film, game or advert — that is a sync licence',
+  'Putting it in a video, film, game or advert — that is a sync license',
   'Playing it to an audience — DJ sets, clubs, bars, restaurants, retail, events',
   'Radio, television, webcast or any broadcast',
   'Edits, remixes, mashups, or any altered version',
@@ -78,8 +78,17 @@ export default function DownloadLicenseTerms({ compact = false }) {
       <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem', mb: 0.5 }}>
         What you get
       </Typography>
+      {/* "It does not expire" on its own was a promise the software stopped keeping on
+        * 2026-10-15, when refunds and chargebacks began ending a license automatically.
+        * This text sits directly above the checkbox a buyer ticks, so it is the exact
+        * wording produced in a dispute -- the worst possible place for it to overstate.
+        *
+        * No time limit is still true and still worth saying; it is the real distinction
+        * from a subscription license. What is added is the two ways it can END. */}
       <Typography sx={{ color: 'grey.400', fontSize: '0.75rem', lineHeight: 1.5 }}>
-        A personal license to download and keep this recording. It does not expire.
+        A personal license to download and keep this recording. There is no time limit on
+        it. It ends only if you breach these terms, or if the payment is later reversed by
+        a refund or chargeback.
       </Typography>
 
       <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem', mt: 1.5, mb: 0.5 }}>
