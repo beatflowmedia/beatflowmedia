@@ -16,6 +16,11 @@ const admin = require('firebase-admin');
 // Canonical licence vocabulary, shared with the app in the manner of utils/pricing.js.
 const { sendEmail } = require('./lib/send-email');
 const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
+// When the money goes back, the licence goes with it. See lib/payment-reversal.js for
+// why this is the trigger for policy that was already written and already enforced.
+const { revokeForPaymentReversal, shouldRevokeOnRefund } = require('./lib/payment-reversal');
+const { buildDisputeEvidence, recordDisputeEvidence } = require('./lib/dispute-evidence');
+const { REVOCATION_REASONS } = require('../../src/utils/licenseRevocation');
 
 /**
  * The contract half of a purchase record: which license version the buyer accepted,
@@ -142,6 +147,18 @@ exports.handler = async (event, context) => {
 
       case 'invoice.payment_failed':
         await handleInvoicePaymentFailed(stripeEvent.data.object);
+        break;
+
+      // The friendly-fraud pair. Without these, the attack is: pay $1.99, download the
+      // master, have the bank reverse the charge, keep the file -- and the purchase row
+      // stays `completed` forever, so /downloads keeps serving it. The money leaves and
+      // the licence does not.
+      case 'charge.refunded':
+        await handleChargeRefunded(stripeEvent.data.object);
+        break;
+
+      case 'charge.dispute.created':
+        await handleDisputeCreated(stripeEvent.data.object);
         break;
 
       default:
@@ -899,5 +916,144 @@ async function handleInvoicePaymentFailed(invoice) {
     console.log('Failed payment recorded');
   } catch (error) {
     console.error('Error handling failed invoice payment:', error);
+  }
+}
+
+// ============================================================================
+// PAYMENT REVERSALS — refunds and chargebacks
+// ============================================================================
+//
+// Both of these end the licence, and the difference between them is money:
+//
+//   refund      we chose to give it back.  Cost: the Stripe fee (~$0.36 on $1.99).
+//   chargeback  the bank took it back.     Cost: the sale PLUS a ~$15 dispute fee.
+//
+// A $15 fee against a $0.49 platform share is the margin on roughly thirty tracks, so
+// a single chargeback is worth more than a month of honest sales. That asymmetry is why
+// the dispute branch does more work than the refund branch: it revokes AND assembles
+// the evidence, because a dispute answered with nothing is lost by default.
+//
+// Neither of these can un-download a file. See lib/payment-reversal.js.
+
+/**
+ * A refund was issued. Usually by us, sometimes to settle a dispute before it escalates.
+ *
+ * Deliberately NOT unconditional: a partial refund is a price adjustment and a refund
+ * tagged `keep_license=true` is a goodwill gesture. Revoking on either would punish a
+ * customer we chose to make whole. shouldRevokeOnRefund() owns that judgement.
+ */
+async function handleChargeRefunded(charge) {
+  try {
+    const decision = shouldRevokeOnRefund(charge);
+    if (!decision.revoke) {
+      console.log('[webhook] charge.refunded ' + charge.id + ': licence left intact — ' + decision.why);
+      return;
+    }
+
+    const db = admin.firestore();
+    const result = await revokeForPaymentReversal(db, {
+      paymentIntentId: charge.payment_intent,
+      reason: REVOCATION_REASONS.REFUND,
+      note: 'Automatic: charge ' + charge.id + ' fully refunded.',
+      at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('[webhook] charge.refunded ' + charge.id + ': ' +
+      result.revoked + ' licence(s) revoked, ' + result.licencesEnded + ' licence row(s) ended');
+  } catch (error) {
+    // Rethrown so the handler returns 500 and Stripe RETRIES. A refund that fails to
+    // revoke must not be acknowledged -- a 200 here tells Stripe the job is done and the
+    // buyer keeps a licence they have been refunded for, permanently and silently.
+    console.error('[webhook] charge.refunded failed for ' + (charge && charge.id) + ':', error);
+    throw error;
+  }
+}
+
+/**
+ * The cardholder disputed the charge with their bank.
+ *
+ * Three jobs, in this order, because the first two must happen even if the third fails:
+ *   1. Revoke the licence       — they no longer hold any right to the recording.
+ *   2. Snapshot the evidence    — assembled NOW, while the logs are untouched.
+ *   3. Flag it for a human      — submitting evidence is a judgement call, not automatic.
+ *
+ * Evidence is snapshotted rather than computed later on purpose: evidence assembled from
+ * live collections is evidence that changes after the fact, which is the one thing a
+ * disputed record must not do.
+ *
+ * It does NOT auto-submit to Stripe. Submission closes the response window, and a bundle
+ * with no delivery proof is better withheld than filed -- diagnostics.missing says which
+ * case this is.
+ */
+async function handleDisputeCreated(dispute) {
+  const db = admin.firestore();
+  const at = admin.firestore.FieldValue.serverTimestamp();
+  const paymentIntentId = dispute.payment_intent;
+
+  try {
+    const result = await revokeForPaymentReversal(db, {
+      paymentIntentId,
+      reason: REVOCATION_REASONS.CHARGEBACK,
+      note: 'Automatic: dispute ' + dispute.id + ' (' + (dispute.reason || 'no reason given') + ').',
+      at
+    });
+
+    const { evidence, diagnostics } = await buildDisputeEvidence(db, { paymentIntentId });
+    await recordDisputeEvidence(db, {
+      disputeId: dispute.id,
+      paymentIntentId,
+      dispute,
+      evidence,
+      diagnostics,
+      at
+    });
+
+    console.log('[webhook] charge.dispute.created ' + dispute.id +
+      ': ' + result.revoked + ' licence(s) revoked; evidence captured' +
+      ' (downloads=' + diagnostics.downloadsFound +
+      ', clickwrap=' + diagnostics.hasClickwrap + ')');
+
+    if (diagnostics.missing.length) {
+      console.warn('[webhook] dispute ' + dispute.id + ' evidence gaps: ' + diagnostics.missing.join('; '));
+    }
+
+    // A dispute has a deadline and nobody reads logs. The evidence is useless if it is
+    // discovered after the response window closes.
+    const alertTo = process.env.ADMIN_ALERT_EMAIL || process.env.SUPPORT_EMAIL;
+    if (alertTo) {
+      const due = dispute.evidence_details && dispute.evidence_details.due_by
+        ? new Date(dispute.evidence_details.due_by * 1000).toISOString()
+        : 'unknown';
+      const mail = await sendEmail({
+        to: alertTo,
+        subject: 'Chargeback opened — ' + dispute.id + ' (respond by ' + due + ')',
+        text: [
+          'A payment has been disputed.',
+          '',
+          'Dispute      : ' + dispute.id,
+          'Reason       : ' + (dispute.reason || 'not given'),
+          'Amount       : ' + (dispute.amount != null ? (dispute.amount / 100).toFixed(2) : '?') +
+            ' ' + String(dispute.currency || '').toUpperCase(),
+          'Respond by   : ' + due,
+          '',
+          'Licences revoked   : ' + result.revoked,
+          'Licence rows ended : ' + result.licencesEnded,
+          'Downloads on record: ' + diagnostics.downloadsFound,
+          'Clickwrap on record: ' + diagnostics.hasClickwrap,
+          diagnostics.missing.length ? 'Evidence gaps: ' + diagnostics.missing.join('; ') : 'No evidence gaps found.',
+          '',
+          'The evidence bundle is saved at disputes/' + dispute.id + ' and is shaped to',
+          "Stripe's dispute evidence fields. It has NOT been submitted — review it first."
+        ].join('\n')
+      });
+      if (!mail.sent) console.error('[webhook] dispute alert email NOT sent:', mail.reason);
+    } else {
+      console.warn('[webhook] no ADMIN_ALERT_EMAIL set — dispute ' + dispute.id + ' raised no alert');
+    }
+  } catch (error) {
+    // Same reasoning as the refund branch: rethrow so Stripe retries. Losing a dispute
+    // by never noticing it is the expensive outcome.
+    console.error('[webhook] charge.dispute.created failed for ' + (dispute && dispute.id) + ':', error);
+    throw error;
   }
 }

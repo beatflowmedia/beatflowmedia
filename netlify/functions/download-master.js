@@ -16,6 +16,71 @@
 const admin = require('firebase-admin');
 const { presignGetObject, r2Config } = require('./lib/r2-presign');
 const { resolveMasterEntitlement } = require('./lib/entitlement');
+
+/**
+ * How many times one buyer may take the same master. 0 disables the cap.
+ *
+ * Five rather than one or two: a buyer who changes laptop, loses the file, imports it
+ * into a second DAW and retries a failed transfer has four legitimate downloads and has
+ * done nothing wrong. A cap tight enough to annoy that person is a support queue, and
+ * refusing a file someone paid for is worse than serving it twice.
+ */
+const DOWNLOAD_CAP = (() => {
+  const raw = process.env.MASTER_DOWNLOAD_CAP;
+  if (raw === undefined || raw === '') return 5;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : 5;
+})();
+
+/**
+ * The cap counts downloads from this date onward, not for all time.
+ *
+ * Found by measuring before shipping: 3 of 11 (buyer, track) pairs in `downloads`
+ * already sat at or above 5 -- one at 15 -- almost entirely from testing this platform.
+ * A cap counting all history would have locked those buyers out of tracks they own on
+ * the very first deploy, and the first symptom would have been a support message, not a
+ * log line.
+ *
+ * A new rule applies going forward. Counting prior behaviour against a limit that did
+ * not exist when it happened is not enforcement, it is a retroactive penalty, and the
+ * people it would have hit first are the ones who helped test the thing.
+ *
+ * SET THIS TO THE DEPLOY DATE. The default is deliberately the day after this was
+ * written, because dating it "today" still counted the day's own test downloads and left
+ * two buyers over the line -- including Percy, on the track he had just bought. A cap
+ * that starts before it ships is a cap that punishes the test run.
+ */
+const CAP_EFFECTIVE_FROM = new Date(process.env.MASTER_DOWNLOAD_CAP_FROM || '2026-10-16T00:00:00Z');
+
+/** Rows to pull before counting. Comfortably above any real (buyer, track) history --
+ *  11 pairs across the whole collection, the largest at 15 -- so the in-memory count
+ *  cannot be wrong by truncation. */
+const CAP_SCAN_LIMIT = 60;
+
+/**
+ * Where the request came from, for the audit record.
+ *
+ * This is dispute evidence, not analytics. A chargeback on a digital good is answered
+ * with proof that THIS person took THIS file at THIS time, and "a download happened"
+ * without a client address is materially weaker than one with it -- Stripe's evidence
+ * form has a field for exactly this. Disclosed in the privacy policy under log data
+ * (src/pages/PrivacyPolicy.js), which is what makes collecting it legitimate.
+ *
+ * Netlify's own header first: x-forwarded-for can be a client-supplied list, so the
+ * platform header is the one that cannot be spoofed by the caller.
+ */
+function requestProvenance(event) {
+  const h = (event && event.headers) || {};
+  const forwarded = h['x-forwarded-for'];
+  return {
+    ipAddress:
+      h['x-nf-client-connection-ip'] ||
+      h['client-ip'] ||
+      (forwarded ? String(forwarded).split(',')[0].trim() : null) ||
+      null,
+    userAgent: h['user-agent'] ? String(h['user-agent']).slice(0, 300) : null
+  };
+}
 const {
   masterObjectKey,
   firebaseMasterBucket,
@@ -121,6 +186,61 @@ exports.handler = async (event) => {
         );
       }
       return fail(403, 'You have not licensed this track.');
+    }
+
+    // ---- how many times has this already been taken? ----------------------
+    // A licence is for one buyer's use, not an unlimited tap on the master. Without a
+    // cap, one account is a distribution channel: the entitlement check says yes every
+    // time, so a script can pull the same master repeatedly, and an account shared
+    // between twenty people looks identical to a buyer who changed laptops.
+    //
+    // The cap is deliberately generous, because the honest reasons to re-download are
+    // real and common -- a new machine, a lost file, a second DAW, a failed transfer.
+    // It is here to stop harvesting, NOT to ration legitimate use, so it sits well
+    // above what any one buyer plausibly needs and refusal explains itself and names a
+    // way out. Set MASTER_DOWNLOAD_CAP=0 to disable.
+    //
+    // Equality-only on two fields, which Firestore serves by merging its automatic
+    // single-field indexes -- no composite index, so this cannot fail the way an
+    // orderBy query does when an index is missing.
+    if (DOWNLOAD_CAP > 0) {
+      try {
+        const taken = await db
+          .collection('downloads')
+          .where('userId', '==', userId)
+          .where('itemId', '==', songId)
+          .limit(CAP_SCAN_LIMIT)
+          .get();
+
+        // Counted in memory rather than with a `where('downloadedAt','>=',...)` for two
+        // reasons. One: equality + range needs a composite index, and Firestore FAILS a
+        // query with a missing index rather than degrading -- so that version would turn
+        // every download into a 500 until someone noticed. Two: the row count per
+        // (buyer, track) is tiny, so there is nothing to optimize.
+        const counted = taken.docs.filter((d) => {
+          const when = d.data().downloadedAt;
+          if (!when || typeof when.toDate !== 'function') return true; // undated: count it
+          return when.toDate() >= CAP_EFFECTIVE_FROM;
+        }).length;
+
+        if (counted >= DOWNLOAD_CAP) {
+          console.warn(
+            '[download-master] cap reached: user', userId, 'song', songId,
+            '(' + counted + ' of ' + DOWNLOAD_CAP + ' since ' + CAP_EFFECTIVE_FROM.toISOString().slice(0, 10) + ')'
+          );
+          return fail(
+            429,
+            'You have reached the download limit for this track (' + DOWNLOAD_CAP + '). ' +
+            'Your licence is still valid — contact support and we will reset it.',
+            { limit: DOWNLOAD_CAP, taken: counted, licenseId: entitlement.licenseId }
+          );
+        }
+      } catch (err) {
+        // A counting failure must NOT deny a paying customer their file. The cap is an
+        // anti-harvesting measure, not a paywall: failing it open costs at most some
+        // extra bandwidth, while failing it closed withholds something already bought.
+        console.error('[download-master] download-count check failed, allowing:', err.message);
+      }
     }
 
     // ---- locate the master ------------------------------------------------
@@ -275,6 +395,9 @@ exports.handler = async (event) => {
         objectKey: key,
         grantedVia: entitlement.via,
         licenseId: entitlement.licenseId,
+        // Dispute evidence. lib/dispute-evidence.js reads these into the access
+        // activity log that answers a "I never received anything" chargeback.
+        ...requestProvenance(event),
         downloadedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });

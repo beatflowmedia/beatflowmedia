@@ -2764,3 +2764,172 @@ The previous entry recorded that a Node test cannot see CSP. This is the same le
 charging twice: the browser check that found this one was written *because* of that
 entry, and it immediately found a second browser-only failure the Node tests had also
 missed. One round of "test it where it runs" was not enough — there were two layers.
+
+## Friendly fraud — when the money goes back, the licence goes with it — 2026-10-15
+
+**The attack.** Pay $1.99, download the master, have the bank reverse the charge, keep the
+file. The purchase row stayed `status: 'completed'` forever, so the entitlement check kept
+saying yes and `/downloads` kept serving the master to someone who had paid nothing.
+Repeat per track. The name for this is **friendly fraud**: a real customer using a real
+payment mechanism in bad faith. It is the main fraud vector for digital goods because
+delivery is irreversible and payment is not.
+
+**The money, which is what sets the priority.** A refund costs the Stripe fee, about
+$0.36 on a $1.99 sale. A chargeback costs the sale plus a ~$15 dispute fee — roughly 30x
+the $0.49 platform share, so one chargeback erases the platform margin on about thirty
+tracks. That asymmetry is why the dispute branch does more work than the refund branch:
+it revokes AND snapshots evidence, because a dispute answered with nothing is lost by
+default, and losing by default costs the same as losing on the merits.
+
+**What was already here, and what was actually missing.** Nearly all of it existed.
+`src/utils/licenseRevocation.js` already defined CHARGEBACK and REFUND as reasons and
+documented the four independent states of paid/refunded x licensed/revoked.
+`lib/entitlement.js` already refused a revoked purchase — deliberately BEFORE the
+subscription fallback, so an active subscription cannot hand back what was just withdrawn.
+Only the WRITER was missing: nothing but the manual `scripts/revoke-license.js` CLI ever
+set the flag. So this is not new policy. It is the automatic trigger for policy that was
+already written and already enforced, which is why it was a small change.
+
+- `netlify/functions/lib/payment-reversal.js` — `revokeForPaymentReversal()`, plus
+  `shouldRevokeOnRefund()` and `assertReversalJoinable()`.
+- `netlify/functions/lib/dispute-evidence.js` — builds and snapshots the bundle.
+- `webhook.js` — `charge.refunded` and `charge.dispute.created` wired into the live switch.
+
+**Deliberate non-revocations.** `charge.refunded` fires on partial refunds too, and giving
+back $2 of a $12 album is a price adjustment, not fraud — revoking there punishes a
+customer being made whole. A refund tagged `keep_license=true` in its metadata also does
+not revoke; that is the "refunded + licensed" state `licenseRevocation.js` already
+documented, and `/terms` promises a full refund where WE failed to deliver.
+
+**Escalation is one-way.** A refund that later becomes a chargeback is re-stamped as a
+chargeback, because that is the more serious fact. A chargeback is never downgraded to a
+refund. Redelivery of the same event is a no-op rather than a re-stamp: moving
+`licenseRevokedAt` forward on every retry would destroy the one timestamp a dispute turns
+on.
+
+**Payment status is left alone, on purpose.** `status` describes MONEY; revocation
+describes the LICENCE. `entitlement.js` tests for exactly `'completed'`, so overloading
+`status` would silently break every other purchase path. Asserted in the tests.
+
+**Evidence is a snapshot, not a view.** Written to `disputes/<disputeId>` when the dispute
+opens, shaped to Stripe's own `dispute.evidence` field names so it submits without
+translation. Evidence assembled later from live collections is evidence that changes after
+the fact, which is the one thing a disputed record must not do. It does NOT auto-submit:
+submitting closes the response window, and a bundle with no delivery proof is better
+withheld — `diagnostics.missing` says which case you are in.
+
+**Both branches rethrow so Stripe retries.** A 200 tells Stripe the job is done. A refund
+that failed to revoke and returned 200 leaves the buyer holding a licence they were
+refunded for, permanently and silently.
+
+### Download cap, and the measurement that changed it
+
+`MASTER_DOWNLOAD_CAP` (default 5) per buyer per track, in `download-master.js`. Without
+one, the entitlement check says yes every time, so one account is a distribution channel.
+
+**Counted from a start date, not for all time — found by measuring before shipping.** Three
+of eleven (buyer, track) pairs in `downloads` were ALREADY at or above 5, one at 15, almost
+entirely from testing this platform. An all-time cap would have locked Percy out of the
+track he had just bought, on the first deploy, and the first symptom would have been a
+support message rather than a log line. `MASTER_DOWNLOAD_CAP_FROM` defaults to the day
+after this was written; **set it to the deploy date.** A cap that starts before it ships
+punishes the test run.
+
+Counted in memory after an equality-only query rather than with
+`where('downloadedAt','>=',...)`: equality + range needs a composite index, and Firestore
+FAILS a query with a missing index rather than degrading, so that version would turn every
+download into a 500 until someone noticed. Row counts per pair are tiny; nothing to
+optimize. The count also **fails open** — a counting error must not withhold a file someone
+bought.
+
+### Provenance on the download log
+
+`ipAddress` and `userAgent` on every `downloads` row, read from Netlify's
+`x-nf-client-connection-ip` first because `x-forwarded-for` can be client-supplied. This is
+dispute evidence, not analytics: Stripe's evidence form has a field for exactly it.
+Legitimate because `src/pages/PrivacyPolicy.js` already discloses log data including IP and
+browser.
+
+### The silent failure to watch
+
+The whole path joins on `purchases.stripePaymentIntent`. **Firestore excludes a document
+from any query naming a field it lacks**, so a purchase written without that field cannot
+be found by a refund or chargeback and keeps its licence forever with nothing logged.
+`assertReversalJoinable()` exists to make that visible, and a test asserts the hazard so it
+cannot be mistaken for working. All 3 current purchases carry the field.
+
+### Tests
+
+`netlify/functions/lib/payment-reversal.test.js` — 16 assertions, in-memory Firestore fake.
+A fake rather than the real database for one reason that matters more than speed: these
+assertions revoke licences, and a test that writes to production to prove it can revoke
+things can revoke a real buyer's licence when run on the wrong day. The fake reproduces the
+field-absence rule above; a fake that returned every document on any `where` would pass a
+test the real database fails.
+
+Verified by planting bugs: breaking idempotency failed 2 assertions, overloading the payment
+status failed 1. This codebase has had three tests that passed because they were wrong, so
+a test is not trusted here until it has been seen to fail.
+
+### Still open
+
+- `/terms` terminates a licence on breach of a **usage** restriction, so a refund or
+  chargeback does not trip it. One sentence is needed. **Lawyer item** — statutory refund
+  rights vary and some cannot be waived.
+- Stripe Dashboard: `statement_descriptor`, business URL and support email are unset. A
+  blank statement descriptor is itself a chargeback *cause* — buyers dispute charges they
+  do not recognise.
+- No per-buyer watermark, so a leaked file is traceable to the recording (via ISRC) but not
+  to the person. Blocked on runtime, not tooling — see below.
+
+### Streaming — measured 2026-10-15, before any work
+
+Verified rather than assumed, because the question "can we stream instead of download" turns
+on it. Every commercial-release track streams a **30-second preview, 0.46 MB, publicly
+fetchable with no login** (8 of 8 sampled; `audioUrl` in the client-readable song doc). The
+master is properly protected: **10.49 MB** behind a presigned URL, 23x larger, purchase only.
+
+So the paywall holds, and the gap is the missing middle: **full-length streaming does not
+exist.** Which means there is nothing yet to sell as "streaming access" — a subscriber would
+pay for what a stranger already gets free. That is the gate for playlists and personalisation,
+since a playlist of 30-second previews is not a product.
+
+Two constraints recorded for whoever builds it:
+
+- **Per-user signed URLs defeat CDN caching.** A unique URL per request cannot be edge-cached,
+  so every play hits origin. The fix is to validate the token at the edge (a Cloudflare Worker
+  in front of R2) and serve one cached object to everyone. R2 is right for this specifically
+  because egress is free.
+- **A watermark cannot live in a Netlify Function.** Today the bytes never touch our server —
+  a presigned URL goes R2 to browser directly. Routing them through code to stamp them is
+  impossible on Netlify Functions, which cap a response at 6 MB against a 10.49 MB master.
+  The same edge Worker is the only place both jobs fit.
+
+### Trend declined
+
+No DRM, and the reason is arithmetic rather than taste: a Widevine/FairPlay licence server is
+roughly $200-1,000+/month and the platform has 3 purchases. Paying a four-figure annual fee to
+protect revenue that has not started is the O caveat — optimize where instrumented. Revisit when
+subscription volume justifies it. What protects the master meanwhile is **quality tiering**,
+which already exists: a captured 128 kbps stream is not a licensable master, at 1/23rd the data
+and with no ISRC metadata.
+
+## Concepts covered
+
+- **Friendly fraud** — surfaced when Percy asked what stops a buyer downloading then
+  refunding. Call: build the automatic revocation path; accept that the bytes cannot be
+  recovered and that the defence is the legal clause plus dispute evidence.
+- **Chargeback vs refund economics** — a ~$15 dispute fee against a $0.49 platform share is
+  the margin on ~30 tracks. Call: prioritise preventing disputes and winning them over
+  policing refunds.
+- **Tethered offline playback** — Percy asked whether offline access could replace downloads.
+  Call: it solves revocation for listening and cannot solve it for licensing, because a
+  usable file is the deliverable; parked on licence-server cost.
+- **Quality tiering** — named when Percy asked about stream-only access. Call: the protection
+  is that a captured stream is not a licensable master, not that capture is prevented.
+- **Forensic watermarking** — surfaced when Percy asked about embedding our own DRM. Call:
+  DRM on a handed-over file is not possible; attribution is, and the cheap tier (metadata
+  stamping) is worth doing before the real one.
+- **Minor units** — prices are stored in cents (`199` = $1.99), caught when generating the
+  station list where rendering raw would have shown $199. Call: expose both `priceCents` and
+  `priceDisplay` across any boundary.
