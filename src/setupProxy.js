@@ -38,11 +38,41 @@
 // another of Percy's projects uses it.
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-// Netlify Dev's port. Kept in step with netlify.toml [dev] port = 8899; if that
-// changes this must change with it. It is a literal rather than a read of
-// netlify.toml because this file loads before any TOML parser is available and a
-// dev-server bootstrap that can fail to parse is worse than one number to update.
-const NETLIFY_DEV = 'https://localhost:8899';
+// Netlify Dev's port, DERIVED from netlify.toml rather than copied.
+//
+// This was a literal, 8899, with a comment saying it must be kept in step with
+// netlify.toml if that ever changed. It changed -- netlify.toml moved to 8888 on
+// 2026-10-09 -- and this did not. The result was every function call in dev returning
+// {"error":"Netlify Dev unreachable"} while the functions server sat answering happily
+// on another port. Two copies of one number, and the one with the comment telling you
+// to update it is the one that got missed.
+//
+// The original reasoning for the literal was sound as far as it went: this file loads
+// before any TOML parser is available, and a dev bootstrap that can fail to parse is
+// worse than one number to maintain. So it is read with a regex instead -- no parser,
+// no dependency, and a fallback if the shape is ever unrecognisable.
+//
+// PROTOCOL: http by default, because `netlify dev` cannot run in this project (it dies
+// in installIntegrationPlugins online, and with --offline it times out waiting for port
+// 3006), so dev is served by `npx netlify functions:serve --port 8888`, which is plain
+// http. Set NETLIFY_DEV_URL to override entirely if netlify dev is ever working again --
+// `secure: false` below already tolerates its self-signed mkcert certificate.
+const fs = require('fs');
+const path = require('path');
+
+function netlifyDevPort() {
+  try {
+    const toml = fs.readFileSync(path.resolve(__dirname, '..', 'netlify.toml'), 'utf8');
+    const dev = toml.split(/^\[/m).find((block) => block.startsWith('dev]'));
+    const m = dev && dev.match(/^\s*port\s*=\s*(\d+)/m);
+    if (m) return m[1];
+  } catch (err) {
+    // Fall through to the default rather than failing to boot the dev server.
+  }
+  return '8888';
+}
+
+const NETLIFY_DEV = process.env.NETLIFY_DEV_URL || ('http://localhost:' + netlifyDevPort());
 
 module.exports = function (app) {
   app.use(
@@ -61,7 +91,9 @@ module.exports = function (app) {
         // usual cause is simply that Netlify Dev is not running.
         console.error(
           `[setupProxy] ${req.method} ${req.url} -> ${NETLIFY_DEV} failed: ${err.message}\n` +
-          '            Is `netlify dev` running on 8899?'
+          `            Is a functions server running on ${NETLIFY_DEV}?
+` +
+          '            Start one with: npx netlify functions:serve --port 8888'
         );
         if (!res.headersSent) {
           res.writeHead(502, { 'Content-Type': 'application/json' });
@@ -70,7 +102,7 @@ module.exports = function (app) {
           JSON.stringify({
             error: 'Netlify Dev unreachable',
             detail: err.message,
-            hint: 'Start it with: npx netlify dev'
+            hint: 'Start it with: npx netlify functions:serve --port 8888'
           })
         );
       }
