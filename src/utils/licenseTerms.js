@@ -74,6 +74,31 @@ const ONE_OFF_DOWNLOAD = {
   grant: LICENSE_GRANT.DOWNLOAD
 };
 
+/**
+ * What a paid subscription buys: the right to put the music in video.
+ *
+ * TIME-BOUND, and the distinction underneath that word is the whole product.
+ *
+ *   The right to PUBLISH NEW content  ends when the subscription ends.
+ *   The clearance of content ALREADY PUBLISHED while subscribed does NOT.
+ *
+ * Those are different things and conflating them is how a music library acquires a
+ * reputation. A creator with three years of videos cannot have them all become
+ * infringing because they cancelled a $24 plan -- they would never subscribe in the
+ * first place, and they would be right not to. Epidemic Sound and Artlist both settled
+ * on the same split, and it is the only version a creator can safely build a channel on.
+ *
+ * `term: TIME_BOUND` therefore describes the GRANT, not the videos. The certificate and
+ * /verify state the date, which is what makes "was this published while covered?"
+ * answerable years later. Epidemic solves the same problem with channel safelisting;
+ * the licence record answers it without asking anyone to register anything.
+ */
+const SUBSCRIPTION_SYNC = {
+  scope: LICENSE_SCOPE.COMMERCIAL,
+  term: LICENSE_TERM.TIME_BOUND,
+  grant: LICENSE_GRANT.SYNC
+};
+
 const SCOPES = Object.values(LICENSE_SCOPE);
 const TERMS = Object.values(LICENSE_TERM);
 const GRANTS = Object.values(LICENSE_GRANT);
@@ -150,6 +175,45 @@ const DOWNLOAD_LICENSE_SUMMARY = {
   syncUrl: 'https://beatflowmediagroup.com/sync-licensing'
 };
 
+// The subscription licence. NOT LEGAL ADVICE and not reviewed by a lawyer -- written to
+// describe exactly what the software does and what the platform can actually deliver,
+// which is the part that can be verified. See docs/sync-license-draft.md for the longer
+// text and the questions a reviewer should be asked.
+//
+// WHAT MAKES THIS DELIVERABLE AT ALL
+// A sync licence is only worth buying if the music does not get claimed or muted. BFMG
+// can promise that because none of its catalogue is enrolled in YouTube Content ID or
+// Meta Rights Manager -- those come bundled in DistroKid's Social Media Pack, which has
+// never been purchased for any release. Enrolling would earn pennies from strangers'
+// videos and claim paying subscribers' videos at the same time, so it stays off. If that
+// ever changes, this summary becomes false on the day it changes.
+//
+// The residual risk is stated rather than hidden: AI-generated music can occasionally
+// trip a false match from an unrelated rights holder. Rare, outside our control, and not
+// something to paper over with the word "guaranteed".
+const SUBSCRIPTION_SYNC_SUMMARY = {
+  agreement: SUBSCRIPTION_SYNC,
+  headline: 'Put our music in your videos, for as long as you subscribe.',
+  summary:
+    'While your subscription is active you may synchronise our recordings with video ' +
+    'and publish it on platforms such as YouTube, TikTok, Instagram, Facebook and ' +
+    'podcasts, including monetised content. Anything you publish while subscribed stays ' +
+    'licensed permanently — cancelling does not put your back catalogue at risk. What ' +
+    'ends with the subscription is the right to publish NEW content using our music. ' +
+    'The licence is worldwide, non-exclusive and non-transferable. It does not cover ' +
+    'broadcast television or radio, cinema, paid advertising campaigns, video games, ' +
+    'reselling the music on its own, or using it to train an AI model — those need a ' +
+    'separate licence.',
+  // The promise that distinguishes this from a file you downloaded somewhere.
+  claimSupport:
+    'Our catalogue is not registered with YouTube Content ID or Meta Rights Manager, so ' +
+    'we do not claim or mute our subscribers’ videos. If a third party claims one ' +
+    'anyway, your account provides a dispute pack — your licence number, its verification ' +
+    'link, and a statement you can submit to the platform. We log every claim.',
+  termsUrl: 'https://beatflowmediagroup.com/terms',
+  syncUrl: 'https://beatflowmediagroup.com/sync-licensing'
+};
+
 // CommonJS, matching utils/pricing.js and utils/agreements.js -- the two files the
 // Netlify functions already import. Webpack interops this fine for the app side; the
 // reverse is not reliably true inside a function bundle, and a module that resolves
@@ -159,7 +223,9 @@ module.exports = {
   LICENSE_TERM,
   LICENSE_GRANT,
   ONE_OFF_DOWNLOAD,
+  SUBSCRIPTION_SYNC,
   DOWNLOAD_LICENSE_SUMMARY,
+  SUBSCRIPTION_SYNC_SUMMARY,
   isValidScope,
   isValidTerm,
   isValidGrant,

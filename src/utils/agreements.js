@@ -159,7 +159,39 @@ const AGREEMENT_HISTORY = {
   // No text written, so no versions. See the note on CONTRIBUTOR_UPLOAD above: an empty
   // history is the honest state, and it is what makes CURRENT_VERSIONS null below.
   [CONTRIBUTOR_UPLOAD]: [],
-  [SYNC_LICENSE]: []
+
+  // The subscription sync licence. Published 2026-10-16, which is what makes the paid
+  // tiers sellable -- they have advertised "commercial use" and "YouTube, TikTok,
+  // Instagram, podcasts" since before any text existed to back it. Nobody had subscribed,
+  // so the promise was latent rather than broken, and this closes it before it was not.
+  //
+  // NOT REVIEWED BY A LAWYER. Written to describe what the software does and what the
+  // platform can actually deliver. docs/sync-license-draft.md carries the longer text and
+  // the questions for whoever reviews it.
+  [SYNC_LICENSE]: [
+    {
+      version: '2026-10-16',
+      headline: 'Put our music in your videos, for as long as you subscribe.',
+      whatChanged: [
+        'This is the first published version of the subscription sync license.',
+        'While your subscription is active you can put our recordings in videos and publish them, including monetised content.',
+        'Anything you publish while subscribed stays licensed permanently. Cancelling does not put videos you have already published at risk.',
+        'What ends when the subscription ends is the right to publish NEW content using our music.',
+        'Broadcast TV and radio, cinema, paid advertising campaigns, video games, reselling the music on its own, and AI training are not covered and need a separate license.',
+        'Our catalogue is not registered with YouTube Content ID or Meta Rights Manager, so we do not claim or mute our own subscribers’ videos.'
+      ],
+      summary:
+        'While your subscription is active you may synchronise our recordings with video ' +
+        'and publish it on platforms such as YouTube, TikTok, Instagram, Facebook and ' +
+        'podcasts, including monetised content. Anything you publish while subscribed stays ' +
+        'licensed permanently — cancelling does not put your back catalogue at risk. What ' +
+        'ends with the subscription is the right to publish NEW content using our music. ' +
+        'The licence is worldwide, non-exclusive and non-transferable. It does not cover ' +
+        'broadcast television or radio, cinema, paid advertising campaigns, video games, ' +
+        'reselling the music on its own, or using it to train an AI model — those need a ' +
+        'separate licence.'
+    }
+  ]
 };
 
 /**
