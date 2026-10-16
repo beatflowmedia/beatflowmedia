@@ -12,5 +12,9 @@ Disallow: /profile
 # following them is budget not spent on the pillar pages they point at.
 Disallow: /r/
 
+# Licence verification pages. One per licence, no search value, and they carry a masked
+# buyer -- there is no reason for them to be indexed.
+Disallow: /verify/
+
 # Sitemaps
 Sitemap: https://beatflowmediagroup.com/sitemap.xml

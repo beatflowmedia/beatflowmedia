@@ -128,6 +128,13 @@
   to   = "/.netlify/functions/catalog-feed"
   status = 200
 
+# Licence certificate verification. Also in public/_redirects -- that file WINS, so a
+# rule added only here is dead. See the ledger entry on the /r/ deploy.
+[[redirects]]
+  from = "/verify/*"
+  to   = "/.netlify/functions/verify-license/:splat"
+  status = 200
+
 # Stripe webhook
 [[redirects]]
   from = "/api/stripe-webhook"

@@ -10,56 +10,42 @@
 //
 //   GET /static/js/bundle.js
 //     -> no such file on disk (webpack holds it in MEMORY during dev)
-//     -> /static/*  /static/:splat  200   <- rewrite to its OWN path, a no-op
 //     -> /*  /index.html  200             <- catch-all wins
 //     -> browser gets text/html where it asked for JavaScript
 //     -> "Uncaught SyntaxError: Unexpected token '<'" and a BLANK PAGE
 //
-// The no-op passthrough was written to prevent exactly this and could never have
-// worked: a redirect whose destination equals its source changes nothing, so the
-// rule below it still matches. Production is unaffected -- there the files really
-// are on disk and are served before redirects are consulted.
+// The fix is to invert the proxy: browse CRA directly on :3006, where webpack serves its
+// own bundle from memory, and forward only the function-backed paths to the functions
+// server. Netlify's redirect engine is no longer in the asset path, so it cannot swallow
+// anything.
 //
-// The fix
-// -------
-// Invert the proxy. Browse CRA directly on :3006, where webpack serves its own
-// bundle from memory natively, and forward ONLY the Netlify-specific paths to
-// Netlify Dev on :8888. Netlify's redirect engine is no longer in the asset path,
-// so it cannot swallow anything.
+// WHY THE RULES ARE DERIVED FROM public/_redirects
+// ------------------------------------------------
+// This file has now been wrong twice, both times because it held a COPY of something.
 //
-// This is also why the fix is not "make the redirect smarter". The rule was
-// standing in for a dev-server layering mistake; correcting the layering removes
-// the need for the rule instead of adding a second one to compensate. The
-// production _redirects keeps its SPA fallback, which is correct there.
+//   1. It hardcoded Netlify Dev's port as 8899 with a comment saying to keep it in step
+//      with netlify.toml. netlify.toml moved to 8888 on 2026-10-09; this did not. Every
+//      function call in dev returned "Netlify Dev unreachable" while the functions server
+//      answered happily on another port.
 //
-// Stripe is unaffected: `stripe listen` forwards straight to Netlify Dev and never
-// goes through this proxy, so webhooks arrive exactly as before. Point --forward-to
-// at the SAME port as NETLIFY_DEV below (8899) -- 8888 is Netlify Dev's default and
-// another of Percy's projects uses it.
+//   2. It hardcoded the forwarded paths as ['/.netlify', '/api']. Adding /verify/* to
+//      _redirects and netlify.toml was not enough: the function answered correctly on
+//      8888 while the app served the SPA shell for the same path. Production was fine
+//      throughout, which is the worst shape for a bug -- it exists only on the machine
+//      you develop on.
+//
+// So both the port and the routing table are now READ rather than copied. _redirects is
+// already the file that wins in production; adding a function route there now makes dev
+// follow automatically. No parser is used -- this file loads before any TOML or TOML-like
+// dependency is available, and a dev bootstrap that can fail to parse is worse than one
+// that falls back.
 const { createProxyMiddleware } = require('http-proxy-middleware');
-
-// Netlify Dev's port, DERIVED from netlify.toml rather than copied.
-//
-// This was a literal, 8899, with a comment saying it must be kept in step with
-// netlify.toml if that ever changed. It changed -- netlify.toml moved to 8888 on
-// 2026-10-09 -- and this did not. The result was every function call in dev returning
-// {"error":"Netlify Dev unreachable"} while the functions server sat answering happily
-// on another port. Two copies of one number, and the one with the comment telling you
-// to update it is the one that got missed.
-//
-// The original reasoning for the literal was sound as far as it went: this file loads
-// before any TOML parser is available, and a dev bootstrap that can fail to parse is
-// worse than one number to maintain. So it is read with a regex instead -- no parser,
-// no dependency, and a fallback if the shape is ever unrecognisable.
-//
-// PROTOCOL: http by default, because `netlify dev` cannot run in this project (it dies
-// in installIntegrationPlugins online, and with --offline it times out waiting for port
-// 3006), so dev is served by `npx netlify functions:serve --port 8888`, which is plain
-// http. Set NETLIFY_DEV_URL to override entirely if netlify dev is ever working again --
-// `secure: false` below already tolerates its self-signed mkcert certificate.
 const fs = require('fs');
 const path = require('path');
 
+const NEWLINE = new RegExp('\\r?\\n');
+
+/** Netlify Dev's port, read from netlify.toml [dev] rather than copied. */
 function netlifyDevPort() {
   try {
     const toml = fs.readFileSync(path.resolve(__dirname, '..', 'netlify.toml'), 'utf8');
@@ -67,19 +53,75 @@ function netlifyDevPort() {
     const m = dev && dev.match(/^\s*port\s*=\s*(\d+)/m);
     if (m) return m[1];
   } catch (err) {
-    // Fall through to the default rather than failing to boot the dev server.
+    // Fall through rather than failing to boot the dev server.
   }
   return '8888';
 }
 
+// http by default: `netlify dev` cannot run in this project -- online it dies inside its
+// own installIntegrationPlugins step, and with --offline it dies with "Timed out waiting
+// for port '3006' to be open" before CRA finishes compiling. Dev is therefore two
+// processes: `npm start` here and `npx netlify functions:serve --port 8888` alongside.
+// NETLIFY_DEV_URL overrides if netlify dev is ever working again; `secure: false` below
+// already tolerates its self-signed mkcert certificate.
 const NETLIFY_DEV = process.env.NETLIFY_DEV_URL || ('http://localhost:' + netlifyDevPort());
+
+/**
+ * The function routes, read from public/_redirects.
+ *
+ * Production REWRITES these paths -- `/verify/LIC-x` is served by
+ * `/.netlify/functions/verify-license/LIC-x` -- so forwarding the path unchanged reaches
+ * the functions server and gets "Function not found". The rewrite has to come along with
+ * the prefix, which is the whole reason this reads the rules rather than just the paths.
+ *
+ * @returns {{prefixes: string[], rewrite: Record<string,string>}}
+ */
+function functionRoutes() {
+  const prefixes = new Set(['/.netlify']);
+  const rewrite = {};
+
+  try {
+    const text = fs.readFileSync(path.resolve(__dirname, '..', 'public', '_redirects'), 'utf8');
+    text.split(NEWLINE).forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+
+      const parts = trimmed.split(/\s+/);
+      const from = parts[0];
+      const to = parts[1];
+      if (!from || !to || to.indexOf('/.netlify/functions/') !== 0) return;
+
+      const prefix = '/' + from.replace(/^\//, '').split('/')[0];
+      if (prefix.length <= 1 || prefix === '/.netlify') return;
+      prefixes.add(prefix);
+
+      // '/verify/*' -> '/.netlify/functions/verify-license/:splat'
+      //   becomes    ^/verify  ->  /.netlify/functions/verify-license
+      // so the trailing segment the caller supplied is carried through untouched.
+      if (from.endsWith('/*') && to.endsWith('/:splat')) {
+        rewrite['^' + from.slice(0, -2)] = to.slice(0, -7);
+      } else {
+        // An exact path, e.g. '/api/catalog.json' -> '/.netlify/functions/catalog-feed'
+        rewrite['^' + from + '$'] = to;
+      }
+    });
+  } catch (err) {
+    // Fall back to the paths that existed before this was derived.
+    return { prefixes: ['/.netlify', '/api'], rewrite: {} };
+  }
+
+  return { prefixes: Array.from(prefixes), rewrite };
+}
+
+const ROUTES = functionRoutes();
 
 module.exports = function (app) {
   app.use(
-    ['/.netlify', '/api'],
+    ROUTES.prefixes,
     createProxyMiddleware({
       target: NETLIFY_DEV,
       changeOrigin: true,
+      pathRewrite: ROUTES.rewrite,
       // Netlify Dev serves a locally-trusted mkcert certificate. Node does not
       // share the OS trust store that the browser uses, so without this the proxy
       // rejects its own machine's certificate.
@@ -88,11 +130,10 @@ module.exports = function (app) {
       onError(err, req, res) {
         // Say which side failed. Without this the browser reports a generic 500
         // and the obvious conclusion -- "the function is broken" -- is wrong: the
-        // usual cause is simply that Netlify Dev is not running.
+        // usual cause is simply that nothing is serving functions.
         console.error(
           `[setupProxy] ${req.method} ${req.url} -> ${NETLIFY_DEV} failed: ${err.message}\n` +
-          `            Is a functions server running on ${NETLIFY_DEV}?
-` +
+          `            Is a functions server running on ${NETLIFY_DEV}?\n` +
           '            Start one with: npx netlify functions:serve --port 8888'
         );
         if (!res.headersSent) {
@@ -100,7 +141,7 @@ module.exports = function (app) {
         }
         res.end(
           JSON.stringify({
-            error: 'Netlify Dev unreachable',
+            error: 'Functions server unreachable',
             detail: err.message,
             hint: 'Start it with: npx netlify functions:serve --port 8888'
           })
@@ -109,3 +150,7 @@ module.exports = function (app) {
     })
   );
 };
+
+// Exported for the reconciler, which checks that every function route in _redirects is
+// actually reachable in dev. Nothing in the dev server uses this.
+module.exports.functionRoutes = functionRoutes;

@@ -3460,3 +3460,90 @@ time: assert the artefact, never the exit code.
 | node assertions | 16 |
 | Playwright assertions | 19 |
 | Reconcilers | csp, price-units, terms, published, build |
+
+## Licence certificates and /verify — 2026-10-16
+
+Percy asked for viewable, downloadable certificates with authenticity at zero cost. The
+premise was sound and worse than it looked: `Downloads.js` line 380 had been saying
+"Download your licensed music and view license certificates" with no certificate behind
+the sentence.
+
+### The shape, and why it is asymmetric
+
+**Public to CHECK, private to ISSUE.** `/verify/<LIC-id>` is public because a venue has to
+be able to check a certificate without an account — that is the entire point of it — so
+the buyer appears masked ("P. R." or "s•••@example.com"), enough to match the person
+presenting the document and not personal data. Issuing the PDF is authenticated and
+ownership-checked: an authenticated caller asking for another buyer's certificate gets a
+403, which is the IDOR this would otherwise be.
+
+### What the code proves, and what it does not
+
+An HMAC keyed with a server-only secret proves BFMG issued the document — **only to
+someone who checks it against our domain.** A forged PDF can print any code it likes; what
+it cannot produce is a verify page on beatflowmediagroup.com agreeing with it. So the
+anchor is the domain, not the document, and every certificate says so in those words. A
+buyer showing a PDF to a venue is relying on that venue following the link.
+
+It is not a PKI signature and no reader shows a green tick. The layout leaves room for a
+paid AATL signature later.
+
+### Decisions worth keeping
+
+- **`v1|` prefixes the HMAC input**, at the station's suggestion. Codes are printed on
+  documents that leave our control and may be checked years later; without a version, any
+  change to the hashed fields would silently invalidate every code in circulation, and the
+  symptom would be genuine certificates failing with no explanation.
+- **Absent fields hash as fixed literals** (`no-isrc`, `no-agreement`, `no-date`) rather
+  than being refused. Only ONE of four existing licences had every field: two predate the
+  clickwrap entirely and one predates the ISRC deploy by nine minutes. The alternative —
+  backfilling an agreement version onto a purchase that never accepted one — would destroy
+  the only thing that field is for. The certificate states what is not on record instead
+  of implying a completeness it never had.
+- **The certificate quotes the version the buyer accepted**, pulled from
+  `AGREEMENT_HISTORY`, not today's wording. A 2026-09-19 licence shows the 2026-09-19 text.
+- **Seconds-precision UTC timestamps.** A Firestore Timestamp does not stringify stably;
+  millisecond drift between issuing and verifying would break genuine codes invisibly.
+- **Base32 without I, L, O or U**, so a code read off paper cannot be mistyped into another
+  valid-looking one. 10 characters is 50 bits.
+- **A missing `LICENSE_CERT_SECRET` refuses rather than defaulting.** A predictable key
+  would make every code forgeable while everything still appeared to work, which is worse
+  than an outage.
+- **Hidden watermark is TRACING, not proof.** An invisible text layer and XMP metadata are
+  both trivially readable and trivially strippable. It catches casual redistribution and
+  nothing else. Document metadata is document-level, so a multi-licence statement
+  accumulates every trace rather than keeping only the last.
+
+### setupProxy, wrong for the second time, now derived
+
+Adding `/verify/*` to `_redirects` and `netlify.toml` was not enough: the function answered
+correctly on 8888 while the app on 3006 served the SPA shell, because `setupProxy.js` held
+a hardcoded list `['/.netlify', '/api']`. Production was fine throughout — **the bug
+existed only on the machine you develop on.**
+
+Then forwarding the prefix alone still failed with "Function not found", because production
+REWRITES `/verify/LIC-x` to `/.netlify/functions/verify-license/LIC-x`, and the proxy was
+passing the path through unchanged.
+
+Both the port and the full routing table are now READ from `netlify.toml` and
+`public/_redirects` rather than copied. Adding a function route to `_redirects` now makes
+dev follow automatically. That is the third copy this file has been wrong about — port,
+prefixes, rewrites — and the first time it holds none.
+
+### A false alarm worth recording
+
+The browser check flagged "leaks real name" on the verify page. It did not: the name was
+the ARTIST credit, which is public and deliberately shown, and the buyer was correctly
+masked to `p•••@gmail.com` throughout. The test searched the whole page for a string that
+happens to be both the artist and the buyer. Reading the definition list as label/value
+pairs rather than grepping the page settled it. A test that cannot tell which FIELD holds
+a value will keep producing alarms like this.
+
+### Ratchet
+
+| Measure | Value |
+|---|---|
+| node assertions (certificate) | 17 |
+| node assertions (payment-reversal) | 16 |
+| jest assertions | 68 |
+| Playwright assertions | 19 |

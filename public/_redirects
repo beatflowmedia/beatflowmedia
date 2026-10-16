@@ -18,6 +18,11 @@
 # BeatFlow Radio fetches this at build time instead of holding a copy that drifts.
 /api/catalog.json  /.netlify/functions/catalog-feed  200
 
+# Licence certificate verification. MUST stay above the SPA catch-all, and must be a
+# function rather than an app route: the HMAC secret cannot reach a browser, and an
+# unknown licence id has to return a real "no such licence" page instead of the shell.
+/verify/*  /.netlify/functions/verify-license/:splat  200
+
 # ---------------------------------------------------------------------------
 # Routes removed by the business-model cleanup (103 routes -> 58).
 #

@@ -39,6 +39,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { stripeService } from '../services/stripeService';
 import { getMasterDownload } from '../services/masterDownload';
+import { downloadCertificate, downloadStatement } from '../services/licenseCertificate';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
@@ -379,6 +380,21 @@ export default function Downloads() {
           <Typography variant="body1" color="grey.400">
             Download your licensed music and view license certificates
           </Typography>
+          <Button
+            size="small"
+            startIcon={<Receipt />}
+            onClick={async () => {
+              try {
+                await downloadStatement();
+                toast.success('Statement downloaded');
+              } catch (err) {
+                toast.error(err.message);
+              }
+            }}
+            sx={{ color: '#1DB954', minHeight: 44, textTransform: 'none', mt: 1 }}
+          >
+            Download all my licences (PDF)
+          </Button>
         </Box>
 
         {error && (
@@ -528,6 +544,23 @@ export default function Downloads() {
                           }}
                         />
                       </Tooltip>
+                      {/* The page has always said "view license certificates". Until now
+                        * there was no certificate behind that sentence. */}
+                      <Button
+                        size="small"
+                        startIcon={<Receipt />}
+                        onClick={async () => {
+                          try {
+                            await downloadCertificate(generateLicenseId(purchase));
+                            toast.success('Certificate downloaded');
+                          } catch (err) {
+                            toast.error(err.message);
+                          }
+                        }}
+                        sx={{ color: '#1DB954', minHeight: 44, textTransform: 'none', mt: 0.5, display: 'flex' }}
+                      >
+                        Certificate
+                      </Button>
                     </TableCell>
                     <TableCell>
                       {(purchase.itemType === 'premium_subscription' || purchase.itemType === 'artist_membership') ? (
