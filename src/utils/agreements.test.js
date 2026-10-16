@@ -34,13 +34,30 @@ describe('currentAgreementVersion', () => {
       });
   });
 
-  test('agreements with no written text cannot be accepted', () => {
-    // These are the designed gaps, not oversights. If someone publishes a
-    // contributor agreement they must set its version deliberately -- and this test
-    // failing is the reminder that the UPLOAD PATH still has to capture it, which is
-    // the whole reason the gap is tracked here rather than in a comment.
+  test('an agreement with no written text cannot be accepted', () => {
+    // A designed gap, not an oversight. Publishing a contributor agreement means setting
+    // its version deliberately -- and this failing is the reminder that the UPLOAD PATH
+    // still has to capture it, which is why the gap is tracked here rather than in a
+    // comment nobody runs.
     expect(currentAgreementVersion(CONTRIBUTOR_UPLOAD)).toBeNull();
-    expect(currentAgreementVersion(SYNC_LICENSE)).toBeNull();
+  });
+
+  test('sync-license is published, which means the CHECKOUT must now capture it', () => {
+    // This assertion replaced one that pinned SYNC_LICENSE to null, and that one failing
+    // on 2026-10-16 was the tripwire working: publishing the text is not the same as
+    // being able to sell under it.
+    //
+    // Text exists now, so the licence CAN be accepted. What makes it lawful to sell is
+    // the subscription checkout recording `sync-license@<version>` against the
+    // subscription, the way create-checkout already records the download licence against
+    // a purchase. Until that is wired, a subscriber is paying for a grant with no
+    // evidence they ever agreed to it -- which is the condition the download path was in
+    // before the clickwrap, and the reason a dispute then has nothing to show.
+    const identifier = currentAgreementVersion(SYNC_LICENSE);
+    expect(identifier).toBe('sync-license@2026-10-16');
+
+    // Deliberately left as the next tripwire: when acceptance is wired, assert the
+    // recorded identifier here too, so the two can never drift.
   });
 
   test('an unknown agreement is null rather than a fabricated identifier', () => {
