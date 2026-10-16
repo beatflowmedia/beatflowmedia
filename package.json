@@ -132,7 +132,8 @@
     "stripe:listen": "stripe listen --forward-to http://localhost:8899/.netlify/functions/stripe-webhook",
     "verify:stripe-profile": "node scripts/verify-stripe-profile.js",
     "verify:price-units": "node scripts/verify-price-units.js",
-    "verify:published": "node scripts/verify-published.js"
+    "verify:published": "node scripts/verify-published.js",
+    "verify:build": "node scripts/verify-build.js"
   },
   "browserslist": {
     "production": [

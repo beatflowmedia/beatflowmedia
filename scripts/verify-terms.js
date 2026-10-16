@@ -32,6 +32,7 @@
 const path = require('path');
 
 const { loadEnv, initAdmin, assertProject, args } = require('./lib/admin');
+const { AGREEMENT_HISTORY, parseAgreementVersion } = require('../src/utils/agreements');
 
 const { has, value } = args();
 const SHOW_WHO = has('--who');
@@ -116,9 +117,53 @@ async function main() {
     console.log('  src/utils/agreements.js -- at which point every existing buyer lands here.');
   }
 
+  // --- can every accepted version still be READ? ------------------------------------
+  //
+  // The stronger obligation, and the one that was silently broken on 2026-10-15.
+  // /terms promises that the version recorded against a purchase governs it. That is
+  // only keepable while the text of that version still exists somewhere a buyer can
+  // reach. Editing Terms.js in place overwrote wording that was, and remains, in force
+  // for two purchases -- and the only warning was this script's own sentence about the
+  // old version staying readable, which nothing enforced.
+  //
+  // AGREEMENT_HISTORY is now that somewhere, and /changes renders it. This asserts the
+  // two have not come apart: every version any real buyer accepted must be present.
+  const accepted = new Set();
+  [...superseded, ...onCurrent].forEach((p) => {
+    if (p.acceptedAgreement) accepted.add(p.acceptedAgreement);
+  });
+
+  const unreadable = [];
+  accepted.forEach((identifier) => {
+    const parsed = parseAgreementVersion(identifier);
+    if (!parsed) { unreadable.push([identifier, 'unparseable identifier']); return; }
+    const history = AGREEMENT_HISTORY[parsed.agreement] || [];
+    if (!history.some((h) => h.version === parsed.version)) {
+      unreadable.push([identifier, 'no entry in AGREEMENT_HISTORY']);
+    }
+  });
+
+  console.log('');
+  console.log('  versions a buyer accepted : ' + accepted.size);
+  if (unreadable.length) {
+    console.error('  UNREADABLE                : ' + unreadable.length);
+    unreadable.forEach(([id, why]) => console.error('      ' + id + '  -- ' + why));
+    console.error('');
+    console.error('  A buyer holds a license under text nobody can produce. /terms says that');
+    console.error('  version governs their purchase, so this is a promise the platform cannot');
+    console.error('  currently keep. Add the version to AGREEMENT_HISTORY in');
+    console.error('  src/utils/agreements.js, with the summary as it stood at the time.');
+  } else {
+    console.log('  all readable at /changes  : yes');
+  }
+
   // Non-zero exit when somebody is on superseded terms, so this can gate a release
   // or run in CI. Pre-clickwrap purchases are NOT an error: they are historical and
   // cannot be retrofitted, only noted.
+  //
+  // An unreadable version is a harder failure than a superseded one: superseded means
+  // somebody needs telling, unreadable means we cannot say what they agreed to.
+  if (unreadable.length) return 1;
   return superseded.length ? 1 : 0;
 }
 

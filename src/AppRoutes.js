@@ -52,6 +52,7 @@ const Audiobooks = lazy(() => import("./pages/Audiobooks"));
 // Legal pages
 const Legal = lazy(() => import("./pages/Legal"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Changes = lazy(() => import("./pages/Changes"));
 const UserGuidelines = lazy(() => import("./pages/UserGuidelines"));
 const PrivacyCenter = lazy(() => import("./pages/PrivacyCenter"));
 const PrivacySettings = lazy(() => import("./pages/PrivacySettings"));
@@ -184,6 +185,7 @@ export default function AppRoutes() {
         {/* Legal pages */}
         <Route path="legal" element={<Legal />} />
         <Route path="terms" element={<Terms />} />
+        <Route path="changes" element={<Changes />} />
         <Route path="user-guidelines" element={<UserGuidelines />} />
         <Route path="privacy-center" element={<PrivacyCenter />} />
         <Route path="privacy-settings" element={<PrivacySettings />} />

@@ -100,28 +100,90 @@ const SYNC_LICENSE = 'sync-license';
 const AGREEMENTS = { DOWNLOAD_LICENSE, CONTRIBUTOR_UPLOAD, SYNC_LICENSE };
 
 /**
+ * EVERY version of each agreement, newest first. The canonical origin.
+ *
+ * WHY A HISTORY AND NOT JUST THE CURRENT VERSION
+ * A purchase stores `download-license@<version>`, and `/terms` promises that the
+ * recorded value — not any later revision of the page — governs that purchase. That
+ * promise is only keepable if the superseded text still exists somewhere a buyer can
+ * read. It did not: editing Terms.js on 2026-10-15 overwrote text that was, and still
+ * is, in force for two purchases. `npm run verify:terms` had been saying so in as many
+ * words ("the old version must stay readable, not be overwritten") and nothing
+ * implemented it.
+ *
+ * So each entry carries the summary AS IT STOOD, and /changes renders them. A buyer on
+ * an older version reads their own deal instead of asking us to email it.
+ *
+ * `whatChanged` is written for the buyer, not for the repo: what is different about
+ * their rights, in the fewest plain words that are still true. The commit messages and
+ * the DOSI ledger are where the engineering reasoning lives.
+ *
+ * ADDING A VERSION: prepend an entry. CURRENT_VERSIONS derives from this, so the two
+ * cannot disagree — which is the point. A hand-maintained "current" beside a
+ * hand-maintained history is two sources of truth and they drift on the first busy day.
+ */
+const AGREEMENT_HISTORY = {
+  [DOWNLOAD_LICENSE]: [
+    {
+      version: '2026-10-15',
+      headline: 'Your license can now end if the payment is reversed.',
+      whatChanged: [
+        'If you get a full refund, or your bank reverses the charge, the license for that recording ends. You must stop using it.',
+        'A partial refund does not end your license.',
+        'At checkout you now confirm two things before paying: that you want the download straight away, and that asking for it straight away means you give up the right to cancel.',
+        'We added a section explaining your cancellation rights, and said plainly that we do not ask you to give up your right to dispute a charge with your bank.'
+      ],
+      summary:
+        'You are licensing a personal download: there is no time limit on it and it does ' +
+        'not expire. It can end in two cases — if you breach these terms, or if the payment ' +
+        'is later reversed by a refund or a chargeback. It does not cover putting the music ' +
+        'in a video, film, game or advert, playing it to an audience, broadcasting it, ' +
+        'remixing or editing it, including it in a compilation, resharing the file, or using ' +
+        'it to train an AI model. Anything beyond personal listening needs a separate license.'
+    },
+    {
+      version: '2026-09-19',
+      headline: 'The first published version of the download license.',
+      whatChanged: [
+        'Before this, the limits on what a download license covers were not written down in one place.',
+        'This version set out what you get, and what needs a separate license: public performance, DJ use, broadcast, sync, remixes, compilations, resharing, and AI training.'
+      ],
+      summary:
+        'You are licensing a personal download: you may keep the recording permanently and ' +
+        'it does not expire. It does not cover putting the music in a video, film, game or ' +
+        'advert, playing it to an audience, broadcasting it, remixing or editing it, ' +
+        'including it in a compilation, resharing the file, or using it to train an AI ' +
+        'model. Anything beyond personal listening needs a separate license.'
+    }
+  ],
+  // No text written, so no versions. See the note on CONTRIBUTOR_UPLOAD above: an empty
+  // history is the honest state, and it is what makes CURRENT_VERSIONS null below.
+  [CONTRIBUTOR_UPLOAD]: [],
+  [SYNC_LICENSE]: []
+};
+
+/**
  * The version currently in force for each agreement, or null when no text exists.
+ *
+ * DERIVED from AGREEMENT_HISTORY rather than written out, so a new version cannot be
+ * published without also recording what it says and what changed. The failure this
+ * prevents is specific: bumping a version while the superseded text goes unarchived,
+ * which is exactly what happened on 2026-10-15 and left two buyers governed by words
+ * nobody could produce.
  *
  * null is meaningful: it means "cannot be accepted", not "any version will do".
  * Every consumer must treat null as a hard stop rather than as a check to skip.
  */
-const CURRENT_VERSIONS = {
-  // Bumped from '2026-09-19' on 2026-10-15. The acceptance text changed materially:
-  // the checkbox now captures express consent to immediate supply AND acknowledgement
-  // that this loses the 14-day cancellation right (UK CCR 2013 reg.37, EU CRD art.16(m)),
-  // and the Terms gained a clause terminating a license when payment is reversed.
-  //
-  // The version MUST move whenever that text changes. The whole value of recording
-  // `download-license@<version>` against a purchase is being able to say which words a
-  // given buyer agreed to. Leaving the version still while the words change destroys
-  // that, silently, and the loss is only discovered when someone asks.
-  //
-  // Buyers before this date accepted the older text and did not give the statutory
-  // acknowledgement. Their records are correct as they stand and must not be rewritten.
-  [DOWNLOAD_LICENSE]: '2026-10-15',
-  [CONTRIBUTOR_UPLOAD]: null,
-  [SYNC_LICENSE]: null
-};
+const CURRENT_VERSIONS = ALL_AGREEMENT_KEYS().reduce((acc, agreement) => {
+  const history = AGREEMENT_HISTORY[agreement] || [];
+  acc[agreement] = history.length ? history[0].version : null;
+  return acc;
+}, {});
+
+/** Declared as a function so it can be used above its own definition order. */
+function ALL_AGREEMENT_KEYS() {
+  return [DOWNLOAD_LICENSE, CONTRIBUTOR_UPLOAD, SYNC_LICENSE];
+}
 
 const AGREEMENT_LABELS = {
   [DOWNLOAD_LICENSE]: 'Download License Terms',
@@ -197,6 +259,7 @@ module.exports = {
   AGREEMENTS,
   ALL_AGREEMENTS,
   CURRENT_VERSIONS,
+  AGREEMENT_HISTORY,
   AGREEMENT_LABELS,
   DOWNLOAD_LICENSE,
   CONTRIBUTOR_UPLOAD,

@@ -3371,3 +3371,92 @@ fails 3 of 8.
 Firebase session and no browser-auth fixture exists. The clickwrap is covered as a
 component and the 409 branch as a unit; the two have not been exercised together through a
 real checkout. That is the honest remaining gap.
+
+## /changes — what changed, for the person it changed for — 2026-10-16
+
+Percy asked whether the update modal should link to an explanation of what changed. It
+should, but narrower than "updates", and the distinction is the whole design.
+
+**Two different jobs, and conflating them means both get ignored.** The update modal
+fires on EVERY deploy and its job is getting new code onto the device — worth a prompt
+whether or not there is a story. The LINK is for the rare change that alters what someone
+actually gets. If it appeared every time it would usually lead to "fixed a redirect rule",
+and a link that is usually worthless is a link nobody clicks on the one occasion it
+matters.
+
+### Derived, not authored
+
+The entries that carry legal weight generate themselves from `AGREEMENT_HISTORY`; the
+nice-to-have ones are hand-written and degrade to silence rather than to a stale list. An
+authored changelog rots — the first forgotten entry makes the page untrustworthy, and an
+untrustworthy page is worse than none because people stop reading it.
+
+`CURRENT_VERSIONS` is now **derived** from `AGREEMENT_HISTORY[agreement][0].version`. A
+new license version cannot be published without also recording what it says and what
+changed, because publishing the entry IS what moves the current version. A hand-kept
+"current" beside a hand-kept history is two sources of truth and they drift on the first
+busy day.
+
+### The gap this closes
+
+`/terms` promises the version recorded against a purchase governs it. That is only
+keepable while the superseded TEXT is readable somewhere, and it was not: editing Terms.js
+on 2026-10-15 overwrote wording still in force for two purchases, and `verify:terms` had
+been printing *"the old version must stay readable, not be overwritten"* the whole time
+with nothing enforcing it. `/changes` now renders every version with its summary as it
+stood, and `verify:terms` fails if any version a real buyer accepted is missing from the
+history — verified by removing the 2026-09-19 entry and watching it report
+`UNREADABLE: 1`.
+
+Superseded versions are labelled **"Still applies to earlier purchases"**, never "old".
+A superseded version is not void; it still governs everyone who accepted it, and calling
+it old tells exactly the wrong story to the person it binds.
+
+### Seen-state fails in the safe direction
+
+Marked when the reader OPENS `/changes`, not when they dismiss the prompt — closing a
+modal is not reading, and treating it as read would silently consume the one notice a
+license change gets. Blocked `localStorage` reads as "not seen", so the link still shows:
+showing it to someone who has read it is a mild annoyance, hiding a license change from
+someone who has not is the outcome the page exists to prevent.
+
+## A build can exit 0 and produce nothing — 2026-10-16
+
+**The third variation of the same mistake, and the most expensive to date.**
+
+`npm run build` exited 0. My check for `"Failed to compile"` found none. I reported a
+passing build and ran a browser suite against it — and all 19 tests failed, including 9
+that had passed an hour earlier. The build had written **no `index.html` at all**; the
+server was handing out leftovers from a previous build.
+
+CRA had said so, quietly:
+
+    Compiled with the following type errors (you may want to check these before deploying)
+    Attempted import error: 'hasUnseenChanges' is not exported from '../data/platformChanges'
+
+An unresolvable import is reported as a **type error**, not as a compile failure, and the
+process still exits 0.
+
+The cause was CJS/ESM interop: `platformChanges.js` was CommonJS, and webpack could not
+statically resolve named imports out of its `module.exports = {...}`. `require()` of the
+same file worked perfectly in node, which is what made it confusing — the module tests
+passed while the bundle could not import it. Converted to ESM, which is what the rest of
+`src/` uses.
+
+**`npm run verify:build` now asserts the ARTEFACT rather than the exit code:** index.html
+exists, is not stale, names a main bundle, and that bundle is on disk and a plausible
+size. Verified against the broken output before fixing it.
+
+The pattern across all three incidents is identical — **a green signal measured on the
+wrong thing**: a build called passing from an empty log, a UI gate scoring 100/100 over
+zero files, and now a build that compiled nothing and exited 0. The fix is the same every
+time: assert the artefact, never the exit code.
+
+### Ratchet
+
+| Measure | Value |
+|---|---|
+| jest assertions | 68 |
+| node assertions | 16 |
+| Playwright assertions | 19 |
+| Reconcilers | csp, price-units, terms, published, build |
