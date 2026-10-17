@@ -100,10 +100,15 @@ needs its own storefront, NOT its own login.
 | Which catalogue a record belongs to | `src/utils/assetPools.js` (`assetPoolOf`) | none — classification is a stored decision |
 | Content Security Policy | `config/csp.js` | `npm run verify:csp` |
 | Master object key + delivery contract | `netlify/functions/lib/masters.js` | `npm run test:functions` |
-| "may this user have this item" | `netlify/functions/lib/entitlement.js` | - |
+| "may this user have this item" | `netlify/functions/lib/entitlement.js` | `npm run test:lib` |
 | Catalogue records (albums/songs) | **`C:/Users/percy/RadioStation/radio/releases.json`** — the station seeds BFMG one-way over ISRC; see its `catalog.js` | `node catalog.js diff` |
 | Stripe pricing | `netlify/functions/create-checkout.js` (server-side price lookup) | e2e coverage |
 | Which agreement a person accepted, and its version | `src/utils/agreements.js` (**CommonJS**, `create-checkout` requires it) | `npx jest src/utils/agreements.test.js` |
+| What a licence IS (scope / term / grant) | `src/utils/licenseTerms.js` | `npx jest src/utils/licenseTerms.test.js` |
+| Which agreement governs which product | `src/utils/licenseTerms.js` (`PRODUCT_AGREEMENTS`, `agreementForProduct`) | `npx jest src/utils/licenseTerms.test.js` |
+| What is being sold for a given `(itemType, licenseType)` | `src/utils/licenseTerms.js` (`productForSale`) | `npx jest src/utils/licenseTerms.test.js` |
+| Commercial licence pricing (track / album / collection) | `src/utils/pricing.js` (`calculateCommercialPrice`, `calculateCollectionPrice`) | `npx jest src/utils/pricing.commercial.test.js` |
+| How many tracks a collection actually contains | the `songs` query on `collectionId` — **not** `collections.trackCount`, which is a stale derived copy | `npm run verify:collections` |
 | What a stored catalogue price *should* be | `src/utils/catalogPricePlan.js` (`planCatalogPrices`) | `npx jest src/utils/catalogPricePlan.test.js` |
 | Whether a record may be sold (`previewOnly`) | `netlify/functions/lib/master-availability.js` — derived from the master in R2 | `npm run verify:masters` |
 | Statutory mechanical owed on a download (§115) | `src/utils/mechanicalRoyalty.js` | `npx jest src/utils/complianceModules.test.js` |
@@ -3547,3 +3552,184 @@ a value will keep producing alarms like this.
 | node assertions (payment-reversal) | 16 |
 | jest assertions | 68 |
 | Playwright assertions | 19 |
+
+## Selling the production library — a third licence — 2026-10-17
+
+The commercial price curve existed (88f0d52) with nothing wired to checkout. Wiring it
+turned out to be mostly a legal problem.
+
+### Neither existing licence fitted, so quietly reusing one was the trap
+
+| Licence | Why it could not be used for a $319 collection |
+|---|---|
+| `download-license@2026-10-15` | **Expressly forbids synchronisation.** Recording it against a commercial sale produces evidence the buyer agreed *not* to do the thing they paid for. |
+| `sync-license@2026-10-16` | Worded throughout as "while your subscription is active". Against a one-off sale it describes a grant that ends, when what was sold does not. |
+
+`commercial-license@2026-10-17` is published: **commercial / perpetual / sync**. One
+payment, no renewal, worldwide, non-exclusive, covering the recordings named on the
+licence rather than the catalogue. Terms section 4 defines it in full and the page now
+carries **both** version identifiers — it carried one above a document containing two
+separately versioned licences, which reads as governing both.
+
+It also said sync was "not available through self-service checkout". This change makes
+that false, so the line was corrected rather than left to rot.
+
+**NOT REVIEWED BY A LAWYER.** `docs/commercial-license-draft.md` carries the long text
+and seven questions. The two sharpest: whether "permanent" needs qualifying everywhere
+it appears given a payment reversal ends the licence, and whether permitting client
+delivery *without* licensing the end client holds up.
+
+### The acceptance gate was asking the wrong question
+
+```js
+if (!isCurrentAgreementVersion(acceptedAgreement))   // "is this SOME current agreement"
+```
+
+With one product that was the same question. With two it is a hole, and **the wrong half
+passes**: a client could present `download-license@…` for a commercial collection and be
+waved through. The server now derives the product from `(itemType, licenseType)` and
+demands *that* product's identifier, so a **valid acceptance of the wrong agreement** is
+refused — the case the old check could not see.
+
+An agreement with no published text now returns **503** rather than selling. That is
+what makes the `contributor-upload` gap safe to leave open: it cannot be sold under by
+accident, only deliberately.
+
+### Both webhooks were recording the wrong licence
+
+`licenseFields(ONE_OFF_DOWNLOAD)` was unconditional in `webhook.js` (1 site) and
+`stripe-webhook.js` (2 sites). A commercial sale recorded that way writes
+`scope: personal, grant: download` on the row that **is** the evidence. The axes now
+travel in the session metadata and come back through `productFromMetadata`.
+
+**A test caught a hole in the fallback.** Validating the three axes was not enough —
+`broadcast` is a legitimate member of `LICENSE_GRANT`, so `{commercial, perpetual,
+broadcast}` passed every axis check and returned as a product. Nothing sells a broadcast
+licence self-serve; the webhook would have written the most expensive right in the
+catalogue onto a licence row. **Axis-valid is a spelling check; being a product is a
+different question**, and only `PRODUCT_AGREEMENTS` answers it now.
+
+### Entitlement had no collection branch, so the biggest buyer was the one refused
+
+`resolveMasterEntitlement` checked the track, then its album, then a subscription. A
+collection licence matched none. The person who paid $319 for 56 tracks could not
+download track 41 — and **every individual query in that function is correct**, which is
+why it survives review. Joined on `collectionId` exactly the way the storefront joins it.
+Revocation cascades through it, or a buyer whose licence was pulled downloads the
+contents one track at a time.
+
+### Priced from what will be delivered, not from a stored count
+
+`collections.trackCount` is a derived copy an importer writes and it is **already wrong**:
+`verify:collections` reports `game-show-walk-on` holding 27 while 30 songs carry its id.
+`assertDeliverable` already runs that query, so it returns the count and the price comes
+from it — $219 rather than $209.
+
+The **page** had the mirror of the same problem, which would have advertised $209 while
+Stripe billed $219. `CollectionPage` now counts the tracks `HomeStorefront` has already
+loaded and filtered (same test the server applies), and the button says
+"Counting tracks…" until that lands rather than quoting a figure that moves.
+
+**The backfill that would repair the stored count was refused by the sandbox and has not
+run.** Not load-bearing — the server never trusts the field — but `verify:collections`
+will keep reporting it until someone runs `npm run backfill:collections -- --apply`.
+
+### `npx jest` now finishes, for the first time
+
+Three files in `netlify/functions/lib` are standalone node scripts ending in
+`process.exit()`. Under jest that **terminates the worker**, so a bare `npx jest` stopped
+partway and never printed a summary — indistinguishable from a hang. That is why
+"run the full suite" was not something anyone here could do.
+
+| Command | Runs |
+|---|---|
+| `npm run test:lib` | the three node-style assertion scripts |
+| `npm run test:all` | jest, then `test:lib` |
+
+**Measured, not claimed:** 44 failed suites / 96 failed tests on `88f0d52` with none of
+this applied, and the same 96 after. Nothing that passed before fails now; four suites
+newly pass. The 96 are pre-existing — transcode, analytics, design atoms, the audio
+engine, the security specs.
+
+### Rule-of-three, applied twice
+
+- **Extracted.** The sign-in offer was about to become its third copy → `useSignInGate`.
+  `PurchaseButton` keeps its own, deliberately: it is the one path that sells anything
+  today and its block is woven through its own already-purchased and album-choice
+  branches.
+- **Not extracted.** The commercial and download terms summaries stay two files.
+  Parameterising them would put a condition on every line of copy, and getting one
+  backwards shows a buyer permission they do not have.
+
+### Decisions worth keeping
+
+- **Two controls, not one chooser.** `PurchaseOptionsDialog` asks "which recording"; the
+  new button asks "which licence". One radio group holding a $1.99 download and a $29
+  commercial licence puts two incomparable decisions in one control and **the cheap
+  option wins by position**. It also leaves the download path untouched.
+- **Both prices shown together** on a collection page. A buyer who only sees $319 cannot
+  tell whether that is the only way in; one who only sees $29 buys four tracks and never
+  learns the curve exists. 56 singly is $1,624 against $319.
+- **The acceptance control is shared**, and only the terms block and named restrictions
+  vary. The statutory capture does not, and that is a legal judgement: a one-off
+  commercial licence is digital content supplied without a physical medium exactly as a
+  download is, so **UK CCR 2013 reg.37 / EU CRD art.16(m) reach it identically**. Only the
+  noun changes. A second copy is how one of the two elements goes missing from one
+  product unnoticed.
+- **A collection has no personal product.** `productForSale('collection', 'personal')` is
+  `null` and checkout refuses it. Falling back would sell 56 tracks for $1.99, because
+  every song document carries `price: 199`.
+
+### An e2e failure that was not a bug
+
+Publishing a third agreement broke two `/changes` assertions, and the page was right both
+times: one counted "In force now" badges expecting 1 when the real property is one *per
+agreement*; the other pinned the seen-marker to a literal date that had legitimately
+moved. Both now derive from `AGREEMENT_HISTORY`. **A test that hardcodes what the data
+says fails every time the data is correct**, and a failure that means nothing is the one
+people learn to skip.
+
+### Ratchet
+
+| Measure | Before | Now |
+|---|---|---|
+| node assertions (certificate) | 17 | 17 |
+| node assertions (payment-reversal) | 16 | 16 |
+| node checks (entitlement) | 0 | 14 |
+| jest assertions | 68 | 98 |
+| Playwright assertions | 19 | 29 |
+| jest suites that can run to completion | 0 (bare run hung) | 58 |
+| pre-existing jest failures (unrelated) | 96 | 96 — do not let this rise |
+| products on sale | 2 | 3 |
+| published agreements | 2 | 3 |
+
+### Still open
+
+- **Acceptance capture at subscription checkout** for `sync-license@2026-10-16`. The
+  `agreements.test.js` tripwire still guards it: a subscriber is paying for a grant with
+  no evidence they agreed to it.
+- **The dispute pack** both sync and commercial terms promise, and the `licenseClaims` log.
+- **`pendingRevenueSplits`** — a collection sale records its split obligation rather than
+  apportioning it. Safe only because every production-library track is BFMG's own today.
+- **Collection pages emit no JSON-LD** — should be `MusicAlbum` +
+  `albumProductionType: CompilationAlbum` + `offers`.
+- **A cart.** Nothing here needs one: each session is still a single item.
+
+### Concepts covered (continued)
+
+- **Clickwrap scope — one agreement per product** — surfaced when the commercial licence
+  needed an acceptance and the gate accepted any current agreement. Call: derive the
+  required agreement from the product; a *valid acceptance of the wrong contract* is the
+  failure a boolean check cannot see.
+- **Non-exclusive licensing** — named when writing the commercial terms. BFMG licenses the
+  same recording to many buyers at once; that is what makes $29 possible, and it has to be
+  said out loud or a buyer assumes exclusivity. Call: state it at the point of sale.
+- **Chain of title through a licensee** — surfaced by the client-work clause: an editor
+  must be able to hand a finished film to the client who paid for it, but that puts the
+  recording in the hands of someone who accepted nothing. Call: licence the editor to
+  include it in delivered work; no separate grant to the end client; recourse runs against
+  the licensee. Flagged as the sharpest reviewer question.
+- **Derived copy vs canonical origin, in money** — `collections.trackCount` priced a
+  product while being stale by three tracks. Call: price from the query, not the cached
+  count, and have the page quote the same source so it cannot advertise one figure and
+  bill another.
