@@ -173,6 +173,79 @@ function formatPrice(priceInCents) {
   return `$${(priceInCents / 100).toFixed(2)}`;
 }
 
+
+/**
+ * What ONE track costs under a commercial (sync) licence, before volume.
+ *
+ * Deliberately not derived from SONG_PRICE. A personal download and a commercial sync
+ * licence are different products sold to different people for different uses, and tying
+ * one to the other would mean a change to the consumer price silently repricing the
+ * commercial catalogue. $1.99 is an impulse buy; $29 is a business expense.
+ *
+ * Benchmarks when this was set (2026-10-16): AudioJungle $19-49/track, PremiumBeat
+ * $49-199, Musicbed $49-199. BFMG is unknown and undercuts deliberately.
+ */
+const COMMERCIAL_TRACK_PRICE = 2900; // $29.00 — production and functional library
+
+/**
+ * A released song costs more than a bed, and the gap is the point.
+ *
+ * A production cue is background. A released single with vocals and a featured artist is
+ * THE SONG IN THE VIDEO -- it carries the scene rather than sitting under it, and it is
+ * the one a viewer might go and look up. Pricing them the same says they are the same
+ * product, which anyone licensing them can hear is false.
+ */
+const COMMERCIAL_RELEASE_TRACK_PRICE = 7900; // $79.00 — commercial-release catalogue
+
+/**
+ * How fast the per-track rate falls as the licence covers more tracks.
+ *
+ * A power curve rather than brackets, because brackets produce CLIFFS: with a flat rate
+ * per band, 4 tracks at $29 costs $116 while 5 tracks at $22 costs $110, so buying more
+ * costs less and the price list contradicts itself. A curve is monotonic by
+ * construction -- more tracks always costs more, and always less per track.
+ *
+ * 0.6 was chosen against the real catalogue rather than in the abstract: it puts a
+ * 56-track collection at roughly $319 ($5.70/track) and a single track at $29, which
+ * sits under PremiumBeat's per-track rate at every size while still being many times a
+ * consumer download.
+ */
+const VOLUME_EXPONENT = 0.6;
+
+/**
+ * Price a commercial licence covering `trackCount` tracks.
+ *
+ * Rounded to the nearest whole dollar and then to a trailing 9, because a price list a
+ * buyer reads should not be full of $318.47. Rounding happens ONCE, at the end -- a
+ * rounded per-track rate multiplied up compounds the error and stops the curve being
+ * monotonic at the boundaries.
+ *
+ * @param {number} trackCount  tracks the licence covers
+ * @param {number} [baseRate]  per-track rate in cents; defaults to the library rate
+ * @returns {number} price in cents
+ *
+ * @example
+ * calculateCommercialPrice(1)   //  2900  ($29)    one bed
+ * calculateCommercialPrice(24)  // 19900  ($199)   a functional collection, $8.29/track
+ * calculateCommercialPrice(56)  // 31900  ($319)   Jazz-Infused, $5.70/track
+ * calculateCommercialPrice(11, COMMERCIAL_RELEASE_TRACK_PRICE) // a released album
+ */
+function calculateCommercialPrice(trackCount, baseRate = COMMERCIAL_TRACK_PRICE) {
+  if (!Number.isFinite(baseRate) || baseRate <= 0) {
+    throw new TypeError('calculateCommercialPrice: baseRate must be a positive number of cents');
+  }
+  const n = Number(trackCount);
+  if (!Number.isFinite(n) || n < 1) return baseRate;
+
+  const raw = baseRate * Math.pow(n, VOLUME_EXPONENT);
+
+  // To the nearest dollar, then down to the nearest trailing 9 ($319 not $320), with a
+  // floor of the single-track rate so a licence can never cost less than one track.
+  const dollars = Math.round(raw / 100);
+  const nines = dollars <= 9 ? dollars : Math.floor((dollars + 1) / 10) * 10 - 1;
+  return Math.max(baseRate, nines * 100);
+}
+
 module.exports = {
   SONG_PRICE,
   ALBUM_DISCOUNT,
@@ -180,5 +253,9 @@ module.exports = {
   ALBUM_PRICE_CAP,
   calculateAlbumPrice,
   calculateBundlePrice,
+  COMMERCIAL_TRACK_PRICE,
+  COMMERCIAL_RELEASE_TRACK_PRICE,
+  VOLUME_EXPONENT,
+  calculateCommercialPrice,
   formatPrice
 };

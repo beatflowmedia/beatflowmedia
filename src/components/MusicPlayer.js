@@ -232,8 +232,14 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = true, maxDuration = 30, o
           {/* Seek Bar Row */}
           <div className="flex items-center gap-2 w-full px-4">
             <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>
+            {/* A range input with no label is announced as a bare "slider" -- the one
+                telling you WHICH slider is missing, and there are two on this bar.
+                aria-valuetext overrides the raw number so it reads "1 minute 23 seconds
+                of 2 minutes 57" rather than "83". */}
             <input
               type="range"
+              aria-label={previewMode ? 'Seek within preview' : 'Seek'}
+              aria-valuetext={`${formatTime(currentTime)} of ${formatTime(previewMode ? Math.min(maxDuration, duration || 0) : (duration || 0))}`}
               className="flex-1 accent-gray-300 h-1 cursor-pointer"
               min={0}
               max={previewMode ? Math.min(maxDuration, duration || 0) : (duration || 0)}
@@ -252,10 +258,17 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = true, maxDuration = 30, o
           {previewMode && song && !isOnThisSongPage ? (
             <button
               onClick={onGetFullVersion || (() => window.location.href = `/song/${song.id}`)}
-              className="bg-[#1DB954] hover:bg-[#1ed760] text-white px-5 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg"
-              title="License this track"
+              /* min-h-11 is 44px: px-5 py-2 measured ~36px, under the WCAG 2.5.5
+                 floor, on the one control that turns a listener into a buyer. */
+              className="bg-[#1DB954] hover:bg-[#1ed760] text-white px-5 min-h-11 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg"
+              title="See license options for this track"
             >
-              License Track
+              {/* Read "License Track" and licensed nothing -- it navigates to the
+                  track page, same as the storefront card did. Here the listener is
+                  ALREADY previewing, so "Preview & license" would be odd; the
+                  destination page calls the control "License options", so this says
+                  the same words for the same place. */}
+              License options
             </button>
           ) : (
             <>
@@ -269,11 +282,19 @@ const MusicPlayer = ({ onShowRightPanel, previewMode = true, maxDuration = 30, o
                 </button>
               )}
               <div className="flex items-center gap-2">
-                <button onClick={toggleMute} className="text-gray-400 hover:text-white">
+                {/* An icon-only button announces as "button" and nothing else. */}
+                <button
+                  onClick={toggleMute}
+                  aria-label={isMuted ? 'Unmute' : 'Mute'}
+                  aria-pressed={isMuted}
+                  className="text-gray-400 hover:text-white"
+                >
                   {isMuted ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
                 </button>
                 <input
                   type="range"
+                  aria-label="Volume"
+                  aria-valuetext={`${Math.round((isMuted ? 0 : contextVolume) * 100)} percent`}
                   className="w-16 accent-gray-300 cursor-pointer"
                   min={0}
                   max={1}

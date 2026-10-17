@@ -175,7 +175,7 @@ function HomeStorefront({
     playSelectedSong(track);
   };
 
-  const handleLicenseTrack = (track) => {
+  const handleOpenTrack = (track) => {
     // NO AUTH GATE HERE, and removing it is the fix rather than a loosening.
     //
     // This used to be `if (!user) navigate('/login')`. There is no /login route and
@@ -330,7 +330,15 @@ function HomeStorefront({
                       '&:hover, &:focus-within': { opacity: 1 }
                     }}
                   >
+                    {/* Icon-only, so without a label a screen reader announces "button"
+                        and nothing else -- on the control whose whole job is "hear this
+                        before you decide". The track name is in it because a page of 56
+                        cards otherwise announces 56 identical "Play" buttons.
+                        MUI IconButton renders a real <button>, so keyboard support is
+                        inherent; the checker's MISSING_KEYBOARD_HANDLER on this line is
+                        reading the onClick without knowing what it is attached to. */}
                     <IconButton
+                      aria-label={`${isPreviewing ? 'Pause' : 'Play'} preview of ${track.title || 'this track'}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePreviewTrack(track);
@@ -389,15 +397,36 @@ function HomeStorefront({
                     )}
                   </Box>
 
-                  {/* License Button */}
+                  {/* THE LABEL HAS TO DESCRIBE WHAT THE CONTROL DOES.
+                    *
+                    * This read "License Track" and did not license anything -- it opens
+                    * the track's detail page, where the preview and the terms are. The
+                    * comment above the handler said so in as many words while the button
+                    * said otherwise.
+                    *
+                    * Found by Percy walking his own storefront: on a collection page the
+                    * play control is hover-revealed, so "License Track" is the ONLY
+                    * visible affordance on a card. A buyer who has not heard the track
+                    * yet reads it as "commit now", and the one honest thing they want --
+                    * listen first -- appears not to be on offer. The click would in fact
+                    * have taken them exactly where they wanted to go.
+                    *
+                    * Same fault as PurchaseButton's old "License for $1.99" on a control
+                    * that opened a chooser, and fixed the same way: say what happens. */}
                   <Button
                     fullWidth
                     variant="contained"
-                    onClick={() => handleLicenseTrack(track)}
+                    onClick={() => handleOpenTrack(track)}
                     sx={{
                       bgcolor: isLicensed ? 'grey.700' : '#1DB954',
                       color: 'white',
                       fontWeight: 'bold',
+                      // 44px floor. Measured at 41 after the relabel -- MUI's default
+                      // padding plus a shorter string landed it under the WCAG 2.5.5
+                      // minimum, which is the kind of regression a label change causes
+                      // and nobody thinks to re-measure.
+                      minHeight: 44,
+                      textTransform: 'none',
                       '&:focus-visible': {
                         outline: '3px solid #ffffff',
                         outlineOffset: '2px'
@@ -407,7 +436,7 @@ function HomeStorefront({
                       }
                     }}
                   >
-                    {isLicensed ? 'View License' : 'License Track'}
+                    {isLicensed ? 'View license' : 'Preview & license'}
                   </Button>
                 </Box>
               </Box>
