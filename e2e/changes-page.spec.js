@@ -33,6 +33,21 @@ const NEWEST_CHANGE = PUBLISHED_AGREEMENTS
 const BASE = process.env.TERMS_BASE_URL || 'http://localhost:5057';
 
 test.use({ baseURL: BASE });
+// SERVICE WORKERS BLOCKED, and this is a real finding rather than a convenience.
+//
+// Running against PRODUCTION minutes after a deploy, these specs failed with
+// "div[role=dialog] intercepts pointer events" -- which reads like a layout bug and is
+// not one. AppUpdatePrompt raises a `fixed inset-0` modal when the service worker reports
+// a new build, so it does not merely sit near a control, it swallows every click on the
+// page. Blocking the worker removes the condition rather than racing it; dismissing the
+// modal still loses to a worker that reports a few seconds later, which is exactly how
+// these two specs passed one run and failed the next.
+//
+// Nothing here tests the update prompt, so nothing is lost. If that prompt ever needs
+// coverage it belongs in a spec of its own that OPTS IN to the worker.
+test.use({ serviceWorkers: 'block' });
+
+
 
 test.describe('/changes', () => {
   test.beforeEach(async ({ page }) => {

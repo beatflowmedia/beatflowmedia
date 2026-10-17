@@ -27,11 +27,51 @@ const {
 
 const BASE = process.env.TERMS_BASE_URL || 'http://localhost:5057';
 test.use({ baseURL: BASE });
+// SERVICE WORKERS BLOCKED, and this is a real finding rather than a convenience.
+//
+// Running against PRODUCTION minutes after a deploy, these specs failed with
+// "div[role=dialog] intercepts pointer events" -- which reads like a layout bug and is
+// not one. AppUpdatePrompt raises a `fixed inset-0` modal when the service worker reports
+// a new build, so it does not merely sit near a control, it swallows every click on the
+// page. Blocking the worker removes the condition rather than racing it; dismissing the
+// modal still loses to a worker that reports a few seconds later, which is exactly how
+// these two specs passed one run and failed the next.
+//
+// Nothing here tests the update prompt, so nothing is lost. If that prompt ever needs
+// coverage it belongs in a spec of its own that OPTS IN to the worker.
+test.use({ serviceWorkers: 'block' });
+
+
 
 // A production-library collection that exists in the catalogue. 24 tracks, which is the
 // most common size -- fourteen collections share it.
 const SLUG = 'deep-sleep';
 const POOL = 'production-music';
+
+/**
+ * Dismiss the "Update available" prompt if it is showing.
+ *
+ * FOUND AGAINST PRODUCTION, NOT LOCALHOST, which is the whole reason it is worth a
+ * helper. A fresh browser hitting a site that deployed minutes ago gets the
+ * service-worker update modal, and it is `fixed inset-0` -- so it does not merely sit
+ * near the licence button, it intercepts every click on the page. The run that found this
+ * failed with "div[role=dialog] intercepts pointer events", which reads like a layout bug
+ * and is not one.
+ *
+ * It is CORRECT behaviour and it got louder on purpose: publishing
+ * commercial-license@2026-10-17 made hasUnseenChanges() true, so the prompt now carries
+ * the "See what changed" link as well. A test that breaks every time a deploy lands is
+ * the one people learn to skip, which is the failure mode this suite exists to avoid.
+ *
+ * Tolerates absence: on localhost, and on any second visit, there is nothing to dismiss.
+ */
+async function dismissUpdatePrompt(page) {
+  const notNow = page.getByRole('button', { name: /^Not now$/i });
+  if (await notNow.count()) {
+    await notNow.first().click().catch(() => {});
+    await expect(page.locator('div[role="dialog"]')).toHaveCount(0, { timeout: 5000 });
+  }
+}
 
 test.describe('licensing a whole collection', () => {
   test.beforeEach(async ({ page }) => {
@@ -40,6 +80,7 @@ test.describe('licensing a whole collection', () => {
     // priced state rather than for the page shell.
     await expect(page.getByRole('button', { name: /License collection/i }))
       .toBeVisible({ timeout: 30000 });
+    await dismissUpdatePrompt(page);
   });
 
   test('offers a route to license the whole collection', async ({ page }) => {
@@ -102,8 +143,18 @@ test.describe('licensing a whole collection', () => {
     // The button goes full-width at xs, which changes its box. A target that is correct
     // on desktop and 36px on a phone is broken on the device most buyers hold.
     await page.setViewportSize({ width: 390, height: 844 });
-    const box = await page.getByRole('button', { name: /License collection/i })
-      .boundingBox();
+
+    // MEASURED AFTER THE REFLOW SETTLES, not immediately. This failed once in a full
+    // production run and passed alone, which is the signature of reading a box mid-layout
+    // rather than of a wrong box: changing the viewport re-flows the panel from row to
+    // column, and boundingBox() will happily return the intermediate geometry.
+    // `toBeInViewport` waits for a settled, painted element, so the measurement below is
+    // of the final layout. A flaky assertion about tap targets is worse than none -- it
+    // is the one that gets deleted the third time it goes red.
+    const button = page.getByRole('button', { name: /License collection/i });
+    await expect(button).toBeInViewport();
+
+    const box = await button.boundingBox();
     expect(box.height).toBeGreaterThanOrEqual(44);
   });
 
@@ -129,6 +180,7 @@ test.describe('licensing a single track commercially', () => {
 
     const firstTrack = page.getByRole('button', { name: /Preview & license/i }).first();
     await expect(firstTrack).toBeVisible({ timeout: 30000 });
+    await dismissUpdatePrompt(page);
     await firstTrack.click();
 
     await expect(page).toHaveURL(/\/song\//, { timeout: 20000 });
@@ -154,6 +206,7 @@ test.describe('licensing a single track commercially', () => {
     await page.goto(`/collection/${SLUG}`, { waitUntil: 'domcontentloaded' });
     const firstTrack = page.getByRole('button', { name: /Preview & license/i }).first();
     await expect(firstTrack).toBeVisible({ timeout: 30000 });
+    await dismissUpdatePrompt(page);
     await firstTrack.click();
     await expect(page).toHaveURL(/\/song\//, { timeout: 20000 });
 
