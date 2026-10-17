@@ -10,6 +10,26 @@
 
 const { test, expect } = require('@playwright/test');
 
+// DERIVED from the registry rather than hardcoded, and that is the whole lesson from
+// publishing commercial-license@2026-10-17: two assertions here broke on the day a THIRD
+// agreement was published, and neither was a bug in the page. One counted "In force now"
+// badges expecting 1 when the real property is one per agreement; the other pinned the
+// seen-marker to a literal date that had moved on. A test that hardcodes what the data
+// says fails every time the data is correct.
+const {
+  AGREEMENT_HISTORY, ALL_AGREEMENTS
+} = require('../src/utils/agreements');
+
+const PUBLISHED_AGREEMENTS = ALL_AGREEMENTS
+  .filter((a) => (AGREEMENT_HISTORY[a] || []).length > 0);
+
+// The newest date across every agreement, which is what latestChangeDate() resolves to
+// and therefore what visiting /changes should record as seen.
+const NEWEST_CHANGE = PUBLISHED_AGREEMENTS
+  .flatMap((a) => AGREEMENT_HISTORY[a].map((v) => v.version))
+  .sort()
+  .reverse()[0];
+
 const BASE = process.env.TERMS_BASE_URL || 'http://localhost:5057';
 
 test.use({ baseURL: BASE });
@@ -34,8 +54,12 @@ test.describe('/changes', () => {
     await expect(page.locator('body')).toContainText(/In force now/i);
   });
 
-  test('exactly one version is marked in force', async ({ page }) => {
-    await expect(page.getByText('In force now')).toHaveCount(1);
+  test('exactly one version PER AGREEMENT is marked in force', async ({ page }) => {
+    // The property that matters is that no agreement shows two current versions -- a
+    // reader seeing two "In force now" badges on one licence cannot tell which governs
+    // them. It is NOT that the page shows one badge in total: each published agreement
+    // has its own current version, and there are three of them now.
+    await expect(page.getByText('In force now')).toHaveCount(PUBLISHED_AGREEMENTS.length);
   });
 
   test('the superseded text is readable, not just referenced', async ({ page }) => {
@@ -85,6 +109,9 @@ test.describe('/changes', () => {
     const seen = await page.evaluate(() => {
       try { return window.localStorage.getItem('bfmg:changes-seen'); } catch (e) { return 'THREW'; }
     });
-    expect(seen).toBe('2026-10-15');
+    // Derived: the marker is the NEWEST change across every agreement, so visiting the
+    // page stops the prompt offering the link. Pinning a literal date here made this fail
+    // the moment a newer agreement was published, which is the opposite of the signal.
+    expect(seen).toBe(NEWEST_CHANGE);
   });
 });
