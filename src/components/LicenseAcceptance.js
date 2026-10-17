@@ -26,14 +26,41 @@
 import { Box, Typography, Checkbox, Link as MuiLink } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import DownloadLicenseTerms from './DownloadLicenseTerms';
+import CommercialLicenseTerms from './CommercialLicenseTerms';
+import { ONE_OFF_DOWNLOAD, ONE_OFF_COMMERCIAL } from '../utils/licenseTerms';
 
 const ACCENT = '#1DB954';
 const TAP_TARGET = 44;
 
-export default function LicenseAcceptance({ accepted, onChange, id = 'accept-download-license' }) {
+export default function LicenseAcceptance({
+  accepted,
+  onChange,
+  id = 'accept-download-license',
+  // WHICH PRODUCT the assent is for. Defaults to the download licence, so the five
+  // existing call sites keep working unchanged and an omission cannot silently collect
+  // commercial assent -- the safe default is the NARROWER grant.
+  product = ONE_OFF_DOWNLOAD,
+  trackCount = null
+}) {
+  const isCommercial = product && product.grant === ONE_OFF_COMMERCIAL.grant;
+
+  // Only the LINK LABEL and the named restrictions vary. The checkbox and the statutory
+  // statement below do not, and must not: see the long comment on the second statement.
+  const termsLabel = isCommercial ? 'Commercial License Terms' : 'Download License Terms';
+  const namedLimits = isCommercial
+    // The four a commercial buyer is most likely to assume are included. Broadcast and
+    // cinema lead because "commercial use" reads as covering them, and a licensee who
+    // puts a cue in a TV spot on this licence is in breach of a clause they skimmed.
+    ? 'including that this license does not cover broadcast television or radio, ' +
+      'cinema, paid advertising campaigns, or reselling the music on its own'
+    : 'including that this license does not cover public performance, DJ use, ' +
+      'remixes or redistribution';
+
   return (
     <>
-      <DownloadLicenseTerms />
+      {isCommercial
+        ? <CommercialLicenseTerms trackCount={trackCount} />
+        : <DownloadLicenseTerms />}
 
       <Box
         component="label"
@@ -80,10 +107,17 @@ export default function LicenseAcceptance({ accepted, onChange, id = 'accept-dow
           * This was previously not captured at all. The box said only "I agree to the
           * terms", which is assent but is neither of the two required elements.
           *
+          * WORDED THE SAME FOR BOTH PRODUCTS, and that is a legal judgement, not laziness.
+          * A one-off commercial licence is digital content supplied without a physical
+          * medium exactly as a download is, so reg.37 / art.16(m) reach it identically and
+          * the same two elements have to be captured. Only the noun changes -- "files and
+          * licence" rather than "download" -- because that is what is supplied.
+          *
           * Worth knowing what this does NOT cover: the CJEU held in C-234/25 (2026) that
           * streaming SUBSCRIPTIONS are digital services, not digital content, so art.16(m)
           * does not apply to them at all and a subscriber keeps the cancellation right
-          * regardless of what they tick. This control is for one-off downloads only.
+          * regardless of what they tick. This control is for ONE-OFF purchases only, of
+          * either kind; a subscription checkout must not reuse it.
           */}
         <Typography sx={{ fontSize: '0.8125rem', lineHeight: 1.5, pt: 0.5 }}>
           I have read and agree to the{' '}
@@ -98,14 +132,14 @@ export default function LicenseAcceptance({ accepted, onChange, id = 'accept-dow
             onClick={(e) => e.stopPropagation()}
             sx={{ color: ACCENT, textDecorationColor: 'rgba(29,185,84,0.4)' }}
           >
-            Download License Terms
+            {termsLabel}
           </MuiLink>
-          , including that this license does not cover public performance, DJ use,
-          remixes or redistribution.
+          , {namedLimits}.
           <Box component="span" sx={{ display: 'block', mt: 1 }}>
             <strong>
-              I ask for my download to be made available immediately, and I accept that
-              once it is, I lose my right to cancel this purchase.
+              I ask for my {isCommercial ? 'files and licence' : 'download'} to be made
+              available immediately, and I accept that once {isCommercial ? 'they are' : 'it is'},
+              I lose my right to cancel this purchase.
             </strong>
           </Box>
         </Typography>

@@ -246,6 +246,43 @@ function calculateCommercialPrice(trackCount, baseRate = COMMERCIAL_TRACK_PRICE)
   return Math.max(baseRate, nines * 100);
 }
 
+
+/**
+ * Which commercial rate applies to a recording, from its asset pool.
+ *
+ * ONE place decides this. The rule lives here rather than at each call site because
+ * create-checkout, the storefront, the collection page and the licence certificate all
+ * need the same answer, and a pool-to-rate mapping copied four times is four chances to
+ * sell a released single at library prices.
+ *
+ * `commercial-release` is the released catalogue -- vocals, featured artists, on DSPs.
+ * Everything else is library material. An unknown pool gets the LIBRARY rate, which is
+ * the cheaper of the two: guessing high on an unrecognised record would overcharge for
+ * something nobody has classified, and that is the error that reaches a customer.
+ *
+ * @param {string} assetPool
+ * @returns {number} per-track rate in cents
+ */
+function commercialRateForPool(assetPool) {
+  return assetPool === 'commercial-release'
+    ? COMMERCIAL_RELEASE_TRACK_PRICE
+    : COMMERCIAL_TRACK_PRICE;
+}
+
+/**
+ * The commercial price of a whole collection.
+ *
+ * Separate from calculateCommercialPrice only so the pool lookup happens in one place
+ * and a caller cannot forget it.
+ *
+ * @param {number} trackCount
+ * @param {string} assetPool
+ * @returns {number} price in cents
+ */
+function calculateCollectionPrice(trackCount, assetPool) {
+  return calculateCommercialPrice(trackCount, commercialRateForPool(assetPool));
+}
+
 module.exports = {
   SONG_PRICE,
   ALBUM_DISCOUNT,
@@ -257,5 +294,7 @@ module.exports = {
   COMMERCIAL_RELEASE_TRACK_PRICE,
   VOLUME_EXPONENT,
   calculateCommercialPrice,
+  commercialRateForPool,
+  calculateCollectionPrice,
   formatPrice
 };

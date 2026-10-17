@@ -29,7 +29,7 @@ const admin = require('firebase-admin');
 const { sendEmail } = require('./lib/send-email');
 const { allocateRevenueForPurchase } = require('./lib/revenue-split');
 // Canonical license vocabulary, shared with the app in the manner of utils/pricing.js.
-const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
+const { licenseFields, productFromMetadata } = require('../../src/utils/licenseTerms');
 
 /**
  * The contract half of a purchase record: which license version the buyer accepted,
@@ -475,7 +475,7 @@ async function handleCheckoutSessionCompleted(session) {
               // named the TERM and the other the SCOPE, under one field name, which is
               // worse than a contradiction because nothing can detect it. Both axes are
               // now written explicitly from one definition.
-              ...licenseFields(ONE_OFF_DOWNLOAD),
+              ...licenseFields(productFromMetadata(session.metadata)),
               status: 'active',
               purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
               validWhileSubscribed: false,
@@ -556,6 +556,16 @@ async function handleCheckoutSessionCompleted(session) {
       if (albumDoc.exists) {
         itemData = albumDoc.data();
       }
+    } else if (itemType === 'collection') {
+      // The document id IS the slug -- CollectionPage reads collections/<slug> and
+      // HomeStorefront joins songs.where('collectionId','==',slug). Looked up here so a
+      // $319 licence does not record itemName: 'Unknown', which is what it did before
+      // this branch existed and is exactly the field a buyer reads on their receipt and
+      // their certificate.
+      const collectionDoc = await db.collection('collections').doc(itemId).get();
+      if (collectionDoc.exists) {
+        itemData = collectionDoc.data();
+      }
     }
 
     // Generate unique license ID for this purchase
@@ -601,7 +611,7 @@ async function handleCheckoutSessionCompleted(session) {
         trackId: itemId,
         purchaseId: purchaseRef.id,
         tier: subscriberTier,
-        ...licenseFields(ONE_OFF_DOWNLOAD),
+        ...licenseFields(productFromMetadata(session.metadata)),
         status: 'active',
         purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
         validWhileSubscribed: false,
@@ -674,6 +684,38 @@ async function handleCheckoutSessionCompleted(session) {
     //   2. `fetch` does not reject on 4xx/5xx, so the old code logged "✅ Revenue
     //      split triggered successfully" even when the call had failed. The one signal
     //      that an artist had not been paid was a success message.
+    //
+    // COLLECTIONS ARE EXCLUDED, and the exclusion is recorded rather than implied.
+    // resolveArtistForItem reads `songs` or `albums`; a collection document has neither
+    // an artistId nor an uploadedBy -- its shape is title, slug, trackCount, assetPool
+    // and a cover. Calling it would throw "collection not found" and land in
+    // failedTransfers, which reads as a payout bug rather than as a thing never built.
+    //
+    // The money is real, so the obligation is written down where it can be queried
+    // instead of logged and lost. Splitting a collection sale means apportioning one
+    // payment across every track in it, which needs a rule nobody has decided yet
+    // (per-track equal share? by duration? by play count?). Today every
+    // production-library track is BFMG's own, so no third party is owed anything, which
+    // is what makes deferring this safe rather than merely convenient. The day a
+    // contributor's track is in a collection, this row is the backlog.
+    if (itemType === 'collection') {
+      try {
+        await db.collection('pendingRevenueSplits').doc(purchaseRef.id).set({
+          purchaseId: purchaseRef.id,
+          userId,
+          itemId,
+          itemType,
+          amount: session.amount_total / 100,
+          trackCount: itemData.trackCount || null,
+          reason: 'Collection sales are not yet apportioned across their tracks.',
+          status: 'pending',
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (pendingError) {
+        console.error('Failed to record pending collection split:', pendingError.message);
+      }
+    }
+
     if (itemType === 'song' || itemType === 'album') {
       try {
         const split = await allocateRevenueForPurchase(db, {

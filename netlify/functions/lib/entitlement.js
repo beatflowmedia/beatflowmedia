@@ -82,6 +82,38 @@ async function resolveMasterEntitlement(db, userId, songId, songData) {
     }
   }
 
+  // 2b. Licensed the COLLECTION it belongs to.
+  //
+  //     Same rule as the album and for the same reason -- a buyer who paid $319 for a
+  //     56-track collection must not be refused track 41 -- but the consequence of
+  //     missing it is worse. A collection is the expensive product, so the buyer most
+  //     likely to be wrongly refused is the one who paid the most.
+  //
+  //     `collectionId` is the slug, which is also the collections document id. Joined
+  //     exactly the way the storefront joins it (HomeStorefront queries
+  //     songs.where('collectionId','==',collectionId)), so entitlement cannot disagree
+  //     with what the page showed as being in the collection.
+  const collectionId = songData && songData.collectionId;
+  if (collectionId) {
+    const viaCollection = await db
+      .collection('purchases')
+      .where('userId', '==', userId)
+      .where('itemId', '==', collectionId)
+      .limit(10)
+      .get();
+    const collectionHit = completed(viaCollection);
+    if (collectionHit) {
+      return { entitled: true, via: 'collection', licenseId: collectionHit.licenseId || null };
+    }
+    const collectionRevoked = revokedOnly(viaCollection);
+    if (collectionRevoked) {
+      return {
+        entitled: false, via: null, licenseId: collectionRevoked.licenseId || null,
+        revoked: true, revokedReason: collectionRevoked.licenseRevokedReason || null
+      };
+    }
+  }
+
   // Checked after the album, not before: a buyer whose single was revoked but who
   // also owns the album on a good license should still get the track.
   //

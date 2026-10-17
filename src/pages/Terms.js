@@ -1,21 +1,35 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Footer from "../components/Footer";
-import { currentAgreementVersion, parseAgreementVersion, DOWNLOAD_LICENSE } from "../utils/agreements";
+import {
+  currentAgreementVersion, parseAgreementVersion, DOWNLOAD_LICENSE, COMMERCIAL_LICENSE
+} from "../utils/agreements";
 import LegalContact from "../components/LegalContact";
 
-// The version identifier this page is, read from the canonical registry rather than
-// written here. Falls back to a plain label if the agreement is ever unpublished, so
+// The version identifiers this page carries, read from the canonical registry rather
+// than written here. Falls back to a plain label if an agreement is ever unpublished, so
 // the page renders rather than showing "null".
-const TERMS_VERSION = currentAgreementVersion(DOWNLOAD_LICENSE) || "unversioned";
-const TERMS_DATE = (() => {
-  const parsed = parseAgreementVersion(TERMS_VERSION);
+//
+// TWO OF THEM NOW, and listing both is the point. Section 4 defines two separately
+// versioned licenses, and a buyer whose purchase records
+// `commercial-license@2026-10-17` has to be able to find that identifier on the page
+// they were pointed at. One identifier at the top of a document containing two licenses
+// reads as governing both, which is the overclaiming this labelling exists to avoid.
+const versionLabel = (agreement) => currentAgreementVersion(agreement) || "unversioned";
+
+const inForceFrom = (identifier) => {
+  const parsed = parseAgreementVersion(identifier);
   if (!parsed) return null;
   const d = new Date(parsed.version + "T00:00:00Z");
   return Number.isNaN(d.getTime())
     ? parsed.version
     : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
-})();
+};
+
+const TERMS_VERSION = versionLabel(DOWNLOAD_LICENSE);
+const TERMS_DATE = inForceFrom(TERMS_VERSION);
+const COMMERCIAL_VERSION = versionLabel(COMMERCIAL_LICENSE);
+const COMMERCIAL_DATE = inForceFrom(COMMERCIAL_VERSION);
 
 export default function Terms() {
   return (
@@ -42,11 +56,19 @@ export default function Terms() {
             <span className="font-mono text-gray-300">{TERMS_VERSION}</span>
             {TERMS_DATE ? <> &middot; in force from {TERMS_DATE}</> : null}
           </p>
+          <p className="text-sm text-gray-400 mb-2">
+            Commercial License version:{' '}
+            <span className="font-mono text-gray-300">{COMMERCIAL_VERSION}</span>
+            {COMMERCIAL_DATE ? <> &middot; in force from {COMMERCIAL_DATE}</> : null}
+          </p>
           <p className="text-sm text-gray-400 mb-8">
-            That identifier and the time of your acceptance are recorded with your purchase, and
-            they govern the <strong>Download License</strong> in section 4. Earlier purchases remain
-            governed by whichever version was accepted at the time. The remaining sections are the
-            general terms of use for the Service and are not separately versioned.
+            Whichever of these you accepted, that identifier and the time of your acceptance are
+            recorded with your purchase, and it governs the license of that name in section 4.
+            Earlier purchases remain governed by whichever version was accepted at the time, and
+            every superseded version stays readable on the{' '}
+            <Link to="/changes" className="text-green-500 hover:underline">changes page</Link>. The
+            remaining sections are the general terms of use for the Service and are not separately
+            versioned.
           </p>
 
           {/* Introduction */}
@@ -138,8 +160,16 @@ export default function Terms() {
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li><strong>Download License:</strong> Personal, private listening. Defined in full below.</li>
-                <li><strong>Sync License:</strong> For synchronization with video or other media. Negotiated
-                  separately and not available through self-service checkout.</li>
+                <li><strong>Commercial License:</strong> Commercial use of named recordings, including
+                  synchronization with video, permanently and for a single payment. Available through
+                  self-service checkout for a single track, an album, or a collection. Defined in full
+                  below.</li>
+                <li><strong>Subscription License:</strong> Commercial synchronization rights for as long as a
+                  paid subscription is active. Work published while subscribed stays licensed
+                  permanently.</li>
+                <li><strong>Negotiated licenses:</strong> Broadcast television and radio, cinema release, paid
+                  advertising campaigns, and public performance are quoted per project and are not available
+                  through self-service checkout.</li>
               </ul>
 
               <h3 className="text-xl font-semibold text-white mt-6">The Download License — What You Receive</h3>
@@ -184,6 +214,72 @@ export default function Terms() {
                 If you are a DJ, or you play music in a business, a download license is not sufficient. That
                 use requires public performance rights, which in most territories are obtained from a
                 performing rights organization, and may also require a separate license from us.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">The Commercial License — What You Receive</h3>
+              <p>
+                A <strong>Commercial License</strong> is a separate and wider license from a Download License,
+                purchased for a single payment. It covers only the recordings identified on your license —
+                a single track, the tracks of one album, or the tracks of one collection — and not our
+                catalogue as a whole.
+              </p>
+              <p>Subject to these Terms, we grant you a worldwide, non-exclusive, non-transferable license to:</p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Synchronize</strong> the recordings with video and publish the result, including on
+                  YouTube, TikTok, Instagram, Facebook and podcast platforms, and including monetized
+                  content.</li>
+                <li>Use the recordings in <strong>podcasts, applications, games, presentations, installations
+                  and online course material</strong>.</li>
+                <li>Include the recordings in <strong>work you deliver to your own clients</strong> under your
+                  own name.</li>
+                <li>Do all of the above <strong>permanently</strong>. This license has no expiry date and there
+                  is nothing to renew.</li>
+                <li>Download and retain the recordings for the purposes above.</li>
+              </ul>
+              <p>
+                There is no cap on views, downloads, impressions or the number of projects. The license is
+                non-exclusive: we license the same recordings to other people.
+              </p>
+              <p className="text-sm text-gray-400">
+                Your end client receives the benefit of your delivered work. They do not receive a license of
+                their own, and they may not extract the recordings from your work for separate use. If they
+                need the recordings independently, they need their own license.
+              </p>
+
+              <h3 className="text-xl font-semibold text-white mt-6">What the Commercial License Does Not Cover</h3>
+              <p>
+                The following are <strong>not</strong> granted, and each requires a separate written license
+                from BeatFlow Media Group:
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Broadcast television and radio, and cinema release.</strong></li>
+                <li><strong>Paid advertising campaigns</strong> — television, radio, cinema, or campaigns
+                  backed by paid media spend.</li>
+                <li><strong>Public performance</strong> — playing the recording to an audience or in a
+                  commercial space, including DJ sets, clubs, bars, restaurants, gyms and retail
+                  premises.</li>
+                <li><strong>Resale, redistribution or sublicensing of the music on its own</strong> — including
+                  uploading it to any library, marketplace, sample pack or stock service.</li>
+                <li><strong>AI and machine learning</strong> — using the recordings, in whole or in part, to
+                  train, fine-tune, condition, or evaluate any machine learning model or dataset.</li>
+                <li><strong>Registration with any rights or royalty collection service</strong> — including
+                  performing rights organizations, collective management organizations, YouTube Content ID,
+                  and Meta Rights Manager. Registering our recordings causes claims against other licensees
+                  and against us.</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold text-white mt-6">Claims Against Your Content</h3>
+              <p>
+                Our catalogue is not registered with YouTube Content ID or Meta Rights Manager, so{' '}
+                <strong>we do not claim or mute our licensees&rsquo; content</strong>. If a third party claims
+                your content anyway, your account provides a dispute pack — your license number, its public
+                verification link, and a statement you may submit to the platform.
+              </p>
+              <p className="text-sm text-gray-400">
+                We do not undertake to have a claim cleared. Platforms accept disputes only from the account
+                that uploaded the content, so we cannot submit one on your behalf, and we cannot compel a
+                third party to release a claim it made in error. Some recordings are AI-generated and may
+                resemble other catalogues closely enough to trigger a false automated match.
               </p>
 
               <h3 className="text-xl font-semibold text-white mt-6">Reservation of Rights</h3>

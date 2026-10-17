@@ -6,6 +6,7 @@ import PlayButton from "../components/PlayButton";
 import LikeButton from "../components/LikeButton";
 import PurchaseButton from "../components/PurchaseButton";
 import DownloadLicenseTerms from "../components/DownloadLicenseTerms";
+import CommercialLicenseButton from "../components/CommercialLicenseButton";
 import { useAuth } from "../context/AuthContext";
 import { useLikes } from '../context/LikesContext';
 import { usePlayer } from "../context/PlayerContext";
@@ -236,6 +237,17 @@ function SongPage() {
                 artistId={song.artistId}
                 uploadedBy={song.uploadedBy}
               />
+              {/* TWO LICENCES, TWO CONTROLS, side by side rather than nested in a
+                  chooser. PurchaseButton's chooser answers "which recording"; this
+                  answers "which licence", and folding them into one radio group would
+                  put two incomparable decisions in one control -- where the cheap one
+                  wins by position.
+
+                  This is also the answer to "can a buyer hand-pick tracks instead of
+                  taking the whole collection": yes, here, at the per-track rate, with
+                  the collection's volume discount shown on the collection page so the
+                  comparison is visible rather than discovered. */}
+              <CommercialLicenseButton song={song} itemId={id} />
             </div>
 
             {/* FACTS ONLY, AND ONLY THOSE PRESENT.

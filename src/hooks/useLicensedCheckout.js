@@ -38,6 +38,7 @@ import { useCallback, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { stripeService } from '../services/stripeService';
 import LicenseAcceptanceDialog from '../components/LicenseAcceptanceDialog';
+import { productForSale } from '../utils/licenseTerms';
 
 export default function useLicensedCheckout(options = {}) {
   const { onError, onRequiresSignIn } = options;
@@ -61,6 +62,18 @@ export default function useLicensedCheckout(options = {}) {
   // forgotten is the one that ships.
   const requestCheckout = useCallback((item) => {
     if (!item || !item.itemId) return;
+
+    // IS THIS A PRODUCT AT ALL. Refused here rather than letting the dialog open with a
+    // dead button, because a dialog whose pay control never enables reads as broken
+    // software to the buyer and tells the caller nothing. `collection` + `personal` is
+    // the real case: a production library has no consumer download price.
+    if (!productForSale(item.type, item.licenseType)) {
+      console.error('requestCheckout refused: no product for',
+        item.type, '+', item.licenseType);
+      if (onError) onError(new Error('That license is not available for this item.'));
+      return;
+    }
+
     if (!user) {
       if (onRequiresSignIn) onRequiresSignIn();
       else if (onError) onError(new Error('Please sign in to license music.'));
@@ -82,7 +95,16 @@ export default function useLicensedCheckout(options = {}) {
       if (!item || !user) return;
 
       try {
-        if (item.type === 'album') {
+        // A COMMERCIAL request is routed by its licenceType, not by its item type, and
+        // the branch order matters: `{ type: 'album', licenseType: 'commercial' }` is a
+        // commercial sale of an album, not an album download. Falling through to
+        // createAlbumCheckout would charge the $11.99 consumer album price for a licence
+        // priced at $329 -- the one failure here that loses money silently.
+        if (item.licenseType === 'commercial') {
+          await stripeService.createCommercialCheckout(
+            user.uid, item.type, item.itemId, user.email, acceptedAgreement
+          );
+        } else if (item.type === 'album') {
           await stripeService.createAlbumCheckout(user.uid, item.itemId, user.email, acceptedAgreement);
         } else {
           await stripeService.createSongCheckout(user.uid, item.itemId, user.email, acceptedAgreement);
@@ -102,6 +124,8 @@ export default function useLicensedCheckout(options = {}) {
       itemName={pending ? pending.itemName : null}
       artistName={pending ? pending.artistName : null}
       price={pending ? pending.price : undefined}
+      product={pending ? productForSale(pending.type, pending.licenseType) : undefined}
+      trackCount={pending ? pending.trackCount : null}
       onConfirm={confirm}
     />
   );

@@ -26,7 +26,8 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Close } from '@mui/icons-material';
 import { formatPrice } from '../utils/pricing';
-import { currentAgreementVersion, DOWNLOAD_LICENSE } from '../utils/agreements';
+import { currentAgreementVersion } from '../utils/agreements';
+import { ONE_OFF_DOWNLOAD, agreementForProduct } from '../utils/licenseTerms';
 import LicenseAcceptance from './LicenseAcceptance';
 
 const ACCENT = '#1DB954';
@@ -38,13 +39,23 @@ export default function LicenseAcceptanceDialog({
   itemName,
   artistName,
   price,
-  onConfirm
+  onConfirm,
+  // WHICH PRODUCT, so the dialog shows the right terms AND sends the right agreement
+  // identifier. It used to hard-code DOWNLOAD_LICENSE, which with a second product on
+  // sale would have sent a download acceptance for a commercial purchase -- the exact
+  // mismatch create-checkout now refuses. Defaults to the download licence so existing
+  // callers are unchanged, and the default is the narrower grant.
+  product = ONE_OFF_DOWNLOAD,
+  trackCount = null
 }) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [accepted, setAccepted] = useState(false);
 
-  const agreementVersion = currentAgreementVersion(DOWNLOAD_LICENSE);
+  // DERIVED from the product rather than named here. src/utils/licenseTerms.js holds
+  // the one mapping of product -> agreement, so the identifier this dialog sends and the
+  // one the server demands cannot drift.
+  const agreementVersion = currentAgreementVersion(agreementForProduct(product));
 
   // Per-transaction, never remembered. A tick that survived between purchases would
   // record assent given once for something else entirely.
@@ -126,7 +137,9 @@ export default function LicenseAcceptanceDialog({
         <LicenseAcceptance
           accepted={accepted}
           onChange={setAccepted}
-          id="accept-download-license-direct"
+          id="accept-license-direct"
+          product={product}
+          trackCount={trackCount}
         />
 
         <Button

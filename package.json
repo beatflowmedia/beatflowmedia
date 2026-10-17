@@ -67,6 +67,8 @@
     "verify:assets": "node scripts/verify-assets.js",
     "verify:csp": "node scripts/verify-csp.js",
     "test:functions": "jest netlify/functions/",
+    "test:lib": "node netlify/functions/lib/payment-reversal.test.js && node netlify/functions/lib/license-certificate.test.js && node netlify/functions/lib/entitlement.test.js",
+    "test:all": "jest --maxWorkers=4 && npm run test:lib",
     "fix:prices": "node scripts/fix-catalog-prices.js",
     "verify:masters": "node scripts/verify-masters.js",
     "migrate:masters": "node scripts/migrate-masters-to-r2.js",

@@ -7,7 +7,7 @@
 // refuse previewOnly ones, apply the sidebar filter and render the license buttons --
 // a copy of it would drift from the original the first time either changed, which is
 // the fault the PRD calls out as "shared backend, independent surfaces" (S84).
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, Button } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -15,11 +15,31 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import HomeStorefront from './HomeStorefront';
 import OptimizedImage from '../components/OptimizedImage';
+import CollectionLicensePanel from '../components/CollectionLicensePanel';
 
 const CollectionPage = () => {
   const { slug } = useParams();
   const [meta, setMeta] = useState(null);
   const [state, setState] = useState('loading'); // loading | ready | missing | error
+
+  // HOW MANY TRACKS ARE ACTUALLY LICENSABLE, counted from the records on screen rather
+  // than read from the collection's stored `trackCount`.
+  //
+  // Those two disagree today: `npm run verify:collections` reports game-show-walk-on
+  // holding trackCount 27 while 30 songs carry its id, and the stored field is a derived
+  // copy an importer writes. create-checkout prices from its own query of the same
+  // songs, so quoting trackCount here would advertise $209 and bill $219 -- a storefront
+  // showing one price and charging another, on the most expensive thing we sell.
+  //
+  // HomeStorefront has already filtered the set to what can be delivered (audio present,
+  // not previewOnly), which is the same test the server applies. One source, both sides.
+  const [licensableCount, setLicensableCount] = useState(null);
+
+  // Memoized because HomeStorefront lists it as an effect dependency -- a fresh function
+  // on every render would re-subscribe the snapshot listener each time.
+  const handleTracksLoaded = useCallback((tracks) => {
+    setLicensableCount(Array.isArray(tracks) ? tracks.length : null);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -114,12 +134,24 @@ const CollectionPage = () => {
             {meta.title}
           </Typography>
           <Typography sx={{ color: 'grey.400', mt: 1 }}>
-            {meta.trackCount} track{meta.trackCount === 1 ? '' : 's'} · licensable individually
+            {meta.trackCount} track{meta.trackCount === 1 ? '' : 's'} · license the
+            collection or any single track
           </Typography>
         </Box>
       </Box>
 
-      <HomeStorefront hideHeader collectionId={meta.slug || meta.id} />
+      {/* "licensable individually" was the whole answer this page gave, and it was a
+        * dead end: nothing on the page licensed a collection, and the only way to
+        * license 56 tracks was to buy 56 times. The panel is where the collection
+        * becomes purchasable, and it states the single-track price next to it so the
+        * two routes are visible at once rather than one being discovered. */}
+      <CollectionLicensePanel collection={meta} licensableCount={licensableCount} />
+
+      <HomeStorefront
+        hideHeader
+        collectionId={meta.slug || meta.id}
+        onTracksLoaded={handleTracksLoaded}
+      />
     </Box>
   );
 };

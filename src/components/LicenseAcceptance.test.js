@@ -121,3 +121,79 @@ describe('LicenseAcceptance — the affirmative act', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+// --- the commercial variant ----------------------------------------------------------
+//
+// ONE control now serves two products, and the failure mode of that is a buyer shown the
+// wrong document. These assertions pin the two halves that must differ and the two that
+// must not.
+//
+// Why it matters more here than it looks: the download licence's longest clause is the
+// eight things it FORBIDS, and sync is one of them. The commercial licence PERMITS sync.
+// Render the wrong one and the buyer either assents to a prohibition on the thing they
+// paid for, or is told they have a right the record does not give them.
+
+describe('LicenseAcceptance — the commercial variant', () => {
+  const COMMERCIAL = { scope: 'commercial', term: 'perpetual', grant: 'sync' };
+
+  test('a commercial purchase shows the COMMERCIAL terms, not the download terms', () => {
+    renderIt({ product: COMMERCIAL, trackCount: 24 });
+    // The commercial summary's own heading copy, which the download summary does not have.
+    expect(screen.getByText(/We will not claim or mute your video/i)).toBeInTheDocument();
+    // And not the download summary's call-out.
+    expect(screen.queryByText(/Putting it in a video, DJing/i)).not.toBeInTheDocument();
+  });
+
+  test('it names the number of recordings the licence covers', () => {
+    // "Commercial licence" reads as catalogue-wide. It is not: it covers what is on the
+    // licence, and saying the count out loud is the cheapest way to prevent that reading.
+    renderIt({ product: COMMERCIAL, trackCount: 24 });
+    expect(screen.getByText(/the 24 recordings in this purchase/i)).toBeInTheDocument();
+  });
+
+  test('the checkbox label links to the COMMERCIAL terms by name', () => {
+    renderIt({ product: COMMERCIAL });
+    expect(screen.getByRole('link', { name: /Commercial License Terms/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Download License Terms$/i })).not.toBeInTheDocument();
+  });
+
+  test('the named restrictions are the COMMERCIAL ones', () => {
+    // A commercial buyer who skims will assume broadcast and cinema are included,
+    // because "commercial use" sounds like it covers them. Those are the four worth
+    // naming inline rather than leaving behind the link.
+    const { container } = renderIt({ product: COMMERCIAL, id: 'test-accept' });
+    const text = container.querySelector('label[for="test-accept"]').textContent;
+    expect(text).toMatch(/broadcast television or radio/i);
+    expect(text).toMatch(/cinema/i);
+    expect(text).toMatch(/paid advertising campaigns/i);
+    // And NOT the download licence's inline list, which would be false here: a
+    // commercial licence does cover remixes-in-context and is not about DJ use.
+    expect(text).not.toMatch(/public performance, DJ use/i);
+  });
+
+  test('BOTH statutory elements survive the commercial wording', () => {
+    // The whole reason the checkbox is shared rather than duplicated. A one-off
+    // commercial licence is digital content supplied without a physical medium exactly
+    // as a download is, so reg.37 / art.16(m) reach it identically and both elements
+    // still have to be captured. A second copy of this control is how one of them goes
+    // missing from one product and nobody notices.
+    const { container } = renderIt({ product: COMMERCIAL, id: 'test-accept' });
+    const text = container.querySelector('label[for="test-accept"]').textContent;
+    expect(text).toMatch(/made\s+available immediately/i);
+    expect(text).toMatch(/lose my right to cancel/i);
+  });
+
+  test('it is still unchecked by default, and still the buyer who acts', () => {
+    renderIt({ product: COMMERCIAL });
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+  });
+
+  test('an omitted product falls back to the DOWNLOAD terms, the narrower grant', () => {
+    // Five existing call sites pass no product. If the default were ever the commercial
+    // licence, every $1.99 download would collect assent to a sync grant it does not
+    // give -- and the buyer would have the document saying otherwise.
+    renderIt();
+    expect(screen.getByRole('link', { name: /Download License Terms/i })).toBeInTheDocument();
+    expect(screen.queryByText(/We will not claim or mute your video/i)).not.toBeInTheDocument();
+  });
+});

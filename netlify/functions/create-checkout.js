@@ -22,8 +22,23 @@ const db = admin.firestore();
 //
 // Only a FALLBACK. resolveServerPrice prefers item.price from Firestore, so the
 // authoritative number for a seeded record is whatever the catalogue holds.
-const { SONG_PRICE: DEFAULT_SONG_PRICE, calculateAlbumPrice } = require('../../src/utils/pricing');
-const { isCurrentAgreementVersion, DOWNLOAD_LICENSE, currentAgreementVersion } = require('../../src/utils/agreements');
+const {
+  SONG_PRICE: DEFAULT_SONG_PRICE,
+  calculateAlbumPrice,
+  calculateCommercialPrice,
+  calculateCollectionPrice,
+  commercialRateForPool
+} = require('../../src/utils/pricing');
+const { currentAgreementVersion } = require('../../src/utils/agreements');
+
+// What is being sold, and which agreement governs it. Required rather than restated:
+// the gate below has to demand the agreement for THIS product, and a copy of that
+// mapping here is a second source of truth about what a buyer agreed to.
+const {
+  productForSale,
+  agreementForProduct,
+  licenseFields
+} = require('../../src/utils/licenseTerms');
 const DISCOUNT_RATES = { none: 0, student: 0.20, creator: 0.30, pro: 0.40, agency: 0.50 };
 
 /* A record is not licensable unless we can actually deliver the master.
@@ -51,22 +66,35 @@ async function assertDeliverable(itemType, itemId, item) {
     throw e;
   };
 
+  if (itemType === 'collection') {
+    // A collection is deliverable when its tracks are. Checked by query rather than
+    // trusting the stored trackCount: that field is written by an importer, and selling
+    // a 56-track licence over 3 deliverable tracks is the failure this exists to stop.
+    const tracks = await db.collection('songs').where('collectionId', '==', itemId).get();
+    const deliverable = tracks.docs.filter((d) => d.data().previewOnly !== true);
+    if (!deliverable.length) refuse();
+    return { deliverableCount: deliverable.length };
+  }
+
   if (itemType !== 'album') {
     if (item.previewOnly === true) refuse();
-    return;
+    return { deliverableCount: 1 };
   }
 
   const tracks = await db.collection('songs').where('albumId', '==', itemId).get();
   // An album with no tracks is not a deliverable product either.
   if (tracks.empty) refuse();
   if (tracks.docs.some(d => d.data().previewOnly === true)) refuse();
+  return { deliverableCount: tracks.size };
 }
 
 // Resolve the authoritative price from Firestore — NEVER trust a client price.
 // Reads the item's real price + the user's active subscription tier and applies
 // the same discount math as src/data/discountTiers.js. Returns cents to charge.
-async function resolveServerPrice(itemType, itemId, userId) {
-  const coll = itemType === 'album' ? 'albums' : 'songs';
+async function resolveServerPrice(itemType, itemId, userId, licenseType = 'personal') {
+  const coll = itemType === 'album' ? 'albums'
+    : itemType === 'collection' ? 'collections'
+      : 'songs';
   const snap = await db.collection(coll).doc(itemId).get();
   if (!snap.exists) {
     // 400 (not 404): Netlify's redirect engine treats a function 404 as "unhandled"
@@ -83,7 +111,7 @@ async function resolveServerPrice(itemType, itemId, userId) {
 
   // Refuse before a Stripe session exists — a charge for an undeliverable
   // product is worse than a failed checkout.
-  await assertDeliverable(itemType, itemId, item);
+  const { deliverableCount } = await assertDeliverable(itemType, itemId, item);
 
   // Fall back to the price this item SHOULD cost, not to the song price.
   //
@@ -98,7 +126,40 @@ async function resolveServerPrice(itemType, itemId, userId) {
     ? calculateAlbumPrice(Number(item.trackCount) || 0)
     : DEFAULT_SONG_PRICE;
 
-  const basePrice = Number.isFinite(item.price) ? item.price : fallbackPrice;
+  // A COMMERCIAL licence is a different product at a different price, so it is COMPUTED
+  // and never read from the stored `price` field. That field is the consumer download
+  // price -- the station writes it, every record carries 199 -- and honouring it for a
+  // commercial licence would sell sync rights to a 56-track collection for $1.99.
+  //
+  // This is the one place where ignoring the stored price is correct. Everywhere else
+  // the stored value wins, because create-checkout charging something the catalogue does
+  // not show is how a storefront advertises one price and bills another.
+  //
+  // AND IT IS PRICED FROM THE COUNT WE WILL ACTUALLY DELIVER, not from the stored
+  // `trackCount`. That field is a derived copy written by an importer, and it is already
+  // wrong: `npm run verify:collections` reports game-show-walk-on holding trackCount 27
+  // while 30 songs carry its id. Pricing off the stale copy would charge the 27-track
+  // price and hand over 30 tracks -- and the same drift in the other direction would
+  // charge for tracks that are not there, which is the version a buyer notices.
+  //
+  // assertDeliverable has already run the query, so this costs nothing extra. The page
+  // still shows the trackCount figure, and the server's number wins; verify:collections
+  // is the reconciler that closes the gap between them.
+  let basePrice;
+  if (licenseType === 'commercial') {
+    const pool = item.assetPool || null;
+    basePrice = itemType === 'collection' || itemType === 'album'
+      ? calculateCollectionPrice(deliverableCount || Number(item.trackCount) || 1, pool)
+      : calculateCommercialPrice(1, commercialRateForPool(pool));
+  } else if (itemType === 'collection') {
+    // There is no consumer price for a collection. It is a commercial product; a
+    // personal licence covers a track or an album, not a production library.
+    const e = new Error('A collection is licensed for commercial use, not as a personal download.');
+    e.statusCode = 400;
+    throw e;
+  } else {
+    basePrice = Number.isFinite(item.price) ? item.price : fallbackPrice;
+  }
 
   // Active subscriber discount (users/{userId}.subscription).
   let tier = 'none';
@@ -211,16 +272,39 @@ exports.handler = async (event, context) => {
     // (see CONTRIBUTOR_UPLOAD and SYNC_LICENSE in src/utils/agreements.js), and
     // making them accept a DOWNLOAD license would record the wrong contract --
     // worse than recording none, because it looks like diligence.
-    const requiresLicenseAcceptance = itemType === 'song' || itemType === 'album';
-    if (requiresLicenseAcceptance) {
-      if (!isCurrentAgreementVersion(acceptedAgreement)) {
-        console.warn('Checkout refused: license acceptance missing or stale:', acceptedAgreement);
+    // DERIVED, not listed. The old version of this check hard-coded song|album and then
+    // asked isCurrentAgreementVersion(acceptedAgreement) -- "is this SOME current
+    // agreement". With one product that was the same question; with two it is a hole, and
+    // the wrong half of it passes: a client could present `download-license@...` for a
+    // $319 commercial collection and be waved through, producing a record of the buyer
+    // agreeing NOT to sync the music they just bought a sync licence for.
+    //
+    // Now the server works out which product this is and demands THAT product's
+    // agreement. A null product means "not a licensed sale" -- subscriptions, submission
+    // credits, studio samples -- and those are untouched, for the reason below.
+    const product = productForSale(itemType, licenseType);
+    const requiredAgreement = product ? agreementForProduct(product) : null;
+
+    if (product) {
+      const expected = currentAgreementVersion(requiredAgreement);
+      if (!expected) {
+        // The agreement has no published text. Refusing the SALE is the only honest
+        // outcome: charging for a grant no document describes is the position the
+        // subscription tiers were in for months.
+        console.error('Checkout refused: no published text for', requiredAgreement);
+        const e = new Error('This license is not available for purchase yet.');
+        e.statusCode = 503;
+        throw e;
+      }
+      if (acceptedAgreement !== expected) {
+        console.warn('Checkout refused: license acceptance missing, stale or for the ' +
+          'wrong agreement. got:', acceptedAgreement, 'want:', expected);
         return {
           statusCode: 409,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             error: 'Please review and accept the current license terms to continue.',
-            currentAgreement: currentAgreementVersion(DOWNLOAD_LICENSE)
+            currentAgreement: expected
           })
         };
       }
@@ -356,7 +440,7 @@ exports.handler = async (event, context) => {
     } else {
       // Regular song/album purchase — price is computed SERVER-SIDE from Firestore.
       // The client-supplied `price` is intentionally ignored (never trust it).
-      const resolved = await resolveServerPrice(itemType, itemId, effectiveUserId);
+      const resolved = await resolveServerPrice(itemType, itemId, effectiveUserId, licenseType);
       const hasDiscount = resolved.discountedPrice < resolved.basePrice;
       const name = resolved.itemName || itemName || (itemType === 'song' ? 'Song' : 'Album');
       const artist = resolved.artistName || artistName || 'Unknown Artist';
@@ -400,6 +484,12 @@ exports.handler = async (event, context) => {
           // without a join to anything that could be edited afterwards.
           acceptedAgreement,
           acceptedAt,
+          // WHAT was sold, in the three axes, so the webhook records the licence it
+          // actually sold rather than assuming a personal download. Written here because
+          // this is where the product is decided; the webhook reads it back with
+          // productFromMetadata. Client `...metadata` is spread above these, so a client
+          // cannot upgrade its own licence by posting licenseGrant: 'sync'.
+          ...licenseFields(product),
           originalPrice: resolved.basePrice.toString(),
           discountedPrice: resolved.discountedPrice.toString(),
           subscriberTier: resolved.tier

@@ -277,6 +277,70 @@ class StripeService {
   }
 
   /**
+   * Create a Stripe checkout session for a ONE-OFF COMMERCIAL license.
+   *
+   * SENDS NO PRICE, DELIBERATELY, and that is the one thing that distinguishes it from
+   * the two methods above. Those pass `price` and `originalPrice` -- harmless, because
+   * create-checkout ignores them and reads the stored price from Firestore, but it means
+   * the client holds an opinion about the number.
+   *
+   * A commercial price is not stored anywhere: it is COMPUTED from the track count and
+   * the asset pool (calculateCollectionPrice in src/utils/pricing.js), and every song
+   * document in the catalogue carries price: 199 regardless. So there is no number here
+   * worth sending, and a client that sent one would be sending the wrong one. Omitting
+   * it keeps the only authority on the server, where the curve lives.
+   *
+   * NO SUBSCRIBER DISCOUNT EITHER. The tiers advertise unlimited DOWNLOADS, not cheaper
+   * commercial licences, and resolveServerPrice applies the discount only to a stored
+   * price. A subscriber who also needs a perpetual commercial licence is buying a
+   * different product from the one their plan covers.
+   *
+   * @param {string} itemType  'song' | 'album' | 'collection'
+   */
+  async createCommercialCheckout(userId, itemType, itemId, userEmail, acceptedAgreement) {
+    try {
+      const response = await fetch('/.netlify/functions/create-checkout', {
+        method: 'POST',
+        headers: await checkoutHeaders(),
+        body: JSON.stringify({
+          userId,
+          itemId,
+          itemType,
+          // The axis that changes which product this is, which price curve applies, and
+          // which agreement the server demands. Sent explicitly rather than inferred
+          // from itemType, because a song and an album are each sellable both ways.
+          licenseType: 'commercial',
+          acceptedAgreement,
+          userEmail,
+          // No licence axes here. create-checkout writes licenseScope/Term/Grant into the
+          // session itself, AFTER spreading this object, so anything sent here would be
+          // overwritten -- and a reader finding it here would reasonably conclude the
+          // client decides the grant.
+          metadata: {
+            userId,
+            itemId,
+            itemType
+          }
+        })
+      });
+
+      if (!response.ok) {
+        await handleCheckoutError(response);
+      }
+
+      const { sessionId } = await response.json();
+
+      const stripe = await getStripePromise();
+      if (!stripe) throw new Error('Stripe failed to initialize');
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error creating commercial checkout:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get user's purchase history
    */
   async getUserPurchases(userId) {

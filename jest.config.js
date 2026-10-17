@@ -56,5 +56,23 @@ module.exports = {
 
   // The e2e directory is Playwright's, and Playwright's `test` is not jest's. Running
   // them here produces confusing failures about a missing test runner.
-  testPathIgnorePatterns: ['/node_modules/', '/e2e/', '/build/', '/build.stale-']
+  //
+  // AND THE SELF-RUNNING SCRIPTS IN netlify/functions/lib, which matter more than they
+  // look. Three files there are STANDALONE NODE SCRIPTS: they build an in-memory
+  // Firestore fake, assert with node's `assert`, print their own results, and finish
+  // with process.exit(). Under jest that exit call terminates the WORKER PROCESS
+  // mid-run, so `npx jest` with no arguments stops partway through and never prints a
+  // summary -- which looks exactly like a hang, not like a misconfiguration. That is
+  // why "run the full suite" was not a thing anyone could do here.
+  //
+  // They are excluded rather than rewritten because the style is deliberate: a test
+  // that proves a license can be REVOKED should be runnable with plain node, with no
+  // runner between it and the assertion. `npm run test:lib` runs them, and
+  // `npm run test:all` runs both halves in order.
+  testPathIgnorePatterns: [
+    '/node_modules/', '/e2e/', '/build/', '/build.stale-',
+    'netlify/functions/lib/payment-reversal.test.js',
+    'netlify/functions/lib/license-certificate.test.js',
+    'netlify/functions/lib/entitlement.test.js'
+  ]
 };

@@ -97,7 +97,23 @@ const CONTRIBUTOR_UPLOAD = 'contributor-upload';
  *  gated behind a privileged account and quotes rather than self-serve checkout. */
 const SYNC_LICENSE = 'sync-license';
 
-const AGREEMENTS = { DOWNLOAD_LICENSE, CONTRIBUTOR_UPLOAD, SYNC_LICENSE };
+/** A buyer accepts this to license a track or a collection for COMMERCIAL use,
+ *  once, permanently -- the production-library product.
+ *
+ *  IT EXISTS BECAUSE NEITHER OF THE OTHER TWO FITS, and quietly reusing one would be
+ *  the worst available outcome. The download license EXPRESSLY FORBIDS sync; recording
+ *  it against a $319 collection licence would produce evidence that the buyer agreed
+ *  NOT to do the thing they just paid to do. The sync licence is written throughout as
+ *  "while your subscription is active", so recording it against a one-off sale
+ *  describes a grant that ends -- when what was sold does not.
+ *
+ *  Same reasoning create-checkout already applies to submission credits: an acceptance
+ *  of the wrong contract is worse than none, because it looks like diligence. */
+const COMMERCIAL_LICENSE = 'commercial-license';
+
+const AGREEMENTS = {
+  DOWNLOAD_LICENSE, CONTRIBUTOR_UPLOAD, SYNC_LICENSE, COMMERCIAL_LICENSE
+};
 
 /**
  * EVERY version of each agreement, newest first. The canonical origin.
@@ -191,6 +207,41 @@ const AGREEMENT_HISTORY = {
         'reselling the music on its own, or using it to train an AI model — those need a ' +
         'separate licence.'
     }
+  ],
+
+  // The one-off commercial licence. Published 2026-10-17, the day the commercial price
+  // curve was wired to checkout -- deliberately the same day, because a price with no
+  // text behind it is the condition the subscription tiers were in for months.
+  //
+  // DIFFERS FROM THE SUBSCRIPTION SYNC LICENCE IN ONE WORD THAT CHANGES EVERYTHING:
+  // perpetual. A subscriber's right to publish NEW work ends with the subscription; this
+  // does not end at all. That makes it the more dangerous document of the two, because
+  // there is no renewal date at which a mistake can be corrected.
+  //
+  // NOT REVIEWED BY A LAWYER. docs/commercial-license-draft.md carries the long text and
+  // the questions for whoever reviews it.
+  [COMMERCIAL_LICENSE]: [
+    {
+      version: '2026-10-17',
+      headline: 'Use these recordings commercially, permanently, for one payment.',
+      whatChanged: [
+        'This is the first published version of the one-off commercial license.',
+        'You may put the recordings you licensed into videos, podcasts, apps, games, presentations and client work, and publish them worldwide, including monetised content.',
+        'It does not expire and there is nothing to renew. It covers the specific recordings on your license, not the rest of the catalogue.',
+        'It is non-exclusive: we license the same recordings to other people too.',
+        'Broadcast TV and radio, cinema, paid advertising campaigns, reselling the music on its own, and AI training are not covered and need a separate license.',
+        'Our catalogue is not registered with YouTube Content ID or Meta Rights Manager, so we do not claim or mute your videos.'
+      ],
+      summary:
+        'You are licensing these recordings for commercial use, permanently and worldwide. ' +
+        'You may synchronise them with video, use them in podcasts, apps, games, ' +
+        'presentations and work you deliver to your own clients, and publish the result ' +
+        'including monetised content. The licence does not expire and there is nothing to ' +
+        'renew. It is non-exclusive and non-transferable, and it covers the recordings named ' +
+        'on your licence rather than the catalogue. It does not cover broadcast television or ' +
+        'radio, cinema, paid advertising campaigns, reselling the music on its own, or using ' +
+        'it to train an AI model — those need a separate licence.'
+    }
   ]
 };
 
@@ -214,13 +265,14 @@ const CURRENT_VERSIONS = ALL_AGREEMENT_KEYS().reduce((acc, agreement) => {
 
 /** Declared as a function so it can be used above its own definition order. */
 function ALL_AGREEMENT_KEYS() {
-  return [DOWNLOAD_LICENSE, CONTRIBUTOR_UPLOAD, SYNC_LICENSE];
+  return [DOWNLOAD_LICENSE, CONTRIBUTOR_UPLOAD, SYNC_LICENSE, COMMERCIAL_LICENSE];
 }
 
 const AGREEMENT_LABELS = {
   [DOWNLOAD_LICENSE]: 'Download License Terms',
   [CONTRIBUTOR_UPLOAD]: 'Contributor Upload Agreement',
-  [SYNC_LICENSE]: 'Sync License Agreement'
+  [SYNC_LICENSE]: 'Sync License Agreement',
+  [COMMERCIAL_LICENSE]: 'Commercial License Agreement'
 };
 
 const ALL_AGREEMENTS = Object.values(AGREEMENTS);
@@ -296,6 +348,7 @@ module.exports = {
   DOWNLOAD_LICENSE,
   CONTRIBUTOR_UPLOAD,
   SYNC_LICENSE,
+  COMMERCIAL_LICENSE,
   currentAgreementVersion,
   parseAgreementVersion,
   isCurrentAgreementVersion,

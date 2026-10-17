@@ -15,7 +15,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
 // Canonical license vocabulary, shared with the app in the manner of utils/pricing.js.
 const { sendEmail } = require('./lib/send-email');
-const { licenseFields, ONE_OFF_DOWNLOAD } = require('../../src/utils/licenseTerms');
+const { licenseFields, productFromMetadata } = require('../../src/utils/licenseTerms');
 // When the money goes back, the license goes with it. See lib/payment-reversal.js for
 // why this is the trigger for policy that was already written and already enforced.
 const { revokeForPaymentReversal, shouldRevokeOnRefund } = require('./lib/payment-reversal');
@@ -481,7 +481,7 @@ async function handleCheckoutSessionCompleted(session) {
         // licenseFields writes the three axes from one definition -- SCOPE, TERM and
         // GRANT -- rather than a single `licenseType` string that silently conflates
         // them. See src/utils/licenseTerms.js.
-        ...licenseFields(ONE_OFF_DOWNLOAD),
+        ...licenseFields(productFromMetadata(session.metadata)),
         ...licenseAcceptanceFields(session),
         status: 'active',
         purchasedAt: admin.firestore.FieldValue.serverTimestamp(),

@@ -32,6 +32,12 @@
 // different prices; Terms.js already excludes sync, performance and broadcast from
 // every download license, so the exclusions exist and the vocabulary did not.
 
+const {
+  DOWNLOAD_LICENSE,
+  SYNC_LICENSE,
+  COMMERCIAL_LICENSE
+} = require('./agreements');
+
 /** How wide the permitted use is. */
 const LICENSE_SCOPE = {
   PERSONAL: 'personal',
@@ -96,6 +102,28 @@ const ONE_OFF_DOWNLOAD = {
 const SUBSCRIPTION_SYNC = {
   scope: LICENSE_SCOPE.COMMERCIAL,
   term: LICENSE_TERM.TIME_BOUND,
+  grant: LICENSE_GRANT.SYNC
+};
+
+/**
+ * What a one-off COMMERCIAL licence buys: the production-library product.
+ *
+ * PERPETUAL AND COMMERCIAL AT THE SAME TIME, which neither other product is, and the
+ * combination is what a buyer is actually paying for. A video editor cutting a client's
+ * brand film cannot accept "licensed while you keep paying" -- the film outlives the
+ * subscription and the client owns it. One payment, no renewal date, no expiry.
+ *
+ * `grant: SYNC` rather than DOWNLOAD, and the file arriving is incidental. The download
+ * licence also delivers a file and expressly forbids pairing it with moving image; this
+ * is sold for exactly that. Same bytes, different product, roughly 15x the price -- which
+ * is why the two must never share an acceptance record.
+ *
+ * SCOPED TO THE RECORDINGS ON THE LICENCE, not the catalogue. Buying a 24-track
+ * collection licenses 24 recordings permanently; it does not license the other 300.
+ */
+const ONE_OFF_COMMERCIAL = {
+  scope: LICENSE_SCOPE.COMMERCIAL,
+  term: LICENSE_TERM.PERPETUAL,
   grant: LICENSE_GRANT.SYNC
 };
 
@@ -214,6 +242,149 @@ const SUBSCRIPTION_SYNC_SUMMARY = {
   syncUrl: 'https://beatflowmediagroup.com/sync-licensing'
 };
 
+// The one-off commercial licence. NOT LEGAL ADVICE and not reviewed by a lawyer. See
+// docs/commercial-license-draft.md for the long text and the reviewer's questions.
+//
+// The claim support is WORD FOR WORD the subscription's, and deliberately so: it rests on
+// the same fact (nothing is enrolled in Content ID or Rights Manager because DistroKid's
+// Social Media Pack has never been bought) and if that fact changes, both become false on
+// the same day. Two paraphrases of one fact would let one get updated and not the other.
+const COMMERCIAL_LICENSE_SUMMARY = {
+  agreement: ONE_OFF_COMMERCIAL,
+  headline: 'Commercial use of these recordings, permanently, for one payment.',
+  summary:
+    'You are licensing these recordings for commercial use, permanently and worldwide. ' +
+    'You may synchronise them with video, use them in podcasts, apps, games, ' +
+    'presentations and work you deliver to your own clients, and publish the result ' +
+    'including monetised content. The licence does not expire and there is nothing to ' +
+    'renew. It is non-exclusive and non-transferable, and it covers the recordings named ' +
+    'on your licence rather than the catalogue. It does not cover broadcast television or ' +
+    'radio, cinema, paid advertising campaigns, reselling the music on its own, or using ' +
+    'it to train an AI model — those need a separate licence.',
+  claimSupport: SUBSCRIPTION_SYNC_SUMMARY.claimSupport,
+  termsUrl: 'https://beatflowmediagroup.com/terms',
+  syncUrl: 'https://beatflowmediagroup.com/sync-licensing'
+};
+
+/**
+ * WHICH AGREEMENT GOVERNS WHICH PRODUCT. The canonical mapping.
+ *
+ * It exists because create-checkout was asking the wrong question. Its gate called
+ * `isCurrentAgreementVersion(acceptedAgreement)`, which answers "is this SOME current
+ * agreement" -- so a client could present `download-license@...` for a $319 commercial
+ * collection and be waved through. Harmless while one product existed; a hole the moment
+ * a second one did. The gate now asks for the identifier of THIS product's agreement.
+ *
+ * Keyed by grant+term because that is what distinguishes the products: download/perpetual
+ * is the $1.99 sale, sync/perpetual is the library sale, sync/time-bound is the
+ * subscription. Scope is not in the key -- it never varies independently of them.
+ */
+const PRODUCT_AGREEMENTS = [
+  { product: ONE_OFF_DOWNLOAD, agreement: DOWNLOAD_LICENSE, summary: DOWNLOAD_LICENSE_SUMMARY },
+  { product: ONE_OFF_COMMERCIAL, agreement: COMMERCIAL_LICENSE, summary: COMMERCIAL_LICENSE_SUMMARY },
+  { product: SUBSCRIPTION_SYNC, agreement: SYNC_LICENSE, summary: SUBSCRIPTION_SYNC_SUMMARY }
+];
+
+/** The agreement key a product is sold under, or null if the product is unknown.
+ *  null is a hard stop, never a check to skip -- same contract as CURRENT_VERSIONS. */
+function agreementForProduct(product) {
+  if (!product) return null;
+  const match = PRODUCT_AGREEMENTS.find(
+    (e) => e.product.grant === product.grant && e.product.term === product.term
+  );
+  return match ? match.agreement : null;
+}
+
+/** The plain-language summary for a product, for any surface that has to tell someone
+ *  what they are about to license. Render it; never paraphrase it. */
+function summaryForProduct(product) {
+  const match = PRODUCT_AGREEMENTS.find(
+    (e) => e.product.grant === product?.grant && e.product.term === product?.term
+  );
+  return match ? match.summary : null;
+}
+
+/**
+ * The product a checkout request is for.
+ *
+ * SINGLE SOURCE for "what is actually being sold here", which three files were each
+ * deciding for themselves. Returns null for a combination that is not a product, and the
+ * caller must refuse rather than fall back -- the fallback case is the one that sells a
+ * commercial licence at the consumer price.
+ *
+ * @param {string} itemType  'song' | 'album' | 'collection'
+ * @param {string} licenseType  'personal' | 'commercial'
+ */
+function productForSale(itemType, licenseType) {
+  if (licenseType === LICENSE_SCOPE.COMMERCIAL) {
+    return ['song', 'album', 'collection'].includes(itemType) ? ONE_OFF_COMMERCIAL : null;
+  }
+  if (licenseType === LICENSE_SCOPE.PERSONAL || licenseType === undefined || licenseType === null) {
+    // A collection has no personal price and no personal product: it is a production
+    // library, and a personal licence covers a track or an album.
+    return ['song', 'album'].includes(itemType) ? ONE_OFF_DOWNLOAD : null;
+  }
+  return null;
+}
+
+/**
+ * The product a completed Stripe session was for, read back off its metadata.
+ *
+ * WHY THE WEBHOOK CANNOT JUST ASSUME. Both webhooks wrote
+ * `licenseFields(ONE_OFF_DOWNLOAD)` unconditionally, which was correct while a download
+ * was the only thing on sale. A commercial sale recorded that way produces a licence
+ * document saying `scope: personal, grant: download` for a purchase whose whole point is
+ * commercial sync -- and that document is the evidence, both for a buyer proving their
+ * right and for BFMG proving its limits. It would contradict the sale it records.
+ *
+ * FALLS BACK TO ONE_OFF_DOWNLOAD, deliberately. Sessions created before these metadata
+ * fields existed carry none, and every one of them was a personal download; defaulting
+ * any other way would relabel real history. An INVALID value falls back too rather than
+ * throwing, because the alternative is a paid webhook that 500s forever and a buyer with
+ * no licence at all -- but it logs, because a reached fallback means the writer changed.
+ *
+ * @param {object} meta  session.metadata
+ * @param {function} [warn]  injected so a function bundle can route the log
+ */
+function productFromMetadata(meta, warn = console.warn) {
+  const m = meta || {};
+  const candidate = {
+    scope: m.licenseScope,
+    term: m.licenseTerm,
+    grant: m.licenseGrant
+  };
+
+  const anyPresent = candidate.scope || candidate.term || candidate.grant;
+  if (!anyPresent) return ONE_OFF_DOWNLOAD;
+
+  // VALIDATED AGAINST THE PRODUCTS ON SALE, not merely against the axes.
+  //
+  // Checking the three axes alone was not enough, and a test caught it: `broadcast` is
+  // a legitimate member of LICENSE_GRANT -- Terms.js section 4 names it as an exclusion
+  // -- so { commercial, perpetual, broadcast } passed every axis check and came back as
+  // a product. It is not one. Nothing sells a broadcast licence self-serve; it is
+  // quoted. The webhook would have written licenseGrant: 'broadcast' onto a licence row,
+  // granting on paper the most expensive right in the catalogue.
+  //
+  // Axis-valid is a spelling check. Being a product is a different question, and
+  // PRODUCT_AGREEMENTS is the only place that answers it.
+  const axesWellFormed = isValidScope(candidate.scope)
+    && isValidTerm(candidate.term)
+    && isValidGrant(candidate.grant);
+  if (axesWellFormed) {
+    const known = PRODUCT_AGREEMENTS.find(
+      (e) => e.product.scope === candidate.scope
+        && e.product.term === candidate.term
+        && e.product.grant === candidate.grant
+    );
+    if (known) return known.product;
+  }
+
+  warn('productFromMetadata: license axes present but invalid, falling back to a ' +
+    'personal download license. got:', JSON.stringify(candidate));
+  return ONE_OFF_DOWNLOAD;
+}
+
 // CommonJS, matching utils/pricing.js and utils/agreements.js -- the two files the
 // Netlify functions already import. Webpack interops this fine for the app side; the
 // reverse is not reliably true inside a function bundle, and a module that resolves
@@ -223,9 +394,16 @@ module.exports = {
   LICENSE_TERM,
   LICENSE_GRANT,
   ONE_OFF_DOWNLOAD,
+  ONE_OFF_COMMERCIAL,
   SUBSCRIPTION_SYNC,
   DOWNLOAD_LICENSE_SUMMARY,
   SUBSCRIPTION_SYNC_SUMMARY,
+  COMMERCIAL_LICENSE_SUMMARY,
+  PRODUCT_AGREEMENTS,
+  agreementForProduct,
+  summaryForProduct,
+  productForSale,
+  productFromMetadata,
   isValidScope,
   isValidTerm,
   isValidGrant,
