@@ -12,7 +12,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .js --fix",
-    "validate": "node -e \"require('./core/AgentOrchestrator'); console.log('✅ All agents validated successfully');\""
+    "validate": "node -e \"require('./core/AgentOrchestrator'); console.log('\u2705 All agents validated successfully');\""
   },
   "keywords": [
     "automation",
@@ -30,7 +30,7 @@
   "author": "BeatFlow Media",
   "license": "MIT",
   "dependencies": {
-    "commander": "^11.1.0",
+    "commander": "^15.0.0",
     "esprima": "^4.0.1",
     "events": "^3.3.0"
   },
