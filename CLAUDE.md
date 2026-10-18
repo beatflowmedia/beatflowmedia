@@ -119,6 +119,10 @@ needs its own storefront, NOT its own login.
 | Whether a license is withdrawn | `src/utils/licenseRevocation.js` (`isRevoked`) | `npx jest src/utils/licenseRevocation.test.js` |
 | Who is on superseded terms | derived from `acceptedAgreement` vs `agreements.js` | `npm run verify:terms` |
 | Admin-script boilerplate (env, credentials, batching) | `scripts/lib/admin.js` | every `npm run` script exercises it |
+| Gap between cards in a responsive grid | `src/utils/layout.js` (`CARD_GRID_SPACING`) | `npx jest src/utils/layout.test.js` |
+| Which packages the deployed functions may rely on | the ROOT `package.json` — `netlify/functions/package.json` and `agents/package.json` are INERT (no node_modules beside them) | `npm run verify:deps` |
+| Which advisories matter | derived from `npm ls --all`, not from `npm audit --omit=dev` | `npm run verify:vulns` |
+| The firebase-admin API the functions call | `netlify/functions/lib/admin-api.test.js` — the surface, never a pinned version | `npm run test:lib` |
 | Everything else | **NEEDS OWNER** | — |
 
 ## Domain landmines — the things that fail *silently*
@@ -139,6 +143,33 @@ needs its own storefront, NOT its own login.
    the cause of the blank album grid — the seeded records carry neither field.
 5. **The WebP probe never fires on Firebase URLs.** `/\.(jpg|jpeg|png)$/i` is anchored to
    end-of-string; Storage URLs end in `?alt=media&token=…`. The optimization silently no-ops.
+6. **`firebase-admin` v14 removes the namespace every function uses, and `npm audit` calls
+   it the fix.** `fixAvailable: firebase-admin@14.5.0` is a claim that a version exists
+   without the advisory — **not** that your code runs on it. On v14,
+   `require('firebase-admin')` returns the `app` module only: `admin.credential`,
+   `admin.firestore`, `admin.auth` and `admin.apps` are all `undefined`, so every function
+   throws **at module load**. The visible result is a successful Stripe charge followed by a
+   500 in the webhook, no purchase row, and a buyer who paid for nothing. Guarded by
+   `netlify/functions/lib/admin-api.test.js` (`npm run test:lib`). Fixing it properly means
+   migrating to `firebase-admin/app`, `/firestore`, `/auth`, `/storage`.
+7. **MUI `Grid spacing` takes a theme multiplier, and a CSS string yields ZERO spacing.**
+   `spacing={2}` means 2 × 8px. `spacing={'clamp(2rem, …)'}` is not a fallback and not the
+   default — the container gets `margin-top: 0` and every item `padding-top: 0`, so rows
+   touch. Nothing warns: not the compiler, not eslint, not the console. Three grids shipped
+   this way. The tell is comparing a broken grid (`mt: 0px / pt: 0px`) with a working one
+   (`mt: -16px / pt: 16px`) on the same page. Use `CARD_GRID_SPACING` from
+   `src/utils/layout.js`; guarded by `npx jest src/utils/layout.test.js`.
+8. **A satellite `package.json` with no `node_modules` beside it is read by nobody.**
+   `netlify/functions/package.json` and `agents/package.json` both describe dependencies for
+   code in their directory, and both resolve from the ROOT install instead. Both were already
+   wrong — one asked for `firebase-admin ^12` while 13.10.0 ran. Authoritative-looking and
+   inert is the worst shape a config value can have. `npm run verify:deps` compares them.
+9. **A dependency scan that misses a directory deletes something in use.** This repo has
+   `agents/ api/ frontend/ middleware/ services/ functions/` beyond the obvious `src/`.
+   Four packages were removed as "unreferenced" and broke `agents/cli.js`, which the
+   pre-commit hook runs. Peer deps (`@emotion/styled`) and dynamic imports
+   (`import("web-vitals")`) are invisible to a grep as well. `npm run verify:deps` resolves
+   every `require()` rather than searching for names.
 
 ## PHAST pillars
 
@@ -3733,3 +3764,266 @@ people learn to skip.
   product while being stale by three tracks. Call: price from the query, not the cached
   count, and have the page quote the same source so it cannot advertise one figure and
   bill another.
+
+## Card rows were touching, and MUI never applied the spacing — 2026-10-18
+
+Percy reported the bottom of one card row sitting against the top of the next on the
+home page. Three grids were written like this:
+
+```jsx
+<Grid container spacing={'clamp(2rem, calc(1.5rem + 3vw), 4rem)'}>
+```
+
+**MUI's `spacing` is a theme multiplier** — `2` means 2 × 8px. Handed a CSS length string
+it emits **no spacing at all**: not a fallback, not the default. The container gets
+`margin-top: 0` and every item `padding-top: 0`.
+
+Nothing warns. Not the compiler, not eslint, not the browser console. The code reads as
+deliberate fluid spacing and renders as zero, which is exactly why it survived.
+
+### Measured before touching anything, because "looks tight" is not a diagnosis
+
+| Grid | gap | container | item |
+|---|---|---|---|
+| "Recently Released Albums" | **0px** | `mt: 0px` | `pt: 0px` |
+| the grid below it | 16px | `mt: -16px` | `pt: 16px` |
+
+The second row is what a **working** MUI grid looks like. The contrast on one page was
+the whole tell.
+
+**Three instances, not one.** Only "Recently Released Albums" had enough items to wrap,
+so it was the only one visibly broken — Featured Artists and Discover Weekly carried the
+identical bug waiting for one more item.
+
+### The fix, and the decision inside it
+
+`CARD_GRID_SPACING = { xs: 2, sm: 3 }` in `src/utils/layout.js`, used by all three.
+Mobile-first: the base rule **is** the phone, scaled up, never a desktop value walked
+back. It matches the grids already rendering correctly at `spacing={2}` and `{3}`.
+
+**One value for all three is a choice.** The originals asked for two different curves
+(0.5–2rem for Featured Artists, 2–4rem for the others) — but since none of them ever
+rendered, there is no existing look to preserve. One constant cannot drift the way three
+literals did.
+
+Not restored as a `clamp()`: MUI cannot take one here, so keeping the fluid curve would
+mean dropping `Grid` for a raw CSS grid in three working layouts, to recover spacing
+nobody has ever seen.
+
+Verified in a browser at two widths: **0px → 24px** at 1366px, **16px** at 390px.
+
+`src/utils/layout.test.js` fails on any `spacing={'…'}` string literal. A unit test is
+the wrong instrument for "does it look right" and the right one for "is this prop a type
+MUI can use" — the failure is categorical, not visual.
+
+> That guard failed on its first run against the example written inside `layout.js`'s own
+> explanation of the bug, so it strips comments first. **A guard that cannot tell code
+> from the documentation of the thing it guards makes documenting the problem
+> impossible.**
+
+---
+
+## 396 vulnerabilities, triaged by surface rather than by count — 2026-10-18
+
+GitHub reported **396** on the default branch (11 critical, 182 high). `npm audit`
+reported **185**. Neither is actionable, and acting on either directly gives you one of
+two failures:
+
+| | |
+|---|---|
+| **Paralysis** | 396 is too many to start on, so nothing starts |
+| **Theatre** | `npm audit fix --force` runs, the build breaks, and the next person learns that security work breaks builds |
+
+### `npm audit --omit=dev` is not the instrument
+
+Worth recording because it is the obvious move. It reported **119 "production"**
+advisories — including `jest`, `webpack-dev-server`, `eslint` and `svgo`. CRA puts
+`react-scripts` in `dependencies`, so npm counts the whole build toolchain as production.
+**A packaging artefact, not a risk assessment.**
+
+### Two surfaces actually ship
+
+| Surface | What runs there |
+|---|---|
+| **FUNCTIONS** | `netlify/functions/*` on Netlify's servers, holding the **Stripe secret key** and **Firebase Admin credentials**. Reachable by anyone who can make the site call a function. |
+| **BUNDLE** | whatever `src/` imports, compiled into `build/`, in a buyer's browser |
+
+Everything else runs on a developer machine against source that developer already trusts.
+**Those advisories are real and not urgent, and saying so out loud is the point** — an
+unexplained decline reads as an oversight and gets "fixed" with `--force`.
+
+Measured: **14 advisories on a shipped surface, 161 build tooling.**
+
+### The advisory graph is not the install tree
+
+A first pass walked `effects` from `npm audit --json` and concluded 6 advisories reached
+the functions. Wrong, and the way it was wrong is the lesson: **`effects` describes which
+packages an advisory invalidates, not which top-level package pulls it in.**
+`protobufjs` (critical) did not appear — and it reaches `firebase-admin` via
+`@google-cloud/firestore → google-gax → @grpc/grpc-js → @grpc/proto-loader`.
+
+`npm run verify:vulns` resolves every path from `npm ls --all` instead. `npm audit fix`
+(no `--force`) cleared **protobufjs, node-forge, fast-xml-parser and form-data** from the
+function runtime.
+
+### I removed four packages that were in use
+
+Eight dependencies had zero references in `src/ scripts/ netlify/ config/ e2e/`. That
+list looked exhaustive. **It was not** — the repo also has `agents/ api/ frontend/
+middleware/ services/ functions/`. `commander`, `esprima`, `fluent-ffmpeg` and
+`music-metadata` are required by `agents/`, and removing them broke `agents/cli.js`,
+**which the pre-commit hook runs.**
+
+The hook caught it with a stack trace. That is the system working — and it was **luck**,
+because it only caught it where that directory happened to sit on the hook's path.
+Nothing would have caught the same removal in `api/` or `services/`.
+
+Restored as **devDependencies** (`agents/` is developer tooling, so they stay out of the
+production tree). Genuinely unused and still gone: `@radix-ui/react-context-menu`,
+`jsmediatags`, `music-metadata-browser`, `react-beautiful-dnd` — the last appears **only
+inside a string in a code-generation template**, which is the generated project's
+dependency, not this one's.
+
+**Three near-misses, checked before deleting, which is why a scan is not a decision:**
+
+| Package | Looked unused because |
+|---|---|
+| `web-vitals` | loaded by `import("web-vitals")` — a **dynamic** import the regex missed |
+| `@emotion/styled` | a required **peer** of `@mui/material`; MUI fails at runtime without it |
+| `react-scripts` | it is the build command itself |
+
+**"No import site" and "safe to delete" are different claims.**
+
+### A third inert manifest
+
+Three `package.json` files describe dependencies for code in their directory and **none
+has a `node_modules` beside it**, so every require resolves from the root instead. They
+are documentation nothing enforces, and both were already wrong:
+
+```
+netlify/functions/package.json   firebase-admin ^12.0.0   root ^13.4.0, installed 13.10.0
+agents/package.json              declares commander + esprima, while its code also
+                                 requires music-metadata and fluent-ffmpeg
+```
+
+**A declaration that is authoritative-looking and inert is the worst shape a config value
+can have.** Both now agree with the root. Deleting them would be cleaner and is not done
+here: Netlify's behaviour depends on the bundler and settings outside this repo, and a
+function that loses `firebase-admin` fails at the moment a buyer pays.
+
+---
+
+## `npm audit` recommended an upgrade that breaks the payment webhook — 2026-10-18
+
+**The most valuable finding of the day.** `npm audit` reports the firebase-admin
+advisories with `fixAvailable: { name: 'firebase-admin', version: '14.5.0' }`. Installing
+it:
+
+```
+v13   require('firebase-admin') → { apps, credential, firestore, auth, storage, … }
+v14   require('firebase-admin') → { initializeApp, cert, getApps, … }   app module ONLY
+```
+
+Every function opens with
+`if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert({…}) })`.
+On v14 both `admin.apps` and `admin.credential` are undefined, so the function throws
+**at module load** — every invocation.
+
+**What would have shipped:** checkout redirects to Stripe → Stripe charges the card →
+`stripe-webhook` 500s before reading its own metadata → no purchase and no licence
+written. The buyer has paid for something that does not exist, and you find out from
+whoever buys next.
+
+> **`fixAvailable` means "a version exists without this advisory". It is not a claim that
+> your code still works on it**, and nothing in the audit output distinguishes a patch
+> bump from an API removal.
+
+It was not even a win on the numbers: v14 took the function surface from 13 advisories to
+7 but took the **highs from 2 to 4**. A breaking change for a worse high count.
+
+**Reverted. firebase-admin stays on 13.x.**
+
+`netlify/functions/lib/admin-api.test.js` asserts the ten calls the functions actually
+make. It asserts the **surface, not the version** — pinning a number says "never
+upgrade", which ages badly; this says "whatever you install, these calls must still
+exist", which an upgrade is free to satisfy and a modular migration satisfies by shrinking
+the list to nothing. It runs **first** in `npm run test:lib`, because if it fails the
+other suites' results are not interesting.
+
+**Proven both ways:** installed 14.5.0 and watched it fail, restored 13.x and watched it
+pass. *A guard nobody has seen fail is a guard nobody should trust.*
+
+### Follow-up, deliberately not done here
+
+Migrating every function to `firebase-admin/app`, `/firestore`, `/auth`, `/storage`. It
+touches the payment path, so it deserves its own work and its own testing. Until then
+13.x carries 2 highs on the function surface, both transitive and both unfixable without
+that migration or an `overrides` pin.
+
+---
+
+## Enforced, not promised
+
+| Command | Goes red when |
+|---|---|
+| `npm run verify:vulns` | a **high or critical** advisory reaches the **deployed functions** |
+| `npm run verify:deps` | a `require()` in our source does not resolve, or a satellite manifest disagrees with the root |
+| `npm run test:lib` | the firebase-admin API the functions call has changed shape |
+| `npx jest src/utils/layout.test.js` | a `Grid` is handed a CSS string as `spacing` |
+
+`verify:vulns` deliberately does **not** fail on build tooling, and `verify:deps` is a
+**ratchet rather than a wall**: 12 imports already do not resolve (dead analytics pages,
+agent templates, a Python package name in `services/*/monitoring.js`), the build is green
+because webpack never reaches them, and `KNOWN_UNRESOLVED` records them so only *new*
+ones fail. **A reconciler that is permanently red gets removed, which is how a ratchet
+dies.**
+
+Both new reconcilers were proven by making them fail on purpose — a planted `require` of
+a nonexistent package for `verify:deps`, and a real v14 install for the admin guard.
+
+### Two bugs found by running the reconcilers rather than trusting them
+
+- `verify:deps` reported **`firebase` unresolvable in 99 files** — because it reduced
+  `firebase/firestore` to `firebase`, which has **no root export**. It now resolves the
+  full specifier.
+- It flagged `events` as missing from the root, when `events` is a **Node builtin** and
+  the manifest is asking for the browser polyfill.
+
+---
+
+## Ratchet — 2026-10-18
+
+| Measure | Before | Now |
+|---|---|---|
+| node checks (admin-api) | 0 | **10** |
+| node checks (entitlement) | 14 | 14 |
+| node assertions (certificate) | 17 | 17 |
+| node assertions (payment-reversal) | 16 | 16 |
+| jest tests passing | 251 | **256** |
+| pre-existing jest failures (unrelated) | 96 | 96 — do not let this rise |
+| Playwright assertions | 29 | 29 |
+| `verify:*` reconcilers | 19 | **21** |
+| advisories on a shipped surface | 20 | **14** |
+| advisories on the function runtime | 18 | **13** |
+| critical advisories on the function runtime | 1 (`protobufjs`) | **0** |
+| declared dependencies | 37 | **27** |
+| bundle (main chunk) | 225KB | **217KB** |
+
+---
+
+## Concepts covered (continued)
+
+- **Risk surface vs advisory count** — surfaced by 396 GitHub vulnerabilities. Call:
+  triage by what actually ships (functions, bundle) rather than by severity totals;
+  `--omit=dev` answers a packaging question, not a risk one.
+- **`fixAvailable` is not a compatibility claim** — surfaced when the recommended
+  firebase-admin fix removed the API every function calls. Call: assert the API surface
+  your code uses, and prove the guard fails before trusting it.
+- **Peer and dynamic imports are invisible to a static scan** — `@emotion/styled` and
+  `web-vitals` both looked unused. Call: a scan produces candidates; resolution produces
+  the decision.
+- **Theme multiplier vs CSS length** — MUI `spacing={2}` is 2 × 8px, and a `clamp()`
+  string silently yields nothing. Call: constrain the prop's type with a test, since the
+  failure is categorical rather than visual.
+- **Ratchet vs wall** — a reconciler that fails on pre-existing debt gets deleted within
+  a week. Call: record the baseline in code (`KNOWN_UNRESOLVED`) and fail only on growth.
