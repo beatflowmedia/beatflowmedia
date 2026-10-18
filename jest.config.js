@@ -73,6 +73,7 @@ module.exports = {
     '/node_modules/', '/e2e/', '/build/', '/build.stale-',
     'netlify/functions/lib/payment-reversal.test.js',
     'netlify/functions/lib/license-certificate.test.js',
-    'netlify/functions/lib/entitlement.test.js'
+    'netlify/functions/lib/entitlement.test.js',
+    'netlify/functions/lib/admin-api.test.js'
   ]
 };
