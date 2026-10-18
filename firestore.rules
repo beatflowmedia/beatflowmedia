@@ -115,6 +115,20 @@ service cloud.firestore {
     // handler renders that as an empty grid, which is indistinguishable from a library
     // that has no collections -- the same silent-failure shape that hid the missing
     // composite index on the home page.
+    // THE OPS DESK. Admin-only in BOTH directions, which is stricter than most
+    // collections here and deliberately so: these records are a list of what is wrong
+    // with the platform, including unreviewed legal exposure and which checks are
+    // currently failing. That is a map for anyone who wanted one, so unlike `songs` or
+    // `collections` there is no public read.
+    //
+    // `__checks` lives in the same collection as a single document holding the last
+    // reconciler run. One rule covers both because both are admin-only; splitting them
+    // would be two rules that must agree.
+    match /opsItems/{itemId} {
+      allow read, list: if isPlatformAdmin();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
     match /collections/{collectionId} {
       allow read: if true;
       allow list: if true; // Allow collection queries

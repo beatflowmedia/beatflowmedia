@@ -10,7 +10,8 @@ import {
   Gavel,
   Campaign,
   Mail,
-  BusinessCenter
+  BusinessCenter,
+  FactCheck
 } from "@mui/icons-material";
 import { adminAnalytics } from "../services/adminAnalytics";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
@@ -25,6 +26,7 @@ const MarketingDashboard = lazy(() => import("../components/admin/MarketingDashb
 const StudioInquiriesManager = lazy(() => import("../components/admin/StudioInquiriesManager"));
 const SponsorApplicationsManager = lazy(() => import("../components/admin/SponsorApplicationsManager"));
 const StudioProjectsManager = lazy(() => import("../components/admin/StudioProjectsManager"));
+const OpsDesk = lazy(() => import("../components/admin/OpsDesk"));
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -187,6 +189,21 @@ export default function AdminDashboard() {
             <span>Studio Projects</span>
           </button>
 
+          {/* THE OPS DESK. Last in the list deliberately: it is where you go to decide,
+              not where you go to work, so it should not sit above the things you use
+              daily. The count badge is the part that pulls you here when it matters. */}
+          <button
+            onClick={() => setActiveTab("ops")}
+            className={`w-full text-left px-4 py-2 rounded transition flex items-center gap-3 ${
+              activeTab === "ops"
+                ? "bg-green-600 text-white"
+                : "hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            <FactCheck fontSize="small" />
+            <span>Ops Desk</span>
+          </button>
+
           <Link
             to="/admin/applications"
             className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700 text-gray-300 transition flex items-center gap-3"
@@ -326,6 +343,16 @@ export default function AdminDashboard() {
           )}
 
           {activeTab === "contentHub" && <ContentHub />}
+
+          {activeTab === "ops" && (
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Ops Desk</h2>
+              {/* The desk routes to the panel that owns each queue rather than
+                  resolving anything itself: a second place to approve an appeal is a
+                  second place for the two to disagree. */}
+              <OpsDesk onNavigate={setActiveTab} />
+            </div>
+          )}
 
           {activeTab === "appeals" && (
             <div>

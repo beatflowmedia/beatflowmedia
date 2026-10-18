@@ -153,6 +153,7 @@ export default function AppRoutes() {
           }
         />
 
+
         {/* Standalone routes outside of AppShell */}
         <Route path="marketing/landing/:slug" element={<MarketingLanding />} />
         <Route path="jobs" element={<Jobs />} />
