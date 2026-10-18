@@ -52,6 +52,7 @@ import OptimizedImage from "../components/OptimizedImage";
 import { artworkUrl } from '../utils/artwork';
 import { PLACEHOLDER_IMAGE } from '../utils/placeholders';
 import useLicensedCheckout from '../hooks/useLicensedCheckout';
+import { CARD_GRID_SPACING } from '../utils/layout';
 
 // Lazy load heavy components for better initial page load
 const TrendingSongs = lazy(() => import("../components/TrendingSongs"));
@@ -828,7 +829,7 @@ function Home() {
             }}>
               Recently Released Albums
             </Typography>
-            <Grid container spacing={'clamp(2rem, calc(1.5rem + 3vw), 4rem)'}>
+            <Grid container spacing={CARD_GRID_SPACING}>
               {recentAlbums.map((album) => (
                 <Grid item xs={6} sm={4} md={2.4} lg={2} key={album.id} sx={{ px: 'clamp(0.25rem, calc(0.125rem + 0.75vw), 0.75rem)' }}>
                   <Card
@@ -968,7 +969,7 @@ function Home() {
           }}>
             Featured Artists
           </Typography>
-          <Grid container spacing={'clamp(0.5rem, calc(0.25rem + 1vw), 2rem)'}>
+          <Grid container spacing={CARD_GRID_SPACING}>
             {featuredArtists.slice(0, 5).map((artist) => (
               <Grid item xs={6} sm={4} md={2.4} key={artist.id}>
                 <Card

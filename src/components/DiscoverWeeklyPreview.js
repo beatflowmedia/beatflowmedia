@@ -19,6 +19,7 @@ import { collection, query, where, orderBy, limit, getDocs } from 'firebase/fire
 import { ASSET_POOLS } from '../utils/assetPools';
 import { useNavigate } from 'react-router-dom';
 import { artworkUrl } from '../utils/artwork';
+import { CARD_GRID_SPACING } from '../utils/layout';
 
 /**
  * DiscoverWeeklyPreview - Home page preview of algorithmic recommendations
@@ -141,7 +142,7 @@ function DiscoverWeeklyPreview() {
       </Box>
 
       {/* Track Grid */}
-      <Grid container spacing={'clamp(2rem, calc(1.5rem + 3vw), 4rem)'}>
+      <Grid container spacing={CARD_GRID_SPACING}>
         {recommendations.slice(0, 20).reduce((uniqueTracks, track) => {
           // Only add if we haven't seen this cover art before
           if (!uniqueTracks.some(t => (t.coverUrl || t.cover) === (track.coverUrl || track.cover))) {
