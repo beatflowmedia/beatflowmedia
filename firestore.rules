@@ -726,6 +726,17 @@ service cloud.firestore {
       allow create, update, delete: if isPlatformAdmin();
     }
 
+    // MARKETING CAMPAIGNS. The other half of OPS-0NZ0E: SocialMediaManager writes a
+    // record here after uploading its image variants, and this collection was never
+    // added, so the deny-all below refused it.
+    //
+    // Admin-only in both directions. A campaign record names unpublished assets and the
+    // segment they target; there is no reader for it outside the admin panel.
+    match /marketingCampaigns/{campaignId} {
+      allow read, list: if isPlatformAdmin();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

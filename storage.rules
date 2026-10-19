@@ -176,6 +176,18 @@ service firebase.storage {
         && request.resource.size < 5 * 1024 * 1024; // a 30s preview is ~0.5MB
     }
 
+    // MARKETING CAMPAIGN IMAGES. Absent until 2026-10-19, which meant the Social Media
+    // Campaign Creator had never once saved: the deny-all below caught the very first
+    // uploadBytes, before Firestore was even reached. Filed as OPS-0NZ0E.
+    //
+    // Admin-only, matching the panel's own gate. Read is admin-only too for now — these
+    // are unpublished campaign assets, and nothing public links to them. If a campaign
+    // image ever needs to be served to a post or a page, that is a deliberate change to
+    // `allow read: if true`, not something to grant pre-emptively.
+    match /marketing/{allPaths=**} {
+      allow read, write: if isPlatformAdmin();
+    }
+
     // Deny all other storage access
     match /{allPaths=**} {
       allow read, write: if false;
