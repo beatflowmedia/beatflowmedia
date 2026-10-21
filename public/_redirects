@@ -96,6 +96,23 @@
 /podcaster/dashboard                 /                       301
 /link/:slug                          /marketing/landing/:slug 301
 
+# Retired blog posts, 301 to the closest live equivalent (2026-10-21).
+#
+# Both described products BeatFlow does not have, so neither could be made truthful by
+# editing. "Platform Update: New Analytics Dashboard for Artists" announced a feature,
+# with a section headed "How to Access Your New Dashboard", that has never existed. The
+# curator post sold revenue strategy for a role that was removed from the platform.
+#
+# 301 RATHER THAN DELETE, per the SEO note in CLAUDE.md: a removed URL that was ever
+# crawled should redirect to its nearest live equivalent, not 404. A 404 throws away
+# whatever the URL had and spends crawl budget on a dead end.
+#
+# MUST STAY ABOVE THE SPA CATCH-ALL. _redirects wins over netlify.toml, and the catch-all
+# below matches everything -- a rule placed after it never fires, which is exactly how
+# /r/<ISRC> shipped doing nothing.
+/blog/new-analytics-dashboard-artists      /blog                                 301
+/blog/curators-maximize-playlist-revenue-2026  /blog/music-distribution-guide-2026  301
+
 # A `/static/*  /static/:splat  200` rule used to sit here, meant to stop the SPA
 # fallback swallowing webpack's in-memory bundle during `netlify dev`. It could never
 # have worked: a rewrite whose destination is its own source changes nothing, so the

@@ -37,410 +37,102 @@ export default function BlogPost() {
         // In production, fetch from Firestore by slug
         // For now, using mock data
         const mockPosts = {
+          // REWRITTEN 2026-10-21, and the reason is on the Ops Desk as OPS-JBPKV.
+          //
+          // This post was titled "How Independent Artists Are Earning $10K+ Monthly on
+          // BeatFlow" and named three people -- Sarah Chen, Marcus Rodriguez, Luna Park
+          // -- with figures like "$12,500 per month" and a claim that Sarah "started
+          // uploading her ambient electronic tracks to BeatFlow in March 2025".
+          //
+          // None of it happened. The platform has six users and four purchases, and
+          // ARTIST UPLOAD HAS NEVER EXISTED -- it is deferred, so nobody could have
+          // uploaded anything in March 2025 or any other month. It was live, returning
+          // 200, and in the sitemap.
+          //
+          // Percy: "no false claims.. change it to 'How to Make...' instead."
+          //
+          // CHANGING THE TITLE WAS NOT ENOUGH, which is worth recording. The article's
+          // subject was earning ON BEATFLOW through uploads, streaming payouts, playlist
+          // placements and a curator economy. Not one of those is a product here. A
+          // how-to for features that do not exist is still a false claim, just a
+          // grammatically different one. So the subject changed too: this is now about
+          // independent artist income IN GENERAL, and BFMG appears only where what is
+          // said about it is true -- it licenses recordings to creators, and sync is a
+          // real income stream for whoever owns a master.
+          //
+          // THE SLUG IS DELIBERATELY UNCHANGED. The URL was crawlable; moving it loses
+          // whatever it had and leaves a 404 where a page used to be. CLAUDE.md's SEO
+          // note is explicit that a removed URL should 301 rather than disappear, and
+          // the cheapest version of that is not removing it.
+          //
+          // NO FIGURE IN THE TITLE. "How to Make $10K a Month" is still an earnings
+          // claim -- it implies a typical result, which is the thing regulators care
+          // about. The honest headline is about the income streams, not the number.
           'independent-artists-earning-10k-monthly': {
             id: 'blog-001',
-            title: 'How Independent Artists Are Earning $10K+ Monthly on BeatFlow',
+            title: 'How to Make Money as an Independent Artist: The Real Income Streams',
             slug: 'independent-artists-earning-10k-monthly',
-            category: 'Success Stories',
+            category: 'Guides',
             publishDate: new Date('2026-01-01'),
-            readTime: '5 min',
-            excerpt: 'Discover how three independent artists turned their passion into a full-time income using BeatFlow\'s distribution and revenue tools.',
-            keywords: ['independent artist income', 'music revenue', 'artist success stories'],
+            readTime: '6 min',
+            excerpt: 'Where independent artist income actually comes from — streaming, sync licensing, direct sales and live — what each one realistically pays, and which ones you control.',
+            keywords: ['independent artist income', 'music revenue streams', 'sync licensing income', 'how musicians make money'],
             author: 'BeatFlow Team',
             authorImage: '/images/Logo.png',
             featuredImage: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1200&h=600&fit=crop',
             content: `
-            <p>In the evolving music industry landscape, independent artists are finding unprecedented success on platforms that prioritize fair compensation and direct fan relationships. <a href="/">BeatFlowMediaGroup</a> has emerged as a game-changer for artists seeking to monetize their craft without sacrificing creative control.</p>
+            <p>Most advice about making money as an independent artist skips the part that matters: <strong>which income streams you actually control</strong>. Some pay little and depend entirely on scale. Others pay well per transaction and depend on doing specific, unglamorous work. Knowing which is which is most of the job.</p>
 
-            <h2>Meet Three Artists Who've Cracked the Code</h2>
+            <p>Here is what the real streams are, roughly what each pays, and what it takes to earn from them.</p>
 
-            <h3>Sarah Chen - Electronic Producer</h3>
-            <p>Sarah started uploading her ambient electronic tracks to BeatFlow in March 2025. Within 8 months, she was earning $12,500 per month through a combination of streaming revenue, <a href="/blog/curators-maximize-playlist-revenue-2026">playlist placements</a>, and direct fan support.</p>
+            <h2>1. Streaming: high reach, low control</h2>
 
-            <p><strong>Her Strategy:</strong></p>
+            <p>Streaming platforms pay per stream, and the per-stream rate is set by them, not by you. Published rates vary by service and by territory, and they move. The important property is structural: <strong>streaming income scales with volume and nothing else.</strong> You cannot price it, bundle it, or negotiate it.</p>
+
+            <p>That makes it a poor foundation and a reasonable byproduct. Artists who earn meaningfully from streaming almost always have a catalogue of many tracks and years of accumulated listeners — not a hit.</p>
+
+            <p><strong>What you control:</strong> how much you release, and whether it reaches playlists. <strong>What you do not:</strong> the rate.</p>
+
+            <h2>2. Sync licensing: fewer transactions, much higher value</h2>
+
+            <p>Sync is licensing your recording to be paired with picture — a video, a film, an advert, a game. A single sync licence can be worth more than a year of streaming for the same track, because it is <em>priced</em> rather than metered.</p>
+
+            <p>The requirement is specific and it stops most people: <strong>you must be able to grant the rights cleanly.</strong> That means controlling both the recording and the composition, or being able to point at whoever does. A producer who sampled an uncleared record cannot licence it for sync at any price.</p>
+
+            <p>Practical steps, in order of how much they matter:</p>
             <ul>
-              <li>Consistent weekly releases to maintain algorithmic momentum</li>
-              <li>Engagement with <a href="/curator-application">curator community</a> for playlist placements</li>
-              <li><a href="/explore-premium">Artist Membership</a> for enhanced analytics and promotion tools</li>
-              <li>Direct fan communication through BeatFlow's artist profile features</li>
+              <li><strong>Keep your splits in writing</strong>, from the session. Verbal agreements become the reason a deal dies two years later.</li>
+              <li><strong>Register your compositions</strong> with a performing rights organisation in your territory.</li>
+              <li><strong>Keep clean instrumental and stem versions.</strong> An editor who needs 30 seconds under dialogue cannot use a mix with a vocal over it.</li>
+              <li><strong>Know your AI provenance.</strong> If any part was generated, know which tool and which licence tier, because a broadcaster will ask.</li>
             </ul>
 
-            <blockquote>
-              "BeatFlow's transparent revenue model and curator network changed everything for me. I can see exactly where my money comes from and plan my releases strategically." - Sarah Chen
-            </blockquote>
+            <h2>3. Direct sales: the highest margin, the hardest audience</h2>
 
-            <h3>Marcus Rodriguez - Hip-Hop Artist</h3>
-            <p>Marcus leveraged <a href="/blog/music-distribution-guide-2026">BeatFlow's distribution tools</a> to build a sustainable music career, earning $15,200 monthly by Q4 2025. His success came from understanding the platform's unique features.</p>
+            <p>Selling a download or a physical release direct puts most of the money in your hands. It also requires an audience that already wants the specific thing you made. This is the stream that rewards a mailing list and punishes a follower count.</p>
 
-            <p><strong>Key Tactics:</strong></p>
-            <ul>
-              <li>Cross-promotion with other BeatFlow artists</li>
-              <li>Regular engagement with <a href="/blog/social-media-marketing-musicians">BeatFlow's social media integration</a></li>
-              <li>Strategic use of genre tags and metadata for discoverability</li>
-              <li>Behind-the-scenes content that increased follower engagement by 340%</li>
-            </ul>
+            <h2>4. Live: still the largest line for most working musicians</h2>
 
-            <h3>Luna Park - Indie Folk Singer</h3>
-            <p>Luna's organic growth story demonstrates how BeatFlow's algorithm rewards authentic artistry. Her monthly earnings reached $10,800 within 6 months of joining.</p>
+            <p>For the majority of independent artists who earn a living, performing is the biggest single contributor. It is also the one with real costs attached — travel, crew, equipment — so gross and net diverge sharply. Track them separately or the numbers mislead you.</p>
 
-            <p><strong>Success Factors:</strong></p>
-            <ul>
-              <li>High-quality production values</li>
-              <li>Consistent release schedule (one single every 3 weeks)</li>
-              <li>Active participation in <a href="/curator-application">BeatFlow's curator recommendation program</a></li>
-              <li>Fan playlist creation encouraging listener curation</li>
-            </ul>
+            <h2>How these fit together</h2>
 
-            <h2>The BeatFlow Advantage: Why Artists Are Earning More</h2>
+            <p>The useful mental model is not "which pays most" but <strong>which ones compound</strong>. A catalogue that is clean enough to licence stays licensable for decades. A release that charted for a week does not keep paying. Work that makes your catalogue easier to clear — splits documented, metadata correct, stems kept — raises the value of everything you have already made, not just the next thing.</p>
 
-            <h3>1. Transparent Revenue Sharing</h3>
-            <p>Unlike traditional platforms that pay fractions of a cent per stream, BeatFlow's model ensures artists receive 70% of streaming revenue—industry-leading rates that make sustainable careers possible.</p>
+            <h2>Where BeatFlow Media fits</h2>
 
-            <h3>2. Curator Economy Integration</h3>
-            <p>BeatFlow's unique curator marketplace means your music gets human-curated placements, not just algorithmic recommendations. This leads to engaged listeners who actually care about your music.</p>
+            <p>To be straightforward about it: <a href="/">BeatFlow Media Group</a> is on the other side of this transaction. We license recordings we own to creators who need music for video, podcasts, apps and client work. We are not a distributor, and we do not currently accept artist uploads.</p>
 
-            <h3>3. Direct Fan Relationships</h3>
-            <p>The platform's artist profile features allow you to build genuine connections with fans, turning casual listeners into loyal supporters who follow your entire catalog.</p>
+            <p>The reason this guide exists on our site is that we deal with the clearance question daily, from the buying side. If you want to see what a licensable catalogue looks like in practice — how rights are stated, what a licence covers, what gets excluded — our <a href="/sync-licensing">sync licensing page</a> and <a href="/terms">licence terms</a> are public, and they are a reasonable template for how to present your own work to a buyer.</p>
 
-            <h3>4. Data-Driven Insights</h3>
-            <p>Artist analytics tools provide detailed insights showing:</p>
-            <ul>
-              <li>Geographic listener distribution</li>
-              <li>Peak streaming times</li>
-              <li>Playlist performance metrics</li>
-              <li>Revenue breakdowns by song and source</li>
-            </ul>
+            <h2>A note on earnings claims</h2>
 
-            <h2>Getting Started: Your Path to $10K/Month</h2>
-
-            <h3>Month 1-2: Foundation Building</h3>
-            <ul>
-              <li>Upload your best 5-10 tracks with professional metadata</li>
-              <li>Optimize your <a href="/artist-profile">artist profile</a> with bio, images, and social links</li>
-              <li>Research successful artists in your genre on the platform</li>
-              <li>Engage with <a href="/curator-inbox">curator community</a> through thoughtful submissions</li>
-            </ul>
-
-            <h3>Month 3-4: Growth Acceleration</h3>
-            <ul>
-              <li>Establish consistent release schedule (weekly or bi-weekly)</li>
-              <li>Analyze your analytics to identify top-performing tracks</li>
-              <li>Collaborate with other BeatFlow artists for cross-promotion</li>
-              <li>Invest in <a href="/explore-premium">artist membership</a> for advanced promotion tools</li>
-            </ul>
-
-            <h3>Month 5-6: Revenue Optimization</h3>
-            <ul>
-              <li>Double down on what's working based on data insights</li>
-              <li>Create strategic playlists featuring your tracks alongside similar artists</li>
-              <li>Engage with your growing fanbase through regular updates</li>
-              <li>Explore additional revenue streams like <a href="/sync-licensing">sync licensing</a></li>
-            </ul>
-
-            <h2>The Numbers Don't Lie</h2>
-            <p>BeatFlow artists who follow best practices see average monthly earnings of:</p>
-            <ul>
-              <li><strong>$2,500-$5,000</strong> after 3 months (consistent uploaders)</li>
-              <li><strong>$5,000-$10,000</strong> after 6 months (active engagement)</li>
-              <li><strong>$10,000+</strong> after 9-12 months (strategic optimization)</li>
-            </ul>
-
-            <h2>Ready to Start Your Journey?</h2>
-            <p>The independent artist revolution is here, and <a href="/for-artists">BeatFlow is leading the charge</a>. Whether you're just starting or looking to take your existing career to the next level, the platform offers tools and community support to help you succeed.</p>
-
-            <p><strong>Next Steps:</strong></p>
-            <ol>
-              <li><a href="/explore-premium">Sign up for BeatFlow Artist Account</a></li>
-              <li>Review <a href="/explore-premium">membership plan</a> and join to start uploading</li>
-              <li>Upload your first tracks with optimized metadata</li>
-              <li>Connect with the <a href="/curator-application">curator community</a></li>
-              <li>Track your progress and adjust your strategy</li>
-            </ol>
-
-            <p>Join Sarah, Marcus, Luna, and thousands of other independent artists building sustainable music careers on <a href="/">BeatFlow</a>.</p>
-
-            <hr style="margin: 2rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);" />
-
-            <p><em>Related articles:</em></p>
-            <ul>
-              <li><a href="/blog/curators-maximize-playlist-revenue-2026">7 Ways Curators Can Maximize Playlist Revenue</a></li>
-              <li><a href="/blog/music-distribution-guide-2026">The Complete Guide to Music Distribution</a></li>
-              <li><a href="/blog/social-media-marketing-musicians">10 Social Media Marketing Tips for Musicians</a></li>
-            </ul>
+            <p>You will see a great many articles promising specific monthly figures. Treat them the way you would treat any unverifiable income claim: ask who was counted, over what period, and what they already had before they started. Income varies enormously with catalogue size, genre, existing audience and territory, and <strong>anyone quoting you a number without those caveats is selling something.</strong></p>
           `,
-            views: 2847,
-            shares: 156
-          },
-          'curators-maximize-playlist-revenue-2026': {
-            id: 'blog-002',
-            title: '7 Ways Curators Can Maximize Playlist Revenue in 2026',
-            slug: 'curators-maximize-playlist-revenue-2026',
-            category: 'Revenue Optimization',
-            publishDate: new Date('2025-12-27'),
-            readTime: '6 min',
-            excerpt: 'Learn proven strategies to grow your playlist following and increase earnings through strategic curation and engagement.',
-            keywords: ['playlist curation', 'curator earnings', 'playlist revenue', 'music curation'],
-            author: 'BeatFlow Team',
-            authorImage: '/images/Logo.png',
-            featuredImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&h=600&fit=crop',
-            content: `
-            <p>The curator economy is booming, and playlist curators on <a href="/">BeatFlowMediaGroup</a> are earning substantial income by connecting listeners with great music. If you're looking to maximize your playlist revenue in 2026, these seven proven strategies will help you grow your following and increase earnings.</p>
-
-            <h2>1. Specialize in a Niche Genre or Mood</h2>
-            <p>The most successful curators don't try to be everything to everyone. Instead, they become known for excellence in a specific area.</p>
-
-            <p><strong>Why It Works:</strong></p>
-            <ul>
-              <li>Builds a loyal, engaged audience that trusts your taste</li>
-              <li>Attracts artists willing to pay premium rates for targeted placement</li>
-              <li>Creates predictable listener behavior and better engagement metrics</li>
-              <li>Easier to maintain consistent quality standards</li>
-            </ul>
-
-            <p><strong>Action Steps:</strong></p>
-            <ul>
-              <li>Identify your strongest music knowledge area (genre, mood, or activity-based)</li>
-              <li>Research competition and find underserved niches</li>
-              <li>Create 2-3 playlists within your niche with clear differentiation</li>
-              <li>Maintain strict quality standards that define your brand</li>
-            </ul>
-
-            <blockquote>
-              "I focused exclusively on lo-fi hip-hop study beats and grew my playlist to 45,000 followers in 8 months. Artists know exactly what I'm about, and my placement requests tripled." - Jessica Martinez, Top Curator
-            </blockquote>
-
-            <h2>2. Optimize Your Playlist Titles and Descriptions</h2>
-            <p>Your playlist title and description are critical for discoverability and conversion. They need to be both search-friendly and compelling to potential followers.</p>
-
-            <p><strong>Title Best Practices:</strong></p>
-            <ul>
-              <li>Include searchable keywords (genre, mood, activity)</li>
-              <li>Keep it concise but descriptive (3-6 words ideal)</li>
-              <li>Avoid generic names like "Chill Vibes" - be specific</li>
-              <li>Consider SEO: what would listeners search for?</li>
-            </ul>
-
-            <p><strong>Description Optimization:</strong></p>
-            <ul>
-              <li>First sentence should hook the reader immediately</li>
-              <li>Include relevant keywords naturally</li>
-              <li>Explain the playlist's purpose and ideal listening context</li>
-              <li>Add your <a href="/curator-application">curator credentials</a> to build trust</li>
-              <li>Update seasonally or for trending events</li>
-            </ul>
-
-            <h2>3. Maintain Consistent Update Schedules</h2>
-            <p>Followers expect fresh content, and BeatFlow's algorithm rewards regular updates with improved visibility.</p>
-
-            <p><strong>Update Strategy:</strong></p>
-            <ul>
-              <li><strong>Weekly refreshes:</strong> Add 3-5 new tracks, remove underperforming ones</li>
-              <li><strong>Monthly overhauls:</strong> Refresh 20-30% of playlist content</li>
-              <li><strong>Seasonal updates:</strong> Major refresh every 3 months</li>
-              <li>Document your update schedule and stick to it religiously</li>
-            </ul>
-
-            <p><strong>Pro Tip:</strong> Announce major updates to your followers through BeatFlow's <a href="/curator-portal">curator communication tools</a>. This drives re-engagement and shows you're actively curating.</p>
-
-            <h2>4. Engage with Your Artist Community</h2>
-            <p>Building relationships with artists creates recurring revenue opportunities and improves your reputation in the BeatFlow ecosystem.</p>
-
-            <p><strong>Engagement Tactics:</strong></p>
-            <ul>
-              <li>Respond promptly to <a href="/curator-inbox">submission requests</a> (within 48 hours)</li>
-              <li>Provide constructive feedback even for rejections</li>
-              <li>Highlight featured artists in your playlist descriptions</li>
-              <li>Share artist success stories on your curator profile</li>
-              <li>Create artist spotlight posts for standout tracks</li>
-            </ul>
-
-            <p><strong>Revenue Impact:</strong> Curators with strong artist relationships see 3x more repeat placements and higher average placement fees.</p>
-
-            <h2>5. Leverage Cross-Promotion Strategies</h2>
-            <p>Don't operate in isolation. Strategic partnerships with other curators and artists can exponentially grow your reach.</p>
-
-            <p><strong>Cross-Promotion Methods:</strong></p>
-            <ul>
-              <li><strong>Curator collaborations:</strong> Create joint playlists with complementary curators</li>
-              <li><strong>Artist partnerships:</strong> Feature emerging artists who actively promote placements</li>
-              <li><strong>Playlist families:</strong> Build multiple playlists that reference each other</li>
-              <li><strong>Social media:</strong> Share playlists on Instagram, TikTok, Twitter with curator tags</li>
-              <li><strong>BeatFlow community:</strong> Participate in <a href="/curator-application">curator forums and events</a></li>
-            </ul>
-
-            <blockquote>
-              "Partnering with three other indie rock curators to create a 'discovery network' increased all our follower counts by 40% in two months." - David Kim, Curator
-            </blockquote>
-
-            <h2>6. Use Data Analytics to Optimize Performance</h2>
-            <p>BeatFlow's <a href="/curator-portal">curator analytics dashboard</a> provides powerful insights. Successful curators use data to make strategic decisions.</p>
-
-            <p><strong>Key Metrics to Monitor:</strong></p>
-            <ul>
-              <li><strong>Track completion rate:</strong> Are listeners finishing songs?</li>
-              <li><strong>Skip patterns:</strong> Which tracks are skipped most often?</li>
-              <li><strong>Peak listening times:</strong> When is your audience most active?</li>
-              <li><strong>Follower growth rate:</strong> Track weekly/monthly trends</li>
-              <li><strong>Revenue per placement:</strong> Identify your most valuable playlist positions</li>
-            </ul>
-
-            <p><strong>Data-Driven Actions:</strong></p>
-            <ul>
-              <li>Remove consistently skipped tracks, even if you personally like them</li>
-              <li>Place your strongest tracks during peak listening hours</li>
-              <li>Double down on playlists with highest engagement rates</li>
-              <li>A/B test different playlist ordering strategies</li>
-              <li>Identify drop-off points and refresh content accordingly</li>
-            </ul>
-
-            <h2>7. Diversify Your Revenue Streams</h2>
-            <p>Top-earning curators don't rely solely on playlist placement fees. They build multiple income sources within the BeatFlow ecosystem.</p>
-
-            <p><strong>Revenue Stream Options:</strong></p>
-            <ul>
-              <li><strong>Premium placements:</strong> Charge higher rates for top 10 positions</li>
-              <li><strong>Guaranteed duration:</strong> Offer 30/60/90-day guaranteed spots at premium prices</li>
-              <li><strong>Package deals:</strong> Multi-playlist placement bundles</li>
-              <li><strong>Consulting services:</strong> Help artists optimize their profiles and releases</li>
-              <li><strong>Playlist management:</strong> Curate branded playlists for businesses or labels</li>
-              <li><strong>BeatFlow partnership programs:</strong> Participate in featured curator initiatives</li>
-            </ul>
-
-            <p><strong>Pricing Strategy:</strong></p>
-            <ul>
-              <li>Set base rates based on follower count and engagement</li>
-              <li>Create tiered pricing: standard, featured, premium positions</li>
-              <li>Offer early bird rates for artists who submit before deadlines</li>
-              <li>Provide loyalty discounts for repeat placements</li>
-            </ul>
-
-            <h2>The Revenue Multiplication Effect</h2>
-            <p>When you implement all seven strategies together, you create a compounding effect:</p>
-
-            <p><strong>Month 1-3: Foundation</strong></p>
-            <ul>
-              <li>Establish niche expertise and optimize playlist metadata</li>
-              <li>Build consistent update schedule</li>
-              <li>Expected revenue: $500-$1,500/month</li>
-            </ul>
-
-            <p><strong>Month 4-6: Growth</strong></p>
-            <ul>
-              <li>Expand artist relationships and cross-promotion</li>
-              <li>Use analytics to refine strategy</li>
-              <li>Expected revenue: $1,500-$4,000/month</li>
-            </ul>
-
-            <p><strong>Month 7-12: Optimization</strong></p>
-            <ul>
-              <li>Diversify revenue streams fully</li>
-              <li>Build curator brand and reputation</li>
-              <li>Expected revenue: $4,000-$8,000/month</li>
-            </ul>
-
-            <h2>Real Curator Success Stories</h2>
-
-            <h3>Case Study: "Midnight Drive" Playlist</h3>
-            <p>Curator Sarah built a nighttime driving playlist that grew from 500 to 32,000 followers in one year by:</p>
-            <ul>
-              <li>Focusing exclusively on atmospheric indie/electronic fusion</li>
-              <li>Updating every Monday at 6 PM (peak commute planning time)</li>
-              <li>Creating a "sister playlist" for daytime drives</li>
-              <li>Partnering with three complementary mood-based curators</li>
-            </ul>
-            <p><strong>Revenue progression:</strong> $400/month → $5,200/month in 12 months</p>
-
-            <h3>Case Study: "Latin Urban Heat" Playlist</h3>
-            <p>Curator Miguel specialized in reggaeton and Latin trap, growing to 28,000 followers by:</p>
-            <ul>
-              <li>Being first to feature emerging Latin artists before they break</li>
-              <li>Creating detailed artist spotlights in descriptions</li>
-              <li>Hosting monthly "new discoveries" playlist refreshes</li>
-              <li>Offering premium "launch week" placements for new releases</li>
-            </ul>
-            <p><strong>Revenue progression:</strong> $600/month → $6,800/month in 10 months</p>
-
-            <h2>Getting Started: Your 30-Day Action Plan</h2>
-
-            <p><strong>Week 1: Foundation</strong></p>
-            <ol>
-              <li>Audit your current playlists - identify your strongest niche</li>
-              <li>Rewrite all playlist titles and descriptions using optimization principles</li>
-              <li>Set up your <a href="/curator-portal">curator analytics dashboard</a></li>
-              <li>Create a content calendar for the next 3 months</li>
-            </ol>
-
-            <p><strong>Week 2: Engagement</strong></p>
-            <ol>
-              <li>Respond to all pending <a href="/curator-inbox">artist submissions</a></li>
-              <li>Reach out to 5 artists currently in your playlists</li>
-              <li>Identify 3 curators for potential collaboration</li>
-              <li>Join BeatFlow curator community forums</li>
-            </ol>
-
-            <p><strong>Week 3: Optimization</strong></p>
-            <ol>
-              <li>Analyze your top 3 playlists' performance data</li>
-              <li>Remove bottom 10% of tracks by completion rate</li>
-              <li>Add 10-15 fresh tracks based on your niche</li>
-              <li>Test different playlist ordering strategies</li>
-            </ol>
-
-            <p><strong>Week 4: Revenue</strong></p>
-            <ol>
-              <li>Create tiered pricing structure for your placements</li>
-              <li>Design a "curator package" offering</li>
-              <li>Set up promotional campaign for new pricing</li>
-              <li>Track baseline revenue metrics for comparison</li>
-            </ol>
-
-            <h2>Common Mistakes to Avoid</h2>
-
-            <ul>
-              <li><strong>Accepting every submission:</strong> Quality over quantity - maintain high standards</li>
-              <li><strong>Ignoring analytics:</strong> Data tells you what's working, use it</li>
-              <li><strong>Inconsistent updates:</strong> Followers notice when playlists go stale</li>
-              <li><strong>Underpricing placements:</strong> Value your time and influence appropriately</li>
-              <li><strong>Poor artist communication:</strong> Professionalism builds long-term relationships</li>
-              <li><strong>Copying competitors:</strong> Differentiation is key to standing out</li>
-              <li><strong>Neglecting descriptions:</strong> They're crucial for discovery and conversion</li>
-            </ul>
-
-            <h2>The Future of Curator Revenue</h2>
-            <p>As BeatFlow continues to grow, curator opportunities are expanding:</p>
-            <ul>
-              <li>Enhanced revenue sharing models launching in Q2 2026</li>
-              <li>Branded playlist partnership programs</li>
-              <li>Curator verification badges for top performers</li>
-              <li>Advanced analytics including listener demographics</li>
-              <li>Integration with live events and artist development</li>
-            </ul>
-
-            <h2>Ready to Maximize Your Curator Revenue?</h2>
-            <p>The strategies outlined above have helped hundreds of BeatFlow curators build sustainable income streams. Whether you're just starting or looking to take your existing playlists to the next level, consistent application of these principles will drive results.</p>
-
-            <p><strong>Next Steps:</strong></p>
-            <ol>
-              <li><a href="/curator-application">Apply to become a BeatFlow curator</a> if you're not already one</li>
-              <li>Review <a href="/curator-application">curator application process</a> for your tier</li>
-              <li>Set up your <a href="/curator-portal">curator dashboard</a></li>
-              <li>Join the curator community and start networking</li>
-              <li>Implement your 30-day action plan today</li>
-            </ol>
-
-            <p>Start building your curator revenue today on <a href="/">BeatFlow</a>.</p>
-
-            <hr style="margin: 2rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);" />
-
-            <p><em>Related articles:</em></p>
-            <ul>
-              <li><a href="/blog/independent-artists-earning-10k-monthly">How Independent Artists Are Earning $10K+ Monthly on BeatFlow</a></li>
-              <li><a href="/blog/music-distribution-guide-2026">The Complete Guide to Music Distribution</a></li>
-              <li><a href="/blog/playlist-curation-best-practices">Playlist Curation Best Practices for 2026</a></li>
-            </ul>
-          `,
-            views: 1523,
-            shares: 89
+            // NO VIEW OR SHARE COUNTS. The removed version carried views: 2847 and
+            // shares: 156, which were literals typed into the source and rendered as
+            // real figures in the admin panel. Nothing tracks a blog view, so there is
+            // no number to carry. See OPS-4SEC4.
           },
           'music-distribution-guide-2026': {
             id: 'blog-003',
@@ -709,10 +401,6 @@ export default function BlogPost() {
               <li>Create tiered fan experiences (Patreon, Discord, etc.)</li>
             </ul>
 
-            <blockquote>
-              "Distributing through BeatFlow changed my revenue model completely. Instead of chasing pennies from Spotify, I'm earning real income from an engaged audience that actually values my music." - Marcus Rodriguez, Hip-Hop Artist
-            </blockquote>
-
             <h2>Common Distribution Mistakes to Avoid</h2>
 
             <h3>1. Rushing the Release</h3>
@@ -893,362 +581,6 @@ export default function BlogPost() {
             views: 2156,
             shares: 143
           },
-          'new-analytics-dashboard-artists': {
-            id: 'blog-004',
-            title: 'Platform Update: New Analytics Dashboard for Artists',
-            slug: 'new-analytics-dashboard-artists',
-            category: 'Platform Updates',
-            publishDate: new Date('2025-12-14'),
-            readTime: '4 min',
-            excerpt: 'Introducing our completely redesigned analytics dashboard with real-time insights and revenue tracking.',
-            keywords: ['analytics dashboard', 'artist analytics', 'streaming insights', 'revenue tracking'],
-            author: 'BeatFlow Team',
-            authorImage: '/images/Logo.png',
-            featuredImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop',
-            content: `
-            <p>We're excited to announce the launch of BeatFlow's completely redesigned analytics dashboard for artists. This major platform update provides real-time insights, comprehensive revenue tracking, and powerful data visualization tools to help you make informed decisions about your music career.</p>
-
-            <h2>What's New?</h2>
-
-            <p>Our new analytics dashboard represents a complete overhaul of how artists access and understand their performance data on BeatFlow. Here's what you can now do:</p>
-
-            <h3>Real-Time Data Updates</h3>
-            <p>Gone are the days of waiting 24-48 hours for your stats to update. The new dashboard provides:</p>
-            <ul>
-              <li><strong>Live stream counts:</strong> See your streams update in real-time as listeners play your music</li>
-              <li><strong>Current listener activity:</strong> View how many people are listening to your tracks right now</li>
-              <li><strong>Immediate revenue tracking:</strong> Watch your earnings grow throughout the day</li>
-              <li><strong>Instant engagement metrics:</strong> See likes, shares, and playlist adds as they happen</li>
-            </ul>
-
-            <h3>Advanced Revenue Analytics</h3>
-            <p>Understanding your income has never been easier with our new revenue breakdown tools:</p>
-
-            <p><strong>Revenue by Source:</strong></p>
-            <ul>
-              <li>Streaming revenue broken down by track and album</li>
-              <li>Playlist placement earnings with curator attribution</li>
-              <li>Download sales tracking</li>
-              <li>Sync licensing revenue (when applicable)</li>
-              <li>Pro-rated monthly projections based on current trends</li>
-            </ul>
-
-            <p><strong>Revenue Timeline:</strong></p>
-            <ul>
-              <li>Daily, weekly, and monthly revenue graphs</li>
-              <li>Year-over-year comparison charts</li>
-              <li>Peak earning periods highlighted</li>
-              <li>Seasonal trend identification</li>
-            </ul>
-
-            <h3>Listener Demographics and Behavior</h3>
-            <p>Understand your audience better than ever before:</p>
-
-            <p><strong>Geographic Data:</strong></p>
-            <ul>
-              <li>Interactive world map showing listener locations</li>
-              <li>City-level granularity for major markets</li>
-              <li>Top countries and regions ranked</li>
-              <li>Growth trends by territory</li>
-            </ul>
-
-            <p><strong>Demographic Insights:</strong></p>
-            <ul>
-              <li>Age range breakdown of your listeners</li>
-              <li>Gender distribution data</li>
-              <li>Listening device preferences (mobile, desktop, tablet)</li>
-              <li>Platform usage patterns</li>
-            </ul>
-
-            <p><strong>Behavioral Analytics:</strong></p>
-            <ul>
-              <li>Peak listening times by hour and day</li>
-              <li>Average session duration per listener</li>
-              <li>Track completion rates (how many listeners finish each song)</li>
-              <li>Skip patterns and drop-off points</li>
-              <li>Repeat listener percentage</li>
-            </ul>
-
-            <h3>Track Performance Metrics</h3>
-            <p>Deep dive into how each of your tracks is performing:</p>
-
-            <ul>
-              <li><strong>Stream velocity:</strong> How quickly tracks are gaining streams</li>
-              <li><strong>Playlist inclusion:</strong> Which playlists feature your music and their follower counts</li>
-              <li><strong>Discovery sources:</strong> How listeners are finding your tracks (search, playlists, artist page, etc.)</li>
-              <li><strong>Engagement rate:</strong> Percentage of listeners who like, share, or add to playlists</li>
-              <li><strong>Comparative performance:</strong> See how each track stacks up against your catalog</li>
-            </ul>
-
-            <h3>Playlist Impact Analysis</h3>
-            <p>For artists featured in <a href="/curator-application">curator playlists</a>, the new dashboard shows:</p>
-
-            <ul>
-              <li>Which playlists are driving the most streams</li>
-              <li>Conversion rate from playlist discovery to profile follows</li>
-              <li>Average position in playlists over time</li>
-              <li>Playlist follower growth while your track is featured</li>
-              <li>Estimated revenue contribution per playlist</li>
-            </ul>
-
-            <h2>Dashboard Walkthrough: Key Features</h2>
-
-            <h3>Overview Tab</h3>
-            <p>Your dashboard home screen provides a high-level snapshot:</p>
-
-            <ul>
-              <li><strong>Total Streams (All Time):</strong> Complete stream count across your catalog</li>
-              <li><strong>Monthly Active Listeners:</strong> Unique listeners in the past 30 days</li>
-              <li><strong>Current Month Revenue:</strong> Running total with daily breakdown</li>
-              <li><strong>Follower Count:</strong> Artist profile followers with growth rate</li>
-              <li><strong>Top Track This Month:</strong> Your best-performing song with key stats</li>
-              <li><strong>Recent Milestones:</strong> Automated celebration of achievements (10K streams, 1K followers, etc.)</li>
-            </ul>
-
-            <h3>Revenue Tab</h3>
-            <p>Comprehensive financial tracking and projections:</p>
-
-            <p><strong>Revenue Summary Cards:</strong></p>
-            <ul>
-              <li>Current month earnings</li>
-              <li>Last month comparison (% change)</li>
-              <li>Projected end-of-month total</li>
-              <li>All-time earnings</li>
-            </ul>
-
-            <p><strong>Interactive Graphs:</strong></p>
-            <ul>
-              <li>Daily revenue bar chart (past 30 days)</li>
-              <li>Monthly revenue trend line (past 12 months)</li>
-              <li>Revenue source pie chart (streaming, downloads, placements)</li>
-              <li>Track-level revenue comparison</li>
-            </ul>
-
-            <p><strong>Payout Information:</strong></p>
-            <ul>
-              <li>Next payout date and estimated amount</li>
-              <li>Payout history with downloadable statements</li>
-              <li>Banking/payment method status</li>
-              <li>Tax documentation center</li>
-            </ul>
-
-            <h3>Audience Tab</h3>
-            <p>Know your listeners inside and out:</p>
-
-            <ul>
-              <li><strong>Geographic distribution map:</strong> Interactive visualization of where your music is being heard</li>
-              <li><strong>Top cities table:</strong> Ranked list with stream counts and growth trends</li>
-              <li><strong>Listener demographics:</strong> Age and gender breakdowns with comparative industry data</li>
-              <li><strong>Device analytics:</strong> How fans are accessing your music</li>
-              <li><strong>Listening behavior:</strong> Time of day patterns, session lengths, and engagement metrics</li>
-            </ul>
-
-            <h3>Tracks Tab</h3>
-            <p>Performance metrics for every song in your catalog:</p>
-
-            <ul>
-              <li><strong>Sortable track table:</strong> Filter by streams, revenue, release date, or engagement</li>
-              <li><strong>Individual track pages:</strong> Deep dive into specific song analytics</li>
-              <li><strong>Playlist appearances:</strong> See every playlist featuring each track</li>
-              <li><strong>Discovery breakdown:</strong> How listeners are finding each song</li>
-              <li><strong>Trend indicators:</strong> Visual cues showing if tracks are trending up or down</li>
-            </ul>
-
-            <h3>Playlists Tab</h3>
-            <p>Track your presence in the BeatFlow curator ecosystem:</p>
-
-            <ul>
-              <li>All playlists featuring your music</li>
-              <li>Curator information and follower counts</li>
-              <li>Streams generated per playlist</li>
-              <li>Revenue attribution by playlist</li>
-              <li>Playlist position tracking over time</li>
-            </ul>
-
-            <h2>How to Access Your New Dashboard</h2>
-
-            <p>If you're an existing BeatFlow artist, your new analytics dashboard is already live! Here's how to access it:</p>
-
-            <ol>
-              <li>Log into your <a href="/artist-portal">BeatFlow artist account</a></li>
-              <li>Navigate to the "Analytics" section from your main menu</li>
-              <li>Explore the new tabs: Overview, Revenue, Audience, Tracks, and Playlists</li>
-              <li>Use date range selectors to view data from different time periods</li>
-              <li>Export any data set as CSV for your own analysis</li>
-            </ol>
-
-            <p>If you're not yet a BeatFlow artist, <a href="/explore-premium">join today</a> to get access to these powerful analytics tools.</p>
-
-            <h2>Making Data-Driven Decisions</h2>
-
-            <p>The new analytics dashboard isn't just about pretty graphs—it's about empowering you to make smarter decisions about your music career. Here are some ways to use your new insights:</p>
-
-            <h3>Optimize Your Release Strategy</h3>
-            <ul>
-              <li>Identify which days and times your audience is most active</li>
-              <li>Release new music when your listeners are most engaged</li>
-              <li>Target geographic markets where you're already gaining traction</li>
-              <li>Analyze which track types perform best (singles vs. album cuts, certain genres, etc.)</li>
-            </ul>
-
-            <h3>Focus Your Marketing Efforts</h3>
-            <ul>
-              <li>See which discovery sources drive the most engaged listeners</li>
-              <li>Double down on marketing channels that convert to streams</li>
-              <li>Identify underperforming tracks that need promotional support</li>
-              <li>Target tour planning to cities with high listener concentrations</li>
-            </ul>
-
-            <h3>Maximize Revenue</h3>
-            <ul>
-              <li>Understand which tracks generate the most income</li>
-              <li>Identify seasonal patterns to plan strategic releases</li>
-              <li>See which <a href="/curator-application">curator placements</a> are worth the investment</li>
-              <li>Track revenue trends to forecast future earnings</li>
-            </ul>
-
-            <h3>Build Your Fanbase</h3>
-            <ul>
-              <li>Monitor follower growth rate and what drives it</li>
-              <li>Engage with listeners in high-activity geographic areas</li>
-              <li>Create content that resonates with your demographic profile</li>
-              <li>Convert playlist listeners into artist profile followers</li>
-            </ul>
-
-            <h2>Mobile-Optimized Design</h2>
-
-            <p>We know artists need to check their stats on the go. The new dashboard is fully optimized for mobile devices:</p>
-
-            <ul>
-              <li>Responsive design that adapts to any screen size</li>
-              <li>Touch-friendly graphs and charts</li>
-              <li>Simplified mobile view for quick stats checks</li>
-              <li>Native app coming in Q1 2026</li>
-            </ul>
-
-            <h2>Data Export and Reporting</h2>
-
-            <p>Your data is your data. We make it easy to export and analyze:</p>
-
-            <ul>
-              <li><strong>CSV exports:</strong> Download any data set as a spreadsheet</li>
-              <li><strong>Custom date ranges:</strong> Pull reports for specific time periods</li>
-              <li><strong>Automated reports:</strong> Schedule weekly or monthly email summaries</li>
-              <li><strong>API access:</strong> For developers, our API provides programmatic access to analytics (coming soon)</li>
-            </ul>
-
-            <h2>Privacy and Data Security</h2>
-
-            <p>Artist data is protected with enterprise-grade security:</p>
-
-            <ul>
-              <li>All analytics data is encrypted in transit and at rest</li>
-              <li>Only you can access your dashboard (not even BeatFlow staff without permission)</li>
-              <li>Listener data is anonymized and aggregated</li>
-              <li>GDPR and CCPA compliant data handling</li>
-              <li>Two-factor authentication available for account security</li>
-            </ul>
-
-            <h2>What Artists Are Saying</h2>
-
-            <blockquote>
-              "The new analytics dashboard is a game-changer. For the first time, I can actually understand where my revenue is coming from and make strategic decisions about my releases. The real-time updates are addictive!" - Sarah Chen, Electronic Producer
-            </blockquote>
-
-            <blockquote>
-              "Being able to see which playlists are driving streams and revenue has completely changed how I approach curator relationships. I now know exactly which placements are worth pursuing." - Marcus Rodriguez, Hip-Hop Artist
-            </blockquote>
-
-            <blockquote>
-              "The geographic data helped me plan my first tour. I focused on cities where I had the most listeners, and every show sold out. This dashboard paid for itself immediately." - Luna Park, Indie Folk Singer
-            </blockquote>
-
-            <h2>Coming Soon: Advanced Features</h2>
-
-            <p>This is just the beginning. We're already working on additional analytics features:</p>
-
-            <h3>Q1 2026 Releases</h3>
-            <ul>
-              <li><strong>Predictive analytics:</strong> AI-powered forecasts for stream and revenue projections</li>
-              <li><strong>Competitive benchmarking:</strong> See how your metrics compare to similar artists (opt-in only)</li>
-              <li><strong>Native mobile app:</strong> iOS and Android apps with push notifications for milestones</li>
-              <li><strong>Collaboration analytics:</strong> Track performance of featured artist collaborations</li>
-            </ul>
-
-            <h3>Q2 2026 Releases</h3>
-            <ul>
-              <li><strong>Social media integration:</strong> Connect Instagram, TikTok, and Twitter for unified analytics</li>
-              <li><strong>Fan journey mapping:</strong> Visualize the path from discovery to superfan</li>
-              <li><strong>A/B testing tools:</strong> Compare performance of different release strategies</li>
-              <li><strong>Automated insights:</strong> AI-generated recommendations based on your data</li>
-            </ul>
-
-            <h2>Feedback Welcome</h2>
-
-            <p>We built this dashboard based on extensive artist feedback, but we want to keep improving. If you have suggestions for additional features or metrics you'd like to see, please let us know:</p>
-
-            <ul>
-              <li>Submit feedback directly from the dashboard using the feedback button</li>
-              <li><a href="/contact">Contact our artist support team</a></li>
-              <li>Join our artist community forums to discuss with other creators</li>
-              <li>Participate in beta testing for upcoming features</li>
-            </ul>
-
-            <h2>Get Started Today</h2>
-
-            <p>Whether you're already a BeatFlow artist or considering joining, our new analytics dashboard gives you the insights you need to grow your music career strategically.</p>
-
-            <p><strong>For existing artists:</strong></p>
-            <ol>
-              <li>Log into your <a href="/artist-portal">artist dashboard</a></li>
-              <li>Click "Analytics" in the main navigation</li>
-              <li>Explore your data and discover new insights</li>
-              <li>Export your first report to track progress</li>
-            </ol>
-
-            <p><strong>For new artists:</strong></p>
-            <ol>
-              <li><a href="/explore-premium">Join BeatFlow</a> with our $25/year artist membership</li>
-              <li>Upload your music and complete your profile</li>
-              <li>Once your tracks are approved, access your analytics dashboard</li>
-              <li>Start tracking your growth from day one</li>
-            </ol>
-
-            <p>The new analytics dashboard is available to all BeatFlow artists at no additional cost—it's included with your <a href="/explore-premium">artist membership</a>.</p>
-
-            <h2>Supporting Resources</h2>
-
-            <p>To help you get the most out of your new dashboard, we've created:</p>
-
-            <ul>
-              <li><strong>Video tutorials:</strong> Step-by-step walkthroughs of each dashboard section</li>
-              <li><strong>Help documentation:</strong> Detailed explanations of every metric and feature</li>
-              <li><strong>Webinar series:</strong> Live training sessions on using analytics to grow your career</li>
-              <li><strong>Case studies:</strong> Real examples of artists using data to succeed</li>
-            </ul>
-
-            <p>All resources are available in the Help section of your artist dashboard.</p>
-
-            <h2>The Future of Artist Analytics</h2>
-
-            <p>At <a href="/">BeatFlow</a>, we believe that transparency and data access are fundamental artist rights. While other platforms keep artists in the dark about their performance and revenue, we're committed to giving you complete visibility into your music's impact.</p>
-
-            <p>This new analytics dashboard represents our commitment to artist empowerment. When you understand your data, you can make better decisions, grow your fanbase strategically, and build a sustainable music career.</p>
-
-            <p>Welcome to the future of artist analytics. We can't wait to see what you'll achieve with these new insights.</p>
-
-            <hr style="margin: 2rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);" />
-
-            <p><em>Related articles:</em></p>
-            <ul>
-              <li><a href="/blog/independent-artists-earning-10k-monthly">How Independent Artists Are Earning $10K+ Monthly on BeatFlow</a></li>
-              <li><a href="/blog/music-distribution-guide-2026">The Complete Guide to Music Distribution in 2026</a></li>
-              <li><a href="/blog/curators-maximize-playlist-revenue-2026">7 Ways Curators Can Maximize Playlist Revenue in 2026</a></li>
-            </ul>
-          `,
-            views: 891,
-            shares: 67
-          },
           'social-media-marketing-musicians': {
             id: 'blog-005',
             title: '10 Social Media Marketing Tips for Musicians in 2026',
@@ -1310,10 +642,6 @@ export default function BlogPost() {
               <li>Longer-form content (8-15 minutes) performs well</li>
               <li>Optimize titles, descriptions, and tags for search</li>
             </ul>
-
-            <blockquote>
-              "I used to just share the same post everywhere and got zero engagement. When I started creating TikToks specifically for TikTok and Instagram content for Instagram, my follower growth increased 400% in two months." - Marcus Rodriguez
-            </blockquote>
 
             <h2>2. Leverage Short-Form Video (It's Not Optional Anymore)</h2>
 
@@ -1396,10 +724,6 @@ export default function BlogPost() {
               <li>"Reading your comments about..."</li>
               <li>"The most emotional moment at my last show..."</li>
             </ul>
-
-            <blockquote>
-              "I stopped posting 'new song out now' and started sharing the stories behind each track. My streaming numbers doubled because people actually cared about the music before they even heard it." - Luna Park
-            </blockquote>
 
             <h2>5. Use Data to Optimize Your Strategy</h2>
 
@@ -1697,10 +1021,6 @@ export default function BlogPost() {
               <li>Diversifying across platforms while focusing on where your audience is</li>
               <li>Converting social followers into streaming listeners, email subscribers, and paying fans</li>
             </ul>
-
-            <blockquote>
-              "I grew from 500 to 50,000 Instagram followers in 18 months by posting consistently, engaging authentically, and always giving value before asking for anything. Social media isn't a sprint—it's a marathon." - Sarah Chen
-            </blockquote>
 
             <h2>Action Plan: Your First 30 Days</h2>
 
@@ -2007,25 +1327,11 @@ export default function BlogPost() {
               <li>Demonstrated independent artists can compete at highest level</li>
             </ul>
 
-            <h3>BeatFlow Success Stories</h3>
+            <h3>What independence actually changes</h3>
 
-            <p>Artists on BeatFlow are proving independence works at all levels:</p>
+            <p>The structural shift is control rather than income: an independent artist owns the master, sets the release schedule, and can licence the recording directly to whoever wants it. Whether that produces more money depends entirely on catalogue size, audience and genre — but it is the owner who decides, which is not true under a typical label agreement.</p>
 
-            <p><strong>Sarah Chen - Electronic Producer:</strong></p>
-            <ul>
-              <li>Started with zero following in March 2025</li>
-              <li>Grew to $12,500/month by December 2025</li>
-              <li>Owns all masters, maintains creative control</li>
-              <li>Built sustainable career without label involvement</li>
-            </ul>
-
-            <p><strong>Marcus Rodriguez - Hip-Hop Artist:</strong></p>
-            <ul>
-              <li>Turned down label deal after BeatFlow success</li>
-              <li>Earns $15,200/month through platform</li>
-              <li>Invests revenue back into career on his terms</li>
-              <li>Proves independence can be more profitable than label deals</li>
-            </ul>
+            <p>To be direct about our own position: <a href="/">BeatFlow Media Group</a> licenses recordings it owns to creators. We are not a distributor and we do not currently accept artist uploads, so we have no artist earnings to report. If you want to see what controlling your own rights looks like from the buying side, our <a href="/terms">licence terms</a> and <a href="/sync-licensing">sync licensing page</a> are public — they are the documents a buyer actually reads before paying.</p>
 
             <h2>The Economics of Independence: Breaking Even Faster</h2>
 
@@ -2487,12 +1793,16 @@ export default function BlogPost() {
               <Typography variant="body2" color="text.secondary">
                 {post.publishDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <TrendingUp fontSize="small" color="disabled" />
-                <Typography variant="body2" color="text.secondary">
-                  {post.views.toLocaleString()} views
-                </Typography>
-              </Box>
+              {/* THE VIEW COUNT IS GONE. It read post.views, which was a literal typed
+                * into the mockPosts object -- 2,847 on one article, 1,523 on another --
+                * and displayed to the public as a real figure. Nothing tracks a blog
+                * view, so there was never a number to show.
+                *
+                * A view count is also social proof: "2,847 people read this" is a claim
+                * about popularity made to a reader deciding whether to trust the page.
+                * Inventing it is the same fault as inventing a testimonial, in a smaller
+                * font. Removed rather than zeroed -- 0 views would claim a measurement
+                * nobody took. See OPS-4SEC4. */}
             </Box>
 
             <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />

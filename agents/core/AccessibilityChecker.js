@@ -535,8 +535,22 @@ class AccessibilityChecker {
   checkFormAccessibility(content, filePath) {
     const issues = [];
 
-    // Check for inputs without labels
-    const inputPattern = /<input[^>]*>/gi;
+    // Check for inputs without labels.
+    //
+    // THE LOOKAHEAD IS LOAD-BEARING. This was /<input[^>]*>/gi -- case-insensitive and
+    // with nothing after "input" -- so it matched any COMPONENT whose name merely starts
+    // with those letters. MUI's <InputAdornment> is the one that bit: a decorative icon
+    // wrapper was reported as an unlabelled form field, at CRITICAL, which blocks a
+    // commit. src/pages/Blog.js has no <input> in it at all and failed the hook anyway.
+    //
+    // A detector that cries wolf at CRITICAL is worse than one that misses: the first
+    // time it blocks a commit over nothing, the next person reaches for --no-verify, and
+    // after that it never catches anything again.
+    //
+    // (?=[\s/>]) requires the tag name to END there -- <input>, <input ... >, <input/> --
+    // so <InputAdornment>, <InputLabel> and <InputBase> no longer match, while every
+    // real input still does.
+    const inputPattern = /<input(?=[\s/>])[^>]*>/gi;
     const inputs = content.matchAll(inputPattern);
 
     for (const match of inputs) {

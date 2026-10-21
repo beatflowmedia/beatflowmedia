@@ -51,7 +51,7 @@ export default function Blog() {
         const mockPosts = [
           {
             id: 'blog-001',
-            title: 'How Independent Artists Are Earning $10K+ Monthly on BeatFlow',
+            title: 'How to Make Money as an Independent Artist: The Real Income Streams',
             slug: 'independent-artists-earning-10k-monthly',
             category: 'Success Stories',
             publishDate: new Date('2026-01-01'),
@@ -60,18 +60,6 @@ export default function Blog() {
             views: 2847,
             shares: 156,
             image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&h=600&fit=crop'
-          },
-          {
-            id: 'blog-002',
-            title: '7 Ways Curators Can Maximize Playlist Revenue in 2026',
-            slug: 'curators-maximize-playlist-revenue-2026',
-            category: 'Revenue Optimization',
-            publishDate: new Date('2025-12-28'),
-            readTime: '6 min',
-            excerpt: 'Learn proven strategies to grow your playlist following and increase earnings through strategic curation and engagement.',
-            views: 1523,
-            shares: 89,
-            image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop'
           },
           {
             id: 'blog-003',
@@ -84,18 +72,6 @@ export default function Blog() {
             views: 3156,
             shares: 234,
             image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop'
-          },
-          {
-            id: 'blog-004',
-            title: 'Platform Update: New Analytics Dashboard for Artists',
-            slug: 'new-analytics-dashboard-artists',
-            category: 'Platform Updates',
-            publishDate: new Date('2025-12-15'),
-            readTime: '4 min',
-            excerpt: 'Introducing our completely redesigned analytics dashboard with real-time insights and revenue tracking.',
-            views: 891,
-            shares: 45,
-            image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop'
           },
           {
             id: 'blog-005',
@@ -189,11 +165,21 @@ export default function Blog() {
 
           {/* Search Bar */}
           <Box sx={{ mb: 4 }}>
+            {/* A PLACEHOLDER IS NOT A LABEL, which is what the pre-commit hook caught
+              * here. It disappears the moment anyone types, so a person who looks away
+              * mid-sentence loses the only clue what the field is for; screen readers
+              * treat it inconsistently, and some skip it entirely. The search box on a
+              * blog index is the one control on the page, so an unlabelled one is the
+              * whole navigation gone for anyone not reading the screen.
+              *
+              * aria-label names it without adding visible chrome. The placeholder stays
+              * as the hint it actually is. */}
             <TextField
               fullWidth
               placeholder="Search articles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              inputProps={{ 'aria-label': 'Search articles' }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -322,12 +308,8 @@ export default function Blog() {
                           </Typography>
                         </Box>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <TrendingUp fontSize="small" sx={{ color: 'rgba(255,255,255,0.5)' }} />
-                          <Typography variant="caption" color="text.secondary">
-                            {post.views.toLocaleString()} views
-                          </Typography>
-                        </Box>
+                        {/* Same fabricated counter as the article page, on every card.
+                          * See the note in BlogPost.js and OPS-4SEC4. */}
                       </Box>
 
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
