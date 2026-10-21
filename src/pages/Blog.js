@@ -17,9 +17,9 @@ import {
 import {
   Search,
   Schedule,
-  TrendingUp
 } from '@mui/icons-material';
 import GoogleAdSense from '../components/GoogleAdSense';
+import { BLOG_POSTS, categoriesOf, asDate } from '../data/blogPosts';
 
 export default function Blog() {
   const [posts, setPosts] = useState([]);
@@ -28,79 +28,33 @@ export default function Blog() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const categories = [
-    'All Posts',
-    'Artist Tips',
-    'Industry News',
-    'Platform Updates',
-    'Success Stories',
-    'Music Marketing',
-    'Distribution Guide',
-    'Revenue Optimization'
-  ];
+  // DERIVED FROM THE POSTS, not listed. The hardcoded version offered Artist Tips,
+  // Platform Updates, Success Stories, Music Marketing and Revenue Optimization --
+  // five filters that returned nothing, because no post carries those categories any
+  // more. A filter that always comes back empty teaches people the search is broken.
+  const categories = ['All Posts', ...categoriesOf()];
 
   useEffect(() => {
     const loadPosts = async () => {
       try {
         setLoading(true);
 
-        // In production, fetch from Firestore
-        // const publishedPosts = await marketingService.getBlogPosts({ status: 'published' });
+        // ONE SOURCE. This was a `mockPosts` array duplicating what BlogPost.js
+        // already held and what BlogManager held a third, different version of -- none
+        // of the three agreeing. Correcting one post's title meant three edits, and the
+        // one missed here left an excerpt describing "three independent artists" who do
+        // not exist, under a headline that no longer mentioned them.
+        //
+        // publishDate is an ISO string in the data module; the Date is built here
+        // because a Date in a shared constant is a mutable object every consumer holds
+        // a reference to.
+        const published = BLOG_POSTS.map((post) => ({
+          ...post,
+          publishDate: asDate(post)
+        }));
 
-        // Mock data for now
-        const mockPosts = [
-          {
-            id: 'blog-001',
-            title: 'How to Make Money as an Independent Artist: The Real Income Streams',
-            slug: 'independent-artists-earning-10k-monthly',
-            category: 'Success Stories',
-            publishDate: new Date('2026-01-01'),
-            readTime: '5 min',
-            excerpt: 'Discover how three independent artists turned their passion into a full-time income using BeatFlow\'s distribution and revenue tools.',
-            views: 2847,
-            shares: 156,
-            image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&h=600&fit=crop'
-          },
-          {
-            id: 'blog-003',
-            title: 'The Ultimate Guide to Music Distribution in 2026',
-            slug: 'music-distribution-guide-2026',
-            category: 'Distribution Guide',
-            publishDate: new Date('2025-12-20'),
-            readTime: '8 min',
-            excerpt: 'Everything you need to know about modern music distribution, from choosing platforms to maximizing revenue.',
-            views: 3156,
-            shares: 234,
-            image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop'
-          },
-          {
-            id: 'blog-005',
-            title: '10 Social Media Marketing Tips for Musicians',
-            slug: 'social-media-marketing-musicians',
-            category: 'Music Marketing',
-            publishDate: new Date('2025-12-10'),
-            readTime: '7 min',
-            excerpt: 'Master social media marketing with these proven strategies from successful BeatFlow artists.',
-            views: 2034,
-            shares: 178,
-            image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop'
-          },
-          {
-            id: 'blog-006',
-            title: 'Industry Trends: The Rise of Independent Music in 2026',
-            slug: 'rise-of-independent-music-2026',
-            category: 'Industry News',
-            publishDate: new Date('2025-12-05'),
-            readTime: '6 min',
-            excerpt: 'How independent artists are reshaping the music industry and what it means for your career.',
-            views: 4521,
-            shares: 312,
-            image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&h=600&fit=crop'
-          }
-        ];
-
-        setPosts(mockPosts);
-        setFilteredPosts(mockPosts);
+        setPosts(published);
+        setFilteredPosts(published);
       } catch (error) {
         console.error('Error loading blog posts:', error);
       } finally {

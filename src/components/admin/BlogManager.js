@@ -34,11 +34,10 @@ import {
   CheckCircle,
   PendingActions,
   Article,
-  Schedule,
-  Visibility as ViewsIcon,
-  Share
+  Schedule
 } from '@mui/icons-material';
 import { useModal } from '../../hooks/useModal';
+import { BLOG_POSTS, categoriesOf, asDate } from '../../data/blogPosts';
 
 export default function BlogManager() {
   const { showConfirm } = useModal();
@@ -47,64 +46,25 @@ export default function BlogManager() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [editedContent, setEditedContent] = useState({});
 
-  const categories = [
-    'Artist Tips',
-    'Industry News',
-    'Platform Updates',
-    'Success Stories',
-    'Music Marketing',
-    'Distribution Guide',
-    'Revenue Optimization'
-  ];
+  // Derived, so the filter cannot offer a category with no posts behind it.
+  const categories = ['All', ...categoriesOf()];
 
-  // Load blog posts (in production, fetch from Firestore)
+  // ONE SOURCE, shared with the public blog.
+  //
+  // This held its own `mockPosts` array -- a THIRD description of the blog, disagreeing
+  // with both Blog.js and BlogPost.js. On 2026-10-21 it still listed a post retired that
+  // morning, and another under the headline "How Independent Artists Are Earning $10K+
+  // Monthly on BeatFlow", which had been removed hours earlier for inventing an artist
+  // and her income. An admin screen describing articles that do not exist is worse than
+  // no screen: it is the one a person would check before deciding the blog is fine.
   useEffect(() => {
-    // Simulated data - in production, fetch from Firestore marketing_content collection
-    const mockPosts = [
-      {
-        id: 'blog-001',
-        title: 'How Independent Artists Are Earning $10K+ Monthly on BeatFlow',
-        slug: 'independent-artists-earning-10k-monthly',
-        category: 'Success Stories',
-        status: 'published',
-        publishDate: new Date('2026-01-01'),
-        views: 2847,
-        shares: 156,
-        readTime: '5 min',
-        excerpt: 'Discover how three independent artists turned their passion into a full-time income using BeatFlow\'s distribution and revenue tools.',
-        keywords: ['independent artist income', 'music revenue', 'artist success stories'],
-        author: 'BeatFlow Team'
-      },
-      {
-        id: 'blog-002',
-        title: '7 Ways Curators Can Maximize Playlist Revenue in 2026',
-        slug: 'curators-maximize-playlist-revenue-2026',
-        category: 'Revenue Optimization',
-        status: 'published',
-        publishDate: new Date('2025-12-28'),
-        views: 1523,
-        shares: 89,
-        readTime: '6 min',
-        excerpt: 'Learn proven strategies to grow your playlist following and increase earnings through strategic curation and engagement.',
-        keywords: ['playlist curation', 'curator earnings', 'playlist revenue'],
-        author: 'BeatFlow Team'
-      },
-      {
-        id: 'blog-003',
-        title: 'The Complete Guide to Music Distribution for Labels in 2026',
-        slug: 'music-distribution-guide-labels-2026',
-        category: 'Distribution Guide',
-        status: 'draft',
-        publishDate: null,
-        views: 0,
-        shares: 0,
-        readTime: '8 min',
-        excerpt: 'Everything record labels need to know about modern music distribution, from catalog management to revenue analytics.',
-        keywords: ['music distribution', 'record labels', 'catalog management'],
-        author: 'BeatFlow Team'
-      }
-    ];
-    setPosts(mockPosts);
+    setPosts(BLOG_POSTS.map((post) => ({
+      ...post,
+      publishDate: asDate(post),
+      // Everything here is published. The draft/published split this panel used to show
+      // came from the fixture, and nothing in the data has ever carried a status.
+      status: 'published'
+    })));
   }, []);
 
   const handleEdit = (post) => {
@@ -166,8 +126,13 @@ export default function BlogManager() {
 
   const publishedCount = posts.filter(p => p.status === 'published').length;
   const draftCount = posts.filter(p => p.status === 'draft').length;
-  const totalViews = posts.reduce((sum, p) => sum + p.views, 0);
-  const totalShares = posts.reduce((sum, p) => sum + p.shares, 0);
+  // TOTAL VIEWS AND SHARES ARE GONE. They summed p.views and p.shares, which were
+  // literals in the fixture -- 2,847 and 1,523 views, 156 and 89 shares -- and rendered
+  // as "4,370 Total Views" and "245 Social Shares" on a platform whose blog records no
+  // analytics event of any kind. Percy, twice: "is this real data?" / "are these number
+  // real?"
+  //
+  // Not replaced with 0: zero claims a measurement nobody took. See OPS-4SEC4.
 
   return (
     <Box sx={{ p: 3 }}>
@@ -219,41 +184,12 @@ export default function BlogManager() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'rgba(255, 152, 0, 0.1)', border: '1px solid rgba(255, 152, 0, 0.3)' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ViewsIcon sx={{ color: '#ff9800' }} />
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ff9800' }}>
-                    {totalViews.toLocaleString()}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Total Views
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'rgba(156, 39, 176, 0.1)', border: '1px solid rgba(156, 39, 176, 0.3)' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Share sx={{ color: '#9c27b0' }} />
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
-                    {totalShares}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Social Shares
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* TWO CARDS REMOVED: "Total Views" and "Social Shares". Both summed literals
+          * from the fixture this panel used to hold -- 2,847 and 1,523 views, 156 and
+          * 89 shares -- rendering as "4,370 Total Views" and "245 Social Shares".
+          * Nothing tracks a blog view or a share, so there is nothing to count, and a
+          * dashboard number that cannot be traced to a stored fact is worse than no
+          * number because it gets quoted. See OPS-4SEC4. */}
       </Grid>
 
       {/* Category Filter */}

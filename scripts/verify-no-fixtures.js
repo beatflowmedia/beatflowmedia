@@ -84,7 +84,6 @@ const KNOWN_FIXTURES = {
   'src/components/admin/StudioProjectsManager.js': 'Comment only. Unreviewed.',
   'src/components/analytics/PerformanceMonitor.js': 'Comment only. Unreviewed.',
   'src/components/investor/InvestorPortalExample.jsx': 'Named *Example*. Confirm nothing routes to it.',
-  'src/components/admin/BlogManager.js': 'OPS-4SEC4 — 4,370 views and 245 shares are literals. Wire or remove.',
   'src/components/admin/LandingPageManager.js': 'Comment only; the fixtures were removed on 2026-10-21 and it reads Firestore.',
   'src/components/admin/AppealsReview.js': 'Marker present; reads Firestore. Confirm before clearing.',
   'src/components/AgentLogViewer.js': 'Developer tool, not a customer surface.',
