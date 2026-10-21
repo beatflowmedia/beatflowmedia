@@ -92,9 +92,14 @@ const WHAT_YOU_GET = [
       "We hold the recording and the composition. One license covers both, so there is no publisher to clear separately."
   },
   {
-    title: "Quoted per project",
+    // REWRITTEN 2026-10-21. This said only "Quoted per project", which was true when
+    // every commercial use was quoted and became misleading the day the one-off
+    // commercial licence shipped. A buyer cutting a client video read this page and
+    // concluded they had to wait two business days for a number -- when the licence
+    // they needed was two minutes and $29 away at checkout.
+    title: "Self-serve, or quoted",
     body:
-      "Priced on media, term and territory rather than a fixed rate card. Tell us the use and we come back with terms."
+      "Video, podcasts, apps, games and client work are licensed at checkout: $29 a track from the production library, $79 for a released song, $179 to $319 for a whole collection. Broadcast, cinema and paid advertising campaigns are quoted, because a national advertisement and a student film are not the same number."
   },
   {
     title: "AI provenance stated",
@@ -244,15 +249,25 @@ export default function SyncLicensing() {
                 covers both the recording and the composition.
               </li>
             </ol>
+            {/* "personal or small-scale" was the whole of what checkout sold when this
+                was written. It is not any more: a perpetual COMMERCIAL licence covering
+                video, client work and monetised content is issued at checkout, and
+                sending that buyer away to wait for a quote loses a sale we can close
+                immediately. The split below is by WHAT THE USE IS, not by how big the
+                buyer feels. */}
             <p className="text-sm text-gray-500 mt-4">
-              Both are quoted rather than sold from a rate card, because a national
-              advertisement and a student film are not the same number, and neither are
-              one café and a gym chain. If you want a track for personal or
-              small-scale use instead,{" "}
+              Broadcast and paid advertising are quoted rather than sold from a rate
+              card, because a national advertisement and a student film are not the same
+              number, and neither are one café and a gym chain.{" "}
+              <strong className="text-gray-300">
+                Most commercial use does not need a quote.
+              </strong>{" "}
+              Putting a track in a video, a podcast, an app, a game or work you deliver
+              to your own client is licensed at checkout, permanently and worldwide —{" "}
               <Link to="/browse/library" className="text-gray-300 hover:underline">
                 browse the library
               </Link>{" "}
-              — those licenses are issued at checkout.
+              and license a track or a whole collection in a couple of minutes.
             </p>
             {/* Stated here rather than left for the quote, because it is the single
                 most common misunderstanding this page exists to correct: a download

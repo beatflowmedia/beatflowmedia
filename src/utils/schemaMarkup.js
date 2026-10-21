@@ -208,6 +208,77 @@ export const generateAlbumSchema = (album) => {
 };
 
 /**
+ * MusicAlbum schema for a production-library COLLECTION.
+ *
+ * SEPARATE FROM generateAlbumSchema, and the reasons are structural rather than
+ * stylistic. That function hardcodes `/album/<id>` URLs, hardcodes
+ * `albumProductionType: StudioAlbum` under a comment admitting it should sometimes be
+ * CompilationAlbum, and emits no `offers` at all. A collection lives at
+ * `/collection/<slug>`, IS a compilation, and its whole reason to be indexed is that it
+ * is for sale. Bending one function over both with flags would put a condition on every
+ * line, and a condition got backwards here is a price or a URL stated wrongly to a
+ * search engine.
+ *
+ * THE MARKUP DESCRIBES THE PAGE AS IT IS. CLAUDE.md's SEO section is explicit that
+ * `aggregateRating` with no reviews is structured-data spam that risks a manual action
+ * stripping rich results sitewide. There are no reviews, so there is no rating here, and
+ * there is no FAQPage either because the page carries no FAQ. What IS emitted is what a
+ * reader can see: the name, the cover, the track count and the price they would pay.
+ *
+ * @param {object} collection  the collections/ document, plus `slug`
+ * @param {object} options
+ * @param {number} options.priceCents  what checkout will actually charge
+ * @param {number} options.trackCount  the DELIVERABLE count, not the stored one
+ */
+export const generateCollectionSchema = (collection, options = {}) => {
+  if (!collection) return null;
+  const slug = collection.slug || collection.id;
+  if (!slug) return null;
+
+  const url = `${SITE_URL}/collection/${slug}`;
+  const { priceCents, trackCount } = options;
+
+  // Only offered when the price is known. An `offers` block with a guessed number is
+  // worse than none: it is the figure Google shows in a result, and a buyer who clicks
+  // a wrong price arrives already misled.
+  const offers = Number.isFinite(priceCents) && priceCents > 0
+    ? {
+      '@type': 'Offer',
+      url,
+      priceCurrency: 'USD',
+      price: (priceCents / 100).toFixed(2),
+      availability: 'https://schema.org/InStock',
+      category: 'Commercial music licence',
+      seller: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL }
+    }
+    : undefined;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'MusicAlbum',
+    '@id': url,
+    url,
+    name: collection.title || slug,
+    description: collection.description
+      || `${trackCount || collection.trackCount || ''} production music tracks licensed for commercial use — video, podcasts, apps, games and client work.`.trim(),
+    image: collection.coverUrl || `${SITE_URL}/images/beatflow-share.png`,
+    numTracks: trackCount || collection.trackCount || undefined,
+    // THE DISTINCTION THAT MAKES THIS HONEST: these are curated sets of library cues,
+    // not an artist's studio record. Saying StudioAlbum would describe a release that
+    // was never made.
+    albumProductionType: 'https://schema.org/CompilationAlbum',
+    albumReleaseType: 'https://schema.org/AlbumRelease',
+    byArtist: {
+      '@type': 'MusicGroup',
+      name: SITE_NAME,
+      url: SITE_URL
+    },
+    genre: collection.genre || undefined,
+    offers
+  };
+};
+
+/**
  * Generate BreadcrumbList schema for navigation
  * @param {array} breadcrumbs - Array of breadcrumb items [{name, url}, ...]
  * @returns {object} BreadcrumbList JSON-LD
@@ -289,6 +360,7 @@ export const schemaToScriptTag = (schema) => {
 };
 
 const schemaMarkup = {
+  generateCollectionSchema,
   generateOrganizationSchema,
   generateWebSiteSchema,
   generateSongSchema,
