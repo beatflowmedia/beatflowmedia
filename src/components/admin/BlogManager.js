@@ -269,12 +269,12 @@ export default function BlogManager() {
                                   Published: {post.publishDate.toLocaleDateString()}
                                 </Typography>
                               )}
-                              <Typography variant="caption" color="text.secondary">
-                                Views: {post.views.toLocaleString()}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                Shares: {post.shares}
-                              </Typography>
+                              {/* Per-post Views and Shares removed with the totals above.
+                                * They read post.views and post.shares, which were literals
+                                * in the fixture and are not in the canonical list because
+                                * nothing measures them. This line is what crashed the
+                                * panel when the data went -- the consumer outlived the
+                                * field, for the SECOND time in two days. See OPS-4SEC4. */}
                             </Box>
                             <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
                               {post.keywords.map((keyword, i) => (

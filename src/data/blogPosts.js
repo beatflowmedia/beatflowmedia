@@ -36,6 +36,11 @@
 /**
  * Every published post, newest first.
  *
+ * `keywords` is here rather than only in BlogPost.js because the admin panel renders
+ * them as chips and the meta tags need them -- the same reason the titles moved. They
+ * were copied FROM the post bodies, not invented, so the two already agree; if they ever
+ * diverge, this is the one that surfaces.
+ *
  * `slug` is the id AND the URL. Changing one moves a page; a URL that moves loses
  * whatever it had, so treat these as fixed once published and use a 301 in
  * public/_redirects instead.
@@ -44,6 +49,7 @@ const BLOG_POSTS = [
   {
     id: 'blog-001',
     slug: 'independent-artists-earning-10k-monthly',
+    keywords: ['independent artist income', 'music revenue streams', 'sync licensing income', 'how musicians make money'],
     title: 'How to Make Money as an Independent Artist: The Real Income Streams',
     category: 'Guides',
     publishDate: '2026-01-01',
@@ -56,6 +62,7 @@ const BLOG_POSTS = [
   {
     id: 'blog-003',
     slug: 'music-distribution-guide-2026',
+    keywords: ['music distribution', 'digital distribution', 'streaming platforms', 'music monetization'],
     title: 'The Ultimate Guide to Music Distribution in 2026',
     category: 'Distribution Guide',
     publishDate: '2025-12-20',
@@ -68,6 +75,7 @@ const BLOG_POSTS = [
   {
     id: 'blog-005',
     slug: 'social-media-marketing-musicians',
+    keywords: ['social media marketing', 'music marketing', 'artist promotion', 'fanbase growth'],
     title: '10 Social Media Marketing Tips for Musicians',
     category: 'Marketing',
     publishDate: '2025-12-10',
@@ -80,6 +88,7 @@ const BLOG_POSTS = [
   {
     id: 'blog-006',
     slug: 'rise-of-independent-music-2026',
+    keywords: ['independent music', 'music industry', 'independent artists', 'music business'],
     title: 'Industry Trends: The Rise of Independent Music in 2026',
     category: 'Industry News',
     publishDate: '2025-12-05',
