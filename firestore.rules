@@ -726,6 +726,20 @@ service cloud.firestore {
       allow create, update, delete: if isPlatformAdmin();
     }
 
+    // LANDING PAGES. Absent until 2026-10-21, which meant /marketing/landing/<slug> was
+    // unreachable for everyone: MarketingLanding.js reads this collection and the
+    // deny-all at the bottom refused it. The collection is also empty, so nothing was
+    // visibly broken -- a page that 404s because it does not exist looks identical to
+    // one that 404s because the reader was denied.
+    //
+    // PUBLIC READ, unlike opsItems and marketingCampaigns. These are marketing pages
+    // whose entire purpose is to be served to a stranger and indexed by a crawler;
+    // gating them would defeat the thing they exist for. Writes stay admin-only.
+    match /landingPages/{slug} {
+      allow read, list: if true;
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
     // MARKETING CAMPAIGNS. The other half of OPS-0NZ0E: SocialMediaManager writes a
     // record here after uploading its image variants, and this collection was never
     // added, so the deny-all below refused it.
