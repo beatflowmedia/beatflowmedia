@@ -83,4 +83,26 @@ if [ $UIUX_EXIT_CODE -ne 0 ]; then
 fi
 
 echo "✅ UI/UX pre-commit checks passed!"
+
+# ---------------------------------------------------------------- fixture data
+#
+# Runs LAST because it is the cheapest check and the one with the widest blast radius:
+# a fabricated number that reaches a screen is read as a measurement, and four of them
+# shipped between 2026-10-20 and 2026-10-21 -- including a live blog post naming an
+# artist and an income she never earned.
+#
+# It is a RATCHET. Sixteen rendering files already carry a fixture marker and the check
+# passes on all of them; only a NEW one in live code fails. A hook that fails on
+# pre-existing debt is a hook that teaches people to use --no-verify.
+echo "🧪 Checking for fixture data in rendering code..."
+node scripts/verify-no-fixtures.js
+FIXTURE_EXIT_CODE=$?
+
+if [ $FIXTURE_EXIT_CODE -ne 0 ]; then
+  echo "❌ A rendering file gained fixture data"
+  echo "💡 Wire it to real data, or do not render it. If it is genuinely not a fixture,"
+  echo "   add it to KNOWN_FIXTURES in scripts/verify-no-fixtures.js WITH A REASON."
+  exit 1
+fi
+
 exit 0

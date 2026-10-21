@@ -131,6 +131,7 @@
     "verify:env": "node scripts/verify-env.js",
     "verify:vulns": "node scripts/verify-vulnerable-surface.js",
     "verify:deps": "node scripts/verify-deps.js",
+    "verify:no-fixtures": "node scripts/verify-no-fixtures.js",
     "ops:requests": "node scripts/ops-requests.js"
   },
   "browserslist": {
