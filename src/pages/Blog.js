@@ -278,15 +278,26 @@ export default function Blog() {
 
           {/* CTA Section */}
           <Box sx={{ mt: 8, p: 4, bgcolor: 'rgba(29, 185, 84, 0.1)', borderRadius: 2, textAlign: 'center' }}>
+            {/* "Join thousands of independent artists earning sustainable income on
+              * BeatFlow" was the old line. BFMG has six users, four purchases, and does
+              * not accept artist uploads -- so there are no artists to join and no
+              * income being earned. It is the same fabrication as the invented
+              * testimonials, in the shape of a call to action, and it was aimed at the
+              * wrong audience besides: this site LICENSES music TO creators.
+              *
+              * The replacement says what BFMG actually sells, to the person who
+              * actually buys it. */}
             <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
-              Ready to Start Your Music Career?
+              Need music you can use commercially?
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Join thousands of independent artists earning sustainable income on BeatFlow
+              License a track or a whole collection for video, podcasts, apps and client
+              work. One payment, permanent, worldwide — and we don&apos;t claim or mute
+              your uploads.
             </Typography>
-            <Link to="/explore-premium" style={{ textDecoration: 'none' }}>
+            <Link to="/browse/library" style={{ textDecoration: 'none' }}>
               <Chip
-                label="Get Started Today"
+                label="Browse the library"
                 clickable
                 sx={{
                   bgcolor: '#1DB954',

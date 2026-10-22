@@ -47,7 +47,12 @@ export default function BlogManager() {
   const [editedContent, setEditedContent] = useState({});
 
   // Derived, so the filter cannot offer a category with no posts behind it.
-  const categories = ['All', ...categoriesOf()];
+  // ONE "all" option, and it lives IN the list. There was a hardcoded
+  // <Chip label="All Posts" /> beside this array, which already began with 'All' -- so
+  // the row rendered two chips meaning the same thing, and neither did anything.
+  const ALL = 'All Posts';
+  const categories = [ALL, ...categoriesOf()];
+  const [selectedCategory, setSelectedCategory] = useState(ALL);
 
   // ONE SOURCE, shared with the public blog.
   //
@@ -124,6 +129,12 @@ export default function BlogManager() {
     window.open(`/blog/${post.slug}`, '_blank');
   };
 
+  // What the list actually shows. Derived rather than held in state: a second copy of
+  // the posts that has to be kept in step with the filter is how a list goes stale.
+  const visiblePosts = selectedCategory === ALL
+    ? posts
+    : posts.filter((p) => p.category === selectedCategory);
+
   const publishedCount = posts.filter(p => p.status === 'published').length;
   const draftCount = posts.filter(p => p.status === 'draft').length;
   // TOTAL VIEWS AND SHARES ARE GONE. They summed p.views and p.shares, which were
@@ -194,13 +205,20 @@ export default function BlogManager() {
 
       {/* Category Filter */}
       <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <Chip label="All Posts" clickable />
+        {/* THESE WERE DECORATIVE. `clickable` gave every chip a ripple and a pointer
+          * cursor and there was no onClick on any of them, so the row looked like a
+          * filter, invited a click, and did nothing. That is worse than an absent
+          * control: a person clicks, sees the full list, and concludes the data is
+          * wrong rather than the button. */}
         {categories.map(cat => (
           <Chip
             key={cat}
             label={cat}
             clickable
-            variant="outlined"
+            onClick={() => setSelectedCategory(cat)}
+            color={selectedCategory === cat ? 'primary' : 'default'}
+            variant={selectedCategory === cat ? 'filled' : 'outlined'}
+            aria-pressed={selectedCategory === cat}
           />
         ))}
       </Box>
@@ -208,15 +226,20 @@ export default function BlogManager() {
       {/* Posts List */}
       <Card sx={{ bgcolor: 'background.default' }}>
         <CardContent>
-          {posts.length === 0 ? (
+          {/* Checks the FILTERED list, not the raw one. With the filter now actually
+            * working, a category with nothing in it would otherwise render an empty box
+            * and no explanation -- which reads as a broken page. */}
+          {visiblePosts.length === 0 ? (
             <Alert severity="info">
               <Typography variant="body2">
-                No blog posts created yet. Use the Bulk Generator to create SEO-optimized blog content for all market segments.
+                {posts.length === 0
+                  ? 'No blog posts yet. Posts live in src/data/blogPosts.js with their bodies in BlogPost.js — see the SEO silo notes in CLAUDE.md before adding one.'
+                  : `No posts in “${selectedCategory}”.`}
               </Typography>
             </Alert>
           ) : (
             <List>
-              {posts.map((post, index) => (
+              {visiblePosts.map((post, index) => (
                 <Box key={post.id}>
                   {index > 0 && <Divider sx={{ my: 1 }} />}
                   <ListItem
