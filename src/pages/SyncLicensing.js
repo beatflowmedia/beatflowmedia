@@ -269,6 +269,20 @@ export default function SyncLicensing() {
               </Link>{" "}
               and license a track or a whole collection in a couple of minutes.
             </p>
+            {/* UP into the pillar. This page's job is converting a quote; it is not the
+                place to explain what a licence is, which is why that explanation kept
+                trying to grow here. /commercial-music-licensing holds it -- the two
+                rights, the price curve, whether a video gets claimed, what is excluded
+                and why. Linking up rather than restating is the whole siloing rule:
+                pages with different jobs that link to each other do not compete. */}
+            <p className="text-sm text-gray-500 mt-3">
+              Not sure which of those you need?{" "}
+              <Link to="/commercial-music-licensing" className="text-green-500 hover:underline">
+                What a commercial music licence actually covers
+              </Link>{" "}
+              sets out the rights involved, what each option costs and why, what is
+              excluded, and whether your video can be claimed.
+            </p>
             {/* Stated here rather than left for the quote, because it is the single
                 most common misunderstanding this page exists to correct: a download
                 license is not a performance license, from us or from anyone. */}

@@ -15,7 +15,7 @@ import { usePlayerActions } from "../hooks/usePlayerActions";
 import { db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { generateSongMetaTags } from "../utils/metaTagsHelper";
-import { generateSongSchema, schemaToScriptTag } from "../utils/schemaMarkup";
+import { generateSongSchema, schemaScript } from "../utils/schemaMarkup";
 import { trackSongView } from "../services/conversionTracking";
 import { SONG_PRICE } from "../utils/pricing";
 import { artworkUrl } from '../utils/artwork';
@@ -175,11 +175,9 @@ function SongPage() {
           {metaTags.link && metaTags.link.map((linkTag, index) => (
             <link key={index} {...linkTag} />
           ))}
-          {songSchema && (
-            <script {...schemaToScriptTag(songSchema)} />
-          )}
         </Helmet>
       )}
+      {schemaScript(songSchema)}
 
       {/* TWO COLUMNS ON DESKTOP, STACKED ON A PHONE.
         *

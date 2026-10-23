@@ -37,6 +37,11 @@
 const INDEXABLE_ROUTES = [
   // --- what BFMG sells. These come first because they are the point. -------------
   { path: '/', priority: 1.0, changefreq: 'weekly', why: 'The hub.' },
+  // The PILLAR, and the only route above 0.9 besides the hub. CLAUDE.md asks for "a few
+  // deep pillar pages (the definitive treatment of a core topic)" with hubs routing to
+  // them; /browse/library and /sync-licensing both sat directly under Home with nothing
+  // tying the licensing story together, which is a cluster with no centre.
+  { path: '/commercial-music-licensing', priority: 0.9, changefreq: 'monthly', why: 'The pillar — what a commercial licence covers, costs, excludes, and how claims work. /browse/library and /sync-licensing link into it.' },
   { path: '/browse/library', priority: 0.9, changefreq: 'weekly', why: 'The production library hub — routes to every collection.' },
   { path: '/sync-licensing', priority: 0.9, changefreq: 'monthly', why: 'What a commercial licence covers, and the quote form for what is not self-serve.' },
   { path: '/browse', priority: 0.8, changefreq: 'weekly', why: 'Browse hub.' },

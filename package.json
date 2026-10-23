@@ -131,6 +131,7 @@
     "verify:env": "node scripts/verify-env.js",
     "verify:vulns": "node scripts/verify-vulnerable-surface.js",
     "verify:deps": "node scripts/verify-deps.js",
+    "verify:a11y": "node scripts/verify-a11y-staged.js",
     "verify:no-fixtures": "node scripts/verify-no-fixtures.js",
     "verify:sitemap": "node scripts/verify-sitemap.js",
     "verify:radio-links": "node scripts/verify-radio-links.js",

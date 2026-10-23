@@ -69,6 +69,7 @@ const Accessibility = lazy(() => import("./pages/Accessibility"));
 const NoticeAtCollection = lazy(() => import("./pages/NoticeAtCollection"));
 const PrivacyChoices = lazy(() => import("./pages/PrivacyChoices"));
 const SyncLicensing = lazy(() => import("./pages/SyncLicensing"));
+const CommercialLicensing = lazy(() => import("./pages/CommercialLicensing"));
 
 // Blog pages
 const Blog = lazy(() => import("./pages/Blog"));
@@ -201,6 +202,7 @@ export default function AppRoutes() {
         <Route path="accessibility" element={<Accessibility />} />
         <Route path="notice-at-collection" element={<NoticeAtCollection />} />
         <Route path="privacy-choices" element={<PrivacyChoices />} />
+        <Route path="commercial-music-licensing" element={<CommercialLicensing />} />
         <Route path="sync-licensing" element={<SyncLicensing />} />
 
         {/* Blog pages */}

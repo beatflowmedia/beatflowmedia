@@ -17,7 +17,7 @@ import HomeStorefront from './HomeStorefront';
 import OptimizedImage from '../components/OptimizedImage';
 import CollectionLicensePanel from '../components/CollectionLicensePanel';
 import { Helmet } from 'react-helmet-async';
-import { generateCollectionSchema, generateBreadcrumbSchema, schemaToScriptTag } from '../utils/schemaMarkup';
+import { generateCollectionSchema, generateBreadcrumbSchema, schemaScript } from '../utils/schemaMarkup';
 import { calculateCollectionPrice } from '../utils/pricing';
 
 const CollectionPage = () => {
@@ -122,9 +122,10 @@ const CollectionPage = () => {
   return (
     <Box sx={{ height: '100%', overflow: 'auto' }}>
       <Helmet>
-        {collectionSchema ? <script {...schemaToScriptTag(collectionSchema)} /> : null}
-        {breadcrumbSchema ? <script {...schemaToScriptTag(breadcrumbSchema)} /> : null}
+        {/* intentionally empty of JSON-LD -- see below */}
       </Helmet>
+      {schemaScript(collectionSchema)}
+      {schemaScript(breadcrumbSchema)}
       <Box
         sx={{
           display: 'flex',

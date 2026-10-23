@@ -226,7 +226,7 @@ const VOLUME_EXPONENT = 0.6;
  *
  * @example
  * calculateCommercialPrice(1)   //  2900  ($29)    one bed
- * calculateCommercialPrice(24)  // 19900  ($199)   a functional collection, $8.29/track
+ * calculateCommercialPrice(24)  // 18900  ($189)   a functional collection, $7.88/track
  * calculateCommercialPrice(56)  // 31900  ($319)   Jazz-Infused, $5.70/track
  * calculateCommercialPrice(11, COMMERCIAL_RELEASE_TRACK_PRICE) // a released album
  */

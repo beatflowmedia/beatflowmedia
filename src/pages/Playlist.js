@@ -67,7 +67,7 @@ import { getBatchPlayCounts } from '../services/engagementMetrics';
 import { usePlaylistFollowers } from '../hooks/usePlaylistFollowers';
 import useFollowPlaylist from '../hooks/useFollowPlaylist';
 import { generatePlaylistMetaTags } from '../utils/metaTagsHelper';
-import { generatePlaylistSchema, schemaToScriptTag } from '../utils/schemaMarkup';
+import { generatePlaylistSchema, schemaScript } from '../utils/schemaMarkup';
 import { trackPlaylistView } from '../services/conversionTracking';
 
 const SORT_OPTIONS = [
@@ -788,11 +788,9 @@ function Playlist() {
           {metaTags.link && metaTags.link.map((linkTag, index) => (
             <link key={index} {...linkTag} />
           ))}
-          {playlistSchema && (
-            <script {...schemaToScriptTag(playlistSchema)} />
-          )}
         </Helmet>
       )}
+      {schemaScript(playlistSchema)}
 
       <Box sx={{ height: '100%', overflow: 'auto', bgcolor: 'grey.900', color: 'white' }}>
         {/* Playlist Header */}

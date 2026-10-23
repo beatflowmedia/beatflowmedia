@@ -19,7 +19,7 @@
 // with nothing reconciling them. Deriving removes the second list rather than trying
 // to keep it in step, and a facet appears the moment its data does.
 import { useCallback, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Box, Typography, Button, Chip, Drawer, IconButton } from '@mui/material';
 import FilterList from '@mui/icons-material/FilterList';
 import Close from '@mui/icons-material/Close';
@@ -226,6 +226,25 @@ const BrowseByCategory = () => {
             case) the visitor has already chosen how to narrow, and offering a second,
             different narrowing above their results answers a question they did not
             ask. */}
+        {/* UP into the pillar, on the pool landings only. These are the top of the
+            catalogue and the page a commercial buyer arrives on from a search, with
+            nothing above them explaining what they would be buying. A facet page does
+            not get this: the visitor there has already chosen how to narrow and is
+            reading results, not deciding whether to licence at all. */}
+        {isPoolLanding && (
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+            New to licensing?{' '}
+            <Link
+              to="/commercial-music-licensing"
+              style={{ color: '#1DB954', textDecoration: 'underline' }}
+            >
+              What a commercial music licence covers
+            </Link>
+            {' '}— the rights involved, what it costs, what is excluded, and whether your
+            video can be claimed.
+          </Typography>
+        )}
+
         {isPoolLanding && (
           <CollectionGrid pool={activeCategory?.pool} title="Browse by collection" />
         )}

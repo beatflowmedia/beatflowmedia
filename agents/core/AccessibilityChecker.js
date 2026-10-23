@@ -447,7 +447,7 @@ class AccessibilityChecker {
 
     // Check heading hierarchy
     const headings = this.extractHeadings(content);
-    const hierarchyIssues = this.validateHeadingHierarchy(headings, filePath);
+    const hierarchyIssues = this.validateHeadingHierarchy(headings, filePath, content);
     issues.push(...hierarchyIssues);
 
     return issues;
@@ -475,7 +475,7 @@ class AccessibilityChecker {
   /**
    * Validate heading hierarchy
    */
-  validateHeadingHierarchy(headings, filePath) {
+  validateHeadingHierarchy(headings, filePath, content) {
     const issues = [];
 
     for (let i = 1; i < headings.length; i++) {
@@ -710,25 +710,76 @@ class AccessibilityChecker {
       }
     }
 
-    // Check volume controls
-    if (content.includes('volume') || content.includes('Volume')) {
-      if (!content.includes('aria-valuemin')) {
-        const line = this.getLineNumber(content, content.indexOf('volume') || content.indexOf('Volume'));
+    // Check volume controls.
+    //
+    // MATCHED ON THE ELEMENT, NOT ON THE WORD. This used to be
+    // `content.includes('volume')` against the whole file, so any file that said
+    // "volume" anywhere gained a CRITICAL accessibility finding. It fired on a static
+    // pricing page whose COMMENT read "the volume argument" -- volume as in quantity,
+    // on a page with no audio and no controls at all.
+    //
+    // Same fault as INPUT_WITHOUT_LABEL matching `<InputAdornment>` (2026-10-21) and
+    // the same fix: a substring is not an element. A volume control in this codebase is
+    // a slider -- `type="range"` or MUI's `<Slider>` -- so the rule now requires BOTH
+    // the control and the word, in the same tag, and reports that tag's line rather
+    // than the first mention of "volume" anywhere in the file.
+    //
+    // A false CRITICAL is not a harmless over-report. It blocks a commit, and the only
+    // way past it is to prove it wrong or reach for --no-verify, which is how a hook
+    // stops being run at all.
+    // WHAT THE CONTROL ACTUALLY NEEDS depends on what it is built from, and the old
+    // rule got this wrong in the other direction too: it demanded `aria-valuemin` from
+    // everything. A native `<input type="range">` with min, max and value ALREADY
+    // exposes valuemin/valuemax/valuenow -- that is the native semantics, and
+    // ARIA-in-HTML is explicit that you should not duplicate it. Adding the attributes
+    // is redundant at best and, if they ever drift from the real min/max, a lie.
+    //
+    // MusicPlayer.js:294 is the worked example. It carries aria-label="Volume",
+    // aria-valuetext for a spoken percentage, and min/max/value -- a correct, accessible
+    // control that the old rule flagged, because it was looking for one attribute
+    // instead of asking what the element needs. "Fixing" that code to satisfy the rule
+    // would have made it worse. So the rule changed.
+    //
+    //   native range input / MUI <Slider>  -> needs an accessible NAME; the value
+    //                                         semantics come from the element itself
+    //   hand-rolled role="slider"          -> needs the full aria-value* set, because
+    //                                         nothing else provides it
+    const volumeControls = (content.match(/<[A-Za-z][A-Za-z0-9.]*\b[^>]*>/g) || [])
+      .filter((tag) => /\bvolume\b/i.test(tag))
+      .map((tag) => {
+        const native = /type\s*=\s*["']range["']/.test(tag) || /^<Slider\b/.test(tag);
+        const custom = /\brole\s*=\s*["']slider["']/.test(tag);
+        if (!native && !custom) return null;
 
-        issues.push({
-          type: 'VOLUME_CONTROL_NO_ARIA',
-          severity: 'MEDIUM',
-          wcagCriterion: '4.1.2',
-          wcagLevel: 'A',
-          file: filePath,
-          line,
-          message: 'Volume control missing ARIA attributes',
-          recommendation: 'Add aria-valuemin, aria-valuemax, aria-valuenow',
-          example: 'aria-valuemin={0} aria-valuemax={100} aria-valuenow={volume}',
-          musicSpecific: true,
-          autoRemediable: false
-        });
-      }
+        const named = /aria-label[=\s]|aria-labelledby[=\s]|getAriaLabel/.test(tag);
+        if (!named) return { tag, why: 'has no accessible name' };
+
+        // Only a control that provides no value semantics of its own has to declare them.
+        if (custom && !native && !tag.includes('aria-valuenow')) {
+          return { tag, why: 'is a custom slider with no aria-valuenow' };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    for (const { tag, why } of volumeControls) {
+      const line = this.getLineNumber(content, content.indexOf(tag));
+
+      issues.push({
+        type: 'VOLUME_CONTROL_NO_ARIA',
+        severity: 'MEDIUM',
+        wcagCriterion: '4.1.2',
+        wcagLevel: 'A',
+        file: filePath,
+        line,
+        message: `Volume control ${why}`,
+        recommendation: why.includes('name')
+          ? 'Add aria-label="Volume" (or aria-labelledby). A native range input with min, max and value already exposes its value semantics.'
+          : 'A custom role="slider" must declare aria-valuenow, aria-valuemin and aria-valuemax itself — nothing else provides them.',
+        example: '<input type="range" aria-label="Volume" min={0} max={1} value={volume} />',
+        musicSpecific: true,
+        autoRemediable: false
+      });
     }
 
     return issues;

@@ -30,6 +30,11 @@
  * incident without re-deciding where it belongs.
  */
 const CHECKS = {
+  a11y: {
+    title: 'No file gains an accessibility issue',
+    area: 'storefront',
+    protects: 'The pre-commit gate judged staged files WHOLE, so a one-line change to a legacy file presented its entire debt for review -- 23 findings for moving one JSON-LD tag in Playlist.js. A gate that fails on debt you did not create is how --no-verify becomes normal, which already happened here once.'
+  },
   admins: {
     title: 'Admin list matches the security rules',
     area: 'quality',

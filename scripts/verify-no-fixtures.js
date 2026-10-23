@@ -150,16 +150,31 @@ function stripComments(text) {
   console.log('  known from before this check             : ' + (found.size - neu.length));
   console.log('');
 
-  if (neu.length) {
-    console.log('  NEW — these are the ones that matter:');
-    for (const f of neu.sort()) {
-      const liveCode = found.get(f).some((h) => h.inCode);
-      console.log('     ' + f + (liveCode ? '   [IN CODE]' : '   [in a comment]'));
-      [...new Set(found.get(f).map((h) => h.why))].forEach((w) => console.log('        ' + w));
-    }
+  // REPORTED IN TWO GROUPS, because they mean opposite things and lumping them together
+  // made the check read as a failure when it was a success. On 2026-10-23 it listed
+  // BlogManager.js and AdminDashboard.js under "these are the ones that matter" -- both
+  // because the comment explaining the fixture that had just been REMOVED from them
+  // names the number it used to render. An instrument that flags its own repairs trains
+  // you to skim its output, and a check you skim is a check you have stopped running.
+  const newInCode = neu.filter((f) => found.get(f).some((h) => h.inCode)).sort();
+  const newInComment = neu.filter((f) => !found.get(f).some((h) => h.inCode)).sort();
+
+  const describe = (f) =>
+    [...new Set(found.get(f).map((h) => h.why))].forEach((w) => console.log('        ' + w));
+
+  if (newInCode.length) {
+    console.log('  NEW, IN CODE — these are the ones that matter:');
+    for (const f of newInCode) { console.log('     ' + f); describe(f); }
     console.log('');
   } else {
-    console.log('  No rendering file has gained a fixture marker. ');
+    console.log('  No rendering file has gained fixture data in code.');
+    console.log('');
+  }
+
+  if (newInComment.length) {
+    console.log('  NEW, IN A COMMENT ONLY — prose, not data. Usually a note explaining a');
+    console.log('  fixture that was just removed, which is the opposite of the fault:');
+    for (const f of newInComment) { console.log('     ' + f); describe(f); }
     console.log('');
   }
 

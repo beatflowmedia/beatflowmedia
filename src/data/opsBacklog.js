@@ -126,6 +126,49 @@ const BACKLOG = [
       'Guarded either way: npm run test:lib fails if the API the functions call ever ' +
       'stops existing. No urgency, but it does not get smaller.',
     effort: 'days'
+  },
+  {
+    // PARKED ON PURPOSE, 2026-10-23. Percy brought research on pitching an album
+    // concept to an established artist and said to defer it for consideration. It is
+    // recorded rather than acted on because the pitch is a Studio Projects question and
+    // Studio Projects is stalled, not cancelled -- but the rights question underneath it
+    // is not specific to any one pitch, and that part does not wait for the product.
+    id: '2026-10-23-legal-ai-generated-rights-before-any-artist-pitch',
+    area: 'legal',
+    severity: 'medium',
+    title: 'Settle what rights exist in AI-generated recordings before pitching an artist',
+    what:
+      'A pitch to an established artist triggers a rights check before anyone discusses ' +
+      'the music, and the research Percy gathered says the generator\'s terms may not ' +
+      'make a paying user the OWNER of the output, that free-tier output can be ' +
+      'non-commercial permanently regardless of later subscribing, and that permission ' +
+      'to monetise and copyright in the work are two separate questions. Those are ' +
+      'claims about a third party\'s terms, dated, and they have changed more than once ' +
+      'this year -- so they are recorded here as the thing to verify, not as findings. ' +
+      'What is worth separating is that fully generated melody and arrangement are the ' +
+      'weak ground, while lyrics Percy wrote and the somatic arc framework are the ' +
+      'strong ground, and the framework is the part a label cannot get elsewhere. ' +
+      'The scale is now known rather than guessed: scripts/scan-library-provenance.js ' +
+      'reports 179 of 1,007 scanned tracks tagged "made with suno". So the question is ' +
+      'neither hypothetical nor catalogue-wide -- it concerns a specific, identifiable ' +
+      'set that is already selling commercial licences. OPS-W22T6 covers the half we ' +
+      'control: that record exists only in one untracked file.',
+    where: [
+      'src/pages/AlbumProjects.js',
+      'src/components/CommercialLicenseTerms.js'
+    ],
+    note:
+      'Three things, in order. (1) Read the generator\'s CURRENT terms against the ' +
+      'account tier each recording was actually made on -- a dated summary is not ' +
+      'evidence. (2) Ask the lawyer already queued for the three licences to cover this ' +
+      'in the same engagement; it is the same question the commercial licence already ' +
+      'turns on, which is why that licence grants rights CONTRACTUALLY rather than ' +
+      'claiming copyright. (3) The positioning follow-on is Percy\'s call and needs no ' +
+      'lawyer: pitch the concept architecture with demos labelled as AI demos, not ' +
+      '"an album I made". Nothing here says a pitch is blocked; it says the rights ' +
+      'answer should exist before the conversation, not after it.',
+    forLawyer: true,
+    effort: 'days'
   }
 ];
 

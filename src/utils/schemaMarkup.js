@@ -9,9 +9,10 @@
  * Improves SEO and enables rich snippets in Google search results
  *
  * @example
- * import { generateSongSchema } from '../utils/schemaMarkup';
- * const schema = generateSongSchema(song);
- * <script type="application/ld+json">{JSON.stringify(schema)}</script>
+ * import { generateSongSchema, schemaScript } from '../utils/schemaMarkup';
+ * const songSchema = generateSongSchema(song);
+ * // OUTSIDE <Helmet> -- react-helmet-async drops script children. See schemaScript.
+ * {schemaScript(songSchema)}
  */
 
 const SITE_NAME = 'BeatFlow Media';
@@ -350,13 +351,61 @@ export const generateGraphSchema = (schemas) => {
  * @param {object} schema - Schema object
  * @returns {object} Script tag props for React Helmet
  */
-export const schemaToScriptTag = (schema) => {
+/**
+ * The JSON-LD <script> for a schema object, or null when there is nothing to emit.
+ *
+ * *** CALL THIS OUTSIDE <Helmet>, NOT INSIDE IT. ***
+ *
+ * react-helmet-async 2.0.5 DROPS a <script> child. Its <meta> and <title> children come
+ * through on the same render, which is what made this so hard to see: the head looked
+ * managed and correct, and the structured data was simply absent. Measured on
+ * 2026-10-23 -- identical markup, 0 tags inside Helmet, one 304-byte BreadcrumbList
+ * immediately outside it.
+ *
+ * Rendering it in the body is not a workaround with a cost. Google's own structured
+ * data documentation accepts JSON-LD anywhere in the document; <head> is a convention,
+ * not a requirement. So the tag goes beside <Helmet> rather than in it, and every call
+ * site carries a one-line note saying why, because "why is the schema not in the head
+ * with the rest of the meta" is the obvious question and the obvious fix re-breaks it.
+ *
+ * WHY A FUNCTION RETURNING AN ELEMENT AND NOT A COMPONENT
+ * Nothing to do with Helmet now -- it is so the null case lives in one place. A falsy
+ * schema returns null, so no call site needs its own `schema && (...)` guard. Two of
+ * them had one, and nesting it around this call is a parse error.
+ *
+ * WHAT THIS REPLACED, AND WHY IT MATTERED
+ * The previous version returned PROPS to be spread onto a script tag:
+ *
+ *     return { type: 'application/ld+json', innerHTML: JSON.stringify(schema) };
+ *     // call site:  <script {...schemaToScriptTag(schema)} />
+ *
+ * `innerHTML` is not a React DOM attribute -- React is explicit that setting HTML
+ * content requires `dangerouslySetInnerHTML`, and it silently DROPS an unknown
+ * lowercase-camelCase prop rather than erroring. So every call site rendered
+ * `<script type="application/ld+json"></script>`: present, valid, and EMPTY.
+ *
+ * Five pages emitted it -- the collection pages, song pages, playlists, and this
+ * pillar -- which is every page on the site carrying structured data. Measured on
+ * 2026-10-23: the pillar's own <title> came through Helmet correctly on the same
+ * render where its script tag arrived with zero bytes, which is what isolated it.
+ *
+ * It is a textbook silent failure. Nothing warns, the markup validates as an empty
+ * script, Search Console reports no structured data -- which is indistinguishable from
+ * a site that never added any -- and the only symptom is rich results that never appear.
+ *
+ * Content goes in as CHILDREN. A JSON-LD payload is text, not markup, so it needs no
+ * dangerouslySetInnerHTML; React escapes it and the escaping is valid JSON.
+ *
+ * @param {object|null} schema
+ * @returns {JSX.Element|null}
+ */
+export const schemaScript = (schema) => {
   if (!schema) return null;
-
-  return {
-    type: 'application/ld+json',
-    innerHTML: JSON.stringify(schema, null, 0) // Minified JSON
-  };
+  return (
+    <script type="application/ld+json">
+      {JSON.stringify(schema)}
+    </script>
+  );
 };
 
 const schemaMarkup = {
@@ -370,6 +419,6 @@ const schemaMarkup = {
   generateBreadcrumbSchema,
   generateItemListSchema,
   generateGraphSchema,
-  schemaToScriptTag
+  schemaScript
 };
 export default schemaMarkup;;

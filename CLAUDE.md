@@ -4035,6 +4035,15 @@ a nonexistent package for `verify:deps`, and a real v14 install for the admin gu
   failure is categorical rather than visual.
 - **Ratchet vs wall** — a reconciler that fails on pre-existing debt gets deleted within
   a week. Call: record the baseline in code (`KNOWN_UNRESOLVED`) and fail only on growth.
+- **Pillar / hub / spoke** — surfaced by having 23 collection pages and nothing above them
+  saying what a licence is. Call: the pillar is the *subject*, `/sync-licensing` is the
+  *conversion*; different jobs that link to each other do not compete.
+- **Silent prop rejection** — React drops an unrecognised camelCase DOM prop without
+  warning, which is how `innerHTML` emptied every JSON-LD tag on the site. Call: assert
+  the rendered output, never the props you passed.
+- **Pessimistic miscalibration** — understating your own capability feels like caution and
+  therefore attracts no scrutiny. Call: check a claim about your own product in *both*
+  directions; `AppRoutes.js` is not the list of routes the site serves.
 
 ## Calibration — the concept that came out of six wrong instruments — 2026-10-23
 
@@ -4079,3 +4088,129 @@ something; it **caused** the fault, confidently.
 
 > A guard proven to go red can still be reading low while it is green.
 
+
+## The pillar, and the structured data that was never there — 2026-10-23
+
+`/commercial-music-licensing`. BFMG had hubs and spokes and no pillar: `/browse/library`
+routes to 23 collections, each collection to its tracks, `/sync-licensing` converts a
+quote — and nothing above any of it said what a commercial music licence **is**. A
+cluster with no centre reads as isolated pages, which is the thin/duplicate signal the
+whole structure exists to avoid.
+
+### Why it is not a second `/sync-licensing`
+
+That page's job is **conversion**: tell us about the project, we come back with terms. The
+pillar's job is the **subject**. The rule is the one `radio/albums.js` states best — "two
+sites saying the same thing compete for the same searches; two sites with different jobs
+that link to each other do not" — and it is as true of two pages as of two properties. So
+`/sync-licensing` and the two pool landings link **up**, the pillar links **down** to the
+library, the quote form, the terms and `/changes`, and neither restates the other.
+
+### Depth had to be real, so it is built only from what BFMG can prove
+
+1,356 words, eight sections, and **every price derived from `src/utils/pricing.js`** rather
+than typed — a pillar quoting a figure the cart does not charge is the collection-page
+fault of 2026-10-18 landing on the page that argues for trusting us.
+
+Two claims were written, checked, and found false before shipping:
+
+- *"More tracks always costs more and the per-track rate always falls."* Against the real
+  curve: **29 ties** in the first 60 track counts, and the per-track rate **rises 20
+  times**, because prices round down to a trailing 9. What survives is weaker and true —
+  *adding a track never reduces the total* — plus a paragraph admitting the rounding. The
+  honest version is also the better one: it is checkable against any collection on the site.
+- The JSDoc in `pricing.js` said 24 tracks cost **$199 / $8.29 a track**. It is
+  **$189 / $7.88**. A stale example beside working code, corrected in the same edit.
+
+### Every JSON-LD tag on the site was empty, and had been
+
+Found because the pillar's render check reported `breadcrumb ld: 0`. The instinct was that
+the new page was special. It was not — **nothing on the site emitted structured data**.
+
+`schemaToScriptTag()` returned *props to spread onto a script element*:
+
+```js
+return { type: 'application/ld+json', innerHTML: JSON.stringify(schema) };
+// <script {...schemaToScriptTag(schema)} />
+```
+
+`innerHTML` is not a React DOM attribute — React requires `dangerouslySetInnerHTML` and
+**silently drops** an unrecognised prop of that shape. Five pages rendered
+`<script type="application/ld+json"></script>`: present, valid, and empty.
+
+**Then the repair was wrong too.** Putting the fixed `<script>{json}</script>` inside
+`<Helmet>` still produced zero tags: react-helmet-async 2.0.5 drops script children while
+passing `<meta>` and `<title>` through **on the same render**. That is precisely what made
+the original invisible — the head looked managed and correct. Isolated by noticing the
+pillar's `<title>` arrived while its script arrived with zero bytes.
+
+JSON-LD now renders **beside** `<Helmet>`, not in it. Google's own documentation accepts
+JSON-LD anywhere in the document; `<head>` is a convention, not a requirement.
+
+Measured after: `/commercial-music-licensing` → one 304-byte `BreadcrumbList`;
+`/collection/8d-music-dragon-burial` → a **1,049-byte `MusicAlbum`** carrying the offer,
+plus a 426-byte `BreadcrumbList`. Previously zero bytes sitewide.
+
+`src/utils/schemaMarkup.test.js` holds both rules — payload in children, call site outside
+`<Helmet>` — and was calibrated by moving the pillar's call back inside and watching it
+name `pages/CommercialLicensing.js:92`. Rule 2 is the one the next person will "fix",
+because putting meta in the head with the other meta is obviously right and happens to be
+wrong here.
+
+`schemaMarkup.js`'s own `@example` had shown the **correct** pattern the whole time, while
+the helper beneath it did the wrong thing. Which is why the guard blanks comments before
+scanning: three of its four checks quote the patterns they forbid, and the first version
+reported a violation in its own explanation — the mistake `layout.test.js` made, for the
+same reason. Comments are blanked **line-for-line** rather than deleted, so a reported
+line number still points at the right line.
+
+### Calibration cuts both ways, which is new
+
+`OPS-NNRBA` was filed claiming the published licences promise a "public verification link"
+that does not exist. **It was wrong and it is withdrawn.** `/verify/<LIC-id>` is a Netlify
+function routed in `public/_redirects` line 24 — live since 2026-10-16, and it returns its
+own page rather than the SPA shell when curled. It appears in **no React route table**,
+which is where the mistake came from.
+
+> `src/AppRoutes.js` is not the list of routes this site serves. `_redirects` and
+> `netlify.toml` each add more, and a function route is invisible to a grep of the React
+> tree. Check the live URL, not the router.
+
+The sharper lesson is about the direction of the error. Every calibration failure recorded
+above was an instrument reading **low**. This one was me reading **our own capability**
+low — and being pessimistic about your own product *feels like* caution, so it attracted
+no scrutiny at all. It had already softened the strongest section on the page to
+"independent lookup is not built yet". The verify page shows VALID/REVOKED, the masked
+holder, the ISRC, the rights granted, and **which version of the terms was accepted**,
+linked to that exact text. That is the single best thing the pillar has to say, and
+caution nearly deleted it.
+
+### Also closed
+
+- `verify:no-fixtures` reported `BlogManager.js` and `AdminDashboard.js` as **new**
+  findings — because the comments explaining the fixtures just *removed* from them name
+  the numbers they used to render. The gate was always right (comment-only never blocked);
+  the **report** filed documentation under "these are the ones that matter". Now split
+  into in-code and in-comment groups. An instrument that flags its own repairs trains you
+  to skim it, and a check you skim is a check you have stopped running.
+- `OPS-KWE66` — **40 of 64 test suites cannot run.** Not assertion failures: suites that
+  fail to load. 10 need a `fetch` polyfill, 6 are `.tsx` the transform will not parse, 6
+  have `jest.mock` hoisting errors, 4 cannot resolve `../../firebaseConfig`, 4 read a
+  field off undefined, 2 want `music-metadata`. Confirmed as a **baseline, not a
+  regression**, by stashing today's work and getting the identical 40/96. The cost: "run
+  the test suite before any commit" currently buys about a third of the coverage it
+  appears to.
+- `OPS-GQ5RB` — parked at Percy's request. What rights exist in AI-generated recordings,
+  which gates any artist pitch out of Studio Projects. Recorded as *the thing to verify*,
+  not as findings: they are dated claims about a third party's terms. Flagged `forLawyer`
+  because it is the same question the commercial licence already turns on — which is why
+  that licence grants rights **contractually** rather than claiming copyright.
+
+### Ratchet
+
+| | Before | After |
+|---|---|---|
+| Indexable routes | 12 | **13** |
+| Pages emitting non-empty JSON-LD | **0** | 5 |
+| Passing tests | 313 | **317** |
+| Suites that cannot load | 40 | 40 — now `OPS-KWE66` |

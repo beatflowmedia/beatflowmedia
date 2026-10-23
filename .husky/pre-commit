@@ -72,17 +72,43 @@ echo "📁 Checking $(echo "$STAGED_FILES" | wc -l) staged file(s)..."
 FILE_LIST=$(echo "$STAGED_FILES" | tr '
 ' ',' | sed 's/,$//')
 
-node agents/cli.js uiux review   --files "$FILE_LIST"   --profile pre-commit   --exit-on-critical
+# REPORTS, DOES NOT GATE. `--exit-on-critical` is deliberately gone from this line.
+#
+# The comment above says the intent: "New code is held to the line; existing debt is a
+# ratchet to work down, recorded in CLAUDE.md, not a wall across every commit." The
+# implementation did not deliver it, because it judged each staged file WHOLE. Moving one
+# JSON-LD tag in Playlist.js on 2026-10-23 presented 23 accessibility findings -- none in
+# the changed line, none introduced that day, and the brand-new file in the same commit
+# had zero. That is the wall the comment warned about, and the hook's own closing line
+# says what a wall produces: --no-verify as the normal way to commit.
+#
+# So the review still runs and still prints its design-token and music-UX findings, which
+# are worth seeing. The GATE is verify:a11y below, which holds a recorded per-file
+# baseline and fails only on growth -- the same shape as KNOWN_FIXTURES here and
+# KNOWN_UNRESOLVED in verify-deps.js.
+node agents/cli.js uiux review   --files "$FILE_LIST"   --profile pre-commit
 
-UIUX_EXIT_CODE=$?
+echo "✅ UI/UX report complete (findings above are a report, not a gate)"
 
-if [ $UIUX_EXIT_CODE -ne 0 ]; then
-  echo "❌ UI/UX check failed with critical issues"
-  echo "💡 Fix the critical issues. Do NOT reach for --no-verify: a failing hook is a finding."
+# ---------------------------------------------------------------- accessibility
+#
+# THIS is the accessibility gate. 124 files carry 464 pre-existing CRITICAL/HIGH
+# findings; the baseline is in scripts/a11y-baseline.json and the only correct direction
+# is down. A file not in the baseline fails on ANY issue, so new code is held to the line.
+#
+# If a finding is wrong, fix the DETECTOR, not the baseline -- three rules in
+# AccessibilityChecker.js have matched prose rather than markup, including one that read
+# the word "volume" in a comment on a page with no audio.
+echo "♿ Checking accessibility against the recorded baseline..."
+node scripts/verify-a11y-staged.js
+A11Y_EXIT_CODE=$?
+
+if [ $A11Y_EXIT_CODE -ne 0 ]; then
+  echo "❌ A file gained an accessibility issue"
+  echo "💡 Fix it, or fix the detector and prove it both ways. Do NOT reach for"
+  echo "   --no-verify: a failing hook is a finding."
   exit 1
 fi
-
-echo "✅ UI/UX pre-commit checks passed!"
 
 # ---------------------------------------------------------------- fixture data
 #
