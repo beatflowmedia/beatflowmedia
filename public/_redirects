@@ -96,6 +96,16 @@
 /podcaster/dashboard                 /                       301
 /link/:slug                          /marketing/landing/:slug 301
 
+# THE SONG SITEMAP. Routed here because _redirects WINS over netlify.toml, and this
+# rule existed only in the toml -- so from April to October 2026 the SPA catch-all
+# matched first, /sitemap-songs.xml returned index.html, and Google read the 906-song
+# catalogue as a page with no URLs in it. It reported 200 the whole time.
+#
+# Identical to the fault that made /r/<ISRC> ship doing nothing, which is recorded as a
+# landmine in CLAUDE.md. The lesson did not transfer because nothing checked it;
+# npm run verify:sitemap now does.
+/sitemap-songs.xml  /.netlify/functions/sitemap-songs  200
+
 # Retired blog posts, 301 to the closest live equivalent (2026-10-21).
 #
 # Both described products BeatFlow does not have, so neither could be made truthful by

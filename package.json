@@ -132,6 +132,8 @@
     "verify:vulns": "node scripts/verify-vulnerable-surface.js",
     "verify:deps": "node scripts/verify-deps.js",
     "verify:no-fixtures": "node scripts/verify-no-fixtures.js",
+    "verify:sitemap": "node scripts/verify-sitemap.js",
+    "build:sitemap": "node scripts/build-sitemap.js",
     "ops:requests": "node scripts/ops-requests.js"
   },
   "browserslist": {

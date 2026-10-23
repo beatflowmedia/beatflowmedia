@@ -52,6 +52,7 @@ import {
   BusinessCenter as BusinessIcon
 } from "@mui/icons-material";
 import { adminAnalytics } from "../../services/adminAnalytics";
+import { loadBusinessMetrics, formatMoney } from '../../services/businessMetrics';
 
 // Platform overview metrics
 const PlatformOverview = ({ data }) => {
@@ -350,143 +351,118 @@ const SystemStatus = ({ data }) => {
 };
 
 // Revenue and business metrics
-const BusinessMetrics = ({ data }) => {
-  const businessData = {
-    totalRevenue: 2567890.45,
-    monthlyRecurring: 234567.89,
-    conversionRate: 12.7,
-    churnRate: 3.2,
-    averageRevenuePer: {
-      user: 45.67,
-      artist: 234.56,
-      play: 0.012
-    },
-    subscriptionBreakdown: {
-      free: { users: 1200000, percentage: 76.5 },
-      premium: { users: 300000, percentage: 19.1 },
-      family: { users: 60000, percentage: 3.8 },
-      student: { users: 7890, percentage: 0.5 }
-    },
-    topRevenueCountries: [
-      { country: "United States", revenue: 1156789.23, percentage: 45.1 },
-      { country: "Canada", revenue: 234567.89, percentage: 9.1 },
-      { country: "United Kingdom", revenue: 189234.56, percentage: 7.4 },
-      { country: "Germany", revenue: 145678.9, percentage: 5.7 },
-      { country: "France", revenue: 123456.78, percentage: 4.8 },
-    ]
-  };
+// Revenue and business metrics, READ rather than declared.
+//
+// THIS PANEL SHOWED $2,567,890.45 IN TOTAL REVENUE, $234,567.89 monthly recurring,
+// 1,200,000 free users and a five-country revenue breakdown. Every figure was a literal
+// inside this component, which took a `data` prop and ignored it. The file made no
+// Firestore call at all.
+//
+// Percy, looking at it: "this appears to be hardcoded (false)". He has four purchases.
+//
+// A number on an admin screen is the basis for a decision, and $2.5m is the kind of
+// figure somebody plans a year around or repeats to an investor. So it is read now --
+// and the figures that CANNOT be read say so, because inventing a plausible one is
+// exactly how $2.5m got on a screen.
+const BusinessMetrics = () => {
+  const [metrics, setMetrics] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    loadBusinessMetrics()
+      .then((m) => { if (alive) setMetrics(m); })
+      .catch((err) => {
+        console.error('BusinessMetrics: load failed —', err);
+        if (alive) setError(err.message || 'Could not read business metrics.');
+      });
+    return () => { alive = false; };
+  }, []);
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader title="Business Metrics" />
+        <CardContent><Alert severity="error">{error}</Alert></CardContent>
+      </Card>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <Card>
+        <CardHeader title="Business Metrics" />
+        <CardContent><Typography color="textSecondary">Reading…</Typography></CardContent>
+      </Card>
+    );
+  }
+
+  /** A figure, or the reason there isn't one. Never a zero standing in for both:
+   *  "nothing sold" and "never measured" are different facts. */
+  const Figure = ({ metric, label, format, color }) => (
+    <Grid item xs={6} md={3}>
+      <Box textAlign="center">
+        {metric.known ? (
+          <Typography variant="h4" color={color || 'success.main'}>
+            {format ? format(metric.value) : metric.value.toLocaleString()}
+          </Typography>
+        ) : (
+          <Typography variant="h6" color="textSecondary" sx={{ opacity: 0.6 }}>
+            not tracked
+          </Typography>
+        )}
+        <Typography variant="body2" color="textSecondary">{label}</Typography>
+        {!metric.known && (
+          <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5, opacity: 0.75 }}>
+            {metric.reason}
+          </Typography>
+        )}
+      </Box>
+    </Grid>
+  );
 
   return (
     <Card>
       <CardHeader title="Business Metrics" />
       <CardContent>
         <Grid container spacing={3} mb={3}>
-          <Grid item xs={6} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="success.main">
-                ${businessData.totalRevenue.toLocaleString()}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Revenue
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="primary">
-                ${businessData.monthlyRecurring.toLocaleString()}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Monthly Recurring
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="info.main">
-                {businessData.conversionRate}%
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Conversion Rate
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <Box textAlign="center">
-              <Typography variant="h4" color="warning.main">
-                {businessData.churnRate}%
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Churn Rate
-              </Typography>
-            </Box>
-          </Grid>
+          <Figure metric={metrics.revenue} label="Total Revenue" format={formatMoney} />
+          <Figure metric={metrics.purchases} label="Completed Purchases" color="primary" />
+          <Figure metric={metrics.users} label="Users" color="info.main" />
+          <Figure metric={metrics.activeSubscriptions} label="Active Subscriptions" color="info.main" />
         </Grid>
 
-        <Typography variant="h6" gutterBottom>
-          Subscription Distribution
-        </Typography>
-        {Object.entries(businessData.subscriptionBreakdown).map(
-          ([tier, data]) => (
-            <Box key={tier} mb={1}>
-              <Box display="flex" justifyContent="space-between" mb={0.5}>
-                <Typography
-                  variant="body2"
-                  sx={{ textTransform: "capitalize" }}
-                >
-                  {tier} ({data.users.toLocaleString()} users)
-                </Typography>
-                <Typography variant="body2" fontWeight="bold">
-                  {data.percentage}%
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={data.percentage}
-                color={
-                  tier === "premium"
-                    ? "primary"
-                    : tier === "family"
-                      ? "secondary"
-                      : "info"
-                }
-                sx={{ height: 6, borderRadius: 1 }}
-              />
-            </Box>
-          ),
-        )}
+        <Grid container spacing={3} mb={3}>
+          <Figure metric={metrics.songs} label="Songs" color="primary" />
+          <Figure metric={metrics.collections} label="Collections" color="primary" />
+          <Figure metric={metrics.albums} label="Albums" color="primary" />
+          <Figure metric={metrics.monthlyRecurring} label="Monthly Recurring" />
+        </Grid>
 
-        <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-          Top Revenue Countries
+        {/* WHAT IS NOT MEASURED, LISTED RATHER THAN OMITTED. Dropping these silently
+          * would leave the panel looking complete; a reader would never learn that
+          * churn and conversion are unavailable rather than zero. Each says what it
+          * would take, so the gap is actionable instead of mysterious. */}
+        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+          Not measured
         </Typography>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Country</TableCell>
-                <TableCell align="right">Revenue</TableCell>
-                <TableCell align="right">Share</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {businessData.topRevenueCountries.map((country, index) => (
-                <TableRow key={index}>
-                  <TableCell>{country.country}</TableCell>
-                  <TableCell align="right">
-                    <Typography
-                      variant="body2"
-                      fontWeight="bold"
-                      color="success.main"
-                    >
-                      ${country.revenue.toLocaleString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">{country.percentage}%</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <List dense>
+          {[
+            ['Churn rate', metrics.churnRate],
+            ['Conversion rate', metrics.conversionRate],
+            ['Revenue by country', metrics.revenueByCountry],
+            ['Subscription tiers', metrics.subscriptionTiers]
+          ].map(([label, metric]) => (
+            <ListItem key={label} disableGutters>
+              <ListItemText
+                primary={label}
+                secondary={metric.reason}
+                primaryTypographyProps={{ variant: 'body2' }}
+                secondaryTypographyProps={{ variant: 'caption' }}
+              />
+            </ListItem>
+          ))}
+        </List>
       </CardContent>
     </Card>
   );
