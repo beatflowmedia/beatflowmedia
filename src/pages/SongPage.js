@@ -7,6 +7,7 @@ import LikeButton from "../components/LikeButton";
 import PurchaseButton from "../components/PurchaseButton";
 import DownloadLicenseTerms from "../components/DownloadLicenseTerms";
 import CommercialLicenseButton from "../components/CommercialLicenseButton";
+import { radioUrlFor } from "../data/radioAlbums";
 import { useAuth } from "../context/AuthContext";
 import { useLikes } from '../context/LikesContext';
 import { usePlayer } from "../context/PlayerContext";
@@ -225,6 +226,39 @@ function SongPage() {
                 <Link to={`/collection/${song.collectionId}`} className="text-green-500 hover:underline">
                   {song.collectionTitle || song.album}
                 </Link>
+              </p>
+            )}
+
+            {/* THE OTHER HALF OF THE MESH.
+              *
+              * BeatFlow Radio already links here -- radio/albums.js sends every album it
+              * airs to BFMG for the licence -- and nothing came back, which is half a
+              * mesh. radio/albums.js also has the clearest sentence either repository
+              * has on why this is worth doing at all:
+              *
+              *   "Two sites saying the same thing compete for the same searches; two
+              *    sites with different jobs that link to each other do not."
+              *
+              * The station's page is about HEARING the record: which programmes play it,
+              * when, and a way to listen live. It deliberately does not restate price or
+              * terms, because that is this page's job. Different jobs, mutual links.
+              *
+              * RESOLVED, NOT DERIVED. The station is selective -- "an album that never
+              * airs gets no page" -- so three of fifteen BFMG albums have none. Building
+              * the slug here would produce dead off-site links that npm run verify:links
+              * cannot see. src/data/radioAlbums.js holds the set that actually resolves;
+              * npm run verify:radio-links regenerates it. */}
+            {radioUrlFor(song.albumId) && (
+              <p className="mt-1 text-sm">
+                <span className="text-gray-500">Hear it on </span>
+                <a
+                  href={radioUrlFor(song.albumId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-500 hover:underline"
+                >
+                  BeatFlow Radio
+                </a>
               </p>
             )}
 

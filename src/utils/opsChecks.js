@@ -130,6 +130,11 @@ const CHECKS = {
     area: 'quality',
     protects: 'Four screens shipped showing invented numbers — 1,247 views, 4,370 views, $2.5m revenue, and a blog post naming an artist who earned $12,500 a month. A number on a screen is read as a measurement.'
   },
+  'radio-links': {
+    title: 'BFMG links back to the station only where a page exists',
+    area: 'storefront',
+    protects: 'The station is selective — three of fifteen albums have no page there — so a slug built in a component would produce dead off-site links that verify:links cannot see.'
+  },
   sitemap: {
     title: 'The sitemap describes a site that exists',
     area: 'storefront',

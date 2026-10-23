@@ -106,6 +106,30 @@ function urlEntry({ loc, lastmod, changefreq, priority }) {
   });
   console.log('  collections : ' + snap.size + '   <- were entirely absent before');
 
+  // --- 4. albums, with the station's selectivity rule applied -----------------
+  //
+  // 161 songs link UP to an album page, and those pages were absent from the sitemap --
+  // a silo with a hole in the middle: the spokes submitted, their hub not.
+  //
+  // THE RULE IS BORROWED FROM radio/albums.js, which says "an album in the catalogue
+  // that never airs gets no page". The BFMG equivalent is that an album with nothing
+  // deliverable gets no sitemap entry: a page offering a licence the checkout would
+  // refuse is worse than no page, and it spends crawl budget to disappoint someone.
+  const albumSnap = await db.collection('albums').get();
+  const albumEntries = [];
+  let skippedAlbums = 0;
+  for (const doc of albumSnap.docs) {
+    const songs = await db.collection('songs').where('albumId', '==', doc.id).get();
+    const deliverable = songs.docs.filter((d) => d.data().previewOnly !== true).length;
+    if (!deliverable) { skippedAlbums += 1; continue; }
+    albumEntries.push(urlEntry({
+      loc: `/album/${doc.id}`, lastmod: today, changefreq: 'monthly', priority: 0.8
+    }));
+  }
+  console.log('  albums      : ' + albumEntries.length +
+    (skippedAlbums ? '   (' + skippedAlbums + ' skipped — nothing deliverable)' : '') +
+    '   <- were absent, while 161 songs linked up to them');
+
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<!--',
@@ -120,6 +144,7 @@ function urlEntry({ loc, lastmod, changefreq, priority }) {
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ...routeEntries,
     ...collectionEntries,
+    ...albumEntries,
     ...blogEntries,
     '</urlset>',
     ''
@@ -127,7 +152,8 @@ function urlEntry({ loc, lastmod, changefreq, priority }) {
 
   fs.writeFileSync(OUT, xml, 'utf8');
 
-  const total = routeEntries.length + collectionEntries.length + blogEntries.length;
+  const total = routeEntries.length + collectionEntries.length +
+    albumEntries.length + blogEntries.length;
   console.log('');
   console.log('  wrote public/sitemap-static.xml — ' + total + ' URLs (was 24, none of them a product)\n');
   process.exit(0);

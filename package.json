@@ -133,6 +133,7 @@
     "verify:deps": "node scripts/verify-deps.js",
     "verify:no-fixtures": "node scripts/verify-no-fixtures.js",
     "verify:sitemap": "node scripts/verify-sitemap.js",
+    "verify:radio-links": "node scripts/verify-radio-links.js",
     "build:sitemap": "node scripts/build-sitemap.js",
     "ops:requests": "node scripts/ops-requests.js"
   },
