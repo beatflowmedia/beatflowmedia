@@ -4214,3 +4214,94 @@ caution nearly deleted it.
 | Pages emitting non-empty JSON-LD | **0** | 5 |
 | Passing tests | 313 | **317** |
 | Suites that cannot load | 40 | 40 — now `OPS-KWE66` |
+
+## The accessibility gate was a wall, and three of its rules read prose — 2026-10-23
+
+Found by trying to commit the pillar. The hook refused with "Found 1 critical issues",
+and the honest path from there was neither `--no-verify` nor shrugging: it was finding out
+what the one critical was.
+
+### It was the word "volume", in a comment, on a page with no audio
+
+`VOLUME_CONTROL_NO_ARIA` fired on `CommercialLicensing.js` because
+`checkMusicA11yPatterns` did `content.includes('volume')` against the whole file, and the
+file's own comment reads *"the volume argument"* — volume as in quantity. Same fault as
+`INPUT_WITHOUT_LABEL` matching `<InputAdornment>` on 2026-10-21, and the same fix: **a
+substring is not an element.** The rule now matches an actual control.
+
+**Then the rule was wrong in the other direction too**, which is the more interesting
+half. It demanded `aria-valuemin` from everything. A native `<input type="range">` with
+`min`, `max` and `value` **already exposes** valuemin/valuemax/valuenow — that is the
+native semantics, and ARIA-in-HTML is explicit that you do not duplicate it. Adding the
+attributes is redundant, and if they ever drift from the real bounds it is a lie to a
+screen reader.
+
+`MusicPlayer.js:294` is the worked example: it carries `aria-label="Volume"`,
+`aria-valuetext` for a spoken percentage, and `min`/`max`/`value`. **Correct, accessible
+code that the rule flagged.** "Fixing" it to satisfy the rule would have made it worse. So
+the rule changed instead, and now asks what the element needs:
+
+| Control | Needs |
+|---|---|
+| native range input, MUI `<Slider>` | an accessible **name**; value semantics come from the element |
+| hand-rolled `role="slider"` | the full `aria-value*` set — nothing else provides it |
+
+Calibrated across eight cases: quiet on prose, quiet on a correct native slider, quiet on
+an unrelated `tempo` range input, fires on an unnamed range input, fires on an unnamed MUI
+`Slider`, fires on a custom `role="slider"` with no `aria-valuenow`, and quiet on
+`MusicPlayer.js`.
+
+### A third rule had never run at all
+
+`validateHeadingHierarchy(headings, filePath)` used `content` on the one line where it
+resolves a heading's index to a line number — and never received it. So
+**`HEADING_HIERARCHY_SKIP` has never once been reported**: an h1 → h3 jump threw a
+`ReferenceError` instead of flagging the page. Caught by eslint's `no-undef`, confirmed
+pre-existing by stashing. One-word fix.
+
+> A rule that throws and a rule that finds nothing are indistinguishable from the outside.
+
+### The gate itself: `verify:a11y`, 124 files, 464 issues
+
+The hook ran `uiux review --exit-on-critical` over the staged files **whole**, while its
+own comment said the opposite was intended:
+
+> "New code is held to the line; existing debt is a ratchet to work down, recorded in
+> CLAUDE.md, not a wall across every commit."
+
+Judging a whole file means a one-line change imports every pre-existing issue in it.
+Moving one JSON-LD tag in `Playlist.js` presented **23 accessibility findings** — not one
+in the changed line, not one introduced that day — while the brand-new file in the same
+commit had zero. The hook's closing line already says what a wall produces, and it had
+already happened here once.
+
+So `--exit-on-critical` is gone from that line: the review **reports** its design-token
+and music-UX findings, and `scripts/verify-a11y-staged.js` **gates**, with a per-file
+baseline in `scripts/a11y-baseline.json` — the same shape as `KNOWN_FIXTURES` here and
+`KNOWN_UNRESOLVED` in `verify-deps.js`.
+
+- a file **not** in the baseline → any CRITICAL/HIGH fails, so new code is held to the line
+- a file in the baseline → only **growth** fails
+- a file below its baseline → reported as CLEARED, so `-- --write` tightens the number
+
+Only CRITICAL and HIGH gate. A gate that catches everything catches nothing, because it
+gets turned off.
+
+Calibrated: `--all` reports 464 against a baseline sum of 464 and says *(agree)*, and
+planting an unnamed volume slider in the pillar exits 1 naming the file. Its own output
+label was also wrong on the first pass — it printed "(staged)" for a `--files` run, which
+is the smallest version of the same fault as reporting the wrong number, and it now names
+its source.
+
+**Accessibility is the one that gets a gate** because the global standard calls it a floor
+that is never traded for style. Design tokens and music UX stay a report.
+
+### Ratchet (updated)
+
+| | Before | After |
+|---|---|---|
+| Accessibility rules matching prose instead of markup | 2 known | **0** |
+| Checker rules that throw instead of reporting | 1 (silent) | **0** |
+| Gating a11y issues, `src/` | 464 (ungated) | 464 — **baselined, growth fails** |
+| Files in the a11y baseline | — | 124 |
+| Commits blocked by debt they did not create | every one touching a legacy file | 0 |

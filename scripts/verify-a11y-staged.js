@@ -93,18 +93,30 @@ function stagedFiles() {
 
   const checker = new AccessibilityChecker();
 
+  // The SOURCE is named in the output, not inferred from it. The first version printed
+  // "(staged)" whenever --all was absent, so a --files run was labelled as a staged run
+  // -- a reconciler mislabelling what it just measured, which is the smallest version of
+  // the same fault as reporting the wrong number.
   let files;
-  if (flag('--all') || flag('--write')) files = sourceFiles(path.join(ROOT, 'src')).map(rel);
-  else if (valueOf('--files')) files = valueOf('--files').split(',').map((s) => s.trim()).filter(Boolean);
-  else files = stagedFiles();
+  let source;
+  if (flag('--all') || flag('--write')) {
+    files = sourceFiles(path.join(ROOT, 'src')).map(rel);
+    source = 'all of src/';
+  } else if (valueOf('--files')) {
+    files = valueOf('--files').split(',').map((s) => s.trim()).filter(Boolean);
+    source = 'named with --files';
+  } else {
+    files = stagedFiles();
+    source = 'staged';
+  }
 
   if (!files.length) {
-    console.log('\nverify:a11y — no JavaScript files to check.\n');
+    console.log('\nverify:a11y — no JavaScript files to check (' + source + ').\n');
     process.exit(0);
   }
 
   console.log('\nverify:a11y — accessibility, ratcheted against a recorded baseline\n');
-  console.log('  files checked: ' + files.length + (flag('--all') || flag('--write') ? '  (all of src/)' : '  (staged)'));
+  console.log('  files checked: ' + files.length + '  (' + source + ')');
 
   const counts = {};
   const detail = {};
