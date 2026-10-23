@@ -4305,3 +4305,55 @@ that is never traded for style. Design tokens and music UX stay a report.
 | Gating a11y issues, `src/` | 464 (ungated) | 464 — **baselined, growth fails** |
 | Files in the a11y baseline | — | 124 |
 | Commits blocked by debt they did not create | every one touching a legacy file | 0 |
+
+## Where the Ops desk, Calendar and expiry register live — 2026-10-23
+
+The global standard now requires each project to name these. Instantiated for BFMG:
+
+| Requirement | Here | State |
+|---|---|---|
+| **Ops desk** | A panel in the Admin Portal (`src/components/admin/OpsDesk.js`), state in Firestore `opsItems`, text seeded in `src/data/opsBacklog.js` | **Live.** Filed by `scripts/ops-file.js`, queue read by `scripts/ops-requests.js` |
+| **Calendar** | — | **Does not exist.** `OPS-72WKZ` |
+| **Expiry register** | — | **Does not exist.** `OPS-V8DE8` |
+| Version skew | `src/index.js` + `src/components/AppUpdatePrompt.js` | **Partly.** Offers correctly, cannot name its version — `OPS-NMFGS` |
+
+### `marketing` is now a seventh ops area
+
+Filing the Calendar gap had nowhere to go: `AREAS` held storefront, checkout, fulfilment,
+catalogue, legal and quality, and a social-posting gap filed under `storefront` is
+mis-classified. **Mis-classifying to satisfy a validator is how a vocabulary stops
+describing the domain** — and the S pillar says a concern missing from the table *is* the
+finding, not a reason to round it to the nearest entry. So `marketing: 'Blog, landing
+pages, social posting and the content calendar'` was added.
+
+`ops.test.js` spelled the six areas out in **two** assertions, so adding one broke the
+test that was not updated — with a diff that reads like a refusal bug rather than a stale
+expectation. The second now derives the message from `Ops.AREAS`. A test is not exempt
+from S.
+
+### Why the job codes are `OPS-NNRBA`, not `SOC-07`
+
+The standard's example is an area prefix plus a number. BFMG uses a single `OPS-` prefix
+and five Crockford base32 characters hashed from the id, and this is **deliberate**, so it
+does not read as an oversight:
+
+- The stated purpose of a job code is "so I can name it in chat". `OPS-NNRBA` is as
+  sayable as `SOC-07`, and typing it into the desk's search finds exactly one card.
+- A sequential number needs a **counter**. A Firestore counter means a card has no number
+  until it has been written, so an agent cannot refer to a finding while filing it, and
+  two agents filing at once contend for the same integer. The hash is derived from the id
+  and is therefore stable, offline, and computable before the write.
+- The area is already a field on the card and a pill in the UI. Encoding it in the
+  reference too would duplicate it — and worse, a card that moved area would need its
+  code changed, which breaks every mention of it in a commit message or a conversation.
+
+The trade-off accepted: the codes are not ordered, so you cannot tell from two references
+which was filed first. The `created` date is on the card and the desk sorts by it, which is
+where that question actually gets asked.
+
+### The Calendar is sequenced behind a decision, not just unbuilt
+
+`OPS-72WKZ` is Percy's, not an agent's, and it waits on `OPS-KFGAE` — whether BFMG posts
+to social at all is undecided. A calendar built first would be a calendar of nothing, and
+the standard's own caveat rules out rows for platforms with no account: "a row for a
+platform with no account reads as coverage and isn't." Decide, then build.

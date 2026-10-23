@@ -1,3 +1,19 @@
+/* eslint-disable testing-library/await-async-query --
+ * `findByReference()` is BFMG's own synchronous lookup -- find an ops item by its
+ * OPS-XXXXX code -- and returns the item, not a promise. The rule matches on the NAME:
+ * anything called findBy* is assumed to be a Testing Library DOM query, which are async.
+ * Nothing here touches the DOM.
+ *
+ * Suppressed rather than renamed, deliberately. "Find by reference" is how the domain
+ * says it: a reference code is the thing Percy reads off the desk and types into search.
+ * Renaming it to lookupByReference to quiet a linter would be letting the mechanism
+ * choose the domain's vocabulary, which is the I caveat precisely -- a name matching the
+ * UI and how the team talks beats a more elegant one matching nothing.
+ *
+ * Awaiting the calls instead would be worse: `await` on a non-promise succeeds silently,
+ * so the tests would still pass while asserting on a resolved value for no reason, and
+ * the next reader would reasonably conclude the function is async.
+ */
 // src/utils/ops.test.js
 //
 // The ops vocabulary. Pinned because every reader and writer of an ops item -- the
@@ -26,9 +42,9 @@ const base = {
 };
 
 describe('areas mirror BFMG, not the station', () => {
-  test('the six areas are where money and rights actually move', () => {
+  test('the seven areas are where money, rights and attention actually move', () => {
     expect(Object.keys(Ops.AREAS).sort()).toEqual(
-      ['catalogue', 'checkout', 'fulfilment', 'legal', 'quality', 'storefront']
+      ['catalogue', 'checkout', 'fulfilment', 'legal', 'marketing', 'quality', 'storefront']
     );
   });
 
@@ -36,8 +52,12 @@ describe('areas mirror BFMG, not the station', () => {
     // 'engine', 'desk', 'listener' and 'social' are the station's areas. Accepting them
     // would let an agent briefed on the wrong rulebook file against BFMG and look fine.
     ['engine', 'desk', 'listener', 'social', 'backend'].forEach((area) => {
+      // DERIVED from Ops.AREAS rather than retyped. This assertion used to spell the
+      // six areas out, so adding `marketing` on 2026-10-23 needed the list edited in
+      // two tests -- and the one that was missed failed with a diff that looked like a
+      // real refusal bug rather than a stale expectation. A test is not exempt from S.
       expect(Ops.problems({ ...base, area })).toContain(
-        'area must be one of storefront, checkout, fulfilment, catalogue, legal, quality'
+        `area must be one of ${Object.keys(Ops.AREAS).join(', ')}`
       );
     });
     // An EMPTY area is refused too, by the required-field check rather than the

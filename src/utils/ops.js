@@ -38,6 +38,12 @@ const AREAS = {
   fulfilment: 'Webhooks, purchase and licence records, entitlement, master delivery, revocation',
   catalogue: 'Songs, albums, collections, previewOnly, ISRC, and the radio sync contract',
   legal: 'Terms, licence agreements, privacy. Flagged for a lawyer, NEVER answered',
+  // ADDED 2026-10-23. The global standard now requires a Calendar -- what posts, where,
+  // when, and whether it actually happened -- and there was nowhere to file that. A
+  // social-posting gap filed under `storefront` is mis-classified, and mis-classifying
+  // to satisfy a validator is how a vocabulary stops describing the domain. The S pillar
+  // puts it plainly: if a concern is not in the table, that is the finding.
+  marketing: 'Blog, landing pages, social posting and the content calendar',
   quality: 'Tests, the verify:* reconcilers, the build, dependencies and CI'
 };
 
