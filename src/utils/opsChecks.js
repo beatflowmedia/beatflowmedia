@@ -125,6 +125,16 @@ const CHECKS = {
     area: 'legal',
     protects: 'A buyer is governed by the version they accepted. If that text is gone, the deal cannot be produced in a dispute.'
   },
+  'no-fixtures': {
+    title: 'No fabricated data reaches a screen',
+    area: 'quality',
+    protects: 'Four screens shipped showing invented numbers — 1,247 views, 4,370 views, $2.5m revenue, and a blog post naming an artist who earned $12,500 a month. A number on a screen is read as a measurement.'
+  },
+  sitemap: {
+    title: 'The sitemap describes a site that exists',
+    area: 'storefront',
+    protects: 'sitemap-songs.xml returned the SPA shell with HTTP 200 for six months, so 906 songs were never submitted. A sitemap is never visibly wrong — the only symptom is pages quietly not getting indexed.'
+  },
   vulns: {
     title: 'No high or critical advisory reaches the deployed functions',
     area: 'quality',

@@ -41,12 +41,21 @@ const BASE = args.includes('--local') ? LOCAL : PROD;
 // A sample keeps this usable as a pre-deploy check. --all is for when it matters.
 const SAMPLE = args.includes('--all') ? Infinity : 40;
 
-function fetchUrl(url, method = 'GET') {
+/**
+ * @param {boolean} full  read the WHOLE body. Sitemaps need it; URL checks do not.
+ *
+ * The cap exists so a HEAD-style check never holds a large page in memory, and capping
+ * a SITEMAP was a bug in this script's first version: at 4000 bytes it counted only the
+ * URLs in the first 4KB and reported the 906-song sitemap as having 69. It never caused
+ * a false pass -- the shell detection reads the opening bytes and the URL checks use
+ * HEAD -- but it under-reported every sitemap over 4KB, which is every useful one.
+ */
+function fetchUrl(url, method = 'GET', full = false) {
   return new Promise((resolve) => {
     const lib = url.startsWith('https') ? https : http;
     const req = lib.request(url, { method, timeout: 20000 }, (res) => {
       let body = '';
-      res.on('data', (c) => { if (body.length < 4000) body += c; });
+      res.on('data', (c) => { if (full || body.length < 4000) body += c; });
       res.on('end', () => resolve({
         status: res.statusCode,
         location: res.headers.location,
@@ -74,7 +83,7 @@ function isSpaShell(body) {
   const problems = [];
 
   // --- the index -------------------------------------------------------------
-  const index = await fetchUrl(`${BASE}/sitemap.xml`);
+  const index = await fetchUrl(`${BASE}/sitemap.xml`, 'GET', true);
   if (index.status !== 200) {
     console.error('  sitemap.xml returned ' + index.status + '. Nothing else can be checked.\n');
     process.exit(1);
@@ -89,7 +98,7 @@ function isSpaShell(body) {
   // --- each child ------------------------------------------------------------
   let urls = [];
   for (const child of children) {
-    const res = await fetchUrl(child);
+    const res = await fetchUrl(child, 'GET', true);
     const name = child.replace(BASE, '');
     if (res.status !== 200) {
       problems.push(`${name} returned ${res.status}`);

@@ -3760,6 +3760,14 @@ people learn to skip.
   recording in the hands of someone who accepted nothing. Call: licence the editor to
   include it in delivered work; no separate grant to the end client; recourse runs against
   the licensee. Flagged as the sharpest reviewer question.
+- **Calibration** — surfaced when `verify:sitemap` reported 69 song URLs and there were
+  906. Call: prove a guard fails before trusting it, AND check the number it reports
+  against an independent count — a guard proven to go red can still be reading low while
+  it is green. Added to the global CLAUDE.md, because *instrument* and *reconciler* are
+  defined there.
+- **A checker's authority is the hazard** — an instrument's output gets trusted more than
+  the code it checks, so a wrong one causes the fault rather than missing it. `verify:deps`
+  said four packages were unused; they were deleted; `agents/` broke.
 - **Derived copy vs canonical origin, in money** — `collections.trackCount` priced a
   product while being stale by three tracks. Call: price from the query, not the cached
   count, and have the page quote the same source so it cannot advertise one figure and
@@ -4027,3 +4035,47 @@ a nonexistent package for `verify:deps`, and a real v14 install for the admin gu
   failure is categorical rather than visual.
 - **Ratchet vs wall** — a reconciler that fails on pre-existing debt gets deleted within
   a week. Call: record the baseline in code (`KNOWN_UNRESOLVED`) and fail only on growth.
+
+## Calibration — the concept that came out of six wrong instruments — 2026-10-23
+
+Added to the **global** `CLAUDE.md` as a caveat on "Enforce what you can", because the
+vocabulary it uses lives there: *reconciler*, *ratchet* and *instrument* are defined
+globally and merely used here. Defining the rule in a project file would split one
+concept across two documents — the S violation, in prose.
+
+**Calibration** is checking an instrument against a known reference before trusting what
+it tells you. The failure mode is not a broken instrument; it is a working one that is
+**off**, which is undetectable from its own output. `npm run verify:sitemap` printed
+"69 URLs" in exactly the tone it would have printed "906".
+
+### Six wrong readings in five days, which is a pattern rather than bad luck
+
+| Instrument | Reading | Truth |
+|---|---|---|
+| `verify:sitemap` | 69 song URLs | **906** — the script capped the response body at 4KB |
+| `verify:deps` | `firebase` unresolvable in 99 files | all fine — it reduced `firebase/firestore` to `firebase`, which has no root export |
+| `verify:deps` | `events` missing from the root | a **Node builtin**; the manifest wanted the browser polyfill |
+| `verify:no-fixtures` | baseline of 16 files | **6 of them were already clean** |
+| the a11y checker | `INPUT_WITHOUT_LABEL`, **CRITICAL** | matched MUI's `<InputAdornment>` — `/<input[^>]*>/gi` is case-insensitive with nothing ending the tag name |
+| first vulnerability triage | 6 advisories reach the functions | **18** — `effects` describes what an advisory invalidates, not what pulls it in |
+
+### Why it does more damage than a wrong line of code
+
+**A checker's output carries more authority than the code it checks.** When `verify:deps`
+said four packages were unused, they were deleted — and four of them were in use by
+`agents/`, which broke the pre-commit hook. The instrument did not fail to catch
+something; it **caused** the fault, confidently.
+
+### The two practices
+
+1. **Prove the guard fails.** Plant the fault it exists to catch and watch it go red.
+   Already the habit here: `verify:deps` was proven with a `require` of a nonexistent
+   package, `verify:no-fixtures` with a planted `mockStats`, `admin-api.test.js` by
+   actually installing firebase-admin 14, `blogPosts.test.js` by re-introducing the exact
+   crash.
+2. **Check the number against an independent count.** This is the one that was missing.
+   `verify:sitemap` was proven to fail correctly on production — and the figure it
+   printed while passing was never checked against `grep -c '<loc>'`.
+
+> A guard proven to go red can still be reading low while it is green.
+
